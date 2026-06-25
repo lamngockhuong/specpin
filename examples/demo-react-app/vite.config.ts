@@ -1,8 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Demo app for trying Specpin. Runs on localhost:3000 so it matches the seeded
-// .specs/manifest.json domains out of the box.
+// Demo app for trying Specpin. Prefers localhost:3000 to match the seeded
+// .specs/manifest.json domains; if 3000 is busy Vite falls back to 3001, which
+// the manifest also allows out of the box.
 export default defineConfig({
   plugins: [react()],
   server: { port: 3000 },
