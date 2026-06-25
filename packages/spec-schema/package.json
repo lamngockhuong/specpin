@@ -15,7 +15,7 @@
   "files": ["dist", "schema"],
   "scripts": {
     "gen": "tsx scripts/gen-types.ts",
-    "build": "tsx scripts/gen-types.ts && tsc -p tsconfig.json",
+    "build": "tsx scripts/gen-types.ts && tsc -p tsconfig.json && tsx scripts/copy-gen-assets.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "lint": "eslint src",

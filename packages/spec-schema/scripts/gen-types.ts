@@ -1,4 +1,7 @@
 import { compile } from "json-schema-to-typescript";
+import Ajv2020 from "ajv/dist/2020.js";
+import addFormats from "ajv-formats";
+import standaloneCode from "ajv/dist/standalone/index.js";
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
@@ -14,6 +17,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const schemaPath = resolve(here, "../schema/v1.json");
 const typesOutPath = resolve(here, "../src/types.gen.ts");
 const schemaOutPath = resolve(here, "../src/schema.gen.ts");
+const validatorsOutPath = resolve(here, "../src/validators.gen.cjs");
+const validatorsDtsPath = resolve(here, "../src/validators.gen.d.cts");
 
 const schemaText = await readFile(schemaPath, "utf8");
 const schema = JSON.parse(schemaText);
@@ -65,3 +70,43 @@ const schemaModule = [
 
 await writeFile(schemaOutPath, schemaModule);
 console.log(`Wrote ${schemaOutPath}`);
+
+// Precompile the validators to standalone code at build time. Ajv's default
+// runtime compilation calls `new Function(...)`, which a content script inherits
+// the host page's CSP for; pages without `unsafe-eval` make Ajv throw "Error
+// compiling schema". Standalone code is plain functions (no eval) and is emitted
+// as CommonJS so the two runtime helpers it pulls in (ajv/dist/runtime/* and
+// ajv-formats/dist/formats) resolve via require() under any bundler. ESM consumers
+// import the named exports through Node's CJS interop.
+const schemaId = schema.$id as string;
+const standaloneAjv = new Ajv2020({ allErrors: true, strict: false, code: { source: true } });
+addFormats(standaloneAjv);
+standaloneAjv.addSchema(schema);
+const validatorsCode = standaloneCode(standaloneAjv, {
+  validateSpecFile: schemaId,
+  validateSpec: `${schemaId}#/$defs/Spec`,
+  validateManifest: `${schemaId}#/$defs/Manifest`,
+});
+
+const validatorsBanner = [
+  "/* eslint-disable */",
+  "// @generated from schema/v1.json by ajv standalone codegen. DO NOT EDIT BY HAND.",
+  "// Run `pnpm --filter @specpin/spec-schema gen`.",
+  "",
+].join("\n");
+
+await writeFile(validatorsOutPath, validatorsBanner + validatorsCode + "\n");
+console.log(`Wrote ${validatorsOutPath}`);
+
+const validatorsDts = [
+  "/* eslint-disable */",
+  "// Generated alongside validators.gen.cjs. DO NOT EDIT BY HAND.",
+  'import type { ValidateFunction } from "ajv";',
+  "export const validateSpecFile: ValidateFunction;",
+  "export const validateSpec: ValidateFunction;",
+  "export const validateManifest: ValidateFunction;",
+  "",
+].join("\n");
+
+await writeFile(validatorsDtsPath, validatorsDts);
+console.log(`Wrote ${validatorsDtsPath}`);

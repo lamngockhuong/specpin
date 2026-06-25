@@ -3,7 +3,13 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".output/**", "src/types.gen.ts"]
+      "outputs": [
+        "dist/**",
+        ".output/**",
+        "src/types.gen.ts",
+        "src/validators.gen.cjs",
+        "src/validators.gen.d.cts"
+      ]
     },
     "test": {
       "dependsOn": ["^build"]
