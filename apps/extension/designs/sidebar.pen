@@ -1,0 +1,667 @@
+{
+  "version": "2.13",
+  "children": [
+    {
+      "type": "frame",
+      "id": "jaqh7",
+      "x": 0,
+      "y": 0,
+      "name": "Spec Card",
+      "reusable": true,
+      "width": 280,
+      "fill": "$surface",
+      "cornerRadius": "$radius-card",
+      "stroke": "$border",
+      "strokeWidth": 1,
+      "layout": "vertical",
+      "gap": 10,
+      "padding": 14,
+      "children": [
+        {
+          "type": "frame",
+          "id": "D4bERZ",
+          "name": "Header Row",
+          "width": "fill_container",
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "LQqAM",
+              "name": "Title Group",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "piTea",
+                  "name": "Title",
+                  "fill": "$text-primary",
+                  "content": "Spec Title",
+                  "fontFamily": "$font-ui",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "C5uIX",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Review Tag",
+                  "enabled": false,
+                  "fill": "$amber-bg",
+                  "cornerRadius": 6,
+                  "padding": [
+                    3,
+                    8
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "lJKxa",
+                      "name": "Review Label",
+                      "fill": "$amber",
+                      "content": "NEEDS REVIEW",
+                      "fontFamily": "$font-ui",
+                      "fontSize": 10,
+                      "fontWeight": "700",
+                      "letterSpacing": 0.5
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "icon",
+              "id": "yswk8",
+              "name": "Chevron",
+              "width": 16,
+              "height": 16,
+              "icon": "chevron-right",
+              "library": "lucide",
+              "fill": "$text-muted"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "D3kVg",
+          "name": "Description",
+          "fill": "$text-secondary",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "One-line description of this spec",
+          "lineHeight": 1.4,
+          "fontFamily": "$font-ui",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "gBzOf",
+          "name": "Rules",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 5,
+          "children": [
+            {
+              "type": "text",
+              "id": "N7bE4Q",
+              "name": "Rule 1",
+              "fill": "$text-muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "  •  Business rule one",
+              "lineHeight": 1.3,
+              "fontFamily": "$font-ui",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "s0HdM2",
+              "name": "Rule 2",
+              "fill": "$text-muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "  •  Business rule two",
+              "lineHeight": 1.3,
+              "fontFamily": "$font-ui",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "iLcje",
+              "name": "Rule 3",
+              "fill": "$text-muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "  •  Business rule three",
+              "lineHeight": 1.3,
+              "fontFamily": "$font-ui",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "lkCY8",
+      "x": 360,
+      "y": 0,
+      "name": "Specpin Sidebar",
+      "clip": true,
+      "width": 320,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "radial",
+        "center": {
+          "x": 0.5,
+          "y": 0.16
+        },
+        "size": {
+          "width": 1.3,
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "$grad-top",
+            "position": 0
+          },
+          {
+            "color": "$grad-bottom",
+            "position": 1
+          }
+        ]
+      },
+      "stroke": "$border",
+      "strokeWidth": {
+        "left": 1
+      },
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "Z2PTDV",
+          "name": "Header",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            20,
+            20,
+            16,
+            20
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "AYsYj",
+              "name": "Brand Row",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "hZzG3",
+                  "name": "Brand Dot",
+                  "fill": "$accent",
+                  "width": 8,
+                  "height": 8
+                },
+                {
+                  "type": "text",
+                  "id": "HITdN",
+                  "name": "Brand Label",
+                  "fill": "$text-secondary",
+                  "content": "SPECPIN",
+                  "fontFamily": "$font-ui",
+                  "fontSize": 11,
+                  "fontWeight": "600",
+                  "letterSpacing": 1.5
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "zMqos",
+              "name": "Page Heading",
+              "fill": "$text-primary",
+              "content": "Specs on this page",
+              "fontFamily": "$font-ui",
+              "fontSize": 16,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "BPnsn",
+          "name": "Summary Row",
+          "width": "fill_container",
+          "padding": [
+            0,
+            20,
+            16,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "KglG2",
+              "name": "Spec Count",
+              "fill": "$text-secondary",
+              "content": "4 specs found",
+              "fontFamily": "$font-ui",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "RDinf",
+              "name": "Review Badge",
+              "fill": "$amber-bg",
+              "cornerRadius": "$radius-control",
+              "padding": [
+                4,
+                10
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "icyt0",
+                  "name": "Badge Label",
+                  "fill": "$amber",
+                  "content": "2 need review",
+                  "fontFamily": "$font-ui",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "rectangle",
+          "id": "f8FNQY",
+          "name": "Divider",
+          "fill": "$border",
+          "width": "fill_container",
+          "height": 1
+        },
+        {
+          "type": "frame",
+          "id": "x8Pqn1",
+          "name": "Cards List",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": [
+            16,
+            12
+          ],
+          "children": [
+            {
+              "id": "P2Lnr",
+              "type": "ref",
+              "ref": "jaqh7",
+              "name": "Login Form Validation",
+              "width": "fill_container",
+              "descendants": {
+                "piTea": {
+                  "content": "Login Form Validation"
+                },
+                "D3kVg": {
+                  "content": "Validates user credentials before authentication"
+                },
+                "N7bE4Q": {
+                  "content": "  •  Email format check"
+                },
+                "s0HdM2": {
+                  "content": "  •  Password min 8 chars"
+                },
+                "iLcje": {
+                  "content": "  •  Rate limit 5 attempts/min"
+                }
+              }
+            },
+            {
+              "id": "R4d7D",
+              "type": "ref",
+              "ref": "jaqh7",
+              "name": "Cart Total Calculation",
+              "width": "fill_container",
+              "stroke": "$amber-border",
+              "descendants": {
+                "piTea": {
+                  "content": "Cart Total Calculation"
+                },
+                "C5uIX": {
+                  "enabled": true
+                },
+                "D3kVg": {
+                  "content": "Computes final cart amount with taxes and discounts"
+                },
+                "N7bE4Q": {
+                  "content": "  •  Tax by jurisdiction"
+                },
+                "s0HdM2": {
+                  "content": "  •  Discount stacking rules"
+                },
+                "iLcje": {
+                  "content": "  •  Currency rounding to cents"
+                }
+              }
+            },
+            {
+              "id": "GiNXG",
+              "type": "ref",
+              "ref": "jaqh7",
+              "name": "User Profile Visibility",
+              "width": "fill_container",
+              "descendants": {
+                "piTea": {
+                  "content": "User Profile Visibility"
+                },
+                "D3kVg": {
+                  "content": "Controls who can view profile information"
+                },
+                "N7bE4Q": {
+                  "content": "  •  Privacy level settings"
+                },
+                "s0HdM2": {
+                  "content": "  •  Admin override access"
+                },
+                "iLcje": {
+                  "content": "  •  Team member visibility"
+                }
+              }
+            },
+            {
+              "id": "FsbjY",
+              "type": "ref",
+              "ref": "jaqh7",
+              "name": "Payment Retry Policy",
+              "width": "fill_container",
+              "stroke": "$amber-border",
+              "descendants": {
+                "piTea": {
+                  "content": "Payment Retry Policy"
+                },
+                "C5uIX": {
+                  "enabled": true
+                },
+                "D3kVg": {
+                  "content": "Handles failed payment reattempt logic"
+                },
+                "N7bE4Q": {
+                  "content": "  •  Exponential backoff intervals"
+                },
+                "s0HdM2": {
+                  "content": "  •  Max 3 retry attempts"
+                },
+                "iLcje": {
+                  "content": "  •  Notify on final failure"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "accent": {
+      "type": "color",
+      "value": "#2DD4BF"
+    },
+    "accent-glow": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#2DD4BF33",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2DD4BF66",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "amber": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#B45309",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#FBBF24",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "amber-bg": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FEF3C7",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2A220E",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "amber-border": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#F59E0B",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#B5851A",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "border": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#D4EBE6",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2DD4BF26",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "elevated": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#103330",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "font-mono": {
+      "type": "string",
+      "value": "JetBrains Mono"
+    },
+    "font-ui": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "page-bg": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#F2FBF9",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#04130F",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "radius-card": {
+      "type": "number",
+      "value": 16
+    },
+    "radius-control": {
+      "type": "number",
+      "value": 10
+    },
+    "surface": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#0E2C28",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "text-muted": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#8AA8A2",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#5E837C",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "text-primary": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#06302A",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#E6FFFA",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "text-secondary": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#4A6B65",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#8FB5AE",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "grad-top": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E6F9F4",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#10463E",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "grad-bottom": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#F2FBF9",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#04130F",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    }
+  },
+  "themes": {
+    "mode": [
+      "light",
+      "dark"
+    ]
+  }
+}

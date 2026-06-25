@@ -51,6 +51,7 @@ pnpm typecheck      # tsc --noEmit per package
 - `docs/system-architecture.md` - components, packages, fingerprinting, security model
 - `docs/run-guide.md` - the full end-to-end loop (init → serve → load extension → connect → render → capture)
 - `docs/schema-reference.md` - the v1 spec format
+- `docs/design-system.md` - extension UI mockups + shared color/font token workflow
 
 ## Contributing
 

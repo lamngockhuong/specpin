@@ -1,0 +1,65 @@
+{
+  "_comment": "Single source of truth for Specpin extension UI. Branded teal, dual-theme, with a radial top-glow gradient (grad-top/grad-bottom) and accent glow per theme. Edit values here, then: node sync-tokens.mjs && ./render.sh",
+  "brand": {
+    "base": "#2DD4BF",
+    "hover": "#5EE6D3",
+    "on": "#04221E",
+    "glow": "#2DD4BF66"
+  },
+  "font": {
+    "ui": "Inter",
+    "mono": "JetBrains Mono"
+  },
+  "radius": {
+    "card": 16,
+    "control": 10
+  },
+  "themes": {
+    "light": {
+      "bg": "#F2FBF9",
+      "surface": "#FFFFFF",
+      "elevated": "#FFFFFF",
+      "control": "#E4F5F1",
+      "border": "#D4EBE6",
+      "text": "#06302A",
+      "text2": "#4A6B65",
+      "text3": "#8AA8A2",
+      "successDot": "#16A34A",
+      "successText": "#15803D",
+      "successBg": "#ECFDF5",
+      "successBorder": "#A7F3D0",
+      "errorText": "#B91C1C",
+      "errorBg": "#FEF2F2",
+      "errorBorder": "#FECACA",
+      "warning": "#B45309",
+      "warningBorder": "#F59E0B",
+      "warningBg": "#FEF3C7",
+      "gradTop": "#E6F9F4",
+      "gradBottom": "#F2FBF9",
+      "accentGlow": "#2DD4BF33"
+    },
+    "dark": {
+      "bg": "#04130F",
+      "surface": "#0E2C28",
+      "elevated": "#103330",
+      "control": "#123832",
+      "border": "#2DD4BF26",
+      "text": "#E6FFFA",
+      "text2": "#8FB5AE",
+      "text3": "#5E837C",
+      "successDot": "#4ADE80",
+      "successText": "#4ADE80",
+      "successBg": "#06251C",
+      "successBorder": "#1C5C3F",
+      "errorText": "#FCA5A5",
+      "errorBg": "#2A1313",
+      "errorBorder": "#5C2626",
+      "warning": "#FBBF24",
+      "warningBorder": "#B5851A",
+      "warningBg": "#2A220E",
+      "gradTop": "#10463E",
+      "gradBottom": "#04130F",
+      "accentGlow": "#2DD4BF66"
+    }
+  }
+}
