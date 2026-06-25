@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # pnpm version comes from package.json "packageManager"; do not also set
+      # "version" here or action-setup errors on the duplicate.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -37,6 +37,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26"
+          cache-dependency-path: apps/cli/go.sum
       # Fail if the embedded schema drifted from packages/spec-schema.
       - run: make check-schema
       - run: go vet ./...
