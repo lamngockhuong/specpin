@@ -1,0 +1,14 @@
+{
+  "id": "extra",
+  "title": "Extra property",
+  "description": "additionalProperties:false rejects unknown keys.",
+  "bogusField": true,
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

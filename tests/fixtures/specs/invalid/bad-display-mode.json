@@ -1,0 +1,14 @@
+{
+  "id": "bad-mode",
+  "title": "Bad display mode",
+  "description": "popup is not a valid DisplayMode.",
+  "preferredDisplayMode": "popup",
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "bad-date",
+  "title": "Bad datetime",
+  "description": "meta.createdAt must satisfy the date-time format (parity between ajv and Go).",
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  },
+  "meta": {
+    "createdBy": "k",
+    "createdAt": "not-a-date",
+    "updatedAt": "2026-06-25T08:00:00Z",
+    "source": "manual"
+  }
+}

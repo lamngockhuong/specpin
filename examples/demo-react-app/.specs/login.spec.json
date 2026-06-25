@@ -1,0 +1,65 @@
+{
+  "$schema": "https://specpin.dev/schema/v1.json",
+  "group": "Login Page",
+  "specs": [
+    {
+      "id": "login-submit-btn",
+      "title": "Log in button",
+      "description": "Calls POST /auth/login. Disabled while loading; shows an inline error on bad credentials.",
+      "businessRules": [
+        "Lock the account after 5 consecutive failures within 15 minutes",
+        "Redirect to /dashboard if role=admin, else /home"
+      ],
+      "tags": ["auth", "critical"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "login-submit",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "form.login button[type=submit]",
+        "xpath": "//form[@class='login']//button[@type='submit']",
+        "domPath": ["form", "button"],
+        "tagName": "button",
+        "textContent": "Log in",
+        "attributes": { "type": "submit" },
+        "nearbyLabels": ["Email", "Password"],
+        "positionHint": { "index": 3, "siblingCount": 4 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-25T08:00:00Z",
+        "updatedAt": "2026-06-25T08:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "login-email-field",
+      "title": "Email field",
+      "description": "Primary identifier for login. Validated as an email; trimmed before submit.",
+      "businessRules": ["Must be a valid email address", "Case-insensitive on the server"],
+      "tags": ["auth"],
+      "preferredDisplayMode": "sidebar",
+      "fingerprint": {
+        "testId": "login-email",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "form.login input[type=email]",
+        "xpath": "//form[@class='login']//input[@type='email']",
+        "domPath": ["form", "label", "input"],
+        "tagName": "input",
+        "textContent": null,
+        "attributes": { "type": "email" },
+        "nearbyLabels": ["Email"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-25T08:00:00Z",
+        "updatedAt": "2026-06-25T08:00:00Z",
+        "source": "manual"
+      }
+    }
+  ]
+}

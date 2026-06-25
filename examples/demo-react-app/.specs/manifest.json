@@ -1,0 +1,12 @@
+{
+  "$schema": "https://specpin.dev/schema/v1.json",
+  "version": "1.0",
+  "project": "Acme CRM Demo",
+  "domains": ["localhost:3000", "127.0.0.1:3000"],
+  "specFiles": ["login.spec.json"],
+  "settings": {
+    "defaultLocale": "en",
+    "matchConfidenceThreshold": 0.6,
+    "defaultDisplayMode": "tooltip"
+  }
+}
