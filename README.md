@@ -48,6 +48,10 @@ pnpm typecheck      # tsc --noEmit per package
 
 ## Documentation
 
+- `docs/project-overview-pdr.md` - product overview, problem statement, goals, PDR
+- `docs/codebase-summary.md` - per-package summary, key files, responsibilities
+- `docs/code-standards.md` - TS/Go conventions, tooling config, schema management
+- `docs/project-roadmap.md` - Phase 1 MVP completion + 1.1 planned features
 - `docs/system-architecture.md` - components, packages, fingerprinting, security model
 - `docs/run-guide.md` - the full end-to-end loop (init → serve → load extension → connect → render → capture)
 - `docs/schema-reference.md` - the v1 spec format
