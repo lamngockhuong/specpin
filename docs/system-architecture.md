@@ -44,6 +44,12 @@ The matcher's signature and `MatchResult` shape are stable so the deferred hybri
 - CORS accepts only extension origins (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`); web origins are rejected.
 - Writes are confined to `.specs/` (path-traversal guard), atomic, and pretty-printed for clean Git diffs.
 
+## Design references
+
+UI mockups for the extension surfaces (popup, options, sidebar, capture form)
+and their shared color/font tokens live in `apps/extension/designs/`. See
+`docs/design-system.md` for the token workflow.
+
 ## Deferred (post-MVP)
 
 FileSystem Access + Manual import sources; overlay/modal/inline-badge renderers; hybrid weighted fingerprint scoring; `specpin generate` (AI); Safari packaging.

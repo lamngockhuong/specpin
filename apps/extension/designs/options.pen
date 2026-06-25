@@ -1,0 +1,610 @@
+{
+  "version": "2.13",
+  "children": [
+    {
+      "type": "frame",
+      "id": "rcWsi",
+      "x": 0,
+      "y": 0,
+      "name": "Options Page",
+      "clip": true,
+      "width": 560,
+      "height": 820,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "radial",
+        "center": {
+          "x": 0.5,
+          "y": 0.16
+        },
+        "size": {
+          "width": 1.3,
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "$grad-top",
+            "position": 0
+          },
+          {
+            "color": "$grad-bottom",
+            "position": 1
+          }
+        ]
+      },
+      "layout": "vertical",
+      "padding": [
+        48,
+        40
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "xjn6v",
+          "name": "Card",
+          "width": "fill_container",
+          "fill": "$surface",
+          "cornerRadius": "$card-radius",
+          "stroke": "$border",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "gap": 28,
+          "padding": 32,
+          "children": [
+            {
+              "type": "text",
+              "id": "kUnMy",
+              "name": "Heading",
+              "fill": "$text-primary",
+              "content": "Specpin connection",
+              "fontFamily": "$font-ui",
+              "fontSize": 22,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "G3VHxh",
+              "name": "Intro",
+              "width": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "w4EpO",
+                  "name": "Intro Text",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Run specpin serve in your project directory, then paste the printed URL and token below to connect the extension.",
+                  "lineHeight": 1.55,
+                  "fontFamily": "$font-ui",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "KFcWo",
+              "name": "URL Field",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "jdkol",
+                  "name": "URL Label",
+                  "fill": "$text-primary",
+                  "content": "Sidecar URL",
+                  "fontFamily": "$font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "JmLVL",
+                  "name": "URL Input",
+                  "width": "fill_container",
+                  "height": 42,
+                  "fill": "$input-bg",
+                  "cornerRadius": "$control-radius",
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ywjiH",
+                      "name": "URL Placeholder",
+                      "fill": "$text-muted",
+                      "content": "http://127.0.0.1:PORT",
+                      "fontFamily": "$font-mono",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "uD3AF",
+              "name": "Token Field",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "v7tj0",
+                  "name": "Token Label",
+                  "fill": "$text-primary",
+                  "content": "Token",
+                  "fontFamily": "$font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "jPqY0",
+                  "name": "Token Input",
+                  "width": "fill_container",
+                  "height": 42,
+                  "fill": "$input-bg",
+                  "cornerRadius": "$control-radius",
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "NNRQp",
+                      "name": "Token Placeholder",
+                      "fill": "$text-muted",
+                      "content": "paste bearer token",
+                      "fontFamily": "$font-mono",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "meM34",
+              "name": "Save Button",
+              "width": "fill_container",
+              "height": 42,
+              "fill": "$accent",
+              "cornerRadius": "$control-radius",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "C8rFQ",
+                  "name": "Button Label",
+                  "fill": "$accent-on",
+                  "content": "Test connection & save",
+                  "fontFamily": "$font-ui",
+                  "fontSize": 14,
+                  "fontWeight": "500"
+                }
+              ],
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "offset": {
+                  "x": 0,
+                  "y": 0
+                },
+                "blur": 24,
+                "spread": 1,
+                "color": "$accent-glow"
+              }
+            },
+            {
+              "type": "frame",
+              "id": "oFiqH",
+              "name": "Success Banner",
+              "width": "fill_container",
+              "fill": "$success-bg",
+              "cornerRadius": "$control-radius",
+              "stroke": "$success-border",
+              "strokeWidth": 1,
+              "gap": 10,
+              "padding": [
+                12,
+                16
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "O8igo",
+                  "name": "Check Icon",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "circle-check",
+                  "library": "lucide",
+                  "fill": "$success-text"
+                },
+                {
+                  "type": "text",
+                  "id": "cUbHB",
+                  "name": "Success Text",
+                  "fill": "$success-text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Connected to sidecar - 4 specs loaded",
+                  "fontFamily": "$font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "dAUrJ",
+              "name": "Error Banner",
+              "width": "fill_container",
+              "fill": "$error-bg",
+              "cornerRadius": "$control-radius",
+              "stroke": "$error-border",
+              "strokeWidth": 1,
+              "gap": 10,
+              "padding": [
+                12,
+                16
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "J4jMr",
+                  "name": "Alert Icon",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "circle-alert",
+                  "library": "lucide",
+                  "fill": "$error-text"
+                },
+                {
+                  "type": "text",
+                  "id": "CYSxM",
+                  "name": "Error Text",
+                  "fill": "$error-text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Connection refused - is specpin serve running?",
+                  "fontFamily": "$font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "accent": {
+      "type": "color",
+      "value": "#2DD4BF"
+    },
+    "accent-hover": {
+      "type": "color",
+      "value": "#5EE6D3"
+    },
+    "border": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#D4EBE6",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2DD4BF26",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "card-radius": {
+      "type": "number",
+      "value": 16
+    },
+    "control-radius": {
+      "type": "number",
+      "value": 10
+    },
+    "error-bg": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FEF2F2",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2A1313",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "error-border": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FECACA",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#5C2626",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "error-text": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#B91C1C",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#FCA5A5",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "font-mono": {
+      "type": "string",
+      "value": "JetBrains Mono"
+    },
+    "font-ui": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "input-bg": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#103330",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "page-bg": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#F2FBF9",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#04130F",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "success-bg": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#ECFDF5",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#06251C",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "success-border": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#A7F3D0",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#1C5C3F",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "success-text": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#15803D",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#4ADE80",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "surface": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#0E2C28",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "text-muted": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#8AA8A2",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#5E837C",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "text-primary": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#06302A",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#E6FFFA",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "text-secondary": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#4A6B65",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#8FB5AE",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "grad-top": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E6F9F4",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#10463E",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "grad-bottom": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#F2FBF9",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#04130F",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "accent-glow": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#2DD4BF33",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2DD4BF66",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "accent-on": {
+      "type": "color",
+      "value": "#04221E"
+    }
+  },
+  "themes": {
+    "mode": [
+      "light",
+      "dark"
+    ]
+  }
+}
