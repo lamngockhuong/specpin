@@ -9,6 +9,8 @@ export default tseslint.config(
       "**/.output/**",
       "**/.turbo/**",
       "**/*.gen.ts",
+      "**/*.gen.cjs",
+      "**/*.gen.d.cts",
       "**/coverage/**",
     ],
   },
