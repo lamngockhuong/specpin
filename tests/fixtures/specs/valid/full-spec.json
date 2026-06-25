@@ -1,0 +1,28 @@
+{
+  "id": "login-submit-btn",
+  "title": "Login button",
+  "description": "Calls POST /auth/login.",
+  "businessRules": ["Lock account after 5 failures"],
+  "tags": ["auth", "critical"],
+  "preferredDisplayMode": "sidebar",
+  "fingerprint": {
+    "testId": "login-submit",
+    "ariaLabel": null,
+    "id": null,
+    "cssSelector": "form.login button[type=submit]",
+    "xpath": "//form//button",
+    "domPath": ["form", "button"],
+    "tagName": "button",
+    "textContent": "Login",
+    "attributes": { "type": "submit", "role": "button" },
+    "nearbyLabels": ["Email", "Password"],
+    "positionHint": { "index": 0, "siblingCount": 1 },
+    "frameworkHint": "react"
+  },
+  "meta": {
+    "createdBy": "khuong",
+    "createdAt": "2026-06-25T08:00:00Z",
+    "updatedAt": "2026-06-25T08:00:00Z",
+    "source": "manual"
+  }
+}

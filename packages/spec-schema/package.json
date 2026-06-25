@@ -1,0 +1,32 @@
+{
+  "name": "@specpin/spec-schema",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema/v1.json": "./schema/v1.json"
+  },
+  "files": ["dist", "schema"],
+  "scripts": {
+    "gen": "tsx scripts/gen-types.ts",
+    "build": "tsx scripts/gen-types.ts && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src",
+    "schema-validate": "tsx scripts/validate-fixtures.ts"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^15.0.3",
+    "tsx": "^4.19.2"
+  }
+}

@@ -1,0 +1,87 @@
+import { browser } from "#imports";
+import {
+  sendToBackground,
+  sendToActiveTab,
+  type SpecsForOrigin,
+  type StatusResult,
+} from "../../shared/messaging.js";
+import type { DisplayMode } from "@specpin/spec-schema";
+
+const byId = (id: string): HTMLElement => document.getElementById(id)!;
+
+async function activeOrigin(): Promise<string> {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  try {
+    return tab?.url ? new URL(tab.url).origin : "";
+  } catch {
+    return "";
+  }
+}
+
+function renderStatus(status: StatusResult): void {
+  const dot = byId("status-dot");
+  dot.className = "dot " + (status.connected ? "ok" : status.configured ? "off" : "");
+  byId("status-text").textContent = !status.configured
+    ? "Not configured"
+    : status.connected
+      ? `Connected (${status.activeSource})`
+      : "Disconnected";
+  (byId("enabled") as HTMLInputElement).checked = status.enabled;
+  byId("project").textContent = status.project ?? "";
+  byId("count").textContent = status.specCount ? `${status.specCount} specs` : "";
+}
+
+function renderSpecs(res: SpecsForOrigin): void {
+  const list = byId("specs");
+  list.innerHTML = "";
+  if (res.specs.length === 0) {
+    const li = document.createElement("li");
+    li.className = "muted";
+    li.textContent = res.enabled ? "No specs for this page." : "Specpin is off.";
+    list.appendChild(li);
+    return;
+  }
+  for (const spec of res.specs) {
+    const li = document.createElement("li");
+    const title = document.createElement("div");
+    title.className = "t";
+    title.textContent = spec.title;
+    const file = document.createElement("div");
+    file.className = "muted";
+    file.textContent = spec._file;
+    li.append(title, file);
+    list.appendChild(li);
+  }
+}
+
+async function refresh(): Promise<void> {
+  const status = await sendToBackground<StatusResult>({ type: "GET_STATUS" });
+  renderStatus(status);
+  const origin = await activeOrigin();
+  const res = await sendToBackground<SpecsForOrigin>({ type: "GET_SPECS_FOR_ORIGIN", origin });
+  renderSpecs(res);
+}
+
+byId("enabled").addEventListener("change", async (e) => {
+  await sendToBackground({ type: "SET_ENABLED", enabled: (e.target as HTMLInputElement).checked });
+  await refresh();
+});
+byId("reload").addEventListener("click", async () => {
+  await sendToBackground({ type: "RELOAD" });
+  await refresh();
+});
+byId("reconnect").addEventListener("click", async () => {
+  await sendToBackground({ type: "RECONNECT" });
+  await refresh();
+});
+byId("capture").addEventListener("click", async () => {
+  await sendToActiveTab({ type: "START_CAPTURE" });
+  window.close(); // let the user click the target element on the page
+});
+byId("mode").addEventListener("change", async (e) => {
+  const value = (e.target as HTMLSelectElement).value;
+  await sendToActiveTab({ type: "SET_DISPLAY_MODE", mode: (value || null) as DisplayMode | null });
+});
+byId("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
+
+void refresh();

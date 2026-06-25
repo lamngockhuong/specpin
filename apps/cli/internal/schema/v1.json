@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specpin.dev/schema/v1.json",
+  "title": "SpecFile",
+  "description": "Root of an <area>.spec.json file. Validates as a SpecFile.",
+  "$ref": "#/$defs/SpecFile",
+  "$defs": {
+    "DisplayMode": {
+      "title": "DisplayMode",
+      "description": "How a spec renders in the browser. Phase 1 ships tooltip + sidebar; the others are reserved for forward compatibility.",
+      "type": "string",
+      "enum": ["overlay", "tooltip", "sidebar", "modal", "inline-badge"]
+    },
+    "FrameworkHint": {
+      "title": "FrameworkHint",
+      "type": "string",
+      "enum": ["react", "vue", "angular", "vanilla"]
+    },
+    "SpecSource": {
+      "title": "SpecSource",
+      "description": "Provenance of a spec. \"manual\" is human-authored; \"ai-generated\" output must be reviewed.",
+      "type": "string",
+      "enum": ["ai-generated", "manual"]
+    },
+    "PositionHint": {
+      "title": "PositionHint",
+      "type": "object",
+      "required": ["index", "siblingCount"],
+      "additionalProperties": false,
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "siblingCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "ElementFingerprint": {
+      "title": "ElementFingerprint",
+      "description": "Multi-signal capture of a DOM element, separated from business content so relinking never touches the spec text.",
+      "type": "object",
+      "required": ["cssSelector", "xpath", "domPath", "tagName", "attributes", "positionHint"],
+      "additionalProperties": false,
+      "properties": {
+        "testId": {
+          "type": ["string", "null"],
+          "description": "data-testid / data-cy / data-qa / data-spec-id. Tier 1 anchor."
+        },
+        "ariaLabel": { "type": ["string", "null"] },
+        "id": {
+          "type": ["string", "null"],
+          "description": "Element id, excluding auto-generated ids (e.g. \":r1:\", \"css-1a2b3c\")."
+        },
+        "cssSelector": { "type": "string" },
+        "xpath": { "type": "string" },
+        "domPath": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tag chain from an ancestor down to the element, e.g. [\"form\",\"button\"]."
+        },
+        "tagName": { "type": "string" },
+        "textContent": {
+          "type": ["string", "null"],
+          "description": "Normalized, truncated (~100 chars) text content."
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Whitelisted attributes: role, type, name, placeholder, href pattern."
+        },
+        "nearbyLabels": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "positionHint": { "$ref": "#/$defs/PositionHint" },
+        "frameworkHint": { "$ref": "#/$defs/FrameworkHint" }
+      }
+    },
+    "SpecMeta": {
+      "title": "SpecMeta",
+      "type": "object",
+      "required": ["createdBy", "createdAt", "updatedAt", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "source": { "$ref": "#/$defs/SpecSource" }
+      }
+    },
+    "Spec": {
+      "title": "Spec",
+      "description": "A business specification pinned to one UI element.",
+      "type": "object",
+      "required": ["id", "title", "description", "fingerprint"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable unique id within the project, e.g. \"login-submit-btn\"."
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "businessRules": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "preferredDisplayMode": { "$ref": "#/$defs/DisplayMode" },
+        "fingerprint": { "$ref": "#/$defs/ElementFingerprint" },
+        "meta": { "$ref": "#/$defs/SpecMeta" }
+      }
+    },
+    "SpecFile": {
+      "title": "SpecFile",
+      "description": "A Specpin <area>.spec.json file: a named group of specs pinned to UI elements.",
+      "type": "object",
+      "required": ["group", "specs"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Optional pointer to this schema for editor tooling."
+        },
+        "group": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable area/page name, e.g. \"Login Page\"."
+        },
+        "specs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Spec" }
+        }
+      }
+    },
+    "ManifestSettings": {
+      "title": "ManifestSettings",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "defaultLocale": { "type": "string" },
+        "matchConfidenceThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "defaultDisplayMode": { "$ref": "#/$defs/DisplayMode" }
+      }
+    },
+    "Manifest": {
+      "title": "Manifest",
+      "description": "The .specs/manifest.json index + project configuration.",
+      "type": "object",
+      "required": ["version", "project", "domains", "specFiles"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Optional pointer to this schema for editor tooling."
+        },
+        "version": { "type": "string", "minLength": 1 },
+        "project": { "type": "string", "minLength": 1 },
+        "domains": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Origins where this project's UI runs, e.g. [\"app.acme.io\",\"localhost:3000\"]."
+        },
+        "specFiles": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Relative names of the <area>.spec.json files in this .specs/ dir."
+        },
+        "settings": { "$ref": "#/$defs/ManifestSettings" }
+      }
+    }
+  }
+}

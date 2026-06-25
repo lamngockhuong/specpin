@@ -1,0 +1,13 @@
+{
+  "id": "minimal",
+  "title": "Minimal spec",
+  "description": "Only the required fields.",
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}
