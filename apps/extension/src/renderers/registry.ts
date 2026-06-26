@@ -1,19 +1,21 @@
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
+import { ModalRenderer } from "./modal.js";
 import type { SpecRenderer } from "./renderer.js";
 import { SidebarRenderer } from "./sidebar.js";
 import { TooltipRenderer } from "./tooltip.js";
 
 type RendererFactory = (doc: Document) => SpecRenderer;
 
-// DisplayMode -> renderer. Phase 1 implements tooltip + sidebar; the other three
-// modes resolve through here and fall back to tooltip with a console note.
+// DisplayMode -> renderer. tooltip + sidebar + modal are implemented; overlay and
+// inline-badge resolve through here and fall back to tooltip with a console note.
 const FACTORIES: Partial<Record<DisplayMode, RendererFactory>> = {
   tooltip: (doc) => new TooltipRenderer(doc),
   sidebar: (doc) => new SidebarRenderer(doc),
+  modal: (doc) => new ModalRenderer(doc),
 };
 
 /** Modes that have a real renderer, in cycle order for the keyboard toggle. */
-export const IMPLEMENTED_MODES: DisplayMode[] = ["tooltip", "sidebar"];
+export const IMPLEMENTED_MODES: DisplayMode[] = ["tooltip", "sidebar", "modal"];
 
 /** Per-spec mode resolution: spec preference, else manifest default, else tooltip. */
 export function resolveMode(spec: Spec, manifest: Manifest | null): DisplayMode {
