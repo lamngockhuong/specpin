@@ -1,6 +1,6 @@
 import { copyFile, mkdir } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // tsc only emits the .ts sources; the generated standalone validator module is
 // CommonJS (.cjs) and must be copied into dist so built consumers can import it.

@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { validateManifest, validateSpec, validateSpecFile } from "../src/validate.js";
 
 // Cross-validator (ajv side): every fixture under tests/fixtures/specs/valid
@@ -10,11 +10,16 @@ import { validateManifest, validateSpec, validateSpecFile } from "../src/validat
 const here = dirname(fileURLToPath(import.meta.url));
 const fixturesDir = resolve(here, "../../../tests/fixtures/specs");
 
-async function readFixtures(kind: "valid" | "invalid"): Promise<Array<{ name: string; data: unknown }>> {
+async function readFixtures(
+  kind: "valid" | "invalid",
+): Promise<Array<{ name: string; data: unknown }>> {
   const dir = join(fixturesDir, kind);
   const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
   return Promise.all(
-    files.map(async (name) => ({ name, data: JSON.parse(await readFile(join(dir, name), "utf8")) })),
+    files.map(async (name) => ({
+      name,
+      data: JSON.parse(await readFile(join(dir, name), "utf8")),
+    })),
   );
 }
 
@@ -42,7 +47,7 @@ async function main(): Promise<void> {
 
   if (failures.length) {
     console.error("Fixture cross-validation (ajv) FAILED:");
-    for (const f of failures) console.error("  - " + f);
+    for (const f of failures) console.error(`  - ${f}`);
     process.exit(1);
   }
   console.log("Fixture cross-validation (ajv): all fixtures agree with the schema.");

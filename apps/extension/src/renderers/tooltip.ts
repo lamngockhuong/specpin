@@ -1,7 +1,7 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
-import type { RenderMeta, SpecRenderer } from "./renderer.js";
-import { createShadowHost } from "../shared/shadow.js";
 import { escapeHtml } from "../shared/html.js";
+import { createShadowHost } from "../shared/shadow.js";
+import type { RenderMeta, SpecRenderer } from "./renderer.js";
 
 interface Pin {
   target: Element;
@@ -53,8 +53,8 @@ export class TooltipRenderer implements SpecRenderer {
     this.doc = doc;
   }
 
-  private ensureRoot(): void {
-    if (this.shadow) return;
+  private ensureRoot(): HTMLElement {
+    if (this.layer) return this.layer;
     const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES);
     host.style.position = "absolute";
     host.style.top = "0";
@@ -74,17 +74,18 @@ export class TooltipRenderer implements SpecRenderer {
     const win = this.doc.defaultView;
     win?.addEventListener("scroll", this.reposition, true);
     win?.addEventListener("resize", this.reposition);
+    return layer;
   }
 
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
-    this.ensureRoot();
+    const layer = this.ensureRoot();
     const badge = this.doc.createElement("div");
     badge.className = "badge";
     badge.textContent = "S";
     if (meta?.needsReview) badge.dataset.review = "true";
     badge.addEventListener("mouseenter", () => this.showTip(spec, badge));
     badge.addEventListener("mouseleave", () => this.hideTip());
-    this.layer!.appendChild(badge);
+    layer.appendChild(badge);
 
     const pin: Pin = { target, badge };
     this.pins.push(pin);
@@ -94,14 +95,17 @@ export class TooltipRenderer implements SpecRenderer {
   private showTip(spec: Spec, badge: HTMLElement): void {
     if (!this.tip) return;
     const rules = (spec.businessRules ?? []).map((r) => `<li>${escapeHtml(r)}</li>`).join("");
-    const tags = (spec.tags ?? []).length ? `<div class="tags">${escapeHtml((spec.tags ?? []).join(", "))}</div>` : "";
+    const tags = (spec.tags ?? []).length
+      ? `<div class="tags">${escapeHtml((spec.tags ?? []).join(", "))}</div>`
+      : "";
     this.tip.innerHTML =
       `<h4>${escapeHtml(spec.title)}</h4>` +
       `<p>${escapeHtml(spec.description)}</p>` +
       (rules ? `<ul>${rules}</ul>` : "") +
       tags;
     const rect = badge.getBoundingClientRect();
-    const win = this.doc.defaultView!;
+    const win = this.doc.defaultView;
+    if (!win) return;
     this.tip.style.left = `${rect.left + win.scrollX}px`;
     this.tip.style.top = `${rect.bottom + win.scrollY + 6}px`;
     this.tip.classList.add("show");
@@ -113,7 +117,8 @@ export class TooltipRenderer implements SpecRenderer {
 
   private positionBadge(pin: Pin): void {
     const rect = pin.target.getBoundingClientRect();
-    const win = this.doc.defaultView!;
+    const win = this.doc.defaultView;
+    if (!win) return;
     pin.badge.style.left = `${rect.left + win.scrollX - 8}px`;
     pin.badge.style.top = `${rect.top + win.scrollY - 8}px`;
   }

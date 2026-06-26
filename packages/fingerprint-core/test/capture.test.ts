@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { captureFingerprint } from "../src/capture.js";
+import { must } from "./test-utils.js";
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -49,14 +50,17 @@ describe("captureFingerprint", () => {
   });
 
   it("captures domPath excluding html/body", () => {
-    const el = mount(`<form class="login"><button type="submit">Login</button></form>`)
-      .querySelector("button")!;
+    const el = must(
+      mount(`<form class="login"><button type="submit">Login</button></form>`).querySelector(
+        "button",
+      ),
+    );
     expect(captureFingerprint(el).domPath).toEqual(["form", "button"]);
   });
 
   it("records position among siblings", () => {
     mount(`<ul><li>a</li><li>b</li><li>c</li></ul>`);
-    const second = document.querySelectorAll("li")[1]!;
+    const second = must(document.querySelectorAll("li")[1]);
     expect(captureFingerprint(second).positionHint).toEqual({ index: 1, siblingCount: 3 });
   });
 
@@ -70,19 +74,22 @@ describe("captureFingerprint", () => {
         <input aria-labelledby="lbl" />
       </form>
     `);
-    const byFor = captureFingerprint(document.getElementById("email")!);
+    const byFor = captureFingerprint(must(document.getElementById("email")));
     expect(byFor.nearbyLabels).toContain("Email");
 
-    const wrapped = captureFingerprint(document.querySelector(`input[type="password"]`)!);
+    const wrapped = captureFingerprint(must(document.querySelector(`input[type="password"]`)));
     expect(wrapped.nearbyLabels?.some((l) => l.includes("Password"))).toBe(true);
 
-    const labelledBy = captureFingerprint(document.querySelector(`input[aria-labelledby]`)!);
+    const labelledBy = captureFingerprint(must(document.querySelector(`input[aria-labelledby]`)));
     expect(labelledBy.nearbyLabels).toContain("Remember me");
   });
 
   it("produces a cssSelector that resolves uniquely back to the element", () => {
-    const el = mount(`<form class="login"><button type="submit">Login</button></form>`)
-      .querySelector("button")!;
+    const el = must(
+      mount(`<form class="login"><button type="submit">Login</button></form>`).querySelector(
+        "button",
+      ),
+    );
     const fp = captureFingerprint(el);
     const hits = document.querySelectorAll(fp.cssSelector);
     expect(hits).toHaveLength(1);

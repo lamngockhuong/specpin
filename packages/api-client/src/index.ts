@@ -3,13 +3,13 @@
 // from @specpin/spec-schema (no duplication).
 
 export {
+  type ConnectionState,
+  type HealthResponse,
   SidecarClient,
   type SidecarClientOptions,
-  type HealthResponse,
   type SpecsResponse,
   type SpecWithFile,
-  type ConnectionState,
 } from "./client.js";
 
 export { SidecarError } from "./errors.js";
-export { subscribeEvents, type SubscribeOptions } from "./events.js";
+export { type SubscribeOptions, subscribeEvents } from "./events.js";

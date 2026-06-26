@@ -1,6 +1,6 @@
+import type { ElementFingerprint } from "@specpin/spec-schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { matchElement } from "../src/match.js";
-import type { ElementFingerprint } from "@specpin/spec-schema";
 
 afterEach(() => {
   document.body.innerHTML = "";

@@ -1,5 +1,5 @@
-import type { Spec } from "@specpin/spec-schema";
 import type { SpecsResponse } from "@specpin/api-client";
+import type { Spec } from "@specpin/spec-schema";
 
 // SpecSource abstracts where specs come from. Phase 1 ships only SidecarSource,
 // but the interface is shaped for the deferred FileSystem + ManualImport

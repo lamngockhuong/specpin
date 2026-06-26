@@ -1,7 +1,12 @@
-import { SidecarClient, SidecarError, type SpecsResponse, type SpecWithFile } from "@specpin/api-client";
+import {
+  SidecarClient,
+  SidecarError,
+  type SpecsResponse,
+  type SpecWithFile,
+} from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
-import { SidecarSource } from "../sources/sidecar.js";
 import { originMatchesDomains } from "../content/orchestrator.js";
+import { SidecarSource } from "../sources/sidecar.js";
 
 export interface TestResult {
   ok: boolean;

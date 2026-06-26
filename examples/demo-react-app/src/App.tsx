@@ -54,11 +54,31 @@ export function App() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { maxWidth: 420, margin: "48px auto", fontFamily: "system-ui, sans-serif", color: "#1f2937" },
+  page: {
+    maxWidth: 420,
+    margin: "48px auto",
+    fontFamily: "system-ui, sans-serif",
+    color: "#1f2937",
+  },
   lead: { color: "#6b7280" },
-  card: { display: "flex", flexDirection: "column", gap: 12, padding: 20, border: "1px solid #e5e7eb", borderRadius: 10 },
+  card: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    padding: 20,
+    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+  },
   label: { display: "flex", flexDirection: "column", gap: 4, fontWeight: 600 },
   input: { padding: 8, border: "1px solid #d1d5db", borderRadius: 6, fontWeight: 400 },
-  button: { padding: 10, border: "none", borderRadius: 6, background: "#4f46e5", color: "#fff", cursor: "pointer", fontWeight: 600 },
+  button: {
+    padding: 10,
+    border: "none",
+    borderRadius: 6,
+    background: "#4f46e5",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: 600,
+  },
   link: { color: "#4f46e5", fontSize: 13 },
 };

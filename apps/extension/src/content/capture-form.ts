@@ -1,7 +1,7 @@
 import type { DisplayMode, ElementFingerprint, Spec } from "@specpin/spec-schema";
-import { validateSpec, formatErrors } from "@specpin/spec-schema";
-import { createShadowHost } from "../shared/shadow.js";
+import { formatErrors, validateSpec } from "@specpin/spec-schema";
 import { escapeAttr, escapeHtml } from "../shared/html.js";
+import { createShadowHost } from "../shared/shadow.js";
 
 const HOST_ID = "specpin-capture-host";
 
@@ -112,7 +112,8 @@ export class CaptureForm {
         description: q<HTMLTextAreaElement>("#sp-desc").value,
         businessRules: q<HTMLTextAreaElement>("#sp-rules").value.split("\n"),
         tags: q<HTMLInputElement>("#sp-tags").value.split(","),
-        preferredDisplayMode: (q<HTMLSelectElement>("#sp-mode").value || null) as DisplayMode | null,
+        preferredDisplayMode: (q<HTMLSelectElement>("#sp-mode").value ||
+          null) as DisplayMode | null,
       };
       const idSuffix = randomSuffix();
       const spec = buildSpec(fields, fingerprint, new Date().toISOString(), idSuffix);
@@ -153,7 +154,8 @@ export class CaptureForm {
   }
 
   private showErrors(box: HTMLElement, messages: string[]): void {
-    const ul = box.querySelector("ul")!;
+    const ul = box.querySelector("ul");
+    if (!ul) return;
     ul.innerHTML = messages.map((m) => `<li>${escapeHtml(m)}</li>`).join("");
     box.classList.add("show");
   }

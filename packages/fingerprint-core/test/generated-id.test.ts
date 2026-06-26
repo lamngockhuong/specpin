@@ -3,7 +3,15 @@ import { isGeneratedClass, isGeneratedId } from "../src/generated-id.js";
 
 describe("isGeneratedId", () => {
   it("flags framework-generated ids", () => {
-    for (const id of [":r1:", ":R2a:", "css-1a2b3c", "sc-bdVaJa", "mui-42", "radix-:r5:", "a1b2c3d4e5"]) {
+    for (const id of [
+      ":r1:",
+      ":R2a:",
+      "css-1a2b3c",
+      "sc-bdVaJa",
+      "mui-42",
+      "radix-:r5:",
+      "a1b2c3d4e5",
+    ]) {
       expect(isGeneratedId(id), id).toBe(true);
     }
   });

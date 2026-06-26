@@ -7,7 +7,7 @@ Standards derived from actual tooling config and observed conventions in the Spe
 **TypeScript/JavaScript**: kebab-case
 - `capture-mode.ts`, `sidecar-controller.ts`, `keyboard.ts`
 - Test files: `*.test.ts`
-- Config files: lowercase with dots (`.prettierrc`, `eslint.config.js`)
+- Config files: lowercase (`biome.json`, `tsconfig.json`)
 
 **Go**: snake_case (Go stdlib convention)
 - `server.go`, `middleware.go`, `hub.go`
@@ -17,7 +17,7 @@ Standards derived from actual tooling config and observed conventions in the Spe
 - `schema.gen.ts`, `types.gen.ts`, `validators.gen.cjs`, `validators.gen.d.cts`
 - NEVER hand-edit these files
 - Always regenerate via `pnpm --filter @specpin/spec-schema gen`
-- ESLint ignores them (see `eslint.config.js` ignores array)
+- Biome ignores them (see the `files.includes` negations in `biome.json`)
 - Git tracks them (required for consumers without build step)
 
 **Markdown**: lowercase with hyphens
@@ -54,43 +54,48 @@ Standards derived from actual tooling config and observed conventions in the Spe
 - Composite projects for workspace references.
 - ESM only (`"type": "module"` in all package.json).
 
-### ESLint (eslint.config.js)
+### Biome (biome.json)
 
-Flat config (ESLint 9), extends `@eslint/js` recommended + `typescript-eslint` recommended.
+One tool handles lint, format, and import organize. There is no ESLint or Prettier.
 
-**Custom rules:**
-```javascript
-{
-  "@typescript-eslint/no-unused-vars": [
-    "error",
-    { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }
-  ]
+**Linter:** `recommended` preset plus two stricter correctness rules:
+
+```jsonc
+"linter": {
+  "rules": {
+    "preset": "recommended",
+    "correctness": {
+      "noUnusedVariables": "error",
+      "noUnusedImports": "error"
+    }
+  }
 }
 ```
 
-**Ignores:**
-- `**/node_modules/**`
-- `**/dist/**`
-- `**/.output/**`
-- `**/.turbo/**`
-- `**/*.gen.ts`, `**/*.gen.cjs`, `**/*.gen.d.cts` (all generated files)
-- `**/coverage/**`
+**Formatter:** matches the prior Prettier style, so the migration diff stayed small:
 
-**Enforcement**: `pnpm lint` (turbo run lint across all packages), CI gate.
-
-### Prettier (.prettierrc)
-
-```json
-{
-  "semi": true,
-  "singleQuote": false,
-  "printWidth": 100,
-  "tabWidth": 2,
-  "trailingComma": "all"
+```jsonc
+"formatter": {
+  "indentStyle": "space",
+  "indentWidth": 2,
+  "lineWidth": 100
 }
 ```
 
-**Enforcement**: `pnpm format` (write), `pnpm format:check` (CI gate).
+Quotes (double), semicolons (always), and trailing commas (all) use Biome defaults, which already
+match the old Prettier config.
+
+**Ignores** (`files.includes` negations, plus `.gitignore` via `vcs.useIgnoreFile`):
+- `**/*.gen.*` (all generated files)
+- `apps/cli/**` (Go sidecar)
+- `packages/spec-schema/schema/**` (schema SSOT)
+
+**Commands:**
+- `pnpm lint` -> `biome check .` (lint + format check + import organize, read-only)
+- `pnpm lint:fix` -> `biome check --write .` (applies safe fixes)
+- `pnpm format` -> `biome format --write .`
+
+**Enforcement**: `biome ci .` in CI gates both lint and format. Run `pnpm lint` locally before a PR.
 
 ### Package Structure
 
@@ -119,7 +124,8 @@ package/
 - `build`: `tsc -p tsconfig.json` (or `tsx scripts/gen-types.ts && tsc` for spec-schema)
 - `typecheck`: `tsc -p tsconfig.json --noEmit`
 - `test`: `vitest run`
-- `lint`: `eslint src`
+
+Linting is not a per-package script: Biome runs once from the repo root (`pnpm lint`).
 
 ### Testing (Vitest 3)
 
@@ -301,7 +307,7 @@ chore(deps): bump wxt to 0.20
 2. `cd apps/cli && make check-schema && go vet ./... && go test ./... && make build`
 
 **CI must pass:**
-- All lints (ESLint + Prettier)
+- Lint + format (`biome ci .`)
 - All typechecks (tsc --noEmit per package)
 - All tests (Vitest TS, Go stdlib testing)
 - All builds (turbo build + make build CLI)
@@ -435,9 +441,8 @@ chore(deps): bump wxt to 0.20
 
 ## References
 
-- ESLint config: `eslint.config.js`
+- Biome config (lint + format): `biome.json`
 - TypeScript config: `tsconfig.base.json`, `packages/*/tsconfig.json`
-- Prettier config: `.prettierrc`
 - Go build: `apps/cli/Makefile`
 - CI workflow: `.github/workflows/ci.yml`
 - Architecture: `docs/system-architecture.md`

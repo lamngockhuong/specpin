@@ -1,7 +1,7 @@
 import { matchElement } from "@specpin/fingerprint-core";
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
-import type { SpecRenderer } from "../renderers/renderer.js";
 import { createRenderer, resolveMode } from "../renderers/registry.js";
+import type { SpecRenderer } from "../renderers/renderer.js";
 
 export interface RenderStats {
   rendered: number;
@@ -43,12 +43,21 @@ export function renderSession(
       renderer = createRenderer(mode, doc);
       byMode.set(mode, renderer);
     }
-    renderer.render(spec, match.el, { confidence: match.confidence, needsReview: match.needsReview });
+    renderer.render(spec, match.el, {
+      confidence: match.confidence,
+      needsReview: match.needsReview,
+    });
     stats.rendered += 1;
   }
 
   const renderers = [...byMode.values()];
-  return { stats, renderers, destroy: () => renderers.forEach((r) => r.destroy()) };
+  return {
+    stats,
+    renderers,
+    destroy: () => {
+      for (const r of renderers) r.destroy();
+    },
+  };
 }
 
 /** Does this page origin fall under the manifest's configured domains? An empty

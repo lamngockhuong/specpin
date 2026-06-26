@@ -1,9 +1,9 @@
 import type { ElementFingerprint, PositionHint } from "@specpin/spec-schema";
-import { isGeneratedId } from "./generated-id.js";
 import { cssEscapeAttrValue } from "./css-escape.js";
+import { detectFramework } from "./detect-framework.js";
+import { isGeneratedId } from "./generated-id.js";
 import { cssSelectorFor } from "./selector.js";
 import { xpathFor } from "./xpath.js";
-import { detectFramework } from "./detect-framework.js";
 
 /** Attributes searched, in priority order, for the Tier-1 test-id anchor. */
 export const TEST_ID_ATTRS = ["data-spec-id", "data-testid", "data-cy", "data-qa"] as const;
@@ -59,7 +59,12 @@ function positionHint(el: Element): PositionHint {
 function domPathFor(el: Element): string[] {
   const path: string[] = [];
   let current: Element | null = el;
-  while (current && current.nodeType === 1 && current.tagName !== "BODY" && current.tagName !== "HTML") {
+  while (
+    current &&
+    current.nodeType === 1 &&
+    current.tagName !== "BODY" &&
+    current.tagName !== "HTML"
+  ) {
     path.unshift(current.tagName.toLowerCase());
     current = current.parentElement;
   }

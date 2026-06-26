@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { validateManifest, validateSpec, validateSpecFile, formatErrors } from "./validate.js";
 import type { Manifest, Spec } from "./types.gen.js";
+import { formatErrors, validateManifest, validateSpec, validateSpecFile } from "./validate.js";
 
 // The canonical example from the Phase 1 spec, section 3.
 const exampleSpec: Spec = {

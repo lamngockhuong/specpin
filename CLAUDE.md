@@ -24,10 +24,10 @@ Root (Turbo orchestrates across all TS packages):
 pnpm install
 pnpm build            # turbo run build (respects ^build deps)
 pnpm test             # vitest per package
-pnpm lint             # eslint flat config
+pnpm lint             # biome check . (lint + format + import organize)
 pnpm typecheck        # tsc --noEmit per package
 pnpm schema-validate  # ajv-side cross-validation of the fixture corpus
-pnpm format           # prettier --write
+pnpm format           # biome format --write .
 ```
 
 Single package / single test:

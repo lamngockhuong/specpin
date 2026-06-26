@@ -1,6 +1,6 @@
+import type { Manifest, Spec } from "@specpin/spec-schema";
 import { describe, expect, it } from "vitest";
 import { createRenderer, isImplemented, resolveMode } from "../src/renderers/registry.js";
-import type { Manifest, Spec } from "@specpin/spec-schema";
 
 const baseSpec: Spec = {
   id: "x",

@@ -1,13 +1,17 @@
+import type { DisplayMode } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import {
-  sendToBackground,
-  sendToActiveTab,
   type SpecsForOrigin,
   type StatusResult,
+  sendToActiveTab,
+  sendToBackground,
 } from "../../shared/messaging.js";
-import type { DisplayMode } from "@specpin/spec-schema";
 
-const byId = (id: string): HTMLElement => document.getElementById(id)!;
+const byId = (id: string): HTMLElement => {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing element #${id}`);
+  return el;
+};
 
 async function activeOrigin(): Promise<string> {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
@@ -20,7 +24,7 @@ async function activeOrigin(): Promise<string> {
 
 function renderStatus(status: StatusResult): void {
   const dot = byId("status-dot");
-  dot.className = "dot " + (status.connected ? "ok" : status.configured ? "off" : "");
+  dot.className = `dot ${status.connected ? "ok" : status.configured ? "off" : ""}`;
   byId("status-text").textContent = !status.configured
     ? "Not configured"
     : status.connected

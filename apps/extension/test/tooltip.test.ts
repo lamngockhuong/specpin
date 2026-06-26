@@ -1,6 +1,7 @@
+import type { Spec } from "@specpin/spec-schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { TooltipRenderer } from "../src/renderers/tooltip.js";
-import type { Spec } from "@specpin/spec-schema";
+import { must } from "./test-utils.js";
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -25,15 +26,15 @@ const spec: Spec = {
 describe("TooltipRenderer", () => {
   it("renders inside a Shadow DOM (style isolation)", () => {
     document.body.innerHTML = `<button>Login</button>`;
-    const target = document.querySelector("button")!;
+    const target = must(document.querySelector("button"));
     const renderer = new TooltipRenderer(document);
     renderer.render(spec, target, { confidence: 1, needsReview: false });
 
-    const host = document.getElementById("specpin-tooltip-host")!;
+    const host = must(document.getElementById("specpin-tooltip-host"));
     expect(host).toBeTruthy();
     expect(host.shadowRoot).toBeTruthy();
     // Badge lives in the shadow root, not the light DOM.
-    expect(host.shadowRoot!.querySelector(".badge")).toBeTruthy();
+    expect(must(host.shadowRoot).querySelector(".badge")).toBeTruthy();
     expect(document.querySelector(".badge")).toBeNull();
     renderer.destroy();
   });
@@ -41,8 +42,12 @@ describe("TooltipRenderer", () => {
   it("flags needsReview matches distinctly", () => {
     document.body.innerHTML = `<button>x</button>`;
     const renderer = new TooltipRenderer(document);
-    renderer.render(spec, document.querySelector("button")!, { confidence: 0.7, needsReview: true });
-    const badge = renderer["shadow"]!.querySelector(".badge") as HTMLElement;
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 0.7,
+      needsReview: true,
+    });
+    const host = document.getElementById("specpin-tooltip-host");
+    const badge = must(host?.shadowRoot?.querySelector(".badge")) as HTMLElement;
     expect(badge.dataset.review).toBe("true");
     renderer.destroy();
   });
@@ -50,7 +55,7 @@ describe("TooltipRenderer", () => {
   it("destroy() removes all rendered UI", () => {
     document.body.innerHTML = `<button>x</button>`;
     const renderer = new TooltipRenderer(document);
-    renderer.render(spec, document.querySelector("button")!);
+    renderer.render(spec, must(document.querySelector("button")));
     renderer.destroy();
     expect(document.getElementById("specpin-tooltip-host")).toBeNull();
     expect(renderer.pinCount).toBe(0);

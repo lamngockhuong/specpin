@@ -44,7 +44,7 @@ Status: **DONE**. All 8 phases implemented, tested, and code-reviewed. CI green.
 
 ### Phase Breakdown (8 phases, dependency graph)
 
-1. **Monorepo Scaffold** (P1, 0.5d) - pnpm workspace, Turborepo, ESLint 9 flat config, Prettier, Vitest, tsconfig.base.json
+1. **Monorepo Scaffold** (P1, 0.5d) - pnpm workspace, Turborepo, Biome (lint + format), Vitest, tsconfig.base.json
 2. **Spec Schema** (P1, 0.5d, depends on 1) - `packages/spec-schema`: v1.json + generated types + ajv validators
 3. **Fingerprint Core** (P1, 1.5d, depends on 1,2) - `packages/fingerprint-core`: capture + match (exact anchors + cssSelector fallback)
 4. **Go Sidecar CLI** (P1, 2d, depends on 2) - `apps/cli`: init + serve (CRUD, SSE, token auth, CORS, schema validation)

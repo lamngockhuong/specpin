@@ -1,6 +1,6 @@
 import type { Manifest, Spec } from "@specpin/spec-schema";
 import { SidecarError } from "./errors.js";
-import { subscribeEvents, type ConnectionState, type SubscribeOptions } from "./events.js";
+import { type ConnectionState, type SubscribeOptions, subscribeEvents } from "./events.js";
 
 export interface SidecarClientOptions {
   baseUrl: string;
@@ -71,7 +71,7 @@ export class SidecarClient {
 
     if (res.status === 204) return undefined as T;
     const text = await res.text();
-    return (text ? (JSON.parse(text) as T) : (undefined as T));
+    return text ? (JSON.parse(text) as T) : (undefined as T);
   }
 
   health(): Promise<HealthResponse> {
@@ -95,10 +95,7 @@ export class SidecarClient {
   }
 
   /** Subscribe to live change events. Returns an unsubscribe function. */
-  subscribe(
-    onChange: () => void,
-    options: Omit<SubscribeOptions, "fetch"> = {},
-  ): () => void {
+  subscribe(onChange: () => void, options: Omit<SubscribeOptions, "fetch"> = {}): () => void {
     return subscribeEvents(this.baseUrl, this.token, onChange, {
       ...options,
       fetch: this.fetchImpl,

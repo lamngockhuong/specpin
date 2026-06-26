@@ -18,7 +18,8 @@
       .actions { display: flex; gap: 6px; margin-top: 8px; }
       button { flex: 1; padding: 6px; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb; cursor: pointer; }
       button:hover { background: #f3f4f6; }
-      a { color: #4f46e5; cursor: pointer; }
+      .link { flex: none; color: #4f46e5; cursor: pointer; background: none; border: none; padding: 0; font: inherit; }
+      .link:hover { background: none; text-decoration: underline; }
     </style>
   </head>
   <body>
@@ -30,18 +31,20 @@
     <div class="row muted"><span id="project"></span><span id="count"></span></div>
     <ul id="specs"></ul>
     <div class="actions">
-      <button id="reload">Reload</button>
-      <button id="reconnect">Reconnect</button>
+      <button id="reload" type="button">Reload</button>
+      <button id="reconnect" type="button">Reconnect</button>
     </div>
     <div class="actions">
-      <button id="capture">+ Capture spec</button>
+      <button id="capture" type="button">+ Capture spec</button>
       <select id="mode" title="Display mode">
         <option value="">Per-spec mode</option>
         <option value="tooltip">Tooltip</option>
         <option value="sidebar">Sidebar</option>
       </select>
     </div>
-    <p class="muted" style="margin-top:8px"><a id="open-options">Connection settings →</a></p>
+    <p class="muted" style="margin-top:8px">
+      <button type="button" id="open-options" class="link">Connection settings →</button>
+    </p>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

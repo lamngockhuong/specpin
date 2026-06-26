@@ -1,5 +1,5 @@
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 // Demo app for trying Specpin. Prefers localhost:3000 to match the seeded
 // .specs/manifest.json domains; if 3000 is busy Vite falls back to 3001, which

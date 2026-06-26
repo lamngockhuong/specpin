@@ -38,7 +38,7 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 - `pnpm schema-validate` - run fixture validation (CI gate).
 
 **Conventions:**
-- All generated files match `*.gen.*` pattern (ignored by ESLint).
+- All generated files match `*.gen.*` pattern (ignored by Biome).
 - Never hand-edit generated files; always regenerate via `pnpm gen`.
 
 ## packages/fingerprint-core
@@ -208,8 +208,8 @@ src/
 **Node/TS:**
 - Node >= 20, pnpm 10.33, Turborepo 2.3.
 - TypeScript 5.7, strict mode + noUncheckedIndexedAccess.
-- ESLint 9 flat config (`eslint.config.js`): ignore `*.gen.*`, unused vars with `_` prefix allowed.
-- Prettier (.prettierrc): semi, double quotes, 100 printWidth, 2 tabWidth, trailingComma all.
+- Biome 2 (`biome.json`): single tool for lint + format + import organize. Lint = recommended preset plus `noUnusedVariables` + `noUnusedImports`. Ignores `*.gen.*`, `apps/cli/**`, `packages/spec-schema/schema/**`, and `.gitignore` paths.
+- Format: spaces (2), lineWidth 100, double quotes, semicolons, trailingComma all (matches the prior Prettier config).
 - Vitest 3 for all TS packages (happy-dom for fingerprint-core DOM tests).
 
 **Go:**
@@ -223,7 +223,7 @@ Two jobs (JS, Go):
 **JS job:**
 1. pnpm install --frozen-lockfile
 2. turbo run build
-3. turbo run lint
+3. biome ci . (lint + format gate)
 4. turbo run typecheck
 5. turbo run test
 6. turbo run schema-validate (cross-validate fixtures through ajv)
@@ -242,7 +242,7 @@ Two jobs (JS, Go):
 - Go files: snake_case per Go stdlib convention (`server.go`, `middleware.go`).
 - Generated files: `*.gen.*` pattern (`schema.gen.ts`, `validators.gen.cjs`), never edit.
 - Test files: `*.test.ts` (TS), `*_test.go` (Go).
-- Config files: lowercase with dots (`.prettierrc`, `eslint.config.js`, `tsconfig.json`).
+- Config files: lowercase (`biome.json`, `tsconfig.json`, `turbo.json`).
 
 ## Code Standards (derived from actual config)
 
@@ -271,7 +271,7 @@ Two jobs (JS, Go):
 
 1. **One schema, two validators**: `packages/spec-schema/schema/v1.json` is SSOT. TS side uses ajv. Go side embeds copy at `apps/cli/internal/schema/v1.json`. `make sync-schema` syncs. `make check-schema` CI gate prevents drift.
 
-2. **Generated files never hand-edited**: all `*.gen.*` files regenerated via `pnpm --filter @specpin/spec-schema gen`. ESLint ignores them. Git tracks them (for consumers without build step).
+2. **Generated files never hand-edited**: all `*.gen.*` files regenerated via `pnpm --filter @specpin/spec-schema gen`. Biome ignores them. Git tracks them (for consumers without build step).
 
 3. **Fingerprint matching order**: (1) exact anchors (test-id, aria, id, data-spec-id) confidence 1.0, (2) unique cssSelector confidence 0.7, (3) else `needsReview`. Hybrid weighted scorer deferred to 1.1 but `MatchResult` interface stable.
 
