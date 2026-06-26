@@ -6,15 +6,53 @@ on:
   pull_request:
 
 jobs:
+  # Classify the diff so jobs run only when their inputs change. Docs-only
+  # changes touch none of these globs, so js and go both stay skipped. Filtering
+  # applies to push (vs the before-commit) and pull_request alike.
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      js: ${{ steps.filter.outputs.js }}
+      go: ${{ steps.filter.outputs.go }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            js:
+              - 'packages/**'
+              - 'apps/extension/**'
+              - 'examples/**'
+              - 'tests/fixtures/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'biome.json'
+              - 'tsconfig*.json'
+              - 'turbo.json'
+              - 'vitest.config.ts'
+              - '.github/workflows/ci.yml'
+            go:
+              # apps/cli is the Go sidecar; schema/** is the SSOT the drift gate
+              # checks; tests/fixtures/** is the shared corpus go test reads too.
+              - 'apps/cli/**'
+              - 'packages/spec-schema/schema/**'
+              - 'tests/fixtures/**'
+              - '.github/workflows/ci.yml'
+
   js:
     name: JS / TS (lint, typecheck, test, build, schema)
+    needs: changes
+    if: needs.changes.outputs.js == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # pnpm version comes from package.json "packageManager"; do not also set
       # "version" here or action-setup errors on the duplicate.
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: pnpm
@@ -28,13 +66,15 @@ jobs:
 
   go:
     name: Go sidecar (vet, test, build, schema drift)
+    needs: changes
+    if: needs.changes.outputs.go == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: apps/cli
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.26"
           cache-dependency-path: apps/cli/go.sum
@@ -44,3 +84,20 @@ jobs:
       # Cross-validator (Go side): same shared fixture corpus as the JS job.
       - run: go test ./...
       - run: make build
+
+  # Single stable status that always reports: green when triggered jobs pass or
+  # are skipped, red when any failed/was cancelled. Mark only this one as a
+  # required check (later) to avoid skipped path-filtered jobs blocking merges.
+  ci-ok:
+    name: CI status
+    if: always()
+    needs: [changes, js, go]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any required job failed or was cancelled
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "A required job failed or was cancelled."
+            exit 1
+          fi
+          echo "All triggered jobs passed (skipped jobs are acceptable)."
