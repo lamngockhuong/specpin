@@ -6,7 +6,10 @@ import {
 } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import { originMatchesDomains } from "../content/orchestrator.js";
+import { ManualSource } from "../sources/manual.js";
+import { selectSource } from "../sources/registry.js";
 import { SidecarSource } from "../sources/sidecar.js";
+import type { SpecSource } from "../sources/source.js";
 
 export interface TestResult {
   ok: boolean;
@@ -20,30 +23,52 @@ export interface ControllerDeps {
 }
 
 /**
- * Owns the SidecarClient + active source + spec cache + SSE subscription. Kept
- * free of extension-runtime APIs so it can be unit-tested; the background
- * entrypoint injects storage and tab-broadcast behavior.
+ * Owns the available sources (sidecar + manual import), the spec cache, and the
+ * SSE subscription. On reload it picks the first available source in fallback
+ * order (sidecar, then manual). Kept free of extension-runtime APIs so it can be
+ * unit-tested; the background entrypoint injects storage and tab-broadcast.
  */
 export class SidecarController {
   private client: SidecarClient | null = null;
-  private source: SidecarSource | null = null;
+  private sidecarSource: SidecarSource | null = null;
+  private readonly manual = new ManualSource();
   private cache: SpecsResponse | null = null;
   private unwatch: (() => void) | null = null;
+  private lastLocalSeq = 0;
+  private activeSource: string | null = null;
 
   constructor(private readonly deps: ControllerDeps = {}) {}
 
   configure(baseUrl: string, token: string): void {
     this.client = new SidecarClient({ baseUrl, token });
-    this.source = new SidecarSource(this.client);
+    this.sidecarSource = new SidecarSource(this.client);
   }
 
+  /** Whether a sidecar connection is configured. */
   isConfigured(): boolean {
     return this.client !== null;
   }
 
-  /** Active source id for the UI, or null when unconfigured. */
+  /** Whether any specs are currently cached (sidecar or manual). */
+  hasContent(): boolean {
+    return this.cache !== null;
+  }
+
+  /**
+   * Apply Manual-import specs (or clear with null) if this write is newer than
+   * the last applied one. Returns false for stale/out-of-order writes so two
+   * Options tabs cannot clobber a newer selection with an older one.
+   */
+  setLocalSpecs(specs: SpecsResponse | null, seq: number): boolean {
+    if (seq <= this.lastLocalSeq) return false;
+    this.lastLocalSeq = seq;
+    this.manual.setSpecs(specs);
+    return true;
+  }
+
+  /** Active source id for the UI (set on the last successful reload). */
   activeSourceId(): string | null {
-    return this.source?.id ?? null;
+    return this.activeSource;
   }
 
   async testConnection(): Promise<TestResult> {
@@ -58,8 +83,17 @@ export class SidecarController {
   }
 
   async reload(): Promise<SpecsResponse> {
-    if (!this.source) throw new SidecarError(0, "not_configured");
-    this.cache = await this.source.loadSpecs();
+    const candidates: SpecSource[] = [];
+    if (this.sidecarSource) candidates.push(this.sidecarSource);
+    candidates.push(this.manual); // available only once local specs are set
+    const source = await selectSource(candidates);
+    if (!source) {
+      this.activeSource = null;
+      this.cache = null;
+      throw new SidecarError(0, "no_source");
+    }
+    this.activeSource = source.id;
+    this.cache = await source.loadSpecs();
     return this.cache;
   }
 
@@ -67,11 +101,12 @@ export class SidecarController {
     return this.cache;
   }
 
-  /** Write a captured spec through the active source, then refresh the cache. */
+  /** Write a captured spec through the sidecar, then refresh the cache. Capture
+   * is sidecar-only; Manual import is read-only. */
   async saveSpec(file: string, spec: Spec): Promise<{ ok: boolean; errors?: string[] }> {
-    if (!this.source) return { ok: false, errors: ["not configured"] };
+    if (!this.sidecarSource) return { ok: false, errors: ["not configured"] };
     try {
-      await this.source.saveSpec(file, spec);
+      await this.sidecarSource.saveSpec(file, spec);
       await this.reload();
       return { ok: true };
     } catch (e) {
@@ -88,11 +123,12 @@ export class SidecarController {
     return this.cache.specs;
   }
 
-  /** Begin watching for live changes; reloads + notifies on each change. */
+  /** Begin watching the sidecar for live changes; reloads + notifies on each
+   * change. Manual import has no live updates (re-import via Options). */
   startWatch(): void {
-    if (!this.source?.watch) return;
+    if (!this.sidecarSource?.watch) return;
     this.stopWatch();
-    this.unwatch = this.source.watch(() => {
+    this.unwatch = this.sidecarSource.watch(() => {
       void this.reload().then(() => this.deps.onSpecsChanged?.());
     });
   }

@@ -38,11 +38,25 @@
         border-radius: var(--sp-radius-control);
       }
       input::placeholder { color: var(--sp-text-3); }
-      input:focus {
+      textarea {
+        width: 100%; min-height: 160px; padding: 11px 12px; resize: vertical;
+        font: 12px/1.5 var(--sp-font-mono);
+        color: var(--sp-text);
+        background: var(--sp-elevated);
+        border: 1px solid var(--sp-border);
+        border-radius: var(--sp-radius-control);
+      }
+      input:focus, textarea:focus {
         outline: none;
         border-color: var(--sp-accent);
         box-shadow: 0 0 0 3px var(--sp-accent-glow);
       }
+      .card + .card { margin-top: 20px; }
+      button.secondary {
+        background: var(--sp-control); color: var(--sp-text);
+        border-color: var(--sp-border); box-shadow: none; margin-top: 10px;
+      }
+      button.secondary:hover { background: var(--sp-elevated); border-color: var(--sp-border); }
       button {
         width: 100%; margin-top: 24px; padding: 12px 14px;
         font: 700 14px/1 var(--sp-font-ui);
@@ -55,27 +69,28 @@
         transition: background 0.12s, border-color 0.12s;
       }
       button:hover { background: var(--sp-accent-hover); border-color: var(--sp-accent-hover); }
-      #result {
+      #result, #localResult {
         display: none;
         margin-top: 18px; padding: 12px 14px;
         border: 1px solid transparent;
         border-radius: var(--sp-radius-control);
         align-items: center; gap: 10px;
+        white-space: pre-wrap;
       }
-      #result::before {
+      #result::before, #localResult::before {
         content: ""; flex: none; width: 18px; height: 18px;
         background: currentColor;
         -webkit-mask: var(--icon) center / contain no-repeat;
         mask: var(--icon) center / contain no-repeat;
       }
-      #result.ok {
+      #result.ok, #localResult.ok {
         display: flex;
         color: var(--sp-success-text);
         background: var(--sp-success-bg);
         border-color: var(--sp-success-border);
         --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>');
       }
-      #result.err {
+      #result.err, #localResult.err {
         display: flex;
         color: var(--sp-error-text);
         background: var(--sp-error-bg);
@@ -106,6 +121,22 @@
       <input id="token" type="text" placeholder="paste bearer token" />
       <button id="save" type="button">Test connection &amp; save</button>
       <div id="result"></div>
+    </div>
+
+    <div class="card">
+      <div class="header">
+        <h1>Manual specs (no sidecar)</h1>
+      </div>
+      <p class="lead">
+        Paste a bundle to view specs without running <code>specpin serve</code>. Read-only:
+        capture still needs a sidecar. Shape:
+        <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>
+      </p>
+      <label for="localSpecs">Bundle JSON</label>
+      <textarea id="localSpecs" placeholder='{ "manifest": { … }, "files": { "login.spec.json": { … } } }'></textarea>
+      <button id="loadLocal" type="button">Load manual specs</button>
+      <button id="clearLocal" type="button" class="secondary">Clear manual specs</button>
+      <div id="localResult"></div>
     </div>
     <script type="module" src="./main.ts"></script>
   </body>
