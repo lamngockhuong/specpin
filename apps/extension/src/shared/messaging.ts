@@ -1,6 +1,6 @@
-import { browser } from "#imports";
-import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import type { SpecWithFile } from "@specpin/api-client";
+import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
+import { browser } from "#imports";
 
 // Message protocol between content script, popup, options, and the background
 // service worker. The SW owns the api-client + token + cache + SSE.

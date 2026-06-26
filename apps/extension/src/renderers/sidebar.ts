@@ -1,7 +1,7 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
-import type { RenderMeta, SpecRenderer } from "./renderer.js";
-import { createShadowHost } from "../shared/shadow.js";
 import { escapeHtml } from "../shared/html.js";
+import { createShadowHost } from "../shared/shadow.js";
+import type { RenderMeta, SpecRenderer } from "./renderer.js";
 
 interface Row {
   spec: Spec;
@@ -46,8 +46,8 @@ export class SidebarRenderer implements SpecRenderer {
     this.doc = doc;
   }
 
-  private ensureRoot(): void {
-    if (this.host) return;
+  private ensureRoot(): HTMLElement {
+    if (this.list) return this.list;
     const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES);
     const panel = this.doc.createElement("div");
     panel.className = "panel";
@@ -58,10 +58,11 @@ export class SidebarRenderer implements SpecRenderer {
     shadow.appendChild(panel);
     this.host = host;
     this.list = list;
+    return list;
   }
 
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
-    this.ensureRoot();
+    const list = this.ensureRoot();
     const row = this.doc.createElement("div");
     row.className = "row";
     if (meta?.needsReview) row.dataset.review = "true";
@@ -71,7 +72,7 @@ export class SidebarRenderer implements SpecRenderer {
       `<div class="d">${escapeHtml(spec.description)}</div>` +
       (rules ? `<ul>${rules}</ul>` : "");
     row.addEventListener("click", () => this.jumpTo(target));
-    this.list!.appendChild(row);
+    list.appendChild(row);
     this.rows.push({ spec, target, el: row });
   }
 

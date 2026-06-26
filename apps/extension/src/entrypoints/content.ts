@@ -1,22 +1,25 @@
-import { browser, defineContentScript } from "#imports";
+import type { SpecWithFile } from "@specpin/api-client";
 import { captureFingerprint } from "@specpin/fingerprint-core";
 import type { DisplayMode, Manifest } from "@specpin/spec-schema";
-import type { SpecWithFile } from "@specpin/api-client";
-import { renderSession, type RenderSession } from "../content/orchestrator.js";
-import { CapturePicker } from "../content/capture-mode.js";
+import { browser, defineContentScript } from "#imports";
 import { CaptureForm } from "../content/capture-form.js";
+import { CapturePicker } from "../content/capture-mode.js";
 import { registerKeyboard } from "../content/keyboard.js";
+import { type RenderSession, renderSession } from "../content/orchestrator.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
 import {
-  sendToBackground,
   type Message,
   type SaveSpecResult,
   type SpecsForOrigin,
+  sendToBackground,
 } from "../shared/messaging.js";
 
 function defaultFileName(): string {
   const seg = location.pathname.split("/").filter(Boolean)[0] ?? location.hostname.split(".")[0];
-  const slug = (seg ?? "captured").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const slug = (seg ?? "captured")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
   return `${slug || "captured"}.spec.json`;
 }
 
@@ -37,7 +40,8 @@ export default defineContentScript({
 
     const rerender = () => {
       session?.destroy();
-      session = enabled && specs.length ? renderSession(specs, manifest, document, forcedMode) : null;
+      session =
+        enabled && specs.length ? renderSession(specs, manifest, document, forcedMode) : null;
     };
 
     async function refresh(): Promise<void> {

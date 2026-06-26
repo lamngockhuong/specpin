@@ -1,7 +1,11 @@
 import { getConfig } from "../../shared/config.js";
 import { sendToBackground, type TestConnectionResult } from "../../shared/messaging.js";
 
-const byId = (id: string): HTMLElement => document.getElementById(id)!;
+const byId = (id: string): HTMLElement => {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing element #${id}`);
+  return el;
+};
 const baseUrl = byId("baseUrl") as HTMLInputElement;
 const token = byId("token") as HTMLInputElement;
 const result = byId("result");

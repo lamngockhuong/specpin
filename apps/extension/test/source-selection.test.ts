@@ -13,7 +13,11 @@ function fakeSource(id: string, available: boolean): SpecSource {
 
 describe("selectSource", () => {
   it("returns the first available source in fallback order", async () => {
-    const chosen = await selectSource([fakeSource("a", false), fakeSource("b", true), fakeSource("c", true)]);
+    const chosen = await selectSource([
+      fakeSource("a", false),
+      fakeSource("b", true),
+      fakeSource("c", true),
+    ]);
     expect(chosen?.id).toBe("b");
   });
 

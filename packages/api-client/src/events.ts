@@ -31,10 +31,11 @@ async function readStream(body: ReadableStream<Uint8Array>, onChange: () => void
     const { value, done } = await reader.read();
     if (done) return;
     buffer += decoder.decode(value, { stream: true });
-    let idx: number;
-    while ((idx = buffer.indexOf("\n\n")) !== -1) {
+    let idx = buffer.indexOf("\n\n");
+    while (idx !== -1) {
       handleFrame(buffer.slice(0, idx), onChange);
       buffer = buffer.slice(idx + 2);
+      idx = buffer.indexOf("\n\n");
     }
   }
 }

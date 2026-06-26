@@ -1,7 +1,7 @@
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import type { SpecRenderer } from "./renderer.js";
-import { TooltipRenderer } from "./tooltip.js";
 import { SidebarRenderer } from "./sidebar.js";
+import { TooltipRenderer } from "./tooltip.js";
 
 type RendererFactory = (doc: Document) => SpecRenderer;
 

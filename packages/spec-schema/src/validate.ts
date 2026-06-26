@@ -3,9 +3,9 @@ import type { ErrorObject, ValidateFunction } from "ajv";
 // scripts/gen-types.ts. Compiling at runtime breaks in content scripts whose
 // host page CSP forbids `unsafe-eval`.
 import {
+  validateManifest as manifestValidator,
   validateSpecFile as specFileValidator,
   validateSpec as specValidator,
-  validateManifest as manifestValidator,
 } from "./validators.gen.cjs";
 
 export interface ValidationResult {

@@ -23,7 +23,7 @@ describe("detectFramework", () => {
 
   it("detects React via fiber keys", () => {
     const el = document.createElement("div");
-    (el as unknown as Record<string, unknown>)["__reactFiber$abc123"] = {};
+    (el as unknown as Record<string, unknown>).__reactFiber$abc123 = {};
     document.body.appendChild(el);
     expect(detectFramework(document)).toBe("react");
   });

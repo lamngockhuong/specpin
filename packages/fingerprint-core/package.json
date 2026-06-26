@@ -11,13 +11,14 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "lint": "eslint src test"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@specpin/spec-schema": "workspace:*"

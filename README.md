@@ -42,7 +42,7 @@ specpin/
 pnpm install        # install workspace deps
 pnpm build          # turbo run build across packages
 pnpm test           # turbo run test (vitest per package)
-pnpm lint           # eslint flat config
+pnpm lint           # biome check . (lint + format + import organize)
 pnpm typecheck      # tsc --noEmit per package
 ```
 

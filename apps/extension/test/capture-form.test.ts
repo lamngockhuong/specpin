@@ -1,7 +1,7 @@
+import type { ElementFingerprint } from "@specpin/spec-schema";
+import { validateSpec } from "@specpin/spec-schema";
 import { describe, expect, it } from "vitest";
 import { buildSpec, type CaptureFields } from "../src/content/capture-form.js";
-import { validateSpec } from "@specpin/spec-schema";
-import type { ElementFingerprint } from "@specpin/spec-schema";
 
 const fingerprint: ElementFingerprint = {
   cssSelector: "form.login button",

@@ -1,8 +1,8 @@
 import type { ElementFingerprint } from "@specpin/spec-schema";
-import { isGeneratedId } from "./generated-id.js";
-import { cssEscapeAttrValue, cssEscapeIdent } from "./css-escape.js";
-import { safeQueryAll } from "./selector.js";
 import { TEST_ID_ATTRS } from "./capture.js";
+import { cssEscapeAttrValue, cssEscapeIdent } from "./css-escape.js";
+import { isGeneratedId } from "./generated-id.js";
+import { safeQueryAll } from "./selector.js";
 
 export interface MatchResult {
   el: Element | null;
@@ -16,7 +16,7 @@ const NO_MATCH: MatchResult = { el: null, confidence: 0, strategy: "none", needs
 /** Return the single element matching `selector`, or null if absent/ambiguous. */
 function uniqueMatch(root: ParentNode, selector: string): Element | null {
   const hits = safeQueryAll(root, selector);
-  return hits.length === 1 ? hits[0]! : null;
+  return hits.length === 1 ? (hits[0] ?? null) : null;
 }
 
 /** Step 1: resolve via exact anchors in priority order. */
@@ -52,8 +52,9 @@ export function matchElement(fp: ElementFingerprint, root: ParentNode = document
 
   if (fp.cssSelector) {
     const hits = safeQueryAll(root, fp.cssSelector);
-    if (hits.length === 1) {
-      return { el: hits[0]!, confidence: 0.7, strategy: "css", needsReview: false };
+    const [hit] = hits;
+    if (hits.length === 1 && hit) {
+      return { el: hit, confidence: 0.7, strategy: "css", needsReview: false };
     }
     // Ambiguous (>1) is explicitly low-confidence: leave for human review.
   }

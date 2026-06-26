@@ -1,5 +1,5 @@
-import type { Spec } from "@specpin/spec-schema";
 import type { SidecarClient, SpecsResponse } from "@specpin/api-client";
+import type { Spec } from "@specpin/spec-schema";
 import type { SpecSource } from "./source.js";
 
 // SidecarSource: the primary (and, in the MVP, only available) source. Wraps the

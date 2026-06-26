@@ -1,6 +1,6 @@
+import type { Spec } from "@specpin/spec-schema";
 import { describe, expect, it, vi } from "vitest";
 import { SidecarClient, SidecarError } from "../src/index.js";
-import type { Spec } from "@specpin/spec-schema";
 
 const sampleSpec: Spec = {
   id: "login-btn",
@@ -29,9 +29,9 @@ function client(fetchImpl: typeof fetch) {
 
 describe("SidecarClient requests", () => {
   it("health() returns the parsed health payload", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      jsonResponse({ ok: true, version: "1.0", project: "Demo" }),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ ok: true, version: "1.0", project: "Demo" }));
     const res = await client(fetchImpl).health();
     expect(res).toEqual({ ok: true, version: "1.0", project: "Demo" });
     const [url, init] = fetchImpl.mock.calls[0];
@@ -40,14 +40,19 @@ describe("SidecarClient requests", () => {
   });
 
   it("getSpecs() returns manifest + specs", async () => {
-    const payload = { manifest: { version: "1.0" }, specs: [{ ...sampleSpec, _file: "a.spec.json" }] };
+    const payload = {
+      manifest: { version: "1.0" },
+      specs: [{ ...sampleSpec, _file: "a.spec.json" }],
+    };
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(payload));
     const res = await client(fetchImpl).getSpecs();
     expect(res.specs[0]._file).toBe("a.spec.json");
   });
 
   it("saveSpec() POSTs { file, spec }", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ file: "a.spec.json", spec: sampleSpec }));
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ file: "a.spec.json", spec: sampleSpec }));
     await client(fetchImpl).saveSpec("a.spec.json", sampleSpec);
     const [url, init] = fetchImpl.mock.calls[0];
     expect(url).toBe("http://127.0.0.1:9999/specs");
@@ -56,7 +61,9 @@ describe("SidecarClient requests", () => {
   });
 
   it("updateSpec() PUTs to the id-scoped path", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ id: "login-btn", spec: sampleSpec }));
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ id: "login-btn", spec: sampleSpec }));
     await client(fetchImpl).updateSpec("login-btn", sampleSpec);
     const [url, init] = fetchImpl.mock.calls[0];
     expect(url).toBe("http://127.0.0.1:9999/specs/login-btn");
@@ -73,7 +80,9 @@ describe("SidecarClient requests", () => {
 describe("SidecarClient errors", () => {
   it("surfaces a 401 as SidecarError, not a raw fetch result", async () => {
     // Fresh Response per call: a Response body can only be read once.
-    const fetchImpl = vi.fn().mockImplementation(() => jsonResponse({ error: "invalid token" }, 401));
+    const fetchImpl = vi
+      .fn()
+      .mockImplementation(() => jsonResponse({ error: "invalid token" }, 401));
     try {
       await client(fetchImpl).health();
       expect.unreachable();
@@ -87,9 +96,11 @@ describe("SidecarClient errors", () => {
   });
 
   it("passes through schema validation details from a 400", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(
-      jsonResponse({ error: "schema_invalid", details: ["/fingerprint is required"] }, 400),
-    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse({ error: "schema_invalid", details: ["/fingerprint is required"] }, 400),
+      );
     try {
       await client(fetchImpl).saveSpec("a.spec.json", sampleSpec);
       expect.unreachable();

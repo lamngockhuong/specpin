@@ -1,7 +1,7 @@
+import type { Spec } from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
 import { SidecarController } from "../background/sidecar-controller.js";
 import { getConfig, getEnabled, setConfig, setEnabled } from "../shared/config.js";
-import type { Spec } from "@specpin/spec-schema";
 import type {
   Message,
   SaveSpecResult,
@@ -21,7 +21,9 @@ export default defineBackground(() => {
     const tabs = await browser.tabs.query({});
     for (const tab of tabs) {
       if (tab.id !== undefined) {
-        browser.tabs.sendMessage(tab.id, { type: "SPECS_CHANGED" } satisfies Message).catch(() => {});
+        browser.tabs
+          .sendMessage(tab.id, { type: "SPECS_CHANGED" } satisfies Message)
+          .catch(() => {});
       }
     }
   }

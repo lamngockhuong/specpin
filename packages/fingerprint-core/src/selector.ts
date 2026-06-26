@@ -1,5 +1,5 @@
-import { isGeneratedClass, isGeneratedId } from "./generated-id.js";
 import { cssEscapeIdent } from "./css-escape.js";
+import { isGeneratedClass, isGeneratedId } from "./generated-id.js";
 
 const MAX_DEPTH = 6;
 

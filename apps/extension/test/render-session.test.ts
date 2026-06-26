@@ -1,6 +1,7 @@
+import type { Spec } from "@specpin/spec-schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { renderSession } from "../src/content/orchestrator.js";
-import type { Spec } from "@specpin/spec-schema";
+import { must } from "./test-utils.js";
 
 afterEach(() => {
   document.body.innerHTML = "";
@@ -48,7 +49,7 @@ describe("renderSession", () => {
       "sidebar",
     );
     expect(session.renderers).toHaveLength(1);
-    expect(session.renderers[0]!.mode).toBe("sidebar");
+    expect(must(session.renderers[0]).mode).toBe("sidebar");
     session.destroy();
   });
 

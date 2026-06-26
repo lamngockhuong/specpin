@@ -1,10 +1,10 @@
-import { compile } from "json-schema-to-typescript";
-import Ajv2020 from "ajv/dist/2020.js";
-import addFormats from "ajv-formats";
-import standaloneCode from "ajv/dist/standalone/index.js";
 import { readFile, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import Ajv2020 from "ajv/dist/2020.js";
+import standaloneCode from "ajv/dist/standalone/index.js";
+import addFormats from "ajv-formats";
+import { compile } from "json-schema-to-typescript";
 
 // Regenerate src/types.gen.ts from schema/v1.json. The schema is the single
 // source of truth; never hand-edit the generated types. CI fails on drift.
@@ -95,7 +95,7 @@ const validatorsBanner = [
   "",
 ].join("\n");
 
-await writeFile(validatorsOutPath, validatorsBanner + validatorsCode + "\n");
+await writeFile(validatorsOutPath, `${validatorsBanner + validatorsCode}\n`);
 console.log(`Wrote ${validatorsOutPath}`);
 
 const validatorsDts = [
