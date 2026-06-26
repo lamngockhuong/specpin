@@ -24,7 +24,9 @@
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-card);
       }
-      h1 { font-size: 20px; font-weight: 700; margin: 0 0 12px; letter-spacing: -0.01em; }
+      .header { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+      .logo { width: 28px; height: 28px; display: block; }
+      h1 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
       p.lead { color: var(--sp-text-2); margin: 0 0 24px; }
       label { display: block; margin: 18px 0 6px; font-weight: 600; color: var(--sp-text); }
       input {
@@ -90,7 +92,10 @@
   </head>
   <body>
     <div class="card">
-      <h1>Specpin connection</h1>
+      <div class="header">
+        <img class="logo" src="/icon/128.png" alt="" />
+        <h1>Specpin connection</h1>
+      </div>
       <p class="lead">
         Run <code>specpin serve</code> in your project, then paste the printed URL and token here.
         Specpin attaches living docs to existing UIs; it does not generate code.
