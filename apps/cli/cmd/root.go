@@ -29,5 +29,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(initCmd, serveCmd, generateCmd)
+	rootCmd.AddCommand(initCmd, serveCmd, validateCmd, generateCmd)
 }
