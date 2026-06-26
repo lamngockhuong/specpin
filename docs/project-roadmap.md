@@ -113,6 +113,7 @@ Goal: robustness, flexibility, polish. No timeline committed.
 - Lazy-load renderers (code-split tooltip/sidebar/overlay, load on first use)
 
 **UX Polish:**
+- Bundle web fonts (Inter, JetBrains Mono) as `@font-face` assets; the shipped UI design system currently references them via fallback stacks (`system-ui` / `ui-monospace`) so the branded typography is not guaranteed off-system
 - Capture mode visual improvements (highlight quality, form styling)
 - Sidebar search/filter specs
 - Keyboard shortcut customization UI

@@ -82,6 +82,7 @@ When you change the schema: edit only `packages/spec-schema/schema/v1.json`, reg
 - `renderers/` - pluggable display modes via `registry.ts` (tooltip, sidebar shipped; overlay/modal/inline-badge deferred).
 - `sources/` - pluggable spec sources via `registry.ts` (sidecar shipped; FileSystem/Manual deferred).
 - `shared/shadow.ts` + `html.ts` - Shadow DOM isolation and CSP-safe HTML; rendering stays out of the host page's styles/CSP.
+- `shared/tokens.gen.css` - generated from `designs/design-tokens.json` by `designs/sync-css-tokens.mjs` (SSOT for the live UI palette; dual-theme via `prefers-color-scheme`). Pages import it directly; `shared/tokens.ts` re-exports a `:host`-scoped variant (`?inline`) for the Shadow DOM renderers. Do not hand-edit the `.gen.css`. See `docs/design-system.md`.
 
 ### Fingerprint matching (`packages/fingerprint-core`)
 

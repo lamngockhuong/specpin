@@ -5,30 +5,131 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Specpin</title>
     <style>
-      body { width: 300px; margin: 0; padding: 12px; font: 13px/1.4 system-ui, sans-serif; color: #1f2937; }
-      h1 { font-size: 15px; margin: 0 0 8px; }
-      .row { display: flex; align-items: center; justify-content: space-between; margin: 6px 0; }
-      .muted { color: #6b7280; }
-      .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; background: #9ca3af; }
-      .dot.ok { background: #16a34a; }
-      .dot.off { background: #dc2626; }
-      ul { list-style: none; margin: 8px 0; padding: 0; max-height: 200px; overflow: auto; }
-      li { padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 4px; }
-      li .t { font-weight: 600; }
-      .actions { display: flex; gap: 6px; margin-top: 8px; }
-      button { flex: 1; padding: 6px; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb; cursor: pointer; }
-      button:hover { background: #f3f4f6; }
-      .link { flex: none; color: #4f46e5; cursor: pointer; background: none; border: none; padding: 0; font: inherit; }
-      .link:hover { background: none; text-decoration: underline; }
+      /* Tokens are imported in main.ts (src/shared/tokens.gen.css). All visual
+         values below reference --sp-* vars; the radial backdrop + accent glow
+         + dark theme come from those tokens. */
+      * { box-sizing: border-box; }
+      body {
+        width: 320px;
+        margin: 0;
+        padding: 16px;
+        font: 13px/1.45 var(--sp-font-ui);
+        color: var(--sp-text);
+        background:
+          radial-gradient(120% 80% at 50% 0%, var(--sp-grad-top), var(--sp-grad-bottom));
+      }
+      .header { display: flex; align-items: center; gap: 8px; }
+      h1 { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+      .pill {
+        font: 500 11px/1 var(--sp-font-mono);
+        color: var(--sp-text-3);
+        background: var(--sp-control);
+        border: 1px solid var(--sp-border);
+        border-radius: 999px;
+        padding: 4px 8px;
+      }
+      .row { display: flex; align-items: center; justify-content: space-between; }
+      .status { margin-top: 14px; }
+      .status > span { display: inline-flex; align-items: center; gap: 8px; }
+      .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sp-text-3); }
+      .dot.ok { background: var(--sp-success-dot); }
+      .dot.off { background: var(--sp-error-text); }
+
+      /* On/off toggle: native checkbox restyled as a track + knob. */
+      #enabled {
+        appearance: none; -webkit-appearance: none;
+        width: 40px; height: 22px; margin: 0;
+        border-radius: 999px;
+        background: var(--sp-control);
+        border: 1px solid var(--sp-border);
+        position: relative; cursor: pointer; transition: background 0.15s, border-color 0.15s;
+      }
+      #enabled::before {
+        content: ""; position: absolute; top: 2px; left: 2px;
+        width: 16px; height: 16px; border-radius: 50%;
+        background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s;
+      }
+      #enabled:checked { background: var(--sp-accent); border-color: var(--sp-accent); }
+      #enabled:checked::before { transform: translateX(18px); }
+
+      .meta {
+        margin-top: 14px; padding-top: 14px;
+        border-top: 1px solid var(--sp-border);
+      }
+      #project { font: 600 13px/1 var(--sp-font-mono); color: var(--sp-text); }
+      #count:empty { display: none; }
+
+      ul { list-style: none; margin: 12px 0; padding: 0; max-height: 220px; overflow: auto; }
+      li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 10px;
+        padding: 7px 0;
+      }
+      li::before {
+        content: ""; grid-row: 1 / span 2; grid-column: 1;
+        width: 15px; height: 15px; margin-top: 1px;
+        background: var(--sp-accent);
+        -webkit-mask: var(--pin) center / contain no-repeat;
+        mask: var(--pin) center / contain no-repeat;
+        --pin: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>');
+      }
+      li .t { grid-column: 2; font-weight: 600; color: var(--sp-text); }
+      li .muted { grid-column: 2; color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; }
+      li.muted { display: block; color: var(--sp-text-3); padding: 10px 0; }
+      li.muted::before { display: none; }
+
+      .actions { display: flex; gap: 8px; margin-top: 12px; }
+      button {
+        flex: 1; padding: 9px 10px;
+        font: 600 13px/1 var(--sp-font-ui);
+        border: 1px solid var(--sp-border);
+        border-radius: var(--sp-radius-control);
+        background: var(--sp-control);
+        color: var(--sp-text);
+        cursor: pointer; transition: filter 0.12s;
+      }
+      button:hover { filter: brightness(0.97); }
+      #capture {
+        background: var(--sp-accent);
+        border-color: var(--sp-accent);
+        color: var(--sp-accent-on);
+        box-shadow: 0 0 0 4px var(--sp-accent-glow);
+      }
+      #capture:hover { background: var(--sp-accent-hover); border-color: var(--sp-accent-hover); filter: none; }
+      #mode {
+        flex: none; padding: 9px 10px;
+        font: 500 12px/1 var(--sp-font-ui);
+        border: 1px solid var(--sp-border);
+        border-radius: var(--sp-radius-control);
+        background: var(--sp-control);
+        color: var(--sp-text);
+        cursor: pointer;
+      }
+      .footer {
+        margin-top: 14px; padding-top: 12px;
+        border-top: 1px solid var(--sp-border);
+        text-align: center;
+      }
+      .link {
+        color: var(--sp-text-2);
+        cursor: pointer; background: none; border: none; padding: 0;
+        font: 500 12px/1 var(--sp-font-ui);
+      }
+      .link:hover { color: var(--sp-accent); text-decoration: none; }
     </style>
   </head>
   <body>
-    <h1>Specpin</h1>
-    <div class="row">
-      <span><span id="status-dot" class="dot"></span><span id="status-text">Loading…</span></span>
-      <label><input type="checkbox" id="enabled" /> On</label>
+    <div class="header">
+      <h1>Specpin</h1>
+      <span class="pill">v0.1.0</span>
     </div>
-    <div class="row muted"><span id="project"></span><span id="count"></span></div>
+    <div class="row status">
+      <span><span id="status-dot" class="dot"></span><span id="status-text">Loading&hellip;</span></span>
+      <input type="checkbox" id="enabled" aria-label="Enable Specpin on this page" />
+    </div>
+    <div class="row meta"><span id="project"></span><span id="count" class="pill"></span></div>
     <ul id="specs"></ul>
     <div class="actions">
       <button id="reload" type="button">Reload</button>
@@ -42,9 +143,9 @@
         <option value="sidebar">Sidebar</option>
       </select>
     </div>
-    <p class="muted" style="margin-top:8px">
-      <button type="button" id="open-options" class="link">Connection settings →</button>
-    </p>
+    <div class="footer">
+      <button type="button" id="open-options" class="link">Connection settings &rarr;</button>
+    </div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>
