@@ -89,6 +89,20 @@ Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element
 | `Alt+Shift+M` | cycle display mode |
 | `Alt+Shift+C` | toggle capture mode (`Esc` cancels) |
 
+## Display modes
+
+Specs render as a **tooltip** (hover peek), a **sidebar** (persistent list), or a **modal** (centered dialog listing every spec on the page). Switch with the popup's mode dropdown or cycle with `Alt+Shift+M`. Per-spec `preferredDisplayMode` and the manifest `defaultDisplayMode` still apply when no mode is forced.
+
+## Use without a sidecar (Manual import)
+
+To view specs without running `specpin serve`, open the extension Options page and paste a bundle into **Manual specs**:
+
+```json
+{ "manifest": { …manifest.json… }, "files": { "login.spec.json": { …spec file… } } }
+```
+
+Click **Load manual specs**. The bundle is validated against the schema in-page before anything is stored. Manual specs are read-only (capture still needs a sidecar) and persist until you click **Clear manual specs**. When a sidecar is also configured and reachable, it takes precedence; manual specs are the fallback.
+
 ## Validate specs offline
 
 `specpin validate` checks `manifest.json` and every `*.spec.json` against the schema without serving anything:

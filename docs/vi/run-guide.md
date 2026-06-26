@@ -91,6 +91,20 @@ Click **+ Capture spec** trong popup (hoặc nhấn `Alt+Shift+C`), click một 
 | `Alt+Shift+M` | cycle display mode |
 | `Alt+Shift+C` | toggle capture mode (`Esc` để hủy) |
 
+## Chế độ hiển thị
+
+Spec hiển thị dưới dạng **tooltip** (xem nhanh khi hover), **sidebar** (danh sách cố định), hoặc **modal** (hộp thoại giữa màn hình liệt kê mọi spec trên trang). Đổi bằng dropdown chế độ trong popup hoặc xoay vòng với `Alt+Shift+M`. `preferredDisplayMode` theo từng spec và `defaultDisplayMode` trong manifest vẫn áp dụng khi không ép chế độ.
+
+## Dùng không cần sidecar (Manual import)
+
+Để xem spec mà không chạy `specpin serve`, mở trang Options của extension và dán một bundle vào ô **Manual specs**:
+
+```json
+{ "manifest": { …manifest.json… }, "files": { "login.spec.json": { …spec file… } } }
+```
+
+Nhấn **Load manual specs**. Bundle được validate theo schema ngay trong trang trước khi lưu. Manual specs là read-only (capture vẫn cần sidecar) và tồn tại cho đến khi bạn nhấn **Clear manual specs**. Khi có sidecar được cấu hình và truy cập được, sidecar được ưu tiên; manual specs là phương án dự phòng.
+
 ## Validate spec offline
 
 `specpin validate` kiểm tra `manifest.json` và mọi `*.spec.json` theo schema mà không cần chạy server:
