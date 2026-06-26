@@ -1,5 +1,7 @@
 # Specpin Project Overview & PDR
 
+> Tiếng Việt: [`vi/project-overview-pdr.md`](./vi/project-overview-pdr.md). English is the source of truth.
+
 ## Problem
 
 Engineering teams lose context between what code does (implementation) and why it does it (business rules, acceptance criteria, edge cases). Specs scatter across Jira, Confluence, Notion, Slack threads, or get buried in stale PRs. Developers reverse-engineer intent from code, support staff escalate instead of checking the spec, and product changes orphan old decisions with no audit trail.

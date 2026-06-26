@@ -1,5 +1,7 @@
 # Project Roadmap
 
+> Tiếng Việt: [`vi/project-roadmap.md`](./vi/project-roadmap.md). English is the source of truth.
+
 Specpin development follows a phased approach: deliver demoable MVP first, defer polish and advanced features to 1.1+.
 
 ## Phase 1 MVP (Completed 2026-06-25)

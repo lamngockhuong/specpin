@@ -1,5 +1,7 @@
 # Codebase Summary
 
+> Tiếng Việt: [`vi/codebase-summary.md`](./vi/codebase-summary.md). English is the source of truth.
+
 Specpin monorepo (~4,620 LOC: 83 TS files, 17 Go files) implementing a Git-native spec layer for web UIs. Three packages (spec-schema, fingerprint-core, api-client), two apps (Go sidecar CLI, WXT browser extension), one demo.
 
 ## Package Dependencies
