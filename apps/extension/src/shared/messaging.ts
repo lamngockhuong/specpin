@@ -25,7 +25,10 @@ export type Message =
       applyToAllSites?: boolean;
     }
   | { type: "REMOVE_CONNECTION"; id: string }
-  | { type: "SAVE_SPEC"; file: string; spec: Spec }
+  // Edit an existing connection's non-secret fields (label, opt-in).
+  | { type: "UPDATE_CONNECTION"; id: string; label?: string; applyToAllSites?: boolean }
+  // `connectionId` targets the destination project when several serve the page.
+  | { type: "SAVE_SPEC"; file: string; spec: Spec; connectionId?: string }
   // Manual-import specs pushed from the Options page (extension-page origin only).
   // `specs: null` clears them. `seq` guards against out-of-order tab writes.
   | { type: "SET_LOCAL_SPECS"; specs: SpecsResponse | null; seq: number }
@@ -47,6 +50,7 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   // connection's bearer token to the sidecar.
   "ADD_CONNECTION",
   "REMOVE_CONNECTION",
+  "UPDATE_CONNECTION",
   "RECONNECT",
 ]);
 

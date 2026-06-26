@@ -1,7 +1,7 @@
 import type { SpecsResponse } from "@specpin/api-client";
 import type { Manifest, Spec } from "@specpin/spec-schema";
-import { originMatchesDomains } from "../content/orchestrator.js";
 import type { Connection, ConnectionStatus, TaggedSpec } from "../shared/connection-types.js";
+import { originMatchesDomains } from "../shared/origin-match.js";
 import { type ConnectionDeps, SidecarConnection } from "./sidecar-connection.js";
 
 export interface RegistryDeps {
@@ -148,16 +148,28 @@ export class SidecarRegistry {
     return { specs, manifest, locales: [...localeSet] };
   }
 
-  /** Save a captured spec to the connection serving the given origin (capture is
-   *  sidecar-only; Manual import is read-only). */
+  /** Connections whose project currently serves the given origin. */
+  connectionsForOrigin(origin: string): ConnectionStatus[] {
+    return [...this.connections.values()]
+      .filter((c) => c.getCache() && c.matchesOrigin(origin))
+      .map((c) => c.status());
+  }
+
+  /** Save a captured spec to a connection serving the given origin (capture is
+   *  sidecar-only; Manual import is read-only). When `connectionId` is given it
+   *  picks that connection (if it serves the origin); otherwise the first match.
+   *  Routing is always bounded by `matchesOrigin`, so a page cannot write to a
+   *  project that does not serve it. */
   async saveSpec(
     origin: string,
     file: string,
     spec: Spec,
+    connectionId?: string,
   ): Promise<{ ok: boolean; errors?: string[] }> {
-    const target = [...this.connections.values()].find(
+    const candidates = [...this.connections.values()].filter(
       (c) => c.getCache() && c.matchesOrigin(origin),
     );
+    const target = connectionId ? candidates.find((c) => c.id === connectionId) : candidates[0];
     if (!target) return { ok: false, errors: ["no connected project serves this page"] };
     try {
       await target.saveSpec(file, spec);

@@ -96,6 +96,8 @@ export default defineBackground(() => {
         return handleAddConnection(message);
       case "REMOVE_CONNECTION":
         return handleRemoveConnection(message.id);
+      case "UPDATE_CONNECTION":
+        return handleUpdateConnection(message);
       case "SET_ENABLED":
         return handleSetEnabled(message.enabled);
       case "RELOAD":
@@ -103,7 +105,7 @@ export default defineBackground(() => {
       case "RECONNECT":
         return handleReconnect(message.id);
       case "SAVE_SPEC":
-        return handleSaveSpec(message.file, message.spec, originOf(sender));
+        return handleSaveSpec(message.file, message.spec, originOf(sender), message.connectionId);
       case "SET_LOCAL_SPECS":
         return handleSetLocalSpecs(message.specs, message.seq);
       default:
@@ -146,60 +148,101 @@ export default defineBackground(() => {
     };
   }
 
+  // Serialize all connection-list read-modify-write operations so two extension
+  // surfaces (popup + options) mutating at once cannot lose a write (M2). JS is
+  // single-threaded, so the only interleaving is at awaits; chaining removes it.
+  let mutationChain: Promise<unknown> = Promise.resolve();
+  function mutate<T>(fn: () => Promise<T>): Promise<T> {
+    const run = mutationChain.then(fn, fn);
+    mutationChain = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }
+
   // SAVE_CONFIG is the single-connection bridge for the current Options page
   // (Phase 4 replaces it with ADD/REMOVE). It upserts a "default" connection and
   // keeps the legacy config key so the page can prefill.
-  async function handleSaveConfig(baseUrl: string, token: string): Promise<TestConnectionResult> {
-    await setConfig({ baseUrl, token });
-    const others = (await getConnections()).filter((c) => c.id !== "default");
-    const connections: Connection[] = [...others, { id: "default", baseUrl, token }];
-    await setConnections(connections);
-    registry.setConnections(connections);
-    await registry.reload("default");
-    const status = registry.statuses().find((s) => s.id === "default");
-    const ok = status?.connected ?? false;
-    if (ok && (await getEnabled())) registry.startWatchAll();
-    await broadcastSpecsChanged();
-    return ok
-      ? { ok: true, project: status?.project ?? undefined }
-      : { ok: false, error: status?.error ?? "connection failed" };
+  function handleSaveConfig(baseUrl: string, token: string): Promise<TestConnectionResult> {
+    return mutate(async () => {
+      await setConfig({ baseUrl, token });
+      const others = (await getConnections()).filter((c) => c.id !== "default");
+      const connections: Connection[] = [...others, { id: "default", baseUrl, token }];
+      await setConnections(connections);
+      registry.setConnections(connections);
+      await registry.reload("default");
+      const status = registry.statuses().find((s) => s.id === "default");
+      const ok = status?.connected ?? false;
+      if (ok && (await getEnabled())) registry.startWatchAll();
+      await broadcastSpecsChanged();
+      return ok
+        ? { ok: true, project: status?.project ?? undefined }
+        : { ok: false, error: status?.error ?? "connection failed" };
+    });
   }
 
-  async function handleAddConnection(message: {
+  function handleAddConnection(message: {
     baseUrl: string;
     token: string;
     label?: string;
     applyToAllSites?: boolean;
   }): Promise<{ ok: boolean; id?: string; project?: string | null; error?: string }> {
-    const id = crypto.randomUUID();
-    const connection: Connection = {
-      id,
-      baseUrl: message.baseUrl,
-      token: message.token,
-      label: message.label,
-      applyToAllSites: message.applyToAllSites,
-    };
-    const connections = [...(await getConnections()), connection];
-    await setConnections(connections);
-    registry.setConnections(connections);
-    await registry.reload(id);
-    const status = registry.statuses().find((s) => s.id === id);
-    if (status?.connected && (await getEnabled())) registry.startWatchAll();
-    await broadcastSpecsChanged();
-    return {
-      ok: status?.connected ?? false,
-      id,
-      project: status?.project ?? null,
-      error: status?.connected ? undefined : (status?.error ?? "connection failed"),
-    };
+    return mutate(async () => {
+      const id = crypto.randomUUID();
+      const connection: Connection = {
+        id,
+        baseUrl: message.baseUrl,
+        token: message.token,
+        label: message.label,
+        applyToAllSites: message.applyToAllSites,
+      };
+      const connections = [...(await getConnections()), connection];
+      await setConnections(connections);
+      registry.setConnections(connections);
+      await registry.reload(id);
+      const status = registry.statuses().find((s) => s.id === id);
+      if (status?.connected && (await getEnabled())) registry.startWatchAll();
+      await broadcastSpecsChanged();
+      return {
+        ok: status?.connected ?? false,
+        id,
+        project: status?.project ?? null,
+        error: status?.connected ? undefined : (status?.error ?? "connection failed"),
+      };
+    });
   }
 
-  async function handleRemoveConnection(id: string): Promise<{ ok: true }> {
-    registry.remove(id);
-    const connections = (await getConnections()).filter((c) => c.id !== id);
-    await setConnections(connections);
-    await broadcastSpecsChanged();
-    return { ok: true };
+  function handleRemoveConnection(id: string): Promise<{ ok: true }> {
+    return mutate(async () => {
+      registry.remove(id);
+      const connections = (await getConnections()).filter((c) => c.id !== id);
+      await setConnections(connections);
+      await broadcastSpecsChanged();
+      return { ok: true };
+    });
+  }
+
+  function handleUpdateConnection(message: {
+    id: string;
+    label?: string;
+    applyToAllSites?: boolean;
+  }): Promise<{ ok: boolean }> {
+    return mutate(async () => {
+      const connections = (await getConnections()).map((c) =>
+        c.id === message.id
+          ? {
+              ...c,
+              label: message.label ?? c.label,
+              applyToAllSites: message.applyToAllSites ?? c.applyToAllSites,
+            }
+          : c,
+      );
+      await setConnections(connections);
+      registry.setConnections(connections);
+      await broadcastSpecsChanged();
+      return { ok: connections.some((c) => c.id === message.id) };
+    });
   }
 
   async function handleSetEnabled(enabled: boolean): Promise<{ ok: true }> {
@@ -227,8 +270,13 @@ export default defineBackground(() => {
     return { ok: registry.anyConnected() };
   }
 
-  async function handleSaveSpec(file: string, spec: Spec, origin: string): Promise<SaveSpecResult> {
-    const result = await registry.saveSpec(origin, file, spec);
+  async function handleSaveSpec(
+    file: string,
+    spec: Spec,
+    origin: string,
+    connectionId?: string,
+  ): Promise<SaveSpecResult> {
+    const result = await registry.saveSpec(origin, file, spec, connectionId);
     if (result.ok) await broadcastSpecsChanged();
     return result;
   }

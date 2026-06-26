@@ -61,6 +61,17 @@
       #project { font: 600 13px/1 var(--sp-font-mono); color: var(--sp-text); }
       #count:empty { display: none; }
 
+      /* Per-tab project list (distinct from the spec list: no pin marker). */
+      #projects { margin: 8px 0 0; }
+      #projects:empty { display: none; }
+      #projects li { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+      #projects li::before { display: none; }
+      #projects .pdot { width: 8px; height: 8px; border-radius: 50%; background: var(--sp-text-3); flex: none; }
+      #projects .pdot.ok { background: var(--sp-success-dot); }
+      #projects .pdot.err { background: var(--sp-error-text); }
+      #projects .pname { font-weight: 600; color: var(--sp-text); }
+      #projects .pcount { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; }
+
       .locale-row { margin-top: 12px; }
       .locale-row[hidden] { display: none; }
       .locale-row label { color: var(--sp-text-2); font-weight: 500; }
@@ -145,6 +156,7 @@
       <input type="checkbox" id="enabled" aria-label="Enable Specpin on this page" />
     </div>
     <div class="row meta"><span id="project"></span><span id="count" class="pill"></span></div>
+    <ul id="projects"></ul>
     <div class="row locale-row" id="locale-row" hidden>
       <label for="locale">Language</label>
       <select id="locale" title="Spec language"></select>

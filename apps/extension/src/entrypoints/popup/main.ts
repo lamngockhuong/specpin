@@ -3,8 +3,10 @@ import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import { pickLocale } from "../../content/localize-spec.js";
 import { getLocale, setLocale } from "../../shared/config.js";
+import { originMatchesDomains } from "../../shared/origin-match.js";
 import "../../shared/tokens.gen.css";
 import {
+  type ConnectionStatus,
   type SpecsForOrigin,
   type StatusResult,
   sendToActiveTab,
@@ -72,6 +74,34 @@ function renderSpecs(res: SpecsForOrigin): void {
   }
 }
 
+/** Does a connection's project serve this origin? Mirrors the background gate. */
+function connectionServes(c: ConnectionStatus, origin: string): boolean {
+  if (c.domains.length === 0) return c.matchesAllSites;
+  return originMatchesDomains(origin, c.domains);
+}
+
+/** List the connected projects that serve the active tab. */
+function renderProjects(list: ConnectionStatus[], origin: string): void {
+  const ul = byId("projects");
+  ul.replaceChildren();
+  const matching = list.filter((c) => connectionServes(c, origin));
+  // With a single project the meta row already names it; avoid duplicate noise.
+  if (matching.length < 2) return;
+  for (const c of matching) {
+    const li = document.createElement("li");
+    const dot = document.createElement("span");
+    dot.className = `pdot ${c.connected ? "ok" : c.error ? "err" : ""}`;
+    const name = document.createElement("span");
+    name.className = "pname";
+    name.textContent = c.label || c.project || c.baseUrl;
+    const count = document.createElement("span");
+    count.className = "pcount";
+    count.textContent = `${c.specCount}`;
+    li.append(dot, name, count);
+    ul.appendChild(li);
+  }
+}
+
 function renderLocalePicker(locales: string[]): void {
   const row = byId("locale-row");
   const select = byId("locale") as HTMLSelectElement;
@@ -100,6 +130,7 @@ async function refresh(): Promise<void> {
   const res = await sendToBackground<SpecsForOrigin>({ type: "GET_SPECS_FOR_ORIGIN", origin });
   lastSpecs = res;
   activeLocale = pickLocale(await getLocale(), res.manifest?.settings?.defaultLocale);
+  renderProjects(status.connections ?? [], origin);
   renderLocalePicker(status.locales ?? []);
   renderSpecs(res);
 }

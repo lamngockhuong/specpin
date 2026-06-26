@@ -57,6 +57,11 @@ ${SHADOW_PREAMBLE}
   color: var(--sp-warning); background: var(--sp-warning-bg);
   border: 1px solid var(--sp-warning-border); border-radius: 5px; padding: 4px 6px;
 }
+.card .project {
+  display: block; margin-bottom: 6px;
+  font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--sp-text-3);
+}
 .card .t { font-weight: 700; font-size: 14px; color: var(--sp-text); }
 .card .d { color: var(--sp-text-2); margin-top: 4px; }
 .card ul { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
@@ -136,10 +141,15 @@ export class ModalRenderer implements SpecRenderer {
     // focusable, so the focus trap below can keep Tab on the close button.
     if (meta?.needsReview) card.dataset.review = "true";
     const tag = meta?.needsReview ? `<span class="tag">Needs review</span>` : "";
+    const project =
+      meta?.showProject && meta.project
+        ? `<span class="project">${escapeHtml(meta.project)}</span>`
+        : "";
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     const rules = text.businessRules.map((r) => `<li>${escapeHtml(r)}</li>`).join("");
     card.innerHTML =
       tag +
+      project +
       `<div class="t">${escapeHtml(text.title)}</div>` +
       `<div class="d">${escapeHtml(text.description)}</div>` +
       (rules ? `<ul>${rules}</ul>` : "");

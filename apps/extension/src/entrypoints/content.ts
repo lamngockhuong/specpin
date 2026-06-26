@@ -1,4 +1,3 @@
-import type { SpecWithFile } from "@specpin/api-client";
 import { captureFingerprint } from "@specpin/fingerprint-core";
 import type { DisplayMode, Manifest } from "@specpin/spec-schema";
 import { browser, defineContentScript } from "#imports";
@@ -9,6 +8,7 @@ import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
 import { type RenderSession, renderSession } from "../content/orchestrator.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
 import { getLocale, setLocale } from "../shared/config.js";
+import type { TaggedSpec } from "../shared/connection-types.js";
 import {
   type Message,
   type SaveSpecResult,
@@ -33,7 +33,7 @@ export default defineContentScript({
   async main() {
     let session: RenderSession | null = null;
     let manifest: Manifest | null = null;
-    let specs: SpecWithFile[] = [];
+    let specs: TaggedSpec[] = [];
     let enabled = true;
     let forcedMode: DisplayMode | null = null;
     let locale = "en";
@@ -117,6 +117,15 @@ export default defineContentScript({
         return;
       }
       captureActive = true;
+      // Distinct sidecar projects serving this page, for the target picker when
+      // more than one matches (Manual specs are read-only, excluded).
+      const targets = [
+        ...new Map(
+          specs
+            .filter((s) => s.connectionId !== "manual")
+            .map((s) => [s.connectionId, { id: s.connectionId, project: s.project }]),
+        ).values(),
+      ];
       picker.start(
         (el) => {
           const fingerprint = captureFingerprint(el);
@@ -124,11 +133,13 @@ export default defineContentScript({
             defaultFile: defaultFileName(),
             locales: availableLocales,
             defaultLocale: manifest?.settings?.defaultLocale ?? locale,
-            onSubmit: async (file, spec) => {
+            targets,
+            onSubmit: async (file, spec, connectionId) => {
               const result = await sendToBackground<SaveSpecResult>({
                 type: "SAVE_SPEC",
                 file,
                 spec,
+                connectionId,
               });
               if (result.ok) endCapture();
               return result;

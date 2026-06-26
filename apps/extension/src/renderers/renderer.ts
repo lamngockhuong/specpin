@@ -12,6 +12,12 @@ export interface RenderMeta {
   /** Locales offered by the in-renderer language selector (sidebar only). When
    *  fewer than two are available the selector is omitted. */
   availableLocales?: string[];
+  /** Project (connection) this spec belongs to. */
+  project?: string;
+  /** True when the page has specs from more than one project, so renderers show
+   *  the project label to disambiguate (kept off for the common single-project
+   *  case to avoid noise). */
+  showProject?: boolean;
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already

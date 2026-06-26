@@ -2,6 +2,7 @@ import { matchElement } from "@specpin/fingerprint-core";
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { createRenderer, resolveMode } from "../renderers/registry.js";
 import type { SpecRenderer } from "../renderers/renderer.js";
+import type { TaggedSpec } from "../shared/connection-types.js";
 
 export interface RenderStats {
   rendered: number;
@@ -35,6 +36,14 @@ export function renderSession(
   // default then "en" so callers without a manifest still render.
   const defaultLocale = manifest?.settings?.defaultLocale;
   const activeLocale = locale ?? defaultLocale ?? "en";
+  // Show project labels only when more than one project contributes specs to the
+  // page, so single-project pages stay uncluttered.
+  const projects = new Set<string>();
+  for (const spec of specs) {
+    const project = (spec as Partial<TaggedSpec>).project;
+    if (project) projects.add(project);
+  }
+  const showProject = projects.size > 1;
 
   for (const spec of specs) {
     const match = matchElement(spec.fingerprint, doc);
@@ -55,6 +64,8 @@ export function renderSession(
       locale: activeLocale,
       defaultLocale,
       availableLocales,
+      project: (spec as Partial<TaggedSpec>).project,
+      showProject,
     });
     stats.rendered += 1;
   }
@@ -67,20 +78,4 @@ export function renderSession(
       for (const r of renderers) r.destroy();
     },
   };
-}
-
-/** Does this page origin fall under the manifest's configured domains? An empty
- * domain list means "any origin" (useful before a project pins its domains).
- * Matching is host-exact or a true subdomain (label-boundary) match, so a domain
- * like "acme.io" matches "app.acme.io" but never "evil-acme.io" or a look-alike
- * embedded in the path/query. */
-export function originMatchesDomains(origin: string, domains: string[]): boolean {
-  if (!domains || domains.length === 0) return true;
-  let host = origin;
-  try {
-    host = new URL(origin).host;
-  } catch {
-    // origin may already be a bare host:port
-  }
-  return domains.some((d) => host === d || host.endsWith(`.${d}`));
 }

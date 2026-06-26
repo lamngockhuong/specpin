@@ -35,6 +35,7 @@ ${SHADOW_PREAMBLE}
   border-radius: var(--sp-radius-control);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); display: none; pointer-events: none;
 }
+.tip .project { display: block; margin: 0 0 4px; font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sp-text-3); }
 .tip h4 { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--sp-text); }
 .tip p { margin: 0 0 6px; color: var(--sp-text-2); }
 .tip ul { margin: 4px 0 0; padding-left: 16px; color: var(--sp-text-3); }
@@ -94,7 +95,8 @@ export class TooltipRenderer implements SpecRenderer {
     badge.className = "badge";
     badge.textContent = "S";
     if (meta?.needsReview) badge.dataset.review = "true";
-    badge.addEventListener("mouseenter", () => this.showTip(text, spec.tags ?? [], badge));
+    const project = meta?.showProject && meta.project ? meta.project : "";
+    badge.addEventListener("mouseenter", () => this.showTip(text, spec.tags ?? [], project, badge));
     badge.addEventListener("mouseleave", () => this.hideTip());
     layer.appendChild(badge);
 
@@ -103,13 +105,19 @@ export class TooltipRenderer implements SpecRenderer {
     this.positionBadge(pin);
   }
 
-  private showTip(text: LocalizedSpecText, specTags: string[], badge: HTMLElement): void {
+  private showTip(
+    text: LocalizedSpecText,
+    specTags: string[],
+    project: string,
+    badge: HTMLElement,
+  ): void {
     if (!this.tip) return;
     const rules = text.businessRules.map((r) => `<li>${escapeHtml(r)}</li>`).join("");
     const tags = specTags.length
       ? `<div class="tags">${escapeHtml(specTags.join(", "))}</div>`
       : "";
     this.tip.innerHTML =
+      (project ? `<span class="project">${escapeHtml(project)}</span>` : "") +
       `<h4>${escapeHtml(text.title)}</h4>` +
       `<p>${escapeHtml(text.description)}</p>` +
       (rules ? `<ul>${rules}</ul>` : "") +

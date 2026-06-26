@@ -27,10 +27,12 @@ export interface CaptureFields {
   createdBy?: string;
 }
 
-/** Submit handler returns whether the write succeeded (and any errors to show). */
+/** Submit handler returns whether the write succeeded (and any errors to show).
+ *  `connectionId` is the chosen target project when several serve the page. */
 export type CaptureSubmit = (
   file: string,
   spec: Spec,
+  connectionId?: string,
 ) => Promise<{ ok: boolean; errors?: string[] }>;
 
 export interface CaptureFormOptions {
@@ -43,6 +45,10 @@ export interface CaptureFormOptions {
   onCancel?: () => void;
   /** Optional existing spec to edit: its locales preload so they are preserved. */
   initial?: Spec;
+  /** Projects that serve this page. When more than one, the form asks which to
+   *  save into (avoids nondeterministic first-match routing for overlapping
+   *  domains). */
+  targets?: { id: string; project: string }[];
 }
 
 function slugify(text: string): string {
@@ -206,7 +212,8 @@ export class CaptureForm {
     const locales = [...seeded].filter(Boolean);
     let current = options.defaultLocale || locales[0] || "en";
 
-    wrap.innerHTML = this.template(options.defaultFile, locales, current);
+    const targets = options.targets ?? [];
+    wrap.innerHTML = this.template(options.defaultFile, locales, current, targets);
     shadow.appendChild(wrap);
     this.host = host;
 
@@ -317,22 +324,40 @@ export class CaptureForm {
         return;
       }
       const file = q<HTMLInputElement>("#sp-file").value.trim() || options.defaultFile;
-      const result = await options.onSubmit(file, spec);
+      const targetSel = shadow.querySelector<HTMLSelectElement>("#sp-target");
+      const connectionId = targetSel?.value || undefined;
+      const result = await options.onSubmit(file, spec, connectionId);
       if (result.ok) this.close();
       else this.showErrors(errorsBox, result.errors ?? ["Save failed; check the sidecar."]);
     });
   }
 
-  private template(defaultFile: string, locales: string[], current: string): string {
+  private template(
+    defaultFile: string,
+    locales: string[],
+    current: string,
+    targets: { id: string; project: string }[],
+  ): string {
     const localeOptions = locales
       .map(
         (l) =>
           `<option value="${escapeAttr(l)}"${l === current ? " selected" : ""}>${escapeHtml(l)}</option>`,
       )
       .join("");
+    // Ask which project to save into only when more than one serves this page.
+    const targetField =
+      targets.length > 1
+        ? `<label>Target project</label><select id="sp-target">${targets
+            .map(
+              (t) =>
+                `<option value="${escapeAttr(t.id)}">${escapeHtml(t.project || t.id)}</option>`,
+            )
+            .join("")}</select>`
+        : "";
     return `
       <div class="card">
         <h3>Capture spec</h3>
+        ${targetField}
         <label>Language <span class="hint">(title &amp; description per language)</span></label>
         <select id="sp-locale">${localeOptions}<option value="${ADD_LOCALE_VALUE}">+ Add language&hellip;</option></select>
         <label>Title</label><input id="sp-title" placeholder="Login button" />

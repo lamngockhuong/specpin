@@ -1,7 +1,7 @@
 import { SidecarClient, SidecarError, type SpecsResponse } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
-import { originMatchesDomains } from "../content/orchestrator.js";
 import type { Connection, ConnectionStatus } from "../shared/connection-types.js";
+import { originMatchesDomains } from "../shared/origin-match.js";
 import { SidecarSource } from "../sources/sidecar.js";
 import type { SpecSource } from "../sources/source.js";
 
