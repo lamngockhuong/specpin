@@ -41,10 +41,12 @@ describe("createRenderer", () => {
   it("creates the requested implemented renderer", () => {
     expect(createRenderer("tooltip", document).mode).toBe("tooltip");
     expect(createRenderer("sidebar", document).mode).toBe("sidebar");
+    expect(createRenderer("modal", document).mode).toBe("modal");
   });
 
   it("falls back to tooltip for unimplemented modes", () => {
-    expect(isImplemented("modal")).toBe(false);
-    expect(createRenderer("modal", document).mode).toBe("tooltip");
+    // overlay + inline-badge are still deferred; modal is now implemented.
+    expect(isImplemented("overlay")).toBe(false);
+    expect(createRenderer("overlay", document).mode).toBe("tooltip");
   });
 });

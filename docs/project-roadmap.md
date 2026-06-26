@@ -78,9 +78,17 @@ Independent review (`plans/reports/from-code-reviewer-to-orchestrator-specpin-mv
 - **Bundle size**: extension content script ~450 KB uncompressed (ajv validator included, under 500 KB target)
 - **Performance**: fingerprint match < 10ms (exact anchors), render latency < 100ms
 
-## Phase 1.1 (Planned, not started)
+## Phase 1.1 (In progress)
 
 Goal: robustness, flexibility, polish. No timeline committed.
+
+**Lean first slice shipped (2026-06-26)** on branch `feat/spec-validate-cli-and-ci` (plan: `plans/260626-1415-specpin-phase-1-1/`):
+- `specpin validate`: offline schema check of `.specs/` (exit 0 valid / 1 invalid / 2 cannot-run), symlink guard in the store, manifest-drift warning.
+- CI spec-lint: in-repo step over the demo specs + a reusable composite action that builds the validator from a pinned ref (not the caller's PR).
+- Manual spec source: render specs with no sidecar by pasting a validated `{ manifest, files }` bundle in Options; read-only, size-capped, prototype-pollution-guarded; controller now selects sidecar -> manual by availability.
+- Modal renderer: centered focus-trapped dialog listing page specs (third display mode), AbortController teardown.
+
+Deferred from this slice pending a real corpus / usage feedback: the hybrid weighted scorer (needs a before/after DOM corpus to tune), the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
 
 ### Planned Features
 

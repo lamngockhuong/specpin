@@ -1,0 +1,46 @@
+name: "Specpin spec-lint"
+description: "Validate a repo's .specs/ JSON (manifest + *.spec.json) against the Specpin schema, offline. No sidecar, no Node toolchain."
+
+inputs:
+  dir:
+    description: "Path to the .specs/ directory to validate, relative to the repo root."
+    required: false
+    default: ".specs"
+  version:
+    description: >-
+      Git ref of lamngockhuong/specpin to build the validator from. Pin this to a
+      release tag or commit SHA for supply-chain safety. "main" is only a fallback
+      until a release is tagged. The validator is ALWAYS built from this pinned
+      Specpin ref, never from the calling repo's PR, so a malicious PR cannot alter
+      validation logic.
+    required: false
+    default: "main"
+  strict-manifest:
+    description: "Fail (not just warn) when manifest.specFiles and on-disk *.spec.json files disagree."
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Check out Specpin (pinned, isolated from caller's tree)
+      uses: actions/checkout@v7
+      with:
+        repository: lamngockhuong/specpin
+        ref: ${{ inputs.version }}
+        path: .specpin-tool
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: "1.26"
+        cache-dependency-path: .specpin-tool/apps/cli/go.sum
+    - name: Build specpin
+      shell: bash
+      working-directory: .specpin-tool/apps/cli
+      run: make build
+    - name: Validate specs
+      shell: bash
+      run: |
+        STRICT=""
+        if [ "${{ inputs.strict-manifest }}" = "true" ]; then STRICT="--strict-manifest"; fi
+        "${{ github.workspace }}/.specpin-tool/apps/cli/bin/specpin" validate --dir "${{ inputs.dir }}" $STRICT

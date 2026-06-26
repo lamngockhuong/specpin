@@ -1,4 +1,4 @@
-import type { SpecWithFile } from "@specpin/api-client";
+import type { SpecsResponse, SpecWithFile } from "@specpin/api-client";
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { browser } from "#imports";
 
@@ -13,13 +13,31 @@ export type Message =
   | { type: "RELOAD" }
   | { type: "RECONNECT" }
   | { type: "SAVE_SPEC"; file: string; spec: Spec }
+  // Manual-import specs pushed from the Options page (extension-page origin only).
+  // `specs: null` clears them. `seq` guards against out-of-order tab writes.
+  | { type: "SET_LOCAL_SPECS"; specs: SpecsResponse | null; seq: number }
   | { type: "SPECS_CHANGED" }
   | { type: "START_CAPTURE" }
   | { type: "SET_DISPLAY_MODE"; mode: DisplayMode | null };
 
+// Message types that mutate stored state and must originate from an extension
+// page (popup/options), never from a web-page content script. The background
+// listener rejects these when sender.tab is set. Add new privileged types here.
+export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
+  "SAVE_CONFIG",
+  "SET_LOCAL_SPECS",
+]);
+
 export interface SaveSpecResult {
   ok: boolean;
   errors?: string[];
+}
+
+export interface SetLocalSpecsResult {
+  ok: boolean;
+  specCount: number;
+  /** False when an older (out-of-order) write was ignored. */
+  applied?: boolean;
 }
 
 export interface SpecsForOrigin {

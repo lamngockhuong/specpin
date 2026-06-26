@@ -80,9 +80,17 @@ Review độc lập (`plans/reports/from-code-reviewer-to-orchestrator-specpin-m
 - **Bundle size**: content script của extension ~450 KB chưa nén (đã gồm ajv validator, dưới mục tiêu 500 KB)
 - **Performance**: fingerprint match < 10ms (exact anchors), độ trễ render < 100ms
 
-## Phase 1.1 (Đã lên kế hoạch, chưa bắt đầu)
+## Phase 1.1 (Đang thực hiện)
 
 Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa cam kết timeline.
+
+**Đã ship lát cắt đầu tiên (2026-06-26)** trên nhánh `feat/spec-validate-cli-and-ci` (plan: `plans/260626-1415-specpin-phase-1-1/`):
+- `specpin validate`: kiểm tra schema offline cho `.specs/` (exit 0 hợp lệ / 1 không hợp lệ / 2 không chạy được), chặn symlink trong store, cảnh báo drift của manifest.
+- CI spec-lint: bước trong repo chạy trên demo specs + một composite action tái sử dụng, build validator từ ref đã pin (không phải PR của bên gọi).
+- Manual spec source: hiển thị spec không cần sidecar bằng cách dán bundle `{ manifest, files }` đã validate trong Options; read-only, giới hạn kích thước, chặn prototype-pollution; controller chọn sidecar -> manual theo tính khả dụng.
+- Modal renderer: hộp thoại giữa màn hình có bẫy focus liệt kê spec trên trang (chế độ hiển thị thứ ba), dọn dẹp bằng AbortController.
+
+Hoãn lại từ lát cắt này, chờ corpus thực tế / phản hồi sử dụng: hybrid weighted scorer (cần corpus DOM trước/sau để tinh chỉnh), nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
 
 ### Tính năng đã lên kế hoạch
 

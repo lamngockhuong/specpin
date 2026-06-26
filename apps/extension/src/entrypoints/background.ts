@@ -1,13 +1,23 @@
+import type { SpecsResponse } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
 import { SidecarController } from "../background/sidecar-controller.js";
-import { getConfig, getEnabled, setConfig, setEnabled } from "../shared/config.js";
-import type {
-  Message,
-  SaveSpecResult,
-  SpecsForOrigin,
-  StatusResult,
-  TestConnectionResult,
+import {
+  getConfig,
+  getEnabled,
+  getLocalSpecs,
+  setConfig,
+  setEnabled,
+  setLocalSpecs,
+} from "../shared/config.js";
+import {
+  type Message,
+  PRIVILEGED_MESSAGE_TYPES,
+  type SaveSpecResult,
+  type SetLocalSpecsResult,
+  type SpecsForOrigin,
+  type StatusResult,
+  type TestConnectionResult,
 } from "../shared/messaging.js";
 
 export default defineBackground(() => {
@@ -29,12 +39,17 @@ export default defineBackground(() => {
   }
 
   async function warmUp(): Promise<void> {
+    // Restore Manual-import specs (if any) so they are available with no sidecar.
+    const local = await getLocalSpecs();
+    if (local) controller.setLocalSpecs(local.specs, local.seq);
+
     const config = await getConfig();
-    if (!config) return;
-    controller.configure(config.baseUrl, config.token);
+    if (config) controller.configure(config.baseUrl, config.token);
+
+    if (!config && !local) return;
     try {
       await controller.reload();
-      connected = true;
+      connected = controller.activeSourceId() === "sidecar";
       if (await getEnabled()) controller.startWatch();
     } catch {
       connected = false;
@@ -45,10 +60,10 @@ export default defineBackground(() => {
 
   browser.runtime.onMessage.addListener((raw, sender): Promise<unknown> | undefined => {
     const message = raw as Message;
-    // Config mutation must originate from an extension page (popup/options),
-    // never from a web-page content script (which carries sender.tab).
-    if (message.type === "SAVE_CONFIG" && sender?.tab !== undefined) {
-      return Promise.resolve({ ok: false, error: "forbidden" } satisfies TestConnectionResult);
+    // Privileged (state-mutating) messages must originate from an extension page
+    // (popup/options), never from a web-page content script (carries sender.tab).
+    if (PRIVILEGED_MESSAGE_TYPES.has(message.type) && sender?.tab !== undefined) {
+      return Promise.resolve({ ok: false, error: "forbidden" });
     }
     switch (message.type) {
       case "GET_SPECS_FOR_ORIGIN":
@@ -67,6 +82,8 @@ export default defineBackground(() => {
         return handleReconnect();
       case "SAVE_SPEC":
         return handleSaveSpec(message.file, message.spec);
+      case "SET_LOCAL_SPECS":
+        return handleSetLocalSpecs(message.specs, message.seq);
       default:
         return undefined;
     }
@@ -74,13 +91,14 @@ export default defineBackground(() => {
 
   async function handleGetSpecs(origin: string): Promise<SpecsForOrigin> {
     const enabled = await getEnabled();
-    if (!controller.isConfigured() || !enabled) {
+    if (!enabled) {
       return { manifest: null, specs: [], enabled };
     }
+    // Warm the cache from whichever source is available (sidecar or manual).
     if (!controller.getCache()) {
       try {
         await controller.reload();
-        connected = true;
+        connected = controller.activeSourceId() === "sidecar";
       } catch {
         connected = false;
       }
@@ -96,7 +114,9 @@ export default defineBackground(() => {
     const enabled = await getEnabled();
     const cache = controller.getCache();
     return {
-      configured: controller.isConfigured(),
+      // "configured" drives the popup's empty state: true if a sidecar is set
+      // up OR manual specs are loaded.
+      configured: controller.isConfigured() || controller.hasContent(),
       connected,
       enabled,
       activeSource: controller.activeSourceId(),
@@ -132,7 +152,8 @@ export default defineBackground(() => {
   async function handleReload(): Promise<{ ok: boolean; specCount: number }> {
     try {
       const specs = await controller.reload();
-      connected = true;
+      // "connected" means the sidecar is reachable, not "some source loaded".
+      connected = controller.activeSourceId() === "sidecar";
       await broadcastSpecsChanged();
       return { ok: true, specCount: specs.specs.length };
     } catch {
@@ -147,10 +168,32 @@ export default defineBackground(() => {
     return result;
   }
 
+  async function handleSetLocalSpecs(
+    specs: SpecsResponse | null,
+    seq: number,
+  ): Promise<SetLocalSpecsResult> {
+    const applied = controller.setLocalSpecs(specs, seq);
+    if (!applied) {
+      // Stale/out-of-order write: keep current state.
+      return { ok: true, applied: false, specCount: controller.getCache()?.specs.length ?? 0 };
+    }
+    await setLocalSpecs(specs === null ? null : { specs, seq });
+    try {
+      await controller.reload();
+      connected = controller.activeSourceId() === "sidecar";
+    } catch {
+      // No source available now (manual cleared and no sidecar): drop the cache
+      // so the UI reflects "no specs".
+      connected = false;
+    }
+    await broadcastSpecsChanged();
+    return { ok: true, applied: true, specCount: controller.getCache()?.specs.length ?? 0 };
+  }
+
   async function handleReconnect(): Promise<{ ok: boolean }> {
     try {
       await controller.reconnect();
-      connected = true;
+      connected = controller.activeSourceId() === "sidecar";
       await broadcastSpecsChanged();
       return { ok: true };
     } catch {

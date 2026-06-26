@@ -84,6 +84,12 @@ jobs:
       # Cross-validator (Go side): same shared fixture corpus as the JS job.
       - run: go test ./...
       - run: make build
+      # Offline spec-lint: validate the demo .specs/ with the just-built binary.
+      # Building from the checked-out tree is fine here because this same job
+      # already ran `go vet` and `go test` over it; the consumer-facing reusable
+      # action (.github/actions/spec-lint) instead builds from a pinned specpin
+      # ref so a caller's PR cannot tamper with the validator.
+      - run: ./bin/specpin validate --dir ../../examples/demo-react-app/.specs
 
   # Single stable status that always reports: green when triggered jobs pass or
   # are skipped, red when any failed/was cancelled. Mark only this one as a

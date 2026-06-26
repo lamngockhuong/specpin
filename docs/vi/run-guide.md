@@ -90,3 +90,46 @@ Click **+ Capture spec** trong popup (hoặc nhấn `Alt+Shift+C`), click một 
 | `Alt+Shift+S` | toggle Specpin on/off |
 | `Alt+Shift+M` | cycle display mode |
 | `Alt+Shift+C` | toggle capture mode (`Esc` để hủy) |
+
+## Chế độ hiển thị
+
+Spec hiển thị dưới dạng **tooltip** (xem nhanh khi hover), **sidebar** (danh sách cố định), hoặc **modal** (hộp thoại giữa màn hình liệt kê mọi spec trên trang). Đổi bằng dropdown chế độ trong popup hoặc xoay vòng với `Alt+Shift+M`. `preferredDisplayMode` theo từng spec và `defaultDisplayMode` trong manifest vẫn áp dụng khi không ép chế độ.
+
+## Dùng không cần sidecar (Manual import)
+
+Để xem spec mà không chạy `specpin serve`, mở trang Options của extension và dán một bundle vào ô **Manual specs**:
+
+```json
+{ "manifest": { …manifest.json… }, "files": { "login.spec.json": { …spec file… } } }
+```
+
+Nhấn **Load manual specs**. Bundle được validate theo schema ngay trong trang trước khi lưu. Manual specs là read-only (capture vẫn cần sidecar) và tồn tại cho đến khi bạn nhấn **Clear manual specs**. Khi có sidecar được cấu hình và truy cập được, sidecar được ưu tiên; manual specs là phương án dự phòng.
+
+## Validate spec offline
+
+`specpin validate` kiểm tra `manifest.json` và mọi `*.spec.json` theo schema mà không cần chạy server:
+
+```bash
+specpin validate --dir .specs
+```
+
+Exit code: `0` hợp lệ toàn bộ, `1` có spec không hợp lệ (cần sửa spec), `2` không chạy được (thiếu thư mục hoặc manifest). Lệnh cũng cảnh báo khi `manifest.specFiles` và các file `*.spec.json` trên đĩa không khớp; thêm `--strict-manifest` để biến drift đó thành lỗi thay vì cảnh báo.
+
+## Lint spec trong CI
+
+Dùng reusable action để fail các PR đưa vào spec không hợp lệ. Không cần Node toolchain; validator được build từ một ref Specpin đã pin (không phải PR của repo gọi), nên một PR độc hại không thể thay đổi logic validate:
+
+```yaml
+# .github/workflows/spec-lint.yml trong repo của bạn
+on: [pull_request]
+jobs:
+  spec-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: lamngockhuong/specpin/.github/actions/spec-lint@v0.1.0  # pin vào release tag
+        with:
+          dir: .specs
+```
+
+Pin `@<tag>` (không dùng `@main`) để an toàn supply-chain khi đã có release tag.

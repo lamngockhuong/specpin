@@ -79,7 +79,25 @@ func (s *Store) resolve(name string) (string, error) {
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
 		return "", fmt.Errorf("%w: %q", ErrTraversal, name)
 	}
+	// Reject symlinked entries: os.ReadFile/Write follow symlinks, so a symlinked
+	// .spec.json could read or clobber a file outside .specs/. A missing file is
+	// fine here (new spec files are created by SaveSpec); only an existing symlink
+	// is rejected.
+	if fi, err := os.Lstat(full); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+		return "", fmt.Errorf("%w: symlink not allowed: %q", ErrTraversal, name)
+	}
 	return full, nil
+}
+
+// ReadRaw reads a file inside .specs/ by name, applying the traversal and
+// symlink guard. Used by offline validation to read manifest.json and each
+// *.spec.json without going through the parsing helpers.
+func (s *Store) ReadRaw(name string) ([]byte, error) {
+	full, err := s.resolve(name)
+	if err != nil {
+		return nil, err
+	}
+	return os.ReadFile(full)
 }
 
 func (s *Store) manifestPath() string { return filepath.Join(s.dir, "manifest.json") }
@@ -97,8 +115,8 @@ func (s *Store) LoadManifest() (Manifest, error) {
 	return m, nil
 }
 
-// specFileNames lists *.spec.json files in the directory, sorted for stable output.
-func (s *Store) specFileNames() ([]string, error) {
+// SpecFileNames lists *.spec.json files in the directory, sorted for stable output.
+func (s *Store) SpecFileNames() ([]string, error) {
 	entries, err := os.ReadDir(s.dir)
 	if err != nil {
 		return nil, err
@@ -124,7 +142,7 @@ func (s *Store) Load() (Bundle, error) {
 	b.Manifest = m
 	b.Specs = []map[string]any{}
 
-	names, err := s.specFileNames()
+	names, err := s.SpecFileNames()
 	if err != nil {
 		return b, err
 	}
@@ -219,7 +237,7 @@ func (s *Store) DeleteSpec(id string) error {
 }
 
 func (s *Store) mutateByID(id string, fn func(sf *specFile, i int)) error {
-	names, err := s.specFileNames()
+	names, err := s.SpecFileNames()
 	if err != nil {
 		return err
 	}

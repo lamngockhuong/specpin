@@ -88,3 +88,46 @@ Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element
 | `Alt+Shift+S` | toggle Specpin on/off |
 | `Alt+Shift+M` | cycle display mode |
 | `Alt+Shift+C` | toggle capture mode (`Esc` cancels) |
+
+## Display modes
+
+Specs render as a **tooltip** (hover peek), a **sidebar** (persistent list), or a **modal** (centered dialog listing every spec on the page). Switch with the popup's mode dropdown or cycle with `Alt+Shift+M`. Per-spec `preferredDisplayMode` and the manifest `defaultDisplayMode` still apply when no mode is forced.
+
+## Use without a sidecar (Manual import)
+
+To view specs without running `specpin serve`, open the extension Options page and paste a bundle into **Manual specs**:
+
+```json
+{ "manifest": { …manifest.json… }, "files": { "login.spec.json": { …spec file… } } }
+```
+
+Click **Load manual specs**. The bundle is validated against the schema in-page before anything is stored. Manual specs are read-only (capture still needs a sidecar) and persist until you click **Clear manual specs**. When a sidecar is also configured and reachable, it takes precedence; manual specs are the fallback.
+
+## Validate specs offline
+
+`specpin validate` checks `manifest.json` and every `*.spec.json` against the schema without serving anything:
+
+```bash
+specpin validate --dir .specs
+```
+
+Exit codes: `0` all valid, `1` invalid specs found (fix the spec), `2` could not run (directory or manifest missing). It also warns when `manifest.specFiles` and the on-disk `*.spec.json` files disagree; pass `--strict-manifest` to make that drift fail instead of warn.
+
+## Lint specs in CI
+
+Use the reusable action to fail PRs that introduce invalid specs. No Node toolchain needed; the validator is built from a pinned Specpin ref (never the calling repo's PR), so a malicious PR cannot alter validation:
+
+```yaml
+# .github/workflows/spec-lint.yml in your repo
+on: [pull_request]
+jobs:
+  spec-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: lamngockhuong/specpin/.github/actions/spec-lint@v0.1.0  # pin to a release tag
+        with:
+          dir: .specs
+```
+
+Pin `@<tag>` (not `@main`) for supply-chain safety once a release is tagged.

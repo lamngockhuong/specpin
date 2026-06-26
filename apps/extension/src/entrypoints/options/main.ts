@@ -1,5 +1,10 @@
 import { getConfig } from "../../shared/config.js";
-import { sendToBackground, type TestConnectionResult } from "../../shared/messaging.js";
+import {
+  type SetLocalSpecsResult,
+  sendToBackground,
+  type TestConnectionResult,
+} from "../../shared/messaging.js";
+import { parseLocalBundle } from "../../sources/local-bundle.js";
 import "../../shared/tokens.gen.css";
 
 const byId = (id: string): HTMLElement => {
@@ -10,6 +15,8 @@ const byId = (id: string): HTMLElement => {
 const baseUrl = byId("baseUrl") as HTMLInputElement;
 const token = byId("token") as HTMLInputElement;
 const result = byId("result");
+const localSpecs = byId("localSpecs") as HTMLTextAreaElement;
+const localResult = byId("localResult");
 
 async function prefill(): Promise<void> {
   const config = await getConfig();
@@ -19,16 +26,16 @@ async function prefill(): Promise<void> {
   }
 }
 
-function showResult(ok: boolean, text: string): void {
-  result.className = ok ? "ok" : "err";
-  result.textContent = text;
+function showResult(target: HTMLElement, ok: boolean, text: string): void {
+  target.className = ok ? "ok" : "err";
+  target.textContent = text;
 }
 
 byId("save").addEventListener("click", async () => {
   const url = baseUrl.value.trim().replace(/\/+$/, "");
   const tok = token.value.trim();
   if (!url || !tok) {
-    showResult(false, "Both URL and token are required.");
+    showResult(result, false, "Both URL and token are required.");
     return;
   }
   // SAVE_CONFIG persists, reconfigures the background client, and tests health.
@@ -38,10 +45,41 @@ byId("save").addEventListener("click", async () => {
     token: tok,
   });
   if (res.ok) {
-    showResult(true, `Connected to "${res.project ?? "sidecar"}". Settings saved.`);
+    showResult(result, true, `Connected to "${res.project ?? "sidecar"}". Settings saved.`);
   } else {
-    showResult(false, `Connection failed: ${res.error ?? "unknown error"}`);
+    showResult(result, false, `Connection failed: ${res.error ?? "unknown error"}`);
   }
+});
+
+byId("loadLocal").addEventListener("click", async () => {
+  const text = localSpecs.value.trim();
+  if (!text) {
+    showResult(localResult, false, "Paste a bundle first.");
+    return;
+  }
+  // Validate client-side BEFORE pushing to the background (never cache unvalidated
+  // input). The spec-schema validators are precompiled and CSP-safe.
+  const { specs, errors } = parseLocalBundle(text);
+  if (!specs) {
+    showResult(localResult, false, `Invalid bundle:\n- ${errors.join("\n- ")}`);
+    return;
+  }
+  const res = await sendToBackground<SetLocalSpecsResult>({
+    type: "SET_LOCAL_SPECS",
+    specs,
+    seq: Date.now(),
+  });
+  showResult(localResult, res.ok, `Loaded ${res.specCount} spec(s) from manual import.`);
+});
+
+byId("clearLocal").addEventListener("click", async () => {
+  await sendToBackground<SetLocalSpecsResult>({
+    type: "SET_LOCAL_SPECS",
+    specs: null,
+    seq: Date.now(),
+  });
+  localSpecs.value = "";
+  showResult(localResult, true, "Manual specs cleared.");
 });
 
 void prefill();
