@@ -1,7 +1,7 @@
 import { SidecarClient, SidecarError, type SpecsResponse } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import type { Connection, ConnectionStatus } from "../shared/connection-types.js";
-import { originMatchesDomains } from "../shared/origin-match.js";
+import { statusServesOrigin } from "../shared/origin-match.js";
 import { SidecarSource } from "../sources/sidecar.js";
 import type { SpecSource } from "../sources/source.js";
 
@@ -82,20 +82,34 @@ export class SidecarConnection {
     return this.cache;
   }
 
+  /** Sidecar currently reachable (last reload succeeded). Cheaper than building
+   *  a full ConnectionStatus just to read this flag. */
+  isConnected(): boolean {
+    return this.connected;
+  }
+
   saveSpec(file: string, spec: Spec): Promise<void> {
     return this.source.saveSpec(file, spec);
   }
 
   /** Does this connection's project serve the given origin? Empty `domains` does
-   *  NOT silently match every site (RT-SA1): it matches only with opt-in. */
+   *  NOT silently match every site (RT-SA1): it matches only with opt-in. Shares
+   *  the rule with the popup via `statusServesOrigin`. */
   matchesOrigin(origin: string): boolean {
     const domains = this.cache?.manifest?.domains ?? [];
-    if (domains.length === 0) return this.applyToAllSites;
-    return originMatchesDomains(origin, domains);
+    return statusServesOrigin(
+      { domains, matchesAllSites: domains.length === 0 && this.applyToAllSites },
+      origin,
+    );
   }
 
   startWatch(): void {
-    this.stopWatch();
+    // Idempotent: a live watch already auto-reconnects internally, so keep it
+    // rather than tearing down the SSE stream and re-subscribing. This makes the
+    // periodic SW-keepalive a no-op when the worker is healthy; only a worker
+    // that lost its watches (eviction) re-subscribes. `reconnect()` forces a
+    // fresh watch by calling stopWatch() first.
+    if (this.unwatch) return;
     this.unwatch =
       this.source.watch?.(
         () => {

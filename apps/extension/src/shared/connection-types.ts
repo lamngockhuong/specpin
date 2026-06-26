@@ -1,5 +1,9 @@
 import type { SpecWithFile } from "@specpin/api-client";
 
+/** Connection id used to tag specs from the page-owned Manual import source. It
+ *  is not a real sidecar connection: capture cannot write to it. */
+export const MANUAL_CONNECTION_ID = "manual";
+
 // Pure, browser-free types shared by the storage layer (config.ts), the message
 // contracts (messaging.ts), and the background registry. Kept here (no `#imports`)
 // so the registry and its tests never pull the extension runtime.

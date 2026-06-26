@@ -258,10 +258,7 @@ export default defineBackground(() => {
     await broadcastSpecsChanged();
     // "ok" means content is available after reload: a reachable sidecar or
     // loaded manual specs (manual-only must not report failure).
-    return {
-      ok: registry.anyConnected() || registry.hasContent(),
-      specCount: registry.statuses().reduce((n, c) => n + c.specCount, 0),
-    };
+    return { ok: registry.anyConnected() || registry.hasContent(), specCount: countAll() };
   }
 
   async function handleReconnect(id?: string): Promise<{ ok: boolean }> {

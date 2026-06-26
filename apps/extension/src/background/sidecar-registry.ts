@@ -1,6 +1,11 @@
 import type { SpecsResponse } from "@specpin/api-client";
 import type { Manifest, Spec } from "@specpin/spec-schema";
-import type { Connection, ConnectionStatus, TaggedSpec } from "../shared/connection-types.js";
+import {
+  type Connection,
+  type ConnectionStatus,
+  MANUAL_CONNECTION_ID,
+  type TaggedSpec,
+} from "../shared/connection-types.js";
 import { originMatchesDomains } from "../shared/origin-match.js";
 import { type ConnectionDeps, SidecarConnection } from "./sidecar-connection.js";
 
@@ -68,13 +73,17 @@ export class SidecarRegistry {
     this.connections.delete(id);
   }
 
+  /** One connection (by id) or all of them; an unknown id yields none. */
+  private targetsFor(id?: string): SidecarConnection[] {
+    if (!id) return [...this.connections.values()];
+    const conn = this.connections.get(id);
+    return conn ? [conn] : [];
+  }
+
   /** Reload one connection (by id) or all of them. Per-connection failures are
    *  captured inside `reload`, so this never rejects on a single bad connection. */
   async reload(id?: string): Promise<void> {
-    const targets = id
-      ? [this.connections.get(id)].filter((c): c is SidecarConnection => c !== undefined)
-      : [...this.connections.values()];
-    await Promise.all(targets.map((c) => c.reload()));
+    await Promise.all(this.targetsFor(id).map((c) => c.reload()));
   }
 
   /** Re-establish every connection from scratch after a service-worker wake:
@@ -93,9 +102,7 @@ export class SidecarRegistry {
   /** Reconnect one connection (by id) or all: drop the watch, reload, restart the
    *  watch (when watching is enabled). Isolated per connection. */
   async reconnect(id: string | undefined, watch: boolean): Promise<void> {
-    const targets = id
-      ? [this.connections.get(id)].filter((c): c is SidecarConnection => c !== undefined)
-      : [...this.connections.values()];
+    const targets = this.targetsFor(id);
     for (const conn of targets) conn.stopWatch();
     await Promise.all(targets.map((c) => c.reload()));
     if (watch) for (const conn of targets) conn.startWatch();
@@ -139,20 +146,13 @@ export class SidecarRegistry {
       if (originMatchesDomains(origin, domains)) {
         const project = this.manual.manifest?.project ?? "";
         for (const spec of this.manual.specs)
-          specs.push({ ...spec, connectionId: "manual", project });
+          specs.push({ ...spec, connectionId: MANUAL_CONNECTION_ID, project });
         manifest ??= this.manual.manifest ?? null;
         collectLocales(localeSet, this.manual.manifest ?? null);
       }
     }
 
     return { specs, manifest, locales: [...localeSet] };
-  }
-
-  /** Connections whose project currently serves the given origin. */
-  connectionsForOrigin(origin: string): ConnectionStatus[] {
-    return [...this.connections.values()]
-      .filter((c) => c.getCache() && c.matchesOrigin(origin))
-      .map((c) => c.status());
   }
 
   /** Save a captured spec to a connection serving the given origin (capture is
@@ -198,7 +198,8 @@ export class SidecarRegistry {
 
   /** Whether any connection's sidecar is currently reachable. */
   anyConnected(): boolean {
-    return this.statuses().some((s) => s.connected);
+    for (const conn of this.connections.values()) if (conn.isConnected()) return true;
+    return false;
   }
 
   /** Union of every connected project's locales (origin-independent), for the

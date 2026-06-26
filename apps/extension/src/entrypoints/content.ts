@@ -8,7 +8,7 @@ import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
 import { type RenderSession, renderSession } from "../content/orchestrator.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
 import { getLocale, setLocale } from "../shared/config.js";
-import type { TaggedSpec } from "../shared/connection-types.js";
+import { MANUAL_CONNECTION_ID, type TaggedSpec } from "../shared/connection-types.js";
 import {
   type Message,
   type SaveSpecResult,
@@ -122,7 +122,7 @@ export default defineContentScript({
       const targets = [
         ...new Map(
           specs
-            .filter((s) => s.connectionId !== "manual")
+            .filter((s) => s.connectionId !== MANUAL_CONNECTION_ID)
             .map((s) => [s.connectionId, { id: s.connectionId, project: s.project }]),
         ).values(),
       ];

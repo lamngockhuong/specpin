@@ -3,7 +3,7 @@ import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import { pickLocale } from "../../content/localize-spec.js";
 import { getLocale, setLocale } from "../../shared/config.js";
-import { originMatchesDomains } from "../../shared/origin-match.js";
+import { statusServesOrigin } from "../../shared/origin-match.js";
 import "../../shared/tokens.gen.css";
 import {
   type ConnectionStatus,
@@ -74,17 +74,11 @@ function renderSpecs(res: SpecsForOrigin): void {
   }
 }
 
-/** Does a connection's project serve this origin? Mirrors the background gate. */
-function connectionServes(c: ConnectionStatus, origin: string): boolean {
-  if (c.domains.length === 0) return c.matchesAllSites;
-  return originMatchesDomains(origin, c.domains);
-}
-
 /** List the connected projects that serve the active tab. */
 function renderProjects(list: ConnectionStatus[], origin: string): void {
   const ul = byId("projects");
   ul.replaceChildren();
-  const matching = list.filter((c) => connectionServes(c, origin));
+  const matching = list.filter((c) => statusServesOrigin(c, origin));
   // With a single project the meta row already names it; avoid duplicate noise.
   if (matching.length < 2) return;
   for (const c of matching) {

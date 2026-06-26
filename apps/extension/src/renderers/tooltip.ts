@@ -4,6 +4,7 @@ import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 import type { RenderMeta, SpecRenderer } from "./renderer.js";
+import { rulesListHtml } from "./renderer.js";
 
 interface Pin {
   target: Element;
@@ -112,7 +113,6 @@ export class TooltipRenderer implements SpecRenderer {
     badge: HTMLElement,
   ): void {
     if (!this.tip) return;
-    const rules = text.businessRules.map((r) => `<li>${escapeHtml(r)}</li>`).join("");
     const tags = specTags.length
       ? `<div class="tags">${escapeHtml(specTags.join(", "))}</div>`
       : "";
@@ -120,7 +120,7 @@ export class TooltipRenderer implements SpecRenderer {
       (project ? `<span class="project">${escapeHtml(project)}</span>` : "") +
       `<h4>${escapeHtml(text.title)}</h4>` +
       `<p>${escapeHtml(text.description)}</p>` +
-      (rules ? `<ul>${rules}</ul>` : "") +
+      rulesListHtml(text.businessRules) +
       tags;
     const rect = badge.getBoundingClientRect();
     const win = this.doc.defaultView;

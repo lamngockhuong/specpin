@@ -3,7 +3,12 @@ import { LOCALE_CHANGE_EVENT, localizeSpec } from "../content/localize-spec.js";
 import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
-import type { RenderMeta, SpecRenderer } from "./renderer.js";
+import {
+  projectCaptionHtml,
+  type RenderMeta,
+  rulesListHtml,
+  type SpecRenderer,
+} from "./renderer.js";
 
 interface Row {
   spec: Spec;
@@ -171,18 +176,13 @@ export class SidebarRenderer implements SpecRenderer {
       this.reviewCount++;
     }
     const tag = meta?.needsReview ? `<span class="tag">Needs review</span>` : "";
-    const project =
-      meta?.showProject && meta.project
-        ? `<span class="project">${escapeHtml(meta.project)}</span>`
-        : "";
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
-    const rules = text.businessRules.map((r) => `<li>${escapeHtml(r)}</li>`).join("");
     card.innerHTML =
       tag +
-      project +
+      projectCaptionHtml(meta) +
       `<div class="t">${escapeHtml(text.title)}</div>` +
       `<div class="d">${escapeHtml(text.description)}</div>` +
-      (rules ? `<ul>${rules}</ul>` : "");
+      rulesListHtml(text.businessRules);
     card.addEventListener("click", () => this.jumpTo(target));
     list.appendChild(card);
     this.rows.push({ spec, target, el: card });

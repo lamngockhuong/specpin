@@ -20,3 +20,17 @@ export function originMatchesDomains(origin: string, domains: string[]): boolean
   }
   return domains.some((d) => host === d || host.endsWith(`.${d}`));
 }
+
+/**
+ * Does a connection (described by its status fields) serve this origin? Encodes
+ * the RT-SA1 rule once: a project that pins domains matches by host; one that
+ * pins none matches only when opted in (`matchesAllSites`). Mirrors
+ * `SidecarConnection.matchesOrigin` so the popup and the registry stay in step.
+ */
+export function statusServesOrigin(
+  status: { domains: string[]; matchesAllSites: boolean },
+  origin: string,
+): boolean {
+  if (status.domains.length === 0) return status.matchesAllSites;
+  return originMatchesDomains(origin, status.domains);
+}
