@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="apps/extension/designs/specpin-icon.png" alt="Specpin" width="96" height="96" />
+</p>
+
 # Specpin
 
 **Specpin pins business specifications (rules, descriptions, acceptance criteria) directly onto the elements of a running web UI. It is NOT a spec-driven code generator** (unrelated to GitHub Spec Kit / OpenSpec): it does not generate application code from specs. It is a knowledge layer that attaches living, Git-versioned documentation onto interfaces you already have. The interface already knows where everything is; Specpin gives it a memory.

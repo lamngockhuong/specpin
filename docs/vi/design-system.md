@@ -110,11 +110,14 @@ PNG.
 Đọc gộp lại: "nhắm vào một element UI và pin spec của nó lên đó" - Specpin là một lớp
 knowledge layer phủ lên giao diện sẵn có, không phải công cụ sinh code.
 
-Tái tạo các kích thước icon chuẩn từ SVG:
+Tái tạo các kích thước icon chuẩn từ SVG vào `public/icon/`, nơi WXT tự động phát
+hiện và đưa vào manifest (`icons` + icon trên thanh công cụ, cấu hình trong
+`wxt.config.ts`). Header của popup và options dùng lại trực tiếp `icon/128.png`,
+nên chỉ một bước này giữ đồng bộ mọi bề mặt:
 
 ```bash
-cd apps/extension/designs
-for s in 16 32 48 128; do rsvg-convert -w $s -h $s specpin-icon.svg -o icon-$s.png; done
+cd apps/extension
+for s in 16 32 48 128; do rsvg-convert -w $s -h $s designs/specpin-icon.svg -o public/icon/$s.png; done
 ```
 
 ## Scripts

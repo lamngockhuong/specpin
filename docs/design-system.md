@@ -122,11 +122,14 @@ Meaning (each element maps to what Specpin does):
 Read together: "aim at a UI element and pin its spec onto it" - Specpin as a
 knowledge layer over an existing interface, not a code generator.
 
-Regenerate the standard icon sizes from the SVG:
+Regenerate the standard icon sizes from the SVG into `public/icon/`, where WXT
+auto-detects them into the manifest (`icons` + the toolbar action icon, wired in
+`wxt.config.ts`). The popup and options headers reuse `icon/128.png` directly, so
+this one step keeps every surface in sync:
 
 ```bash
-cd apps/extension/designs
-for s in 16 32 48 128; do rsvg-convert -w $s -h $s specpin-icon.svg -o icon-$s.png; done
+cd apps/extension
+for s in 16 32 48 128; do rsvg-convert -w $s -h $s designs/specpin-icon.svg -o public/icon/$s.png; done
 ```
 
 ## Conventions
