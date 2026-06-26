@@ -1,6 +1,7 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
+import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 import type { RenderMeta, SpecRenderer } from "./renderer.js";
 
 interface Pin {
@@ -11,25 +12,33 @@ interface Pin {
 const HOST_ID = "specpin-tooltip-host";
 
 const STYLES = `
-:host { all: initial; }
+${SHADOW_PREAMBLE}
 .layer { position: absolute; top: 0; left: 0; z-index: 2147483647; }
 .badge {
   position: absolute; width: 16px; height: 16px; border-radius: 50%;
-  background: #4f46e5; color: #fff; font: 600 10px/16px system-ui, sans-serif;
-  text-align: center; cursor: help; box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  background: var(--sp-accent); color: var(--sp-accent-on);
+  font: 600 10px/16px var(--sp-font-ui);
+  text-align: center; cursor: help;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--sp-accent-glow);
   pointer-events: auto; user-select: none;
 }
-.badge[data-review="true"] { background: #d97706; }
-.tip {
-  position: absolute; max-width: 320px; background: #1f2937; color: #f9fafb;
-  font: 13px/1.45 system-ui, sans-serif; padding: 10px 12px; border-radius: 8px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.35); display: none; pointer-events: none;
+.badge[data-review="true"] {
+  background: var(--sp-warning-border); color: var(--sp-accent-on);
 }
-.tip h4 { margin: 0 0 4px; font-size: 13px; font-weight: 700; }
-.tip p { margin: 0 0 6px; color: #d1d5db; }
-.tip ul { margin: 4px 0 0; padding-left: 16px; }
+.tip {
+  position: absolute; max-width: 320px;
+  background: var(--sp-elevated); color: var(--sp-text);
+  font: 13px/1.45 var(--sp-font-ui);
+  padding: 11px 13px;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); display: none; pointer-events: none;
+}
+.tip h4 { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--sp-text); }
+.tip p { margin: 0 0 6px; color: var(--sp-text-2); }
+.tip ul { margin: 4px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .tip li { margin: 2px 0; }
-.tip .tags { margin-top: 6px; color: #93c5fd; font-size: 11px; }
+.tip .tags { margin-top: 6px; color: var(--sp-accent); font-family: var(--sp-font-mono); font-size: 11px; }
 .tip.show { display: block; }
 `;
 

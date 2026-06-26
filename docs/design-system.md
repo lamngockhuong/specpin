@@ -2,8 +2,10 @@
 
 Visual mockups for the browser extension's user-facing surfaces, plus the single
 source of truth for their colors and fonts. Source files live in
-`apps/extension/designs/`. They are design references, not shipped code: the
-extension UI is built in `apps/extension/src` (plain HTML/CSS + Shadow DOM).
+`apps/extension/designs/`. The `.pen` files stay design references (not shipped
+code), but `design-tokens.json` now also drives the shipped UI: it generates the
+CSS-variable layer the live surfaces in `apps/extension/src` consume (see
+"Tokens in the shipped UI" below), so mockups and code share one palette.
 
 Aesthetic: "branded teal" - teal accent `#2DD4BF`, a radial top-glow gradient on
 each surface, an accent glow behind the primary CTA, hairline borders, 16px card
@@ -49,6 +51,33 @@ cd apps/extension/designs
 node sync-tokens.mjs   # rewrite each .pen's variables (theme colors -> per-theme arrays)
 ./render.sh            # re-export 8 PNGs + rebuild overview.png
 ```
+
+## Tokens in the shipped UI
+
+`design-tokens.json` is also the SSOT for the live extension UI.
+`sync-css-tokens.mjs` generates `src/shared/tokens.gen.css` (do not hand-edit;
+the `.gen.css` name keeps it out of Biome). The file is a `:root` block (shared
+tokens + light theme) plus a `@media (prefers-color-scheme: dark)` override, so
+the UI follows the OS/browser theme automatically with no JS and no toggle.
+
+```bash
+pnpm --filter @specpin/extension sync-css-tokens   # regenerate tokens.gen.css
+```
+
+Two consumers, one generated file:
+
+- **Popup + options pages** import `tokens.gen.css` directly (Vite injects it);
+  `:root` matches the document, so vars resolve normally.
+- **Shadow DOM renderers** (sidebar, tooltip, capture form) cannot inherit the
+  page's `:root` vars: `:host { all: initial }` isolates them, and `:root` does
+  not match inside a shadow tree. So `src/shared/tokens.ts` imports
+  `tokens.gen.css?inline` and rewrites `:root` -> `:host`; each renderer prepends
+  that string to its `STYLES`. Custom properties are not reset by `all`, so the
+  vars survive the isolation reset.
+
+All five surfaces reference `--sp-*` vars only (no hardcoded palette literals).
+Web fonts (Inter, JetBrains Mono) are referenced via fallback stacks, not bundled
+`@font-face` files yet (see `project-roadmap.md`).
 
 `render.sh` uses `pencil interactive` headless (deterministic, no AI agent): for
 each surface it pins the primary frame's `theme` to light then dark and exports

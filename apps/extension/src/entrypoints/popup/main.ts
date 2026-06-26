@@ -1,5 +1,6 @@
 import type { DisplayMode } from "@specpin/spec-schema";
 import { browser } from "#imports";
+import "../../shared/tokens.gen.css";
 import {
   type SpecsForOrigin,
   type StatusResult,

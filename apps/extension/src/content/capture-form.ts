@@ -2,6 +2,7 @@ import type { DisplayMode, ElementFingerprint, Spec } from "@specpin/spec-schema
 import { formatErrors, validateSpec } from "@specpin/spec-schema";
 import { escapeAttr, escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
+import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 
 const HOST_ID = "specpin-capture-host";
 
@@ -60,20 +61,64 @@ export function buildSpec(
 }
 
 const STYLES = `
-:host { all: initial; }
-.backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 2147483647; display: flex; align-items: center; justify-content: center; }
-.card { width: 420px; max-width: 92vw; max-height: 90vh; overflow:auto; background: #fff; color: #1f2937; border-radius: 10px; padding: 18px; font: 13px/1.5 system-ui, sans-serif; box-shadow: 0 16px 48px rgba(0,0,0,.4); }
-.card h3 { margin: 0 0 10px; font-size: 15px; }
-label { display:block; font-weight:600; margin: 10px 0 3px; }
-input, textarea, select { width:100%; box-sizing:border-box; padding:7px; border:1px solid #d1d5db; border-radius:6px; font: inherit; }
-textarea { min-height: 54px; resize: vertical; }
-.hint { color:#6b7280; font-weight:400; font-size:11px; }
-.actions { display:flex; gap:8px; margin-top:14px; }
-button { flex:1; padding:8px; border-radius:6px; border:1px solid #d1d5db; background:#f9fafb; cursor:pointer; }
-button.primary { background:#4f46e5; color:#fff; border-color:#4f46e5; }
-.errors { margin-top:10px; color:#991b1b; background:#fee2e2; border-radius:6px; padding:8px; display:none; }
-.errors.show { display:block; }
-.errors ul { margin:4px 0 0; padding-left:16px; }
+${SHADOW_PREAMBLE}
+* { box-sizing: border-box; }
+.backdrop {
+  position: fixed; inset: 0; z-index: 2147483647;
+  background: var(--sp-overlay-bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.card {
+  width: 440px; max-width: 92vw; max-height: 90vh; overflow: auto;
+  background: var(--sp-surface); color: var(--sp-text);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-card);
+  padding: 28px;
+  font: 13px/1.5 var(--sp-font-ui);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+.card h3 { margin: 0 0 18px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+label { display: block; font-weight: 600; margin: 16px 0 6px; color: var(--sp-text); }
+.hint { color: var(--sp-text-3); font-weight: 400; font-size: 11px; }
+input, textarea, select {
+  width: 100%; padding: 10px 12px;
+  font: 13px/1.4 var(--sp-font-ui);
+  color: var(--sp-text);
+  background: var(--sp-elevated);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+}
+input::placeholder, textarea::placeholder { color: var(--sp-text-3); }
+input:focus, textarea:focus, select:focus {
+  outline: none; border-color: var(--sp-accent);
+  box-shadow: 0 0 0 3px var(--sp-accent-glow);
+}
+textarea { min-height: 64px; resize: vertical; }
+.actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+button {
+  padding: 10px 18px;
+  font: 600 13px/1 var(--sp-font-ui);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  background: var(--sp-control); color: var(--sp-text);
+  cursor: pointer; transition: background 0.12s, border-color 0.12s;
+}
+button:hover { filter: brightness(0.97); }
+button.primary {
+  background: var(--sp-accent); color: var(--sp-accent-on); border-color: var(--sp-accent);
+  box-shadow: 0 0 0 4px var(--sp-accent-glow);
+}
+button.primary:hover { background: var(--sp-accent-hover); border-color: var(--sp-accent-hover); filter: none; }
+.errors {
+  margin-top: 14px; padding: 10px 12px;
+  color: var(--sp-error-text);
+  background: var(--sp-error-bg);
+  border: 1px solid var(--sp-error-border);
+  border-radius: var(--sp-radius-control);
+  display: none;
+}
+.errors.show { display: block; }
+.errors ul { margin: 4px 0 0; padding-left: 16px; }
 `;
 
 /** Shadow-DOM inline form for authoring a spec from a captured fingerprint. */

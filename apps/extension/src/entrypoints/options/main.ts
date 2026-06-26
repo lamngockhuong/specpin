@@ -1,5 +1,6 @@
 import { getConfig } from "../../shared/config.js";
 import { sendToBackground, type TestConnectionResult } from "../../shared/messaging.js";
+import "../../shared/tokens.gen.css";
 
 const byId = (id: string): HTMLElement => {
   const el = document.getElementById(id);

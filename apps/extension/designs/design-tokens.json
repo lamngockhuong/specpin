@@ -6,6 +6,7 @@
     "on": "#04221E",
     "glow": "#2DD4BF66"
   },
+  "overlay": "#020C0A99",
   "font": {
     "ui": "Inter",
     "mono": "JetBrains Mono"
