@@ -12,8 +12,8 @@ afterEach(() => {
 function spec(id: string, testId: string, mode?: "tooltip" | "sidebar"): Spec {
   return {
     id,
-    title: id,
-    description: "d",
+    title: { en: id },
+    description: { en: "d" },
     preferredDisplayMode: mode,
     fingerprint: {
       cssSelector: `[data-testid="${testId}"]`,

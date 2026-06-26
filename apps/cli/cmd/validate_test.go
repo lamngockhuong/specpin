@@ -23,8 +23,8 @@ const validSpecFile = `{
   "specs": [
     {
       "id": "login-btn",
-      "title": "Log in",
-      "description": "submits the form",
+      "title": { "en": "Log in" },
+      "description": { "en": "submits the form" },
       "fingerprint": {
         "cssSelector": "button",
         "xpath": "/button",
@@ -67,7 +67,7 @@ func TestValidatePassesOnValidSpecs(t *testing.T) {
 
 func TestValidateFailsOnSchemaViolation(t *testing.T) {
 	// A spec missing the required "title" violates the schema.
-	bad := strings.Replace(validSpecFile, `"title": "Log in",`, "", 1)
+	bad := strings.Replace(validSpecFile, `"title": { "en": "Log in" },`, "", 1)
 	dir := writeSpecsDir(t, map[string]string{
 		"manifest.json":   validManifest,
 		"login.spec.json": bad,

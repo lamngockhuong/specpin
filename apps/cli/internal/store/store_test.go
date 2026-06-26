@@ -11,8 +11,8 @@ import (
 
 const validSpec = `{
   "id": "login-btn",
-  "title": "Login",
-  "description": "submits the form",
+  "title": { "en": "Login" },
+  "description": { "en": "submits the form" },
   "fingerprint": {
     "cssSelector": "button",
     "xpath": "/button",
@@ -73,7 +73,8 @@ func TestSaveSpecUpsertsByID(t *testing.T) {
 	if len(bundle.Specs) != 1 {
 		t.Fatalf("upsert should not duplicate, got %d", len(bundle.Specs))
 	}
-	if bundle.Specs[0]["description"] != "updated text" {
+	desc, _ := bundle.Specs[0]["description"].(map[string]any)
+	if desc["en"] != "updated text" {
 		t.Errorf("expected updated description, got %v", bundle.Specs[0]["description"])
 	}
 }

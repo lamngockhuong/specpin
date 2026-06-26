@@ -5,12 +5,13 @@ import { formatErrors, validateManifest, validateSpec, validateSpecFile } from "
 // The canonical example from the Phase 1 spec, section 3.
 const exampleSpec: Spec = {
   id: "login-submit-btn",
-  title: "Login button",
-  description:
-    "Calls POST /auth/login. Disabled while loading. Shows inline error on bad credentials.",
+  title: { en: "Login button" },
+  description: {
+    en: "Calls POST /auth/login. Disabled while loading. Shows inline error on bad credentials.",
+  },
   businessRules: [
-    "Lock account after 5 consecutive failures within 15 minutes",
-    "Redirect to /dashboard if role=admin, else /home",
+    { en: "Lock account after 5 consecutive failures within 15 minutes" },
+    { en: "Redirect to /dashboard if role=admin, else /home" },
   ],
   tags: ["auth", "critical"],
   preferredDisplayMode: "modal",

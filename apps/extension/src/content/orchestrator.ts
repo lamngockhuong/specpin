@@ -26,9 +26,14 @@ export function renderSession(
   manifest: Manifest | null,
   doc: Document = document,
   forcedMode?: DisplayMode | null,
+  locale?: string,
 ): RenderSession {
   const byMode = new Map<DisplayMode, SpecRenderer>();
   const stats: RenderStats = { rendered: 0, needsReview: 0, unmatched: 0 };
+  // Phase 1 renders at the project's base locale; Phase 2 supplies the viewer's
+  // chosen locale. Falling back to "en" keeps callers without a manifest working.
+  const defaultLocale = manifest?.settings?.defaultLocale;
+  const activeLocale = locale ?? defaultLocale ?? "en";
 
   for (const spec of specs) {
     const match = matchElement(spec.fingerprint, doc);
@@ -46,6 +51,8 @@ export function renderSession(
     renderer.render(spec, match.el, {
       confidence: match.confidence,
       needsReview: match.needsReview,
+      locale: activeLocale,
+      defaultLocale,
     });
     stats.rendered += 1;
   }

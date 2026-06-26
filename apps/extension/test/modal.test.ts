@@ -5,9 +5,9 @@ import { ModalRenderer } from "../src/renderers/modal.js";
 function spec(id: string, title: string): Spec {
   return {
     id,
-    title,
-    description: `desc ${id}`,
-    businessRules: ["rule one"],
+    title: { en: title },
+    description: { en: `desc ${id}` },
+    businessRules: [{ en: "rule one" }],
   } as unknown as Spec;
 }
 
@@ -37,7 +37,33 @@ describe("ModalRenderer", () => {
     expect(shadow?.querySelectorAll(".card")).toHaveLength(2);
     // The lower-confidence spec is flagged for review.
     expect(shadow?.querySelectorAll('.card[data-review="true"]')).toHaveLength(1);
+    // Localized title resolves to plain text (never "[object Object]") - RT1.
+    const titles = [...(shadow?.querySelectorAll(".card .t") ?? [])].map((n) => n.textContent);
+    expect(titles).toEqual(["One", "Two"]);
 
+    r.destroy();
+  });
+
+  it("renders the requested locale and falls back when it is absent", () => {
+    const r = new ModalRenderer(document);
+    const target = document.createElement("button");
+    document.body.appendChild(target);
+    const bilingual = {
+      id: "x",
+      title: { en: "Login", vi: "Đăng nhập" },
+      description: { en: "desc" },
+      businessRules: [],
+    } as unknown as Spec;
+
+    r.render(bilingual, target, {
+      confidence: 1,
+      needsReview: false,
+      locale: "vi",
+      defaultLocale: "en",
+    });
+    expect(modalHost()?.shadowRoot?.querySelector(".card .t")?.textContent).toBe("Đăng nhập");
+    // Description has no vi -> falls back to en.
+    expect(modalHost()?.shadowRoot?.querySelector(".card .d")?.textContent).toBe("desc");
     r.destroy();
   });
 

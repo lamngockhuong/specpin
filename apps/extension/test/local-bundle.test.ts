@@ -14,8 +14,8 @@ const specFile = {
   specs: [
     {
       id: "login-btn",
-      title: "Log in",
-      description: "submits the form",
+      title: { en: "Log in" },
+      description: { en: "submits the form" },
       fingerprint: {
         cssSelector: "button",
         xpath: "/button",

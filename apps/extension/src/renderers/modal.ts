@@ -1,4 +1,5 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
+import { localizeSpec } from "../content/localize-spec.js";
 import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
@@ -135,11 +136,12 @@ export class ModalRenderer implements SpecRenderer {
     // focusable, so the focus trap below can keep Tab on the close button.
     if (meta?.needsReview) card.dataset.review = "true";
     const tag = meta?.needsReview ? `<span class="tag">Needs review</span>` : "";
-    const rules = (spec.businessRules ?? []).map((r) => `<li>${escapeHtml(r)}</li>`).join("");
+    const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
+    const rules = text.businessRules.map((r) => `<li>${escapeHtml(r)}</li>`).join("");
     card.innerHTML =
       tag +
-      `<div class="t">${escapeHtml(spec.title)}</div>` +
-      `<div class="d">${escapeHtml(spec.description)}</div>` +
+      `<div class="t">${escapeHtml(text.title)}</div>` +
+      `<div class="d">${escapeHtml(text.description)}</div>` +
       (rules ? `<ul>${rules}</ul>` : "");
     card.addEventListener("click", () => this.jumpTo(target), { signal: this.ac.signal });
     list.appendChild(card);

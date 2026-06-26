@@ -38,7 +38,8 @@ describe("buildSpec", () => {
   it("slugifies the title into the id and trims/filters lists", () => {
     const spec = buildSpec(fields, fingerprint, "2026-06-25T08:00:00Z", "ab12cd");
     expect(spec.id).toBe("login-button-ab12cd");
-    expect(spec.businessRules).toEqual(["Lock after 5 failures"]);
+    expect(spec.title).toEqual({ en: "Login Button" });
+    expect(spec.businessRules).toEqual([{ en: "Lock after 5 failures" }]);
     expect(spec.tags).toEqual(["auth", "critical"]);
     expect(spec.preferredDisplayMode).toBe("sidebar");
   });

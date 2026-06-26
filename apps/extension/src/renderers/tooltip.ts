@@ -1,4 +1,5 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
+import { type LocalizedSpecText, localizeSpec } from "../content/localize-spec.js";
 import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
@@ -88,11 +89,12 @@ export class TooltipRenderer implements SpecRenderer {
 
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
     const layer = this.ensureRoot();
+    const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     const badge = this.doc.createElement("div");
     badge.className = "badge";
     badge.textContent = "S";
     if (meta?.needsReview) badge.dataset.review = "true";
-    badge.addEventListener("mouseenter", () => this.showTip(spec, badge));
+    badge.addEventListener("mouseenter", () => this.showTip(text, spec.tags ?? [], badge));
     badge.addEventListener("mouseleave", () => this.hideTip());
     layer.appendChild(badge);
 
@@ -101,15 +103,15 @@ export class TooltipRenderer implements SpecRenderer {
     this.positionBadge(pin);
   }
 
-  private showTip(spec: Spec, badge: HTMLElement): void {
+  private showTip(text: LocalizedSpecText, specTags: string[], badge: HTMLElement): void {
     if (!this.tip) return;
-    const rules = (spec.businessRules ?? []).map((r) => `<li>${escapeHtml(r)}</li>`).join("");
-    const tags = (spec.tags ?? []).length
-      ? `<div class="tags">${escapeHtml((spec.tags ?? []).join(", "))}</div>`
+    const rules = text.businessRules.map((r) => `<li>${escapeHtml(r)}</li>`).join("");
+    const tags = specTags.length
+      ? `<div class="tags">${escapeHtml(specTags.join(", "))}</div>`
       : "";
     this.tip.innerHTML =
-      `<h4>${escapeHtml(spec.title)}</h4>` +
-      `<p>${escapeHtml(spec.description)}</p>` +
+      `<h4>${escapeHtml(text.title)}</h4>` +
+      `<p>${escapeHtml(text.description)}</p>` +
       (rules ? `<ul>${rules}</ul>` : "") +
       tags;
     const rect = badge.getBoundingClientRect();

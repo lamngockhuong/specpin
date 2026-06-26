@@ -4,11 +4,13 @@
   "specs": [
     {
       "id": "login-submit-btn",
-      "title": "Log in button",
-      "description": "Calls POST /auth/login. Disabled while loading; shows an inline error on bad credentials.",
+      "title": { "en": "Log in button" },
+      "description": {
+        "en": "Calls POST /auth/login. Disabled while loading; shows an inline error on bad credentials."
+      },
       "businessRules": [
-        "Lock the account after 5 consecutive failures within 15 minutes",
-        "Redirect to /dashboard if role=admin, else /home"
+        { "en": "Lock the account after 5 consecutive failures within 15 minutes" },
+        { "en": "Redirect to /dashboard if role=admin, else /home" }
       ],
       "tags": ["auth", "critical"],
       "preferredDisplayMode": "tooltip",
@@ -35,9 +37,14 @@
     },
     {
       "id": "login-email-field",
-      "title": "Email field",
-      "description": "Primary identifier for login. Validated as an email; trimmed before submit.",
-      "businessRules": ["Must be a valid email address", "Case-insensitive on the server"],
+      "title": { "en": "Email field" },
+      "description": {
+        "en": "Primary identifier for login. Validated as an email; trimmed before submit."
+      },
+      "businessRules": [
+        { "en": "Must be a valid email address" },
+        { "en": "Case-insensitive on the server" }
+      ],
       "tags": ["auth"],
       "preferredDisplayMode": "sidebar",
       "fingerprint": {

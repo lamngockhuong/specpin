@@ -4,8 +4,8 @@ import "testing"
 
 const validSpec = `{
   "id": "login-btn",
-  "title": "Login",
-  "description": "submits the form",
+  "title": { "en": "Login" },
+  "description": { "en": "submits the form" },
   "fingerprint": {
     "cssSelector": "button",
     "xpath": "/button",
@@ -33,7 +33,7 @@ func TestValidatorAcceptsValid(t *testing.T) {
 
 func TestValidatorRejectsMissingFingerprint(t *testing.T) {
 	v, _ := NewValidator()
-	errs := v.ValidateSpec([]byte(`{"id":"x","title":"X","description":"d"}`))
+	errs := v.ValidateSpec([]byte(`{"id":"x","title":{"en":"X"},"description":{"en":"d"}}`))
 	if errs == nil {
 		t.Fatal("expected validation errors for missing fingerprint")
 	}
@@ -44,7 +44,7 @@ func TestValidatorRejectsBadDateTimeFormat(t *testing.T) {
 	// meta.createdAt is format:date-time; an obvious non-date must be rejected,
 	// matching ajv+ajv-formats on the TS side.
 	bad := `{
-      "id":"x","title":"X","description":"d",
+      "id":"x","title":{"en":"X"},"description":{"en":"d"},
       "fingerprint":{"cssSelector":"b","xpath":"/b","domPath":["b"],"tagName":"b","attributes":{},"positionHint":{"index":0,"siblingCount":1}},
       "meta":{"createdBy":"k","createdAt":"not-a-date","updatedAt":"2026-06-25T08:00:00Z","source":"manual"}
     }`

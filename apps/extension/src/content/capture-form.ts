@@ -34,19 +34,25 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-/** Build a schema-shaped Spec from capture fields. Pure + testable. */
+/** Build a schema-shaped Spec from capture fields. Pure + testable. The object
+ *  schema requires locale-keyed text, so the single entered value is stored
+ *  under `locale` (default "en"); Phase 2 adds the per-locale authoring form. */
 export function buildSpec(
   fields: CaptureFields,
   fingerprint: ElementFingerprint,
   nowIso: string,
   idSuffix: string,
+  locale = "en",
 ): Spec {
   const base = slugify(fields.title) || "spec";
   const spec: Spec = {
     id: `${base}-${idSuffix}`,
-    title: fields.title.trim(),
-    description: fields.description.trim(),
-    businessRules: fields.businessRules.map((r) => r.trim()).filter(Boolean),
+    title: { [locale]: fields.title.trim() },
+    description: { [locale]: fields.description.trim() },
+    businessRules: fields.businessRules
+      .map((r) => r.trim())
+      .filter(Boolean)
+      .map((r) => ({ [locale]: r })),
     tags: fields.tags.map((t) => t.trim()).filter(Boolean),
     fingerprint,
     meta: {

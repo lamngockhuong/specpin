@@ -1,8 +1,7 @@
 {
-  "id": "bad-mode",
-  "title": { "en": "Bad display mode" },
-  "description": { "en": "popup is not a valid DisplayMode." },
-  "preferredDisplayMode": "popup",
+  "id": "prototype-locale-key",
+  "title": { "__proto__": "Prototype-pollution key rejected by propertyNames." },
+  "description": { "en": "Locale keys must match the BCP-47 pattern; __proto__ does not." },
   "fingerprint": {
     "cssSelector": "button",
     "xpath": "/button",

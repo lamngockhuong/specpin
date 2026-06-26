@@ -16,8 +16,8 @@ const token = "test-token-123"
 
 const validSpec = `{
   "id": "login-btn",
-  "title": "Login",
-  "description": "submits the form",
+  "title": { "en": "Login" },
+  "description": { "en": "submits the form" },
   "fingerprint": {
     "cssSelector": "button",
     "xpath": "/button",

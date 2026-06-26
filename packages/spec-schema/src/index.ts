@@ -3,11 +3,13 @@
 // CLI embeds the same file and CI cross-validates both implementations.
 
 // The parsed schema, for consumers that need the raw document (e.g. tooling).
+export { resolveLocalized, resolveLocalizedList } from "./resolve-localized.js";
 export { schemaV1 } from "./schema.gen.js";
 export type {
   DisplayMode,
   ElementFingerprint,
   FrameworkHint,
+  LocalizedString,
   Manifest,
   ManifestSettings,
   PositionHint,

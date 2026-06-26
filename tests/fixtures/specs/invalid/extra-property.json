@@ -1,7 +1,7 @@
 {
   "id": "extra",
-  "title": "Extra property",
-  "description": "additionalProperties:false rejects unknown keys.",
+  "title": { "en": "Extra property" },
+  "description": { "en": "additionalProperties:false rejects unknown keys." },
   "bogusField": true,
   "fingerprint": {
     "cssSelector": "button",

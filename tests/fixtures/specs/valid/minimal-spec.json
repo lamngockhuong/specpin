@@ -1,7 +1,7 @@
 {
   "id": "minimal",
-  "title": "Minimal spec",
-  "description": "Only the required fields.",
+  "title": { "en": "Minimal spec" },
+  "description": { "en": "Only the required fields." },
   "fingerprint": {
     "cssSelector": "button",
     "xpath": "/button",

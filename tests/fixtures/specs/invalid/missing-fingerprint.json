@@ -1,5 +1,5 @@
 {
   "id": "no-fp",
-  "title": "Missing fingerprint",
-  "description": "fingerprint is required."
+  "title": { "en": "Missing fingerprint" },
+  "description": { "en": "fingerprint is required." }
 }

@@ -1,4 +1,5 @@
 import type { DisplayMode } from "@specpin/spec-schema";
+import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import "../../shared/tokens.gen.css";
 import {
@@ -50,7 +51,8 @@ function renderSpecs(res: SpecsForOrigin): void {
     const li = document.createElement("li");
     const title = document.createElement("div");
     title.className = "t";
-    title.textContent = spec.title;
+    // Phase 1 resolves at the base locale; Phase 2 wires the viewer's choice.
+    title.textContent = resolveLocalized(spec.title, "en");
     const file = document.createElement("div");
     file.className = "muted";
     file.textContent = spec._file;
