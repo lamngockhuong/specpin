@@ -9,6 +9,9 @@ export interface RenderMeta {
   needsReview: boolean;
   locale?: string;
   defaultLocale?: string;
+  /** Locales offered by the in-renderer language selector (sidebar only). When
+   *  fewer than two are available the selector is omitted. */
+  availableLocales?: string[];
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already

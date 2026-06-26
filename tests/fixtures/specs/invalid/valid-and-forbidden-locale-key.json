@@ -1,7 +1,9 @@
 {
   "id": "valid-and-forbidden-locale-key",
   "title": { "en": "Has a good key but also a forbidden one", "__proto__": "evil" },
-  "description": { "en": "propertyNames must reject __proto__ even when a valid locale is present." },
+  "description": {
+    "en": "propertyNames must reject __proto__ even when a valid locale is present."
+  },
   "fingerprint": {
     "cssSelector": "button",
     "xpath": "/button",

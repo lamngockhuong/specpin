@@ -5,8 +5,10 @@ import { browser, defineContentScript } from "#imports";
 import { CaptureForm } from "../content/capture-form.js";
 import { CapturePicker } from "../content/capture-mode.js";
 import { registerKeyboard } from "../content/keyboard.js";
+import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
 import { type RenderSession, renderSession } from "../content/orchestrator.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
+import { getLocale, setLocale } from "../shared/config.js";
 import {
   type Message,
   type SaveSpecResult,
@@ -34,15 +36,47 @@ export default defineContentScript({
     let specs: SpecWithFile[] = [];
     let enabled = true;
     let forcedMode: DisplayMode | null = null;
+    let locale = "en";
+    let availableLocales: string[] = [];
+    // RT-FM6: a re-render must not run while the user is mid-capture; queue it
+    // and apply on capture exit instead.
+    let captureActive = false;
+    let pendingRerender = false;
 
     const picker = new CapturePicker(document);
     const form = new CaptureForm(document);
 
+    const localesFor = (m: Manifest | null): string[] => {
+      const declared = m?.settings?.locales;
+      if (declared?.length) return declared;
+      const def = m?.settings?.defaultLocale;
+      return def ? [def] : [];
+    };
+
     const rerender = () => {
+      if (captureActive) {
+        pendingRerender = true;
+        return;
+      }
       session?.destroy();
       session =
-        enabled && specs.length ? renderSession(specs, manifest, document, forcedMode) : null;
+        enabled && specs.length
+          ? renderSession(specs, manifest, document, forcedMode, locale, availableLocales)
+          : null;
     };
+
+    const flushPendingRerender = () => {
+      if (pendingRerender) {
+        pendingRerender = false;
+        rerender();
+      }
+    };
+
+    async function applyLocale(next: string, persist: boolean): Promise<void> {
+      locale = next;
+      if (persist) await setLocale(next);
+      rerender();
+    }
 
     async function refresh(): Promise<void> {
       let res: SpecsForOrigin;
@@ -57,6 +91,9 @@ export default defineContentScript({
       enabled = res.enabled;
       manifest = res.manifest;
       specs = res.specs;
+      availableLocales = localesFor(manifest);
+      // Re-resolve the active locale: stored choice, else the project default.
+      locale = pickLocale(await getLocale(), manifest?.settings?.defaultLocale);
       rerender();
     }
 
@@ -66,19 +103,41 @@ export default defineContentScript({
       rerender();
     }
 
+    function endCapture(): void {
+      captureActive = false;
+      flushPendingRerender();
+    }
+
     function startCapture(): void {
       if (picker.isActive) {
         picker.stop();
+        endCapture();
         return;
       }
-      picker.start((el) => {
-        const fingerprint = captureFingerprint(el);
-        form.open(fingerprint, {
-          defaultFile: defaultFileName(),
-          onSubmit: (file, spec) =>
-            sendToBackground<SaveSpecResult>({ type: "SAVE_SPEC", file, spec }),
-        });
-      });
+      captureActive = true;
+      picker.start(
+        (el) => {
+          const fingerprint = captureFingerprint(el);
+          form.open(fingerprint, {
+            defaultFile: defaultFileName(),
+            locales: availableLocales,
+            defaultLocale: manifest?.settings?.defaultLocale ?? locale,
+            onSubmit: async (file, spec) => {
+              const result = await sendToBackground<SaveSpecResult>({
+                type: "SAVE_SPEC",
+                file,
+                spec,
+              });
+              if (result.ok) endCapture();
+              return result;
+            },
+            onCancel: endCapture,
+          });
+        },
+        // Picker dismissed (Escape) before any element was picked: release the
+        // capture flag so re-rendering is not frozen (RT-FM6 exit path).
+        endCapture,
+      );
     }
 
     async function toggleEnabled(): Promise<void> {
@@ -90,6 +149,13 @@ export default defineContentScript({
       onToggleEnabled: () => void toggleEnabled(),
       onCycleMode: cycleMode,
       onToggleCapture: startCapture,
+    });
+
+    // The sidebar's in-panel language selector dispatches this DOM event; apply
+    // it like a popup-driven change and persist so the popup picker mirrors it.
+    document.addEventListener(LOCALE_CHANGE_EVENT, (e) => {
+      const next = (e as CustomEvent<string>).detail;
+      if (typeof next === "string" && next) void applyLocale(next, true);
     });
 
     browser.runtime.onMessage.addListener((raw) => {
@@ -104,6 +170,10 @@ export default defineContentScript({
         case "SET_DISPLAY_MODE":
           forcedMode = message.mode;
           rerender();
+          break;
+        case "SET_LOCALE":
+          // The popup already persisted the choice; just re-render with it.
+          void applyLocale(message.locale, false);
           break;
       }
     });

@@ -1,5 +1,5 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
-import { localizeSpec } from "../content/localize-spec.js";
+import { LOCALE_CHANGE_EVENT, localizeSpec } from "../content/localize-spec.js";
 import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
@@ -35,6 +35,16 @@ ${SHADOW_PREAMBLE}
   content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--sp-accent);
 }
 .title { margin: 10px 0 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.locale { margin: 10px 0 0; }
+.locale[hidden] { display: none; }
+.locale select {
+  font: 500 12px/1 var(--sp-font-ui);
+  color: var(--sp-text);
+  background: var(--sp-control);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  padding: 6px 8px; cursor: pointer;
+}
 .summary { display: flex; align-items: center; gap: 10px; margin: 6px 0 16px; color: var(--sp-text-2); }
 .review-pill {
   display: none;
@@ -89,6 +99,8 @@ export class SidebarRenderer implements SpecRenderer {
   private list: HTMLElement | null = null;
   private summaryCount: HTMLElement | null = null;
   private reviewPill: HTMLElement | null = null;
+  private localeBox: HTMLElement | null = null;
+  private localeSelectorBuilt = false;
   private rows: Row[] = [];
   private reviewCount = 0;
   private readonly doc: Document;
@@ -105,6 +117,7 @@ export class SidebarRenderer implements SpecRenderer {
     panel.innerHTML =
       `<div class="eyebrow">Specpin</div>` +
       `<h3 class="title">Specs on this page</h3>` +
+      `<div class="locale" hidden></div>` +
       `<div class="summary"><span class="count">0 specs found</span>` +
       `<span class="review-pill"></span></div>`;
     const list = this.doc.createElement("div");
@@ -114,11 +127,38 @@ export class SidebarRenderer implements SpecRenderer {
     this.list = list;
     this.summaryCount = panel.querySelector(".count");
     this.reviewPill = panel.querySelector(".review-pill");
+    this.localeBox = panel.querySelector(".locale");
     return list;
+  }
+
+  /** Build the language selector once, from the first render's meta. Changing it
+   *  dispatches a DOM event the content script applies; the renderer stays free
+   *  of storage/messaging. */
+  private ensureLocaleSelector(meta?: RenderMeta): void {
+    if (this.localeSelectorBuilt || !this.localeBox) return;
+    const locales = meta?.availableLocales ?? [];
+    if (locales.length < 2) return;
+    this.localeSelectorBuilt = true;
+    const current = meta?.locale ?? locales[0];
+    const options = locales
+      .map(
+        (l) =>
+          `<option value="${escapeHtml(l)}"${l === current ? " selected" : ""}>${escapeHtml(l)}</option>`,
+      )
+      .join("");
+    this.localeBox.innerHTML = `<select aria-label="Language">${options}</select>`;
+    this.localeBox.hidden = false;
+    const select = this.localeBox.querySelector("select");
+    select?.addEventListener("change", () => {
+      this.doc.dispatchEvent(
+        new CustomEvent(LOCALE_CHANGE_EVENT, { detail: (select as HTMLSelectElement).value }),
+      );
+    });
   }
 
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
     const list = this.ensureRoot();
+    this.ensureLocaleSelector(meta);
     const card = this.doc.createElement("div");
     card.className = "card";
     if (meta?.needsReview) {
@@ -168,6 +208,8 @@ export class SidebarRenderer implements SpecRenderer {
     this.list = null;
     this.summaryCount = null;
     this.reviewPill = null;
+    this.localeBox = null;
+    this.localeSelectorBuilt = false;
     this.rows = [];
     this.reviewCount = 0;
   }

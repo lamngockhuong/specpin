@@ -4,13 +4,20 @@
   "specs": [
     {
       "id": "login-submit-btn",
-      "title": { "en": "Log in button" },
+      "title": { "en": "Log in button", "vi": "Nút đăng nhập" },
       "description": {
-        "en": "Calls POST /auth/login. Disabled while loading; shows an inline error on bad credentials."
+        "en": "Calls POST /auth/login. Disabled while loading; shows an inline error on bad credentials.",
+        "vi": "Gọi POST /auth/login. Bị vô hiệu khi đang tải; hiển thị lỗi nội tuyến khi sai thông tin đăng nhập."
       },
       "businessRules": [
-        { "en": "Lock the account after 5 consecutive failures within 15 minutes" },
-        { "en": "Redirect to /dashboard if role=admin, else /home" }
+        {
+          "en": "Lock the account after 5 consecutive failures within 15 minutes",
+          "vi": "Khoá tài khoản sau 5 lần thất bại liên tiếp trong 15 phút"
+        },
+        {
+          "en": "Redirect to /dashboard if role=admin, else /home",
+          "vi": "Chuyển đến /dashboard nếu role=admin, ngược lại /home"
+        }
       ],
       "tags": ["auth", "critical"],
       "preferredDisplayMode": "tooltip",
@@ -37,13 +44,14 @@
     },
     {
       "id": "login-email-field",
-      "title": { "en": "Email field" },
+      "title": { "en": "Email field", "vi": "Trường email" },
       "description": {
-        "en": "Primary identifier for login. Validated as an email; trimmed before submit."
+        "en": "Primary identifier for login. Validated as an email; trimmed before submit.",
+        "vi": "Định danh chính khi đăng nhập. Được kiểm tra dạng email; cắt khoảng trắng trước khi gửi."
       },
       "businessRules": [
-        { "en": "Must be a valid email address" },
-        { "en": "Case-insensitive on the server" }
+        { "en": "Must be a valid email address", "vi": "Phải là địa chỉ email hợp lệ" },
+        { "en": "Case-insensitive on the server", "vi": "Không phân biệt hoa thường trên máy chủ" }
       ],
       "tags": ["auth"],
       "preferredDisplayMode": "sidebar",

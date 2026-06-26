@@ -9,6 +9,7 @@ export class CapturePicker {
   private active = false;
   private highlight: HTMLElement | null = null;
   private onPick: ((el: Element) => void) | null = null;
+  private onCancel: (() => void) | null = null;
   private readonly doc: Document;
 
   constructor(doc: Document = document) {
@@ -19,10 +20,14 @@ export class CapturePicker {
     return this.active;
   }
 
-  start(onPick: (el: Element) => void): void {
+  /** Begin picking. `onCancel` fires when the picker is dismissed WITHOUT a pick
+   *  (Escape), so callers can release any "capture in progress" state instead of
+   *  leaking it (a stuck flag would freeze re-rendering). */
+  start(onPick: (el: Element) => void, onCancel?: () => void): void {
     if (this.active) return;
     this.active = true;
     this.onPick = onPick;
+    this.onCancel = onCancel ?? null;
     this.ensureHighlight();
     this.doc.addEventListener("mousemove", this.onMove, true);
     this.doc.addEventListener("click", this.onClick, true);
@@ -33,10 +38,17 @@ export class CapturePicker {
     this.doc.addEventListener("mousedown", this.suppress, true);
   }
 
+  /** Tear down the picker. External stop (caller-driven) does not fire onCancel;
+   *  the caller already owns its own state in that path. */
   stop(): void {
+    this.teardown();
+  }
+
+  private teardown(): void {
     if (!this.active) return;
     this.active = false;
     this.onPick = null;
+    this.onCancel = null;
     this.doc.removeEventListener("mousemove", this.onMove, true);
     this.doc.removeEventListener("click", this.onClick, true);
     this.doc.removeEventListener("keydown", this.onKey, true);
@@ -79,7 +91,7 @@ export class CapturePicker {
     event.stopPropagation();
     const el = event.target as Element | null;
     const pick = this.onPick;
-    this.stop();
+    this.teardown();
     if (el && pick) pick(el);
   };
 
@@ -91,7 +103,9 @@ export class CapturePicker {
   private onKey = (event: Event): void => {
     if ((event as KeyboardEvent).key === "Escape") {
       event.preventDefault();
-      this.stop();
+      const cancel = this.onCancel;
+      this.teardown();
+      cancel?.();
     }
   };
 }

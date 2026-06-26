@@ -61,6 +61,19 @@
       #project { font: 600 13px/1 var(--sp-font-mono); color: var(--sp-text); }
       #count:empty { display: none; }
 
+      .locale-row { margin-top: 12px; }
+      .locale-row[hidden] { display: none; }
+      .locale-row label { color: var(--sp-text-2); font-weight: 500; }
+      #locale {
+        padding: 7px 10px;
+        font: 500 12px/1 var(--sp-font-ui);
+        border: 1px solid var(--sp-border);
+        border-radius: var(--sp-radius-control);
+        background: var(--sp-control);
+        color: var(--sp-text);
+        cursor: pointer;
+      }
+
       ul { list-style: none; margin: 12px 0; padding: 0; max-height: 220px; overflow: auto; }
       li {
         display: grid;
@@ -132,6 +145,10 @@
       <input type="checkbox" id="enabled" aria-label="Enable Specpin on this page" />
     </div>
     <div class="row meta"><span id="project"></span><span id="count" class="pill"></span></div>
+    <div class="row locale-row" id="locale-row" hidden>
+      <label for="locale">Language</label>
+      <select id="locale" title="Spec language"></select>
+    </div>
     <ul id="specs"></ul>
     <div class="actions">
       <button id="reload" type="button">Reload</button>

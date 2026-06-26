@@ -113,6 +113,11 @@ export default defineBackground(() => {
   async function handleStatus(): Promise<StatusResult> {
     const enabled = await getEnabled();
     const cache = controller.getCache();
+    const settings = cache?.manifest?.settings;
+    const defaultLocale = settings?.defaultLocale ?? "en";
+    // Offer the project's declared locales; fall back to the default so the
+    // picker is never empty. Phase 3 turns this into a cross-project union.
+    const locales = settings?.locales?.length ? settings.locales : [defaultLocale];
     return {
       // "configured" drives the popup's empty state: true if a sidecar is set
       // up OR manual specs are loaded.
@@ -122,6 +127,7 @@ export default defineBackground(() => {
       activeSource: controller.activeSourceId(),
       project: cache?.manifest?.project ?? null,
       specCount: cache?.specs.length ?? 0,
+      locales,
     };
   }
 

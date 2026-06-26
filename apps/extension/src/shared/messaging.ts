@@ -18,7 +18,10 @@ export type Message =
   | { type: "SET_LOCAL_SPECS"; specs: SpecsResponse | null; seq: number }
   | { type: "SPECS_CHANGED" }
   | { type: "START_CAPTURE" }
-  | { type: "SET_DISPLAY_MODE"; mode: DisplayMode | null };
+  | { type: "SET_DISPLAY_MODE"; mode: DisplayMode | null }
+  // Viewer locale change, dispatched popup -> active tab's content script. The
+  // popup persists the choice to storage; the content script re-renders with it.
+  | { type: "SET_LOCALE"; locale: string };
 
 // Message types that mutate stored state and must originate from an extension
 // page (popup/options), never from a web-page content script. The background
@@ -53,6 +56,10 @@ export interface StatusResult {
   activeSource: string | null;
   project: string | null;
   specCount: number;
+  /** Locales the popup language picker can offer: the union of connected
+   *  projects' `manifest.settings.locales`, never empty (defaults to the
+   *  project's defaultLocale, else "en"). */
+  locales?: string[];
 }
 
 export interface TestConnectionResult {
