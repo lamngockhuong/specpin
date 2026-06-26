@@ -48,6 +48,8 @@ pnpm typecheck      # tsc --noEmit per package
 
 ## Documentation
 
+> Tiếng Việt: bản dịch các tài liệu nằm trong [`docs/vi/`](./docs/vi/). English is the source of truth.
+
 - `docs/project-overview-pdr.md` - product overview, problem statement, goals, PDR
 - `docs/codebase-summary.md` - per-package summary, key files, responsibilities
 - `docs/code-standards.md` - TS/Go conventions, tooling config, schema management
