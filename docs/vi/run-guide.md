@@ -71,17 +71,44 @@ pnpm --filter @specpin/extension build:firefox    # firefox-mv2 in .output/
 
 ## 6. Kết nối
 
-Mở trang Options của extension, dán URL và token từ bước 4, click **Test connection & save**. Một thông báo màu xanh xác nhận sidecar đã truy cập được.
+Mở trang Options của extension (**Connected projects**), dán URL và token từ bước 4 vào form add, tùy chọn đặt tên cho nó, click **Test & add project**. Project xuất hiện trong danh sách với status, project name, spec count, và domains của nó. Add thêm project bằng cách tương tự; **Remove** và **Reconnect** hoạt động per row.
+
+Một project mà manifest của nó không pin `domains` thì không hoạt động theo mặc định (spec của nó sẽ hiển thị trên mọi site nếu không). Row hiển thị một cảnh báo và checkbox **Apply to all sites**; chỉ tick nó nếu bạn muốn spec của project đó xuất hiện ở mọi nơi.
 
 ## 7. Xem spec render ra
 
 Truy cập demo app (`http://localhost:3000`). Các spec đã match hiện ra dưới dạng tooltip trên element của chúng (badge chuyển sang màu amber khi một match cần review). Sửa một `.spec.json` trên đĩa và trang sẽ live-update qua SSE.
 
-Popup liệt kê các spec cho trang hiện tại, toggle Specpin on/off, đổi display mode, và cung cấp Reload / Reconnect.
+Popup liệt kê các spec cho trang hiện tại, toggle Specpin on/off, đổi display mode, chọn ngôn ngữ spec, và cung cấp Reload / Reconnect. Khi nhiều hơn một project phục vụ page, popup liệt kê từng matching project và renderer ghi caption từng spec với project của nó.
 
-## 8. Capture một spec mới
+## 8. Chuyển ngôn ngữ
 
-Click **+ Capture spec** trong popup (hoặc nhấn `Alt+Shift+C`), click một element, điền form, và lưu. Spec được validate theo schema, ghi vào `.spec.json` đã chọn (pretty-print), và xuất hiện trong `git diff` để review. Các spec đã capture mang `meta.source: "manual"`.
+Nội dung spec (title, description, business rules) được localize. Dropdown **Language** của popup đặt active locale và render lại tất cả display mode; header của sidebar phản chiếu nó. Lựa chọn được lưu giữa các session. Một spec không có text cho locale được chọn sẽ fall back về `defaultLocale` của project, rồi đến bất kỳ locale nào có mặt. Dropdown cung cấp hợp (union) của `settings.locales` giữa các connected project.
+
+## 9. Capture một spec mới (với bản dịch)
+
+Click **+ Capture spec** trong popup (hoặc nhấn `Alt+Shift+C`), click một element, rồi điền form. Chọn một **Language**, nhập title/description/rules cho nó, rồi chọn ngôn ngữ khác (hoặc **+ Add language**) để thêm bản dịch (việc chuyển ngôn ngữ giữ những gì bạn đã nhập). Ngôn ngữ mặc định yêu cầu title và description. Nếu nhiều hơn một project phục vụ page, chọn **Target project**. Khi save, spec được validate, ghi vào `.spec.json` đã chọn (pretty-printed), và hiển thị trong `git diff`. Các spec đã capture mang `meta.source: "manual"`.
+
+## Phím tắt
+
+| Phím tắt | Hành động |
+|----------|-----------|
+| `Alt+Shift+S` | toggle Specpin on/off |
+| `Alt+Shift+M` | cycle display mode |
+| `Alt+Shift+C` | toggle capture mode (`Esc` để hủy) |
+
+## Kết nối nhiều project cùng lúc
+
+Một extension có thể phục vụ nhiều project. Chạy một sidecar per project trên port riêng của nó (mỗi cái in token riêng), và add từng cái trong Options:
+
+```bash
+# project A
+cd /path/to/project-a && /path/to/bin/specpin serve --port 51001
+# project B (terminal khác)
+cd /path/to/project-b && /path/to/bin/specpin serve --port 51002
+```
+
+Để demo điều này với một demo app duy nhất, chạy hai sidecar trên hai thư mục `.specs/` khác nhau trên các port khác nhau; mỗi page chỉ hiển thị các spec của project(s) mà `domains` của nó khớp origin của nó.
 
 ## Phím tắt
 
@@ -103,7 +130,7 @@ Spec hiển thị dưới dạng **tooltip** (xem nhanh khi hover), **sidebar** 
 { "manifest": { …manifest.json… }, "files": { "login.spec.json": { …spec file… } } }
 ```
 
-Nhấn **Load manual specs**. Bundle được validate theo schema ngay trong trang trước khi lưu. Manual specs là read-only (capture vẫn cần sidecar) và tồn tại cho đến khi bạn nhấn **Clear manual specs**. Khi có sidecar được cấu hình và truy cập được, sidecar được ưu tiên; manual specs là phương án dự phòng.
+Nhấn **Load manual specs**. Bundle được validate theo schema ngay trong trang trước khi lưu. Manual specs là read-only (capture vẫn cần sidecar) và tồn tại cho đến khi bạn nhấn **Clear manual specs**. Chúng được merge vào spec của page cùng với bất kỳ connected project nào mà `domains` của nó khớp page (manual spec dùng `domains` của manifest riêng của chúng).
 
 ## Validate spec offline
 

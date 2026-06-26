@@ -32,6 +32,7 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 - `src/types.gen.ts` - generated TS types (3,057 dòng, không bao giờ sửa).
 - `src/validators.gen.cjs` - CJS ajv validator cho các consumer Node (49,843 dòng, không bao giờ sửa).
 - `src/validate.ts` - wrapper mỏng expose `validateSpec()`, `validateManifest()` (27 dòng).
+- `src/resolve-localized.ts` - prototype-safe `resolveLocalized()` / `resolveLocalizedList()` cho nội dung `LocalizedString` (locale -> defaultLocale -> fallback first present).
 - `scripts/gen-types.ts` - codegen runner (json-schema-to-typescript + ajv standalone).
 - `scripts/copy-gen-assets.ts` - copy `.gen.cjs` + `.gen.d.cts` sang dist sau build.
 - `scripts/validate-fixtures.ts` - cross-validate fixtures (valid + invalid) với schema.
@@ -140,37 +141,40 @@ internal/
 ```
 src/
   entrypoints/
-    background.ts     - SW, SidecarClient lifecycle (183 lines)
-    content.ts        - orchestrator, match+render loop (133 lines)
-    popup/            - connection UI (index.html, main.ts, styles.css)
-    options/          - settings page (index.html, main.ts, styles.css)
+    background.ts     - SW; sở hữu SidecarRegistry, định tuyến message, SW-wake re-establish
+    content.ts        - vòng lặp match+render, locale state, capture flow
+    popup/            - view per-tab: status, specs, project list, language picker
+    options/          - connection manager (add/remove/reconnect) + manual import
   background/
-    sidecar-controller.ts - manages client state, relays to content (124 lines)
+    sidecar-registry.ts   - map của các connection + manual source; tổng hợp được gate theo origin
+    sidecar-connection.ts - client + cache + SSE watch của một project (được cô lập)
   content/
-    orchestrator.ts   - main loop: fetch specs, match, render (187 lines)
-    capture-mode.ts   - element picker, form overlay (241 lines)
-    capture-form.ts   - spec authoring form (156 lines)
-    keyboard.ts       - shortcut handler (Ctrl+Shift+C toggle capture) (47 lines)
+    orchestrator.ts   - vòng lặp match; thread locale + project label vào renderer
+    localize-spec.ts  - giải quyết text được localize của spec cho viewer locale
+    capture-mode.ts   - element picker (Esc hủy qua callback)
+    capture-form.ts   - soạn spec per-locale + target-project picker
+    keyboard.ts       - shortcut handler
   renderers/
-    registry.ts       - `SpecRenderer` interface + registry (31 lines)
-    tooltip.ts        - hover peek renderer (134 lines)
-    sidebar.ts        - persistent panel renderer (287 lines)
+    registry.ts       - interface `SpecRenderer` + registry
+    tooltip.ts / sidebar.ts / modal.ts - ba display mode đã hiện thực
   sources/
-    registry.ts       - `SpecSource` interface + registry (29 lines)
-    sidecar.ts        - SidecarSource adapter (98 lines)
+    registry.ts       - interface `SpecSource` + selection
+    sidecar.ts        - SidecarSource adapter
+    manual.ts / local-bundle.ts - read-only manual-import source + bundle parser
   shared/
-    shadow.ts         - Shadow DOM utilities for isolated styles (52 lines)
-    html.ts           - safe HTML escaping (23 lines)
-    messaging.ts      - typed message passing (67 lines)
-    config.ts         - storage helpers (41 lines)
+    shadow.ts / html.ts        - cô lập Shadow DOM + safe HTML escaping
+    messaging.ts               - protocol message được type
+    connection-types.ts        - Connection / ConnectionStatus / TaggedSpec không phụ thuộc browser
+    origin-match.ts            - matching origin/domain thuần (dùng chung bởi SW + popup)
+    config.ts                  - storage helper (connections, locale, enabled, manual)
 ```
 
 **Key flows:**
-- Background SW: lúc install/startup, chờ config kết nối từ popup. Khi connect, khởi tạo `SidecarClient`, bật SSE listener, relay `specsChanged` tới các content script.
-- Content script: lúc load, hỏi BG để lấy specs. Với mỗi spec, gọi `matchElement(fingerprint)`. Nếu match, lấy renderer đang active (tooltip | sidebar), gọi `renderer.render(spec, element)`. Lắng nghe toggle capture mode (keyboard shortcut hoặc popup action).
-- Capture mode: vào picker mode (hover highlight các element). Khi click, freeze element, hiện capture form (title, description, rules). Khi save, `captureFingerprint(element)`, POST tới sidecar, thoát capture mode, reload specs.
-- Renderers: tất cả hiện thực interface `SpecRenderer` (`render(spec, element)`, `remove(specId)`, `dispose()`). Tooltip dùng Floating UI để định vị. Sidebar ghim vào mép viewport (cạnh phải, teal theme).
-- Sources: spec fetcher có thể plug. MVP chỉ ship `SidecarSource`. Interface cho phép FileSystem, Manual CSV ở 1.1.
+- Background SW: một `SidecarRegistry` giữ N connection (mỗi cái có client + cache + SSE watch riêng) cộng manual source. `reestablish()` xây dựng lại chúng từ storage khi mỗi lần SW wake. `GET_SPECS_FOR_ORIGIN` trả về tổng hợp đã khớp origin, được tag theo project.
+- Content script: khi load, hỏi BG lấy spec của origin. Với mỗi cái, `matchElement(fingerprint)`; render qua mode đang active (tooltip | sidebar | modal), giải quyết localized text cho viewer locale. Lắng nghe capture toggle, locale change, và `SPECS_CHANGED`.
+- Capture: picker highlight các element; khi click, form soạn title/description/rules per locale (và chọn một target project khi nhiều cái phục vụ page). Khi save, validate, POST tới connection đã chọn, reload.
+- Renderers: hiện thực `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); đọc localized text qua `localizeSpec`, và caption project khi nhiều hơn một đóng góp cho page.
+- Sources: pluggable. Đã ship: `SidecarSource` + read-only Manual import. FileSystem Access hoãn lại.
 
 **Build:**
 - `pnpm build` - WXT build cho chrome-mv3 -> `.output/chrome-mv3/`.

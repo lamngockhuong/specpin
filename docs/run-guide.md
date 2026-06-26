@@ -69,17 +69,36 @@ pnpm --filter @specpin/extension build:firefox    # firefox-mv2 in .output/
 
 ## 6. Connect
 
-Open the extension Options page, paste the URL and token from step 4, click **Test connection & save**. A green message confirms the sidecar is reachable.
+Open the extension Options page (**Connected projects**), paste the URL and token from step 4 into the add form, optionally name it, click **Test & add project**. The project appears in the list with its status, project name, spec count, and domains. Add more projects the same way; **Remove** and **Reconnect** act per row.
+
+A project whose manifest pins no `domains` is inactive by default (its specs would otherwise show on every site). The row shows a warning and an **Apply to all sites** checkbox; tick it only if you intend that project's specs to appear everywhere.
 
 ## 7. See specs render
 
 Visit the demo app (`http://localhost:3000`). Matched specs appear as tooltips on their elements (the badge turns amber when a match needs review). Edit a `.spec.json` on disk and the page live-updates via SSE.
 
-The popup lists the specs for the current page, toggles Specpin on/off, switches display mode, and offers Reload / Reconnect.
+The popup lists the specs for the current page, toggles Specpin on/off, switches display mode, picks the spec language, and offers Reload / Reconnect. When more than one project serves the page, the popup lists each matching project and renderers caption each spec with its project.
 
-## 8. Capture a new spec
+## 8. Switch language
 
-Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, fill the form, and save. The spec is validated against the schema, written to the chosen `.spec.json` (pretty-printed), and shows up in `git diff` for review. Captured specs carry `meta.source: "manual"`.
+Spec content (title, description, business rules) is localized. The popup's **Language** dropdown sets the active locale and re-renders all display modes; the sidebar header mirrors it. The choice persists across sessions. A spec with no text for the chosen locale falls back to the project's `defaultLocale`, then to any present locale. The dropdown offers the union of `settings.locales` across the connected projects.
+
+## 9. Capture a new spec (with translations)
+
+Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, then fill the form. Pick a **Language**, enter the title/description/rules for it, then choose another language (or **+ Add language**) to add a translation - switching languages keeps what you already entered. The default language requires a title and description. If more than one project serves the page, pick the **Target project**. On save the spec is validated, written to the chosen `.spec.json` (pretty-printed), and shows up in `git diff`. Captured specs carry `meta.source: "manual"`.
+
+## Connect several projects at once
+
+One extension can serve many projects. Run a sidecar per project on its own port (each prints its own token), and add each in Options:
+
+```bash
+# project A
+cd /path/to/project-a && /path/to/bin/specpin serve --port 51001
+# project B (another terminal)
+cd /path/to/project-b && /path/to/bin/specpin serve --port 51002
+```
+
+To demo this against the single demo app, run two sidecars over two `.specs/` directories on different ports; each page shows only the specs of the project(s) whose `domains` match its origin.
 
 ## Keyboard shortcuts
 
@@ -101,7 +120,7 @@ To view specs without running `specpin serve`, open the extension Options page a
 { "manifest": { …manifest.json… }, "files": { "login.spec.json": { …spec file… } } }
 ```
 
-Click **Load manual specs**. The bundle is validated against the schema in-page before anything is stored. Manual specs are read-only (capture still needs a sidecar) and persist until you click **Clear manual specs**. When a sidecar is also configured and reachable, it takes precedence; manual specs are the fallback.
+Click **Load manual specs**. The bundle is validated against the schema in-page before anything is stored. Manual specs are read-only (capture still needs a sidecar) and persist until you click **Clear manual specs**. They are merged into a page's specs alongside any connected projects whose `domains` match the page (manual specs use their own manifest `domains`).
 
 ## Validate specs offline
 

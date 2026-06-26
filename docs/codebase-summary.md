@@ -30,6 +30,7 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 - `src/types.gen.ts` - generated TS types (3,057 lines, never edit).
 - `src/validators.gen.cjs` - CJS ajv validator for Node consumers (49,843 lines, never edit).
 - `src/validate.ts` - thin wrapper exposing `validateSpec()`, `validateManifest()` (27 lines).
+- `src/resolve-localized.ts` - prototype-safe `resolveLocalized()` / `resolveLocalizedList()` for `LocalizedString` content (locale -> defaultLocale -> first present fallback).
 - `scripts/gen-types.ts` - codegen runner (json-schema-to-typescript + ajv standalone).
 - `scripts/copy-gen-assets.ts` - copies `.gen.cjs` + `.gen.d.cts` to dist post-build.
 - `scripts/validate-fixtures.ts` - cross-validates fixtures (valid + invalid) against schema.
@@ -138,37 +139,40 @@ internal/
 ```
 src/
   entrypoints/
-    background.ts     - SW, SidecarClient lifecycle (183 lines)
-    content.ts        - orchestrator, match+render loop (133 lines)
-    popup/            - connection UI (index.html, main.ts, styles.css)
-    options/          - settings page (index.html, main.ts, styles.css)
+    background.ts     - SW; owns the SidecarRegistry, routes messages, SW-wake re-establish
+    content.ts        - match+render loop, locale state, capture flow
+    popup/            - per-tab view: status, specs, project list, language picker
+    options/          - connection manager (add/remove/reconnect) + manual import
   background/
-    sidecar-controller.ts - manages client state, relays to content (124 lines)
+    sidecar-registry.ts   - map of connections + manual source; origin-gated aggregation
+    sidecar-connection.ts - one project's client + cache + SSE watch (isolated)
   content/
-    orchestrator.ts   - main loop: fetch specs, match, render (187 lines)
-    capture-mode.ts   - element picker, form overlay (241 lines)
-    capture-form.ts   - spec authoring form (156 lines)
-    keyboard.ts       - shortcut handler (Ctrl+Shift+C toggle capture) (47 lines)
+    orchestrator.ts   - match loop; threads locale + project labels into renderers
+    localize-spec.ts  - resolve a spec's localized text for the viewer locale
+    capture-mode.ts   - element picker (Esc cancels via callback)
+    capture-form.ts   - per-locale spec authoring + target-project picker
+    keyboard.ts       - shortcut handler
   renderers/
-    registry.ts       - `SpecRenderer` interface + registry (31 lines)
-    tooltip.ts        - hover peek renderer (134 lines)
-    sidebar.ts        - persistent panel renderer (287 lines)
+    registry.ts       - `SpecRenderer` interface + registry
+    tooltip.ts / sidebar.ts / modal.ts - the three implemented display modes
   sources/
-    registry.ts       - `SpecSource` interface + registry (29 lines)
-    sidecar.ts        - SidecarSource adapter (98 lines)
+    registry.ts       - `SpecSource` interface + selection
+    sidecar.ts        - SidecarSource adapter
+    manual.ts / local-bundle.ts - read-only manual-import source + bundle parser
   shared/
-    shadow.ts         - Shadow DOM utilities for isolated styles (52 lines)
-    html.ts           - safe HTML escaping (23 lines)
-    messaging.ts      - typed message passing (67 lines)
-    config.ts         - storage helpers (41 lines)
+    shadow.ts / html.ts        - Shadow DOM isolation + safe HTML escaping
+    messaging.ts               - typed message protocol
+    connection-types.ts        - browser-free Connection / ConnectionStatus / TaggedSpec
+    origin-match.ts            - pure origin/domain matching (shared by SW + popup)
+    config.ts                  - storage helpers (connections, locale, enabled, manual)
 ```
 
 **Key flows:**
-- Background SW: on install/startup, wait for popup connection config. On connect, instantiate `SidecarClient`, start SSE listener, relay `specsChanged` to content scripts.
-- Content script: on load, ask BG for specs. For each spec, call `matchElement(fingerprint)`. If match, get active renderer (tooltip | sidebar), call `renderer.render(spec, element)`. Listen for capture mode toggle (keyboard shortcut or popup action).
-- Capture mode: enter picker mode (hover highlights elements). On click, freeze element, show capture form (title, description, rules). On save, `captureFingerprint(element)`, POST to sidecar, exit capture mode, reload specs.
-- Renderers: all implement `SpecRenderer` interface (`render(spec, element)`, `remove(specId)`, `dispose()`). Tooltip uses Floating UI for positioning. Sidebar pins to viewport edge (right side, teal theme).
-- Sources: pluggable spec fetchers. MVP ships `SidecarSource` only. Interface allows FileSystem, Manual CSV in 1.1.
+- Background SW: a `SidecarRegistry` holds N connections (each its own client + cache + SSE watch) plus the manual source. `reestablish()` rebuilds them from storage on each SW wake. `GET_SPECS_FOR_ORIGIN` returns the origin-matched aggregate, tagged by project.
+- Content script: on load, ask BG for the origin's specs. For each, `matchElement(fingerprint)`; render via the active mode (tooltip | sidebar | modal), resolving localized text for the viewer locale. Listens for capture toggle, locale change, and `SPECS_CHANGED`.
+- Capture: picker highlights elements; on click the form authors title/description/rules per locale (and picks a target project when several serve the page). On save, validate, POST to the chosen connection, reload.
+- Renderers: implement `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); read localized text via `localizeSpec`, and caption the project when more than one contributes to the page.
+- Sources: pluggable. Shipped: `SidecarSource` + read-only Manual import. FileSystem Access deferred.
 
 **Build:**
 - `pnpm build` - WXT build for chrome-mv3 -> `.output/chrome-mv3/`.
@@ -240,7 +244,7 @@ Two jobs (JS, Go):
 
 ## File Naming Conventions
 
-- TS files: kebab-case (`capture-mode.ts`, `sidecar-controller.ts`).
+- TS files: kebab-case (`capture-mode.ts`, `sidecar-registry.ts`).
 - Go files: snake_case per Go stdlib convention (`server.go`, `middleware.go`).
 - Generated files: `*.gen.*` pattern (`schema.gen.ts`, `validators.gen.cjs`), never edit.
 - Test files: `*.test.ts` (TS), `*_test.go` (Go).
@@ -304,7 +308,7 @@ Two jobs (JS, Go):
 
 **Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
 
-**Extension rendering**: `apps/extension/src/renderers/` (tooltip.ts, sidebar.ts), `content/orchestrator.ts` (match loop).
+**Extension rendering**: `apps/extension/src/renderers/` (tooltip.ts, sidebar.ts, modal.ts), `content/orchestrator.ts` (match loop).
 
 **Extension capture**: `apps/extension/src/content/capture-mode.ts` (picker), `capture-form.ts` (authoring form).
 

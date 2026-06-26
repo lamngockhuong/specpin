@@ -6,7 +6,7 @@
 
 **Specpin pins business specifications (rules, descriptions, acceptance criteria) directly onto the elements of a running web UI. It is NOT a spec-driven code generator** (unrelated to GitHub Spec Kit / OpenSpec): it does not generate application code from specs. It is a knowledge layer that attaches living, Git-versioned documentation onto interfaces you already have. The interface already knows where everything is; Specpin gives it a memory.
 
-Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to elements through resilient fingerprints, and render in-browser through pluggable display modes (tooltip, sidebar, and more). Everything is local-first and Git-native: versioned, reviewable via PR, and diffable.
+Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to elements through resilient fingerprints, and render in-browser through pluggable display modes (tooltip, sidebar, modal). Spec content is multi-language (locale-keyed), and one extension can connect to several projects at once, routing specs to each page by origin. Everything is local-first and Git-native: versioned, reviewable via PR, and diffable.
 
 ## How it fits together
 
@@ -73,4 +73,4 @@ See `.github/CONTRIBUTING.md`. Run `pnpm lint && pnpm typecheck && pnpm test && 
 
 ## Status
 
-Phase 1 MVP. Demoable end-to-end: a Go sidecar serves `.specs/`, and the WXT extension matches fingerprints and renders specs (tooltip + sidebar) with manual capture. Deferred to 1.1: FileSystem/Manual sources, hybrid fingerprint scoring, the remaining renderers, Safari packaging, and `specpin generate` (AI).
+Phase 1 MVP shipped, plus 1.1 slices: a Go sidecar serves `.specs/`, and the WXT extension matches fingerprints and renders specs (tooltip + sidebar + modal) with manual capture. Specs are multi-language with an in-browser language toggle and per-locale authoring; the extension connects to multiple projects at once, routed by origin. Also delivered: offline `specpin validate`, CI spec-lint, and a read-only Manual import source. Still deferred: the FileSystem Access source, hybrid fingerprint scoring, the overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI).

@@ -20,7 +20,8 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 | `project` | string | yes | display name |
 | `domains` | string[] | yes | origins where the UI runs, e.g. `["localhost:3000"]`; empty = any |
 | `specFiles` | string[] | yes | names of the `<area>.spec.json` files |
-| `settings.defaultLocale` | string | no | |
+| `settings.defaultLocale` | string | no | fallback locale when the viewer's choice is absent on a spec |
+| `settings.locales` | string[] | no | BCP-47 locales this project authors specs in; the extension's language picker offers the union across connected projects |
 | `settings.matchConfidenceThreshold` | number 0-1 | no | reserved for the deferred hybrid scorer |
 | `settings.defaultDisplayMode` | DisplayMode | no | fallback render mode |
 
@@ -36,13 +37,28 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
 | `id` | string | yes | unique within the project |
-| `title` | string | yes | |
-| `description` | string | yes | |
-| `businessRules` | string[] | no | |
-| `tags` | string[] | no | |
+| `title` | LocalizedString | yes | locale-keyed object (see below) |
+| `description` | LocalizedString | yes | locale-keyed object; each value non-empty |
+| `businessRules` | LocalizedString[] | no | each rule is a locale-keyed object |
+| `tags` | string[] | no | not localized |
 | `preferredDisplayMode` | DisplayMode | no | overrides `settings.defaultDisplayMode` |
 | `fingerprint` | ElementFingerprint | yes | the element link |
 | `meta` | SpecMeta | no | provenance + timestamps |
+
+## LocalizedString
+
+Spec business content (`title`, `description`, each `businessRules` item) is a **locale-keyed object**, not a flat string:
+
+```json
+{ "en": "Log in button", "vi": "Nút đăng nhập" }
+```
+
+- Keys are BCP-47 locale codes (`^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$`), e.g. `en`, `vi`, `en-US`.
+- At least one entry is required (`minProperties: 1`); each value is a non-empty string (`minLength: 1`); at most 50 entries.
+- **Flat strings are rejected** by both validators - `"title": "Log in"` is invalid.
+- Fallback order when rendering for a locale: the requested locale, then the manifest's `defaultLocale`, then the first present value. A partly translated `businessRules` list drops items that have no value for the resolved locale (never renders a blank rule).
+
+The `description` value is non-empty (`minLength: 1`), so a blank description is now invalid (it was an allowed empty string before localization).
 
 ## ElementFingerprint
 
@@ -57,7 +73,7 @@ Optional: `testId`, `ariaLabel`, `id` (all nullable), `textContent` (nullable), 
 
 ## DisplayMode
 
-`"overlay" | "tooltip" | "sidebar" | "modal" | "inline-badge"`. Phase 1 implements `tooltip` and `sidebar`; the other three are reserved (forward-compatible) and fall back to `tooltip` at render time.
+`"overlay" | "tooltip" | "sidebar" | "modal" | "inline-badge"`. `tooltip`, `sidebar`, and `modal` are implemented; `overlay` and `inline-badge` are reserved (forward-compatible) and fall back to `tooltip` at render time.
 
 ## Validation
 
