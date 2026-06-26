@@ -1,0 +1,68 @@
+{
+  "version": "2.14",
+  "children": [
+    {
+      "type": "frame",
+      "id": "DkAva",
+      "x": 0,
+      "y": 0,
+      "name": "Specpin Icon",
+      "clip": true,
+      "width": 512,
+      "height": 512,
+      "fill": "#2DD4BF",
+      "cornerRadius": 112,
+      "layout": "none",
+      "children": [
+        {
+          "type": "path",
+          "id": "HUGxh",
+          "x": 0,
+          "y": 0,
+          "name": "Pin Shape",
+          "geometry": "M256 410c0-80-100-155-100-225 0-55 45-100 100-100 55 0 100 45 100 100 0 70-100 145-100 225z",
+          "viewBox": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "fill": "#FFFFFF",
+          "width": 512,
+          "height": 512
+        },
+        {
+          "type": "ellipse",
+          "id": "HL6jh",
+          "x": 191,
+          "y": 120,
+          "name": "Inner Circle",
+          "fill": "#2DD4BF",
+          "width": 130,
+          "height": 130
+        },
+        {
+          "type": "path",
+          "id": "S92Hfi",
+          "x": 0,
+          "y": 0,
+          "name": "Reticle",
+          "geometry": "M226 170l0-15 15 0m30 0l15 0 0 15m-60 30l0 15 15 0m30 0l15 0 0-15",
+          "viewBox": [
+            0,
+            0,
+            512,
+            512
+          ],
+          "fill": "#00000000",
+          "width": 512,
+          "height": 512,
+          "stroke": "#FFFFFF",
+          "strokeWidth": 11,
+          "strokeLinecap": "square"
+        }
+      ]
+    }
+  ],
+  "fileToken": "1394de33-5482-4d02-98ab-1ea039cd72ae"
+}
