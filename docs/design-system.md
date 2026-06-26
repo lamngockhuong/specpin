@@ -1,5 +1,7 @@
 # Extension UI Design System
 
+> Tiếng Việt: [`vi/design-system.md`](./vi/design-system.md). English is the source of truth.
+
 Visual mockups for the browser extension's user-facing surfaces, plus the single
 source of truth for their colors and fonts. Source files live in
 `apps/extension/designs/`. The `.pen` files stay design references (not shipped
@@ -94,6 +96,38 @@ The 4 `.pen` files are the authoritative, hand-editable sources. After any
 structural edit (new variable, new node bound to a token), run
 `node sync-tokens.mjs --rebind` once, then the normal `sync-tokens.mjs` +
 `render.sh`.
+
+## Extension icon
+
+The toolbar/store icon lives in `apps/extension/designs/`: `specpin-icon.pen`
+(Pencil source), `specpin-icon.png` (2x raster), and `specpin-icon.svg` (the
+scalable vector used for shipping). Pencil exports raster + PDF + HTML but not
+SVG, so the `.svg` is a hand-built reconstruction of the `.pen` design, verified
+by rendering back to PNG.
+
+Meaning (each element maps to what Specpin does):
+
+- **White map pin** - the literal `Spec` + `pin` of the name. Specpin pins a
+  business spec onto a specific element of a running UI; a location pin is the
+  "mark this exact spot" metaphor.
+- **Targeting reticle (four corner brackets) in the pin head** - locking onto /
+  framing one UI element before attaching its spec. Mirrors the
+  `fingerprint-core` capture + match step that locks a spec to one element.
+- **Teal `#2DD4BF` on a rounded-square (squircle) backdrop** - the brand color
+  from `design-tokens.json`, keeping the icon consistent with popup/sidebar/
+  tooltip. White-on-teal stays legible down to 16x16. The teal disc behind the
+  reticle is the background showing through a cutout in the white pin, so the
+  whole mark uses only two colors.
+
+Read together: "aim at a UI element and pin its spec onto it" - Specpin as a
+knowledge layer over an existing interface, not a code generator.
+
+Regenerate the standard icon sizes from the SVG:
+
+```bash
+cd apps/extension/designs
+for s in 16 32 48 128; do rsvg-convert -w $s -h $s specpin-icon.svg -o icon-$s.png; done
+```
 
 ## Conventions
 
