@@ -91,7 +91,9 @@ export default defineContentScript({
       enabled = res.enabled;
       manifest = res.manifest;
       specs = res.specs;
-      availableLocales = localesFor(manifest);
+      // Prefer the background's cross-project locale union for this origin; fall
+      // back to deriving from the single manifest.
+      availableLocales = res.locales?.length ? res.locales : localesFor(manifest);
       // Re-resolve the active locale: stored choice, else the project default.
       locale = pickLocale(await getLocale(), manifest?.settings?.defaultLocale);
       rerender();

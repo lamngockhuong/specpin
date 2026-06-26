@@ -10,6 +10,7 @@ export interface SpecSource {
   isAvailable(): Promise<boolean>;
   loadSpecs(): Promise<SpecsResponse>;
   saveSpec(file: string, spec: Spec): Promise<void>;
-  /** Optional live-change subscription; returns an unsubscribe function. */
-  watch?(onChange: () => void): () => void;
+  /** Optional live-change subscription; returns an unsubscribe function.
+   *  `options.jitterMs` randomizes reconnect timing across concurrent watches. */
+  watch?(onChange: () => void, options?: { jitterMs?: number }): () => void;
 }

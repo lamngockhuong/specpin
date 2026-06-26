@@ -1,15 +1,17 @@
 import type { SpecsResponse } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
-import { SidecarController } from "../background/sidecar-controller.js";
+import { SidecarRegistry } from "../background/sidecar-registry.js";
 import {
-  getConfig,
+  getConnections,
   getEnabled,
   getLocalSpecs,
   setConfig,
+  setConnections,
   setEnabled,
   setLocalSpecs,
 } from "../shared/config.js";
+import type { Connection } from "../shared/connection-types.js";
 import {
   type Message,
   PRIVILEGED_MESSAGE_TYPES,
@@ -20,13 +22,20 @@ import {
   type TestConnectionResult,
 } from "../shared/messaging.js";
 
-export default defineBackground(() => {
-  let connected = false;
+const KEEPALIVE_ALARM = "specpin-keepalive";
 
-  const controller = new SidecarController({
+export default defineBackground(() => {
+  const registry = new SidecarRegistry({
     onSpecsChanged: () => void broadcastSpecsChanged(),
+    // Per-connection reconnect jitter so N connections that drop together do not
+    // reconnect in lockstep (RT-FM2).
+    jitterMs: 2_000,
   });
 
+  // Best-effort "something changed, re-query" ping to every tab. It is NOT a
+  // confidentiality boundary (RT-SA7): the content script re-calls
+  // GET_SPECS_FOR_ORIGIN, and `specsForOrigin` is the real origin gate. Sending
+  // to all tabs is intentionally fail-open.
   async function broadcastSpecsChanged(): Promise<void> {
     const tabs = await browser.tabs.query({});
     for (const tab of tabs) {
@@ -38,25 +47,36 @@ export default defineBackground(() => {
     }
   }
 
-  async function warmUp(): Promise<void> {
-    // Restore Manual-import specs (if any) so they are available with no sidecar.
-    const local = await getLocalSpecs();
-    if (local) controller.setLocalSpecs(local.specs, local.seq);
-
-    const config = await getConfig();
-    if (config) controller.configure(config.baseUrl, config.token);
-
-    if (!config && !local) return;
+  // Rebuild every connection from storage and (re)start watches. Runs at module
+  // eval and on each service-worker wake (onStartup / onInstalled / alarm), so a
+  // suspended SW that lost its watches re-establishes them generally, for one or
+  // many connections (RT-FM1). Idempotent: setConnections reconciles and
+  // startWatch stops any prior watch first.
+  async function reestablish(): Promise<void> {
+    // Defensive: a storage rejection here would otherwise surface as an unhandled
+    // rejection from the fire-and-forget callers below.
     try {
-      await controller.reload();
-      connected = controller.activeSourceId() === "sidecar";
-      if (await getEnabled()) controller.startWatch();
+      const local = await getLocalSpecs();
+      if (local) registry.setLocalSpecs(local.specs, local.seq);
+      const connections = await getConnections();
+      const enabled = await getEnabled();
+      await registry.reestablish(connections, enabled);
     } catch {
-      connected = false;
+      // Next wake (message/alarm) retries; nothing actionable here.
     }
   }
 
-  void warmUp();
+  void reestablish();
+
+  browser.runtime.onStartup?.addListener(() => void reestablish());
+  browser.runtime.onInstalled?.addListener(() => void reestablish());
+  // The MV3 worker suspends when idle and SSE cannot wake it, so a watch can lag
+  // up to one alarm period behind a change. This alarm re-establishes watches
+  // (and the module re-evaluates on any wake); 1 minute is the packed floor.
+  browser.alarms?.create(KEEPALIVE_ALARM, { periodInMinutes: 1 });
+  browser.alarms?.onAlarm.addListener((alarm) => {
+    if (alarm.name === KEEPALIVE_ALARM) void reestablish();
+  });
 
   browser.runtime.onMessage.addListener((raw, sender): Promise<unknown> | undefined => {
     const message = raw as Message;
@@ -70,18 +90,20 @@ export default defineBackground(() => {
         return handleGetSpecs(message.origin);
       case "GET_STATUS":
         return handleStatus();
-      case "TEST_CONNECTION":
-        return controller.testConnection() as Promise<TestConnectionResult>;
       case "SAVE_CONFIG":
         return handleSaveConfig(message.baseUrl, message.token);
+      case "ADD_CONNECTION":
+        return handleAddConnection(message);
+      case "REMOVE_CONNECTION":
+        return handleRemoveConnection(message.id);
       case "SET_ENABLED":
         return handleSetEnabled(message.enabled);
       case "RELOAD":
         return handleReload();
       case "RECONNECT":
-        return handleReconnect();
+        return handleReconnect(message.id);
       case "SAVE_SPEC":
-        return handleSaveSpec(message.file, message.spec);
+        return handleSaveSpec(message.file, message.spec, originOf(sender));
       case "SET_LOCAL_SPECS":
         return handleSetLocalSpecs(message.specs, message.seq);
       default:
@@ -89,87 +111,124 @@ export default defineBackground(() => {
     }
   });
 
+  function originOf(sender: { tab?: { url?: string } } | undefined): string {
+    const url = sender?.tab?.url;
+    if (!url) return "";
+    try {
+      return new URL(url).origin;
+    } catch {
+      return "";
+    }
+  }
+
   async function handleGetSpecs(origin: string): Promise<SpecsForOrigin> {
     const enabled = await getEnabled();
-    if (!enabled) {
-      return { manifest: null, specs: [], enabled };
-    }
-    // Warm the cache from whichever source is available (sidecar or manual).
-    if (!controller.getCache()) {
-      try {
-        await controller.reload();
-        connected = controller.activeSourceId() === "sidecar";
-      } catch {
-        connected = false;
-      }
-    }
-    return {
-      manifest: controller.getCache()?.manifest ?? null,
-      specs: controller.specsForOrigin(origin),
-      enabled,
-    };
+    if (!enabled) return { manifest: null, specs: [], enabled };
+    const { specs, manifest, locales } = registry.specsForOrigin(origin);
+    return { manifest, specs, enabled, locales };
   }
 
   async function handleStatus(): Promise<StatusResult> {
     const enabled = await getEnabled();
-    const cache = controller.getCache();
-    const settings = cache?.manifest?.settings;
-    const defaultLocale = settings?.defaultLocale ?? "en";
-    // Offer the project's declared locales; fall back to the default so the
-    // picker is never empty. Phase 3 turns this into a cross-project union.
-    const locales = settings?.locales?.length ? settings.locales : [defaultLocale];
+    const connections = registry.statuses();
+    const connected = connections.some((c) => c.connected);
+    const firstConnected = connections.find((c) => c.connected) ?? connections[0];
+    const locales = registry.allLocales();
     return {
-      // "configured" drives the popup's empty state: true if a sidecar is set
-      // up OR manual specs are loaded.
-      configured: controller.isConfigured() || controller.hasContent(),
+      configured: registry.isConfigured() || registry.hasContent(),
       connected,
       enabled,
-      activeSource: controller.activeSourceId(),
-      project: cache?.manifest?.project ?? null,
-      specCount: cache?.specs.length ?? 0,
-      locales,
+      activeSource: connected ? "sidecar" : registry.hasContent() ? "manual" : null,
+      project: firstConnected?.project ?? null,
+      specCount: connections.reduce((n, c) => n + c.specCount, 0),
+      locales: locales.length ? locales : ["en"],
+      connections,
     };
   }
 
+  // SAVE_CONFIG is the single-connection bridge for the current Options page
+  // (Phase 4 replaces it with ADD/REMOVE). It upserts a "default" connection and
+  // keeps the legacy config key so the page can prefill.
   async function handleSaveConfig(baseUrl: string, token: string): Promise<TestConnectionResult> {
     await setConfig({ baseUrl, token });
-    controller.configure(baseUrl, token);
-    const result = await controller.testConnection();
-    connected = result.ok;
-    if (result.ok) {
-      try {
-        await controller.reload();
-        if (await getEnabled()) controller.startWatch();
-      } catch {
-        /* surfaced via subsequent status */
-      }
-    }
-    return result;
+    const others = (await getConnections()).filter((c) => c.id !== "default");
+    const connections: Connection[] = [...others, { id: "default", baseUrl, token }];
+    await setConnections(connections);
+    registry.setConnections(connections);
+    await registry.reload("default");
+    const status = registry.statuses().find((s) => s.id === "default");
+    const ok = status?.connected ?? false;
+    if (ok && (await getEnabled())) registry.startWatchAll();
+    await broadcastSpecsChanged();
+    return ok
+      ? { ok: true, project: status?.project ?? undefined }
+      : { ok: false, error: status?.error ?? "connection failed" };
+  }
+
+  async function handleAddConnection(message: {
+    baseUrl: string;
+    token: string;
+    label?: string;
+    applyToAllSites?: boolean;
+  }): Promise<{ ok: boolean; id?: string; project?: string | null; error?: string }> {
+    const id = crypto.randomUUID();
+    const connection: Connection = {
+      id,
+      baseUrl: message.baseUrl,
+      token: message.token,
+      label: message.label,
+      applyToAllSites: message.applyToAllSites,
+    };
+    const connections = [...(await getConnections()), connection];
+    await setConnections(connections);
+    registry.setConnections(connections);
+    await registry.reload(id);
+    const status = registry.statuses().find((s) => s.id === id);
+    if (status?.connected && (await getEnabled())) registry.startWatchAll();
+    await broadcastSpecsChanged();
+    return {
+      ok: status?.connected ?? false,
+      id,
+      project: status?.project ?? null,
+      error: status?.connected ? undefined : (status?.error ?? "connection failed"),
+    };
+  }
+
+  async function handleRemoveConnection(id: string): Promise<{ ok: true }> {
+    registry.remove(id);
+    const connections = (await getConnections()).filter((c) => c.id !== id);
+    await setConnections(connections);
+    await broadcastSpecsChanged();
+    return { ok: true };
   }
 
   async function handleSetEnabled(enabled: boolean): Promise<{ ok: true }> {
     await setEnabled(enabled);
-    if (!enabled) controller.stopWatch();
-    else if (controller.isConfigured()) controller.startWatch();
+    if (!enabled) registry.stopWatchAll();
+    else registry.startWatchAll();
     await broadcastSpecsChanged();
     return { ok: true };
   }
 
   async function handleReload(): Promise<{ ok: boolean; specCount: number }> {
-    try {
-      const specs = await controller.reload();
-      // "connected" means the sidecar is reachable, not "some source loaded".
-      connected = controller.activeSourceId() === "sidecar";
-      await broadcastSpecsChanged();
-      return { ok: true, specCount: specs.specs.length };
-    } catch {
-      connected = false;
-      return { ok: false, specCount: 0 };
-    }
+    await registry.reload();
+    await broadcastSpecsChanged();
+    // "ok" means content is available after reload: a reachable sidecar or
+    // loaded manual specs (manual-only must not report failure).
+    return {
+      ok: registry.anyConnected() || registry.hasContent(),
+      specCount: registry.statuses().reduce((n, c) => n + c.specCount, 0),
+    };
   }
 
-  async function handleSaveSpec(file: string, spec: Spec): Promise<SaveSpecResult> {
-    const result = await controller.saveSpec(file, spec);
+  async function handleReconnect(id?: string): Promise<{ ok: boolean }> {
+    await registry.reconnect(id, await getEnabled());
+    await broadcastSpecsChanged();
+    return { ok: registry.anyConnected() };
+  }
+
+  async function handleSaveSpec(file: string, spec: Spec, origin: string): Promise<SaveSpecResult> {
+    const result = await registry.saveSpec(origin, file, spec);
     if (result.ok) await broadcastSpecsChanged();
     return result;
   }
@@ -178,33 +237,16 @@ export default defineBackground(() => {
     specs: SpecsResponse | null,
     seq: number,
   ): Promise<SetLocalSpecsResult> {
-    const applied = controller.setLocalSpecs(specs, seq);
+    const applied = registry.setLocalSpecs(specs, seq);
     if (!applied) {
-      // Stale/out-of-order write: keep current state.
-      return { ok: true, applied: false, specCount: controller.getCache()?.specs.length ?? 0 };
+      return { ok: true, applied: false, specCount: countAll() };
     }
     await setLocalSpecs(specs === null ? null : { specs, seq });
-    try {
-      await controller.reload();
-      connected = controller.activeSourceId() === "sidecar";
-    } catch {
-      // No source available now (manual cleared and no sidecar): drop the cache
-      // so the UI reflects "no specs".
-      connected = false;
-    }
     await broadcastSpecsChanged();
-    return { ok: true, applied: true, specCount: controller.getCache()?.specs.length ?? 0 };
+    return { ok: true, applied: true, specCount: countAll() };
   }
 
-  async function handleReconnect(): Promise<{ ok: boolean }> {
-    try {
-      await controller.reconnect();
-      connected = controller.activeSourceId() === "sidecar";
-      await broadcastSpecsChanged();
-      return { ok: true };
-    } catch {
-      connected = false;
-      return { ok: false };
-    }
+  function countAll(): number {
+    return registry.statuses().reduce((n, c) => n + c.specCount, 0);
   }
 });

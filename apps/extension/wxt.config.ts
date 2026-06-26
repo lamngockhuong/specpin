@@ -19,7 +19,7 @@ export default defineConfig({
   manifest: ({ manifestVersion }) => ({
     name: "Specpin",
     description: "Pin business specifications to UI elements. Read-only MVP.",
-    permissions: ["storage", "activeTab", "tabs"],
+    permissions: ["storage", "activeTab", "tabs", "alarms"],
     host_permissions: ["http://127.0.0.1/*", "http://localhost/*"],
     ...(manifestVersion === 3
       ? { action: { default_icon: iconSet } }

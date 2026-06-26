@@ -10,6 +10,9 @@ export interface SubscribeOptions {
   /** Initial reconnect delay; doubles each failure up to maxBackoffMs. */
   baseBackoffMs?: number;
   maxBackoffMs?: number;
+  /** Random extra delay (0..jitterMs) added to each reconnect, so N connections
+   *  that drop together do not reconnect in lockstep (thundering herd). */
+  jitterMs?: number;
 }
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -53,6 +56,7 @@ export function subscribeEvents(
   const fetchImpl = options.fetch ?? globalThis.fetch.bind(globalThis);
   const base = options.baseBackoffMs ?? 500;
   const max = options.maxBackoffMs ?? 10_000;
+  const jitter = options.jitterMs ?? 0;
   const setState = (s: ConnectionState) => options.onState?.(s);
 
   // A connection must stay up at least this long to count as healthy and reset
@@ -88,7 +92,7 @@ export function subscribeEvents(
         setState("error");
       }
       if (closed) return;
-      await delay(backoff);
+      await delay(backoff + (jitter > 0 ? Math.random() * jitter : 0));
       backoff = Math.min(backoff * 2, max);
     }
   })();

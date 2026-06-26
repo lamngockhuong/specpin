@@ -1,5 +1,8 @@
 import type { SpecsResponse } from "@specpin/api-client";
 import { browser } from "#imports";
+import type { Connection } from "./connection-types.js";
+
+export type { Connection } from "./connection-types.js";
 
 // Connection config + on/off flag, persisted in extension storage. The token
 // and URL are pasted once into the Options page from the sidecar's stdout.
@@ -17,6 +20,7 @@ export interface LocalSpecsState {
 }
 
 const CONFIG_KEY = "specpin:config";
+const CONNECTIONS_KEY = "specpin:connections";
 const ENABLED_KEY = "specpin:enabled";
 const LOCAL_SPECS_KEY = "specpin:localSpecs";
 const LOCALE_KEY = "specpin:locale";
@@ -30,6 +34,18 @@ export async function getConfig(): Promise<ConnectionConfig | null> {
 
 export async function setConfig(config: ConnectionConfig): Promise<void> {
   await browser.storage.local.set({ [CONFIG_KEY]: config });
+}
+
+/** The list of sidecar connections (native storage format, no legacy migration:
+ *  a fresh install has none and the Options UI populates it). */
+export async function getConnections(): Promise<Connection[]> {
+  const stored = await browser.storage.local.get(CONNECTIONS_KEY);
+  const value = stored[CONNECTIONS_KEY] as Connection[] | undefined;
+  return Array.isArray(value) ? value : [];
+}
+
+export async function setConnections(connections: Connection[]): Promise<void> {
+  await browser.storage.local.set({ [CONNECTIONS_KEY]: connections });
 }
 
 export async function getEnabled(): Promise<boolean> {
