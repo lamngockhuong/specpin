@@ -1,5 +1,7 @@
 # Code Standards
 
+> Tiếng Việt: [`vi/code-standards.md`](./vi/code-standards.md). English is the source of truth.
+
 Standards derived from actual tooling config and observed conventions in the Specpin monorepo. All rules reflect what the codebase already enforces, not aspirational guidelines.
 
 ## File Naming

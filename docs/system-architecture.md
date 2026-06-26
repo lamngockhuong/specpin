@@ -1,5 +1,7 @@
 # Specpin System Architecture
 
+> Tiếng Việt: [`vi/system-architecture.md`](./vi/system-architecture.md). English is the source of truth.
+
 Specpin pins business specifications onto the elements of a running web UI. It is **not** a spec-driven code generator: it does not produce application code from specs. It is a Git-native knowledge layer that attaches living documentation to interfaces you already have.
 
 ## Components

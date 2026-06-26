@@ -1,5 +1,7 @@
 # Run Guide
 
+> Tiếng Việt: [`vi/run-guide.md`](./vi/run-guide.md). English is the source of truth.
+
 Specpin attaches living business specs to a running UI; it is **not** a code generator. This guide runs the full loop end to end: init the sidecar, serve, load the extension, connect, see specs render, and capture a new one.
 
 ## Prerequisites
