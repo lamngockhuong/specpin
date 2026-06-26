@@ -79,8 +79,6 @@ export class ModalRenderer implements SpecRenderer {
   private list: HTMLElement | null = null;
   private summary: HTMLElement | null = null;
   private closeBtn: HTMLButtonElement | null = null;
-  private count = 0;
-  private reviewCount = 0;
   private prevFocus: Element | null = null;
   private readonly doc: Document;
   private readonly ac = new AbortController();
@@ -135,10 +133,7 @@ export class ModalRenderer implements SpecRenderer {
     card.className = "card";
     // Plain clickable card (mouse jump-to), like the sidebar. Not keyboard-
     // focusable, so the focus trap below can keep Tab on the close button.
-    if (meta?.needsReview) {
-      card.dataset.review = "true";
-      this.reviewCount++;
-    }
+    if (meta?.needsReview) card.dataset.review = "true";
     const tag = meta?.needsReview ? `<span class="tag">Needs review</span>` : "";
     const rules = (spec.businessRules ?? []).map((r) => `<li>${escapeHtml(r)}</li>`).join("");
     card.innerHTML =
@@ -148,14 +143,16 @@ export class ModalRenderer implements SpecRenderer {
       (rules ? `<ul>${rules}</ul>` : "");
     card.addEventListener("click", () => this.jumpTo(target), { signal: this.ac.signal });
     list.appendChild(card);
-    this.count++;
     this.updateSummary();
   }
 
+  // Counts are derived from the DOM so there is no separate state to keep in sync.
   private updateSummary(): void {
-    if (!this.summary) return;
-    const review = this.reviewCount > 0 ? `, ${this.reviewCount} need review` : "";
-    this.summary.textContent = `${this.count} spec${this.count === 1 ? "" : "s"} found${review}`;
+    if (!this.summary || !this.list) return;
+    const count = this.list.childElementCount;
+    const reviewCount = this.list.querySelectorAll('.card[data-review="true"]').length;
+    const review = reviewCount > 0 ? `, ${reviewCount} need review` : "";
+    this.summary.textContent = `${count} spec${count === 1 ? "" : "s"} found${review}`;
   }
 
   private onKeydown(e: KeyboardEvent): void {
@@ -198,8 +195,6 @@ export class ModalRenderer implements SpecRenderer {
     this.list = null;
     this.summary = null;
     this.closeBtn = null;
-    this.count = 0;
-    this.reviewCount = 0;
     this.prevFocus = null;
   }
 }

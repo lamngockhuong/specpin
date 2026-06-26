@@ -10,13 +10,14 @@ import {
   setEnabled,
   setLocalSpecs,
 } from "../shared/config.js";
-import type {
-  Message,
-  SaveSpecResult,
-  SetLocalSpecsResult,
-  SpecsForOrigin,
-  StatusResult,
-  TestConnectionResult,
+import {
+  type Message,
+  PRIVILEGED_MESSAGE_TYPES,
+  type SaveSpecResult,
+  type SetLocalSpecsResult,
+  type SpecsForOrigin,
+  type StatusResult,
+  type TestConnectionResult,
 } from "../shared/messaging.js";
 
 export default defineBackground(() => {
@@ -59,12 +60,9 @@ export default defineBackground(() => {
 
   browser.runtime.onMessage.addListener((raw, sender): Promise<unknown> | undefined => {
     const message = raw as Message;
-    // State mutations must originate from an extension page (popup/options),
-    // never from a web-page content script (which carries sender.tab).
-    if (
-      (message.type === "SAVE_CONFIG" || message.type === "SET_LOCAL_SPECS") &&
-      sender?.tab !== undefined
-    ) {
+    // Privileged (state-mutating) messages must originate from an extension page
+    // (popup/options), never from a web-page content script (carries sender.tab).
+    if (PRIVILEGED_MESSAGE_TYPES.has(message.type) && sender?.tab !== undefined) {
       return Promise.resolve({ ok: false, error: "forbidden" });
     }
     switch (message.type) {

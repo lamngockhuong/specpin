@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -85,9 +86,7 @@ func runValidate(dir string, strictManifest bool, out, errOut io.Writer) int {
 		return exitCannotRun
 	}
 
-	fileCount := 1 // manifest.json
 	for _, name := range names {
-		fileCount++
 		raw, err := st.ReadRaw(name)
 		if err != nil {
 			// An unreadable or symlinked listed spec file is an author-fixable
@@ -104,9 +103,9 @@ func runValidate(dir string, strictManifest bool, out, errOut io.Writer) int {
 		}
 	}
 
-	driftErrors := reportDrift(out, st, names, strictManifest)
+	driftErrors := reportDrift(out, manifestRaw, names, strictManifest)
 
-	fmt.Fprintf(out, "\n%d files checked, %d error(s)\n", fileCount, totalErrors)
+	fmt.Fprintf(out, "\n%d files checked, %d error(s)\n", 1+len(names), totalErrors)
 
 	if totalErrors > 0 || (strictManifest && driftErrors > 0) {
 		return exitInvalid
@@ -122,11 +121,14 @@ func printFileResult(out io.Writer, name string, errs []string) {
 }
 
 // reportDrift compares manifest.specFiles against the *.spec.json files on disk.
-// It warns by default; under --strict-manifest the caller treats drift as a
-// failure. Returns the number of drift items found.
-func reportDrift(out io.Writer, st *store.Store, names []string, strict bool) int {
-	m, err := st.LoadManifest()
-	if err != nil {
+// It reuses the already-read manifest bytes (no second disk read). Warns by
+// default; under --strict-manifest the caller treats drift as a failure.
+// Returns the number of drift items found.
+func reportDrift(out io.Writer, manifestRaw []byte, names []string, strict bool) int {
+	var m struct {
+		SpecFiles []string `json:"specFiles"`
+	}
+	if err := json.Unmarshal(manifestRaw, &m); err != nil {
 		// Manifest parse problems are already reported by schema validation;
 		// skip drift rather than double-report.
 		return 0

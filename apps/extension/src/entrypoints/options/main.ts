@@ -26,21 +26,16 @@ async function prefill(): Promise<void> {
   }
 }
 
-function showResult(ok: boolean, text: string): void {
-  result.className = ok ? "ok" : "err";
-  result.textContent = text;
-}
-
-function showLocalResult(ok: boolean, text: string): void {
-  localResult.className = ok ? "ok" : "err";
-  localResult.textContent = text;
+function showResult(target: HTMLElement, ok: boolean, text: string): void {
+  target.className = ok ? "ok" : "err";
+  target.textContent = text;
 }
 
 byId("save").addEventListener("click", async () => {
   const url = baseUrl.value.trim().replace(/\/+$/, "");
   const tok = token.value.trim();
   if (!url || !tok) {
-    showResult(false, "Both URL and token are required.");
+    showResult(result, false, "Both URL and token are required.");
     return;
   }
   // SAVE_CONFIG persists, reconfigures the background client, and tests health.
@@ -50,23 +45,23 @@ byId("save").addEventListener("click", async () => {
     token: tok,
   });
   if (res.ok) {
-    showResult(true, `Connected to "${res.project ?? "sidecar"}". Settings saved.`);
+    showResult(result, true, `Connected to "${res.project ?? "sidecar"}". Settings saved.`);
   } else {
-    showResult(false, `Connection failed: ${res.error ?? "unknown error"}`);
+    showResult(result, false, `Connection failed: ${res.error ?? "unknown error"}`);
   }
 });
 
 byId("loadLocal").addEventListener("click", async () => {
   const text = localSpecs.value.trim();
   if (!text) {
-    showLocalResult(false, "Paste a bundle first.");
+    showResult(localResult, false, "Paste a bundle first.");
     return;
   }
   // Validate client-side BEFORE pushing to the background (never cache unvalidated
   // input). The spec-schema validators are precompiled and CSP-safe.
   const { specs, errors } = parseLocalBundle(text);
   if (!specs) {
-    showLocalResult(false, `Invalid bundle:\n- ${errors.join("\n- ")}`);
+    showResult(localResult, false, `Invalid bundle:\n- ${errors.join("\n- ")}`);
     return;
   }
   const res = await sendToBackground<SetLocalSpecsResult>({
@@ -74,7 +69,7 @@ byId("loadLocal").addEventListener("click", async () => {
     specs,
     seq: Date.now(),
   });
-  showLocalResult(res.ok, `Loaded ${res.specCount} spec(s) from manual import.`);
+  showResult(localResult, res.ok, `Loaded ${res.specCount} spec(s) from manual import.`);
 });
 
 byId("clearLocal").addEventListener("click", async () => {
@@ -84,7 +79,7 @@ byId("clearLocal").addEventListener("click", async () => {
     seq: Date.now(),
   });
   localSpecs.value = "";
-  showLocalResult(true, "Manual specs cleared.");
+  showResult(localResult, true, "Manual specs cleared.");
 });
 
 void prefill();
