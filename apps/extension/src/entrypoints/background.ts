@@ -142,7 +142,7 @@ export default defineBackground(() => {
       enabled,
       activeSource: connected ? "sidecar" : registry.hasContent() ? "manual" : null,
       project: firstConnected?.project ?? null,
-      specCount: connections.reduce((n, c) => n + c.specCount, 0),
+      specCount: connections.reduce((n, c) => n + c.specCount, 0) + registry.manualSpecCount(),
       locales: locales.length ? locales : ["en"],
       connections,
     };
@@ -292,6 +292,6 @@ export default defineBackground(() => {
   }
 
   function countAll(): number {
-    return registry.statuses().reduce((n, c) => n + c.specCount, 0);
+    return registry.statuses().reduce((n, c) => n + c.specCount, 0) + registry.manualSpecCount();
   }
 });

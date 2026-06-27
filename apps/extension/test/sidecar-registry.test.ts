@@ -122,6 +122,17 @@ describe("SidecarRegistry routing", () => {
     expect(serialized).not.toContain("tok-a");
     expect(serialized).not.toMatch(/token/i);
   });
+
+  it("counts Manual-import specs (not part of statuses())", () => {
+    const r = registryWith({});
+    expect(r.manualSpecCount()).toBe(0);
+    r.setLocalSpecs(resp("Manual", [], "m-spec"), 1);
+    // Manual specs are real content but are not a connection.
+    expect(r.statuses()).toEqual([]);
+    expect(r.manualSpecCount()).toBe(1);
+    r.setLocalSpecs(null, 2);
+    expect(r.manualSpecCount()).toBe(0);
+  });
 });
 
 describe("SidecarRegistry watch re-establish (RT-FM1)", () => {
