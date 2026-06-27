@@ -4,7 +4,7 @@ import {
   type StatusResult,
   sendToBackground,
 } from "../../shared/messaging.js";
-import { parseLocalBundle } from "../../sources/local-bundle.js";
+import { parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
 import "../../shared/tokens.gen.css";
 
 const byId = (id: string): HTMLElement => {
@@ -20,6 +20,7 @@ const applyAll = byId("applyAll") as HTMLInputElement;
 const addResult = byId("addResult");
 const connections = byId("connections");
 const localSpecs = byId("localSpecs") as HTMLTextAreaElement;
+const localFiles = byId("localFiles") as HTMLInputElement;
 const localResult = byId("localResult");
 
 // The sidecar binds localhost only; reject anything else before sending.
@@ -169,6 +170,31 @@ byId("loadLocal").addEventListener("click", async () => {
     seq: Date.now(),
   });
   showResult(localResult, res.ok, `Loaded ${res.specCount} spec(s) from manual import.`);
+  await refresh();
+});
+
+byId("loadFiles").addEventListener("click", async () => {
+  const picked = Array.from(localFiles.files ?? []);
+  if (picked.length === 0) {
+    showResult(localResult, false, "Pick manifest.json and at least one .spec.json file.");
+    return;
+  }
+  // Read all picked files, then assemble + validate via the shared parseLocalBundle path.
+  const files = await Promise.all(
+    picked.map(async (f) => ({ name: f.name, text: await f.text() })),
+  );
+  const { specs, errors } = parseLocalFiles(files);
+  if (!specs) {
+    showResult(localResult, false, `Invalid selection:\n- ${errors.join("\n- ")}`);
+    return;
+  }
+  const res = await sendToBackground<SetLocalSpecsResult>({
+    type: "SET_LOCAL_SPECS",
+    specs,
+    seq: Date.now(),
+  });
+  showResult(localResult, res.ok, `Loaded ${res.specCount} spec(s) from ${picked.length} file(s).`);
+  localFiles.value = "";
   await refresh();
 });
 

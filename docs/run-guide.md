@@ -114,13 +114,24 @@ Specs render as a **tooltip** (hover peek), a **sidebar** (persistent list), or 
 
 ## Use without a sidecar (Manual import)
 
-To view specs without running `specpin serve`, open the extension Options page and paste a bundle into **Manual specs**:
+To view specs without running `specpin serve`, open the extension Options page and load them under **Manual specs**. There are two ways, both read-only (capture still needs a sidecar):
+
+**From files (no JSON assembly).** Click the file picker, select `manifest.json` plus one or more `*.spec.json` files from your `.specs/` directory, then **Load from files**. The extension assembles and validates them in-page.
+
+**From a pasted bundle.** Paste a single JSON object of this shape, then **Load pasted bundle**:
 
 ```json
 { "manifest": { …manifest.json… }, "files": { "login.spec.json": { …spec file… } } }
 ```
 
-Click **Load manual specs**. The bundle is validated against the schema in-page before anything is stored. Manual specs are read-only (capture still needs a sidecar) and persist until you click **Clear manual specs**. They are merged into a page's specs alongside any connected projects whose `domains` match the page (manual specs use their own manifest `domains`).
+To produce that bundle from a repo's `.specs/` without hand-assembly, use the CLI:
+
+```bash
+specpin bundle --dir .specs            # print bundle JSON to stdout (copy/paste or pipe)
+specpin bundle --dir .specs --out bundle.json   # write it to a file instead
+```
+
+`bundle` only reads and assembles; it does not validate (run `specpin validate` for schema checks, or rely on the in-page validation on import). Either path validates against the schema before anything is stored. Manual specs persist until you click **Clear manual specs**, and merge into a page's specs alongside any connected projects whose `domains` match the page (manual specs use their own manifest `domains`).
 
 ## Validate specs offline
 

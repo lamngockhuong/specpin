@@ -40,6 +40,23 @@
         border-radius: var(--sp-radius-control);
       }
       input::placeholder { color: var(--sp-text-3); }
+      input[type="file"] {
+        width: 100%; padding: 9px 12px;
+        font: 12px/1.4 var(--sp-font-mono);
+        color: var(--sp-text-2);
+        background: var(--sp-elevated);
+        border: 1px solid var(--sp-border);
+        border-radius: var(--sp-radius-control);
+      }
+      input[type="file"]::file-selector-button {
+        margin-right: 10px; padding: 6px 10px;
+        font: 600 12px/1 var(--sp-font-ui);
+        color: var(--sp-text);
+        background: var(--sp-control);
+        border: 1px solid var(--sp-border);
+        border-radius: var(--sp-radius-control);
+        cursor: pointer;
+      }
       textarea {
         width: 100%; min-height: 160px; padding: 11px 12px; resize: vertical;
         font: 12px/1.5 var(--sp-font-mono);
@@ -151,9 +168,13 @@
         capture still needs a sidecar. Shape:
         <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>
       </p>
-      <label for="localSpecs">Bundle JSON</label>
+      <label for="localFiles">From files <span style="font-weight: 400; color: var(--sp-text-3)">(pick manifest.json + one or more *.spec.json)</span></label>
+      <input id="localFiles" type="file" accept=".json,application/json" multiple />
+      <button id="loadFiles" type="button">Load from files</button>
+
+      <label for="localSpecs" style="margin-top: 24px">Or paste bundle JSON</label>
       <textarea id="localSpecs" placeholder='{ "manifest": { … }, "files": { "login.spec.json": { … } } }'></textarea>
-      <button id="loadLocal" type="button">Load manual specs</button>
+      <button id="loadLocal" type="button">Load pasted bundle</button>
       <button id="clearLocal" type="button" class="secondary" style="width: 100%; margin-top: 10px">Clear manual specs</button>
       <div id="localResult"></div>
     </div>

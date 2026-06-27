@@ -124,13 +124,24 @@ Spec hiển thị dưới dạng **tooltip** (xem nhanh khi hover), **sidebar** 
 
 ## Dùng không cần sidecar (Manual import)
 
-Để xem spec mà không chạy `specpin serve`, mở trang Options của extension và dán một bundle vào ô **Manual specs**:
+Để xem spec mà không chạy `specpin serve`, mở trang Options của extension và load chúng trong mục **Manual specs**. Có hai cách, cả hai đều read-only (capture vẫn cần sidecar):
+
+**Từ file (không cần tự ráp JSON).** Nhấn vào ô chọn file, chọn `manifest.json` cùng một hoặc nhiều file `*.spec.json` từ thư mục `.specs/`, rồi nhấn **Load from files**. Extension tự ráp và validate ngay trong trang.
+
+**Từ bundle dán vào.** Dán một object JSON duy nhất theo dạng sau, rồi nhấn **Load pasted bundle**:
 
 ```json
 { "manifest": { …manifest.json… }, "files": { "login.spec.json": { …spec file… } } }
 ```
 
-Nhấn **Load manual specs**. Bundle được validate theo schema ngay trong trang trước khi lưu. Manual specs là read-only (capture vẫn cần sidecar) và tồn tại cho đến khi bạn nhấn **Clear manual specs**. Chúng được merge vào spec của page cùng với bất kỳ connected project nào mà `domains` của nó khớp page (manual spec dùng `domains` của manifest riêng của chúng).
+Để sinh ra bundle đó từ thư mục `.specs/` của một repo mà không cần tự ráp, dùng CLI:
+
+```bash
+specpin bundle --dir .specs            # in bundle JSON ra stdout (copy/paste hoặc pipe)
+specpin bundle --dir .specs --out bundle.json   # ghi ra file thay vì stdout
+```
+
+`bundle` chỉ đọc và ráp; nó không validate (chạy `specpin validate` để kiểm schema, hoặc dựa vào validate ngay trong trang khi import). Cả hai cách đều validate theo schema trước khi lưu. Manual specs tồn tại cho đến khi bạn nhấn **Clear manual specs**, và được merge vào spec của page cùng với bất kỳ connected project nào mà `domains` của nó khớp page (manual spec dùng `domains` của manifest riêng của chúng).
 
 ## Validate spec offline
 
