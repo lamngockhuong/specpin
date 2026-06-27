@@ -29,6 +29,19 @@ const surface = byId("surface") as HTMLSelectElement;
 // The sidecar binds localhost only; reject anything else before sending.
 const LOCAL_URL = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/;
 
+/** Normalize a sidecar URL (trim + drop trailing slashes) and validate the
+ *  localhost-only rule. Returns the normalized URL plus an error message when a
+ *  non-empty URL fails that rule. The empty-input case is left to each caller's
+ *  required-field check (add needs a token too; edit keeps the stored token). */
+function normalizeLocalUrl(raw: string): { url: string; error: string | null } {
+  const url = raw.trim().replace(/\/+$/, "");
+  const error =
+    url && !LOCAL_URL.test(url)
+      ? "URL must be http://127.0.0.1:PORT or http://localhost:PORT."
+      : null;
+  return { url, error };
+}
+
 function showResult(target: HTMLElement, ok: boolean, text: string): void {
   target.className = ok ? "ok" : "err";
   target.textContent = text;
@@ -52,6 +65,9 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
 
   const actions = document.createElement("div");
   actions.className = "conn-actions";
+  const edit = document.createElement("button");
+  edit.className = "secondary";
+  edit.textContent = "Edit";
   const reconnect = document.createElement("button");
   reconnect.className = "secondary";
   reconnect.textContent = "Reconnect";
@@ -66,7 +82,7 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
     await sendToBackground({ type: "REMOVE_CONNECTION", id: c.id });
     await refresh();
   });
-  actions.append(reconnect, remove);
+  actions.append(edit, reconnect, remove);
   head.append(title, actions);
 
   const meta = document.createElement("div");
@@ -76,7 +92,13 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
   const domains = c.domains.length ? c.domains.join(", ") : "no domains pinned";
   meta.textContent = `${c.baseUrl} · ${state} · ${c.specCount} spec(s) · ${domains}`;
 
-  row.append(head, meta);
+  // Inline edit form, toggled by the Edit button. Hidden until first opened.
+  const editForm = editSection(c);
+  edit.addEventListener("click", () => {
+    editForm.hidden = !editForm.hidden;
+  });
+
+  row.append(head, meta, editForm);
 
   // Team-default visibility editor (sidecar-backed connections only). Writes
   // .specs/views.json to Git, shared with everyone on the project.
@@ -109,6 +131,86 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
   }
 
   return row;
+}
+
+/** Inline edit form for one connection: change the sidecar URL, label, and
+ *  (optionally) the bearer token. The token field starts empty and a blank value
+ *  keeps the stored secret (RT-SA6: the current token is never rendered back).
+ *  Saving re-validates the connection and reports the result like adding does;
+ *  on success the list refreshes (which collapses the form). */
+function editSection(c: ConnectionStatus): HTMLElement {
+  const form = document.createElement("div");
+  form.className = "conn-edit";
+  form.hidden = true;
+
+  const urlLabel = document.createElement("label");
+  urlLabel.textContent = "Sidecar URL";
+  const url = document.createElement("input");
+  url.type = "text";
+  url.value = c.baseUrl;
+
+  const labelLabel = document.createElement("label");
+  labelLabel.textContent = "Label (optional)";
+  const labelInput = document.createElement("input");
+  labelInput.type = "text";
+  labelInput.value = c.label ?? "";
+
+  const tokenLabel = document.createElement("label");
+  tokenLabel.textContent = "Token";
+  const tokenInput = document.createElement("input");
+  tokenInput.type = "password";
+  tokenInput.autocomplete = "off";
+  tokenInput.placeholder = "leave blank to keep current token";
+
+  const actions = document.createElement("div");
+  actions.className = "conn-actions";
+  const save = document.createElement("button");
+  save.className = "secondary";
+  save.textContent = "Save changes";
+  const cancel = document.createElement("button");
+  cancel.className = "secondary";
+  cancel.textContent = "Cancel";
+  actions.append(save, cancel);
+
+  const result = document.createElement("div");
+
+  cancel.addEventListener("click", () => {
+    tokenInput.value = "";
+    result.textContent = "";
+    result.className = "";
+    form.hidden = true;
+  });
+
+  save.addEventListener("click", async () => {
+    const { url: nextUrl, error } = normalizeLocalUrl(url.value);
+    if (!nextUrl) {
+      showResult(result, false, "URL is required.");
+      return;
+    }
+    if (error) {
+      showResult(result, false, error);
+      return;
+    }
+    const tok = tokenInput.value.trim();
+    const res = await sendToBackground<{ ok: boolean; project?: string | null; error?: string }>({
+      type: "UPDATE_CONNECTION",
+      id: c.id,
+      baseUrl: nextUrl,
+      label: labelInput.value.trim(),
+      // Omit the token when blank so the background keeps the stored secret.
+      ...(tok ? { token: tok } : {}),
+    });
+    // Never keep the secret in the field once submitted.
+    tokenInput.value = "";
+    if (res.ok) {
+      await refresh();
+    } else {
+      showResult(result, false, `Could not connect: ${res.error ?? "unknown error"}`);
+    }
+  });
+
+  form.append(urlLabel, url, labelLabel, labelInput, tokenLabel, tokenInput, actions, result);
+  return form;
 }
 
 /** Team-default visibility editor for one connection. The hidden facet keys are
@@ -198,14 +300,14 @@ surface.addEventListener("change", () => {
 });
 
 byId("add").addEventListener("click", async () => {
-  const url = baseUrl.value.trim().replace(/\/+$/, "");
+  const { url, error } = normalizeLocalUrl(baseUrl.value);
   const tok = token.value.trim();
   if (!url || !tok) {
     showResult(addResult, false, "Both URL and token are required.");
     return;
   }
-  if (!LOCAL_URL.test(url)) {
-    showResult(addResult, false, "URL must be http://127.0.0.1:PORT or http://localhost:PORT.");
+  if (error) {
+    showResult(addResult, false, error);
     return;
   }
   const res = await sendToBackground<{ ok: boolean; project?: string | null; error?: string }>({

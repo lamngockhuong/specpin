@@ -26,8 +26,18 @@ export type Message =
       applyToAllSites?: boolean;
     }
   | { type: "REMOVE_CONNECTION"; id: string }
-  // Edit an existing connection's non-secret fields (label, opt-in).
-  | { type: "UPDATE_CONNECTION"; id: string; label?: string; applyToAllSites?: boolean }
+  // Edit an existing connection. `label`/`applyToAllSites` are the lightweight
+  // (no reconnect) edits. `baseUrl`/`token` change the live endpoint: when either
+  // is present the handler recreates the client and re-validates. An omitted
+  // `token` keeps the stored secret (RT-SA6: it is never rendered back to edit).
+  | {
+      type: "UPDATE_CONNECTION";
+      id: string;
+      label?: string;
+      applyToAllSites?: boolean;
+      baseUrl?: string;
+      token?: string;
+    }
   // `connectionId` targets the destination project when several serve the page.
   | { type: "SAVE_SPEC"; file: string; spec: Spec; connectionId?: string }
   // Manual-import specs pushed from the Options page (extension-page origin only).

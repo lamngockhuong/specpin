@@ -373,6 +373,17 @@ export default defineBackground(() => {
     });
   }
 
+  /** Shape one connection's current status into the {ok, project, error} report
+   *  that ADD_CONNECTION and UPDATE_CONNECTION return after re-validating. */
+  function connectReport(id: string): { ok: boolean; project: string | null; error?: string } {
+    const status = registry.statuses().find((s) => s.id === id);
+    return {
+      ok: status?.connected ?? false,
+      project: status?.project ?? null,
+      error: status?.connected ? undefined : (status?.error ?? "connection failed"),
+    };
+  }
+
   function handleAddConnection(message: {
     baseUrl: string;
     token: string;
@@ -392,15 +403,10 @@ export default defineBackground(() => {
       await setConnections(connections);
       registry.setConnections(connections);
       await registry.reload(id);
-      const status = registry.statuses().find((s) => s.id === id);
-      if (status?.connected && (await getEnabled())) registry.startWatchAll();
+      const report = connectReport(id);
+      if (report.ok && (await getEnabled())) registry.startWatchAll();
       await broadcastSpecsChanged();
-      return {
-        ok: status?.connected ?? false,
-        id,
-        project: status?.project ?? null,
-        error: status?.connected ? undefined : (status?.error ?? "connection failed"),
-      };
+      return { id, ...report };
     });
   }
 
@@ -418,7 +424,9 @@ export default defineBackground(() => {
     id: string;
     label?: string;
     applyToAllSites?: boolean;
-  }): Promise<{ ok: boolean }> {
+    baseUrl?: string;
+    token?: string;
+  }): Promise<{ ok: boolean; project?: string | null; error?: string }> {
     return mutate(async () => {
       const connections = (await getConnections()).map((c) =>
         c.id === message.id
@@ -426,11 +434,26 @@ export default defineBackground(() => {
               ...c,
               label: message.label ?? c.label,
               applyToAllSites: message.applyToAllSites ?? c.applyToAllSites,
+              baseUrl: message.baseUrl || c.baseUrl,
+              // Omitted (or blank) token keeps the stored secret; a non-empty one
+              // replaces it. `||` (not `??`) so an empty string never wipes it.
+              token: message.token || c.token,
             }
           : c,
       );
       await setConnections(connections);
       registry.setConnections(connections);
+      // Endpoint edits (URL/token) change the live client, so re-validate and
+      // report connect/error like ADD_CONNECTION does. Route through reconnect()
+      // (stop -> reload -> start) so the OLD SSE watch is torn down and the NEW
+      // endpoint is watched: a plain startWatchAll() would no-op on the stale
+      // watch handle and leak the prior stream. A label/opt-in-only edit needs no
+      // round-trip.
+      if (message.baseUrl !== undefined || message.token !== undefined) {
+        await registry.reconnect(message.id, await getEnabled());
+        await broadcastSpecsChanged();
+        return connectReport(message.id);
+      }
       await broadcastSpecsChanged();
       return { ok: connections.some((c) => c.id === message.id) };
     });

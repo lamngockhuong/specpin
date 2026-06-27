@@ -150,6 +150,15 @@
         padding: 2px 5px; border-radius: 4px;
       }
 
+      /* Inline edit form inside each connection row. */
+      .conn-edit { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--sp-border); }
+      .conn-edit label { margin: 12px 0 4px; font-size: 12px; font-weight: 600; }
+      .conn-edit label:first-child { margin-top: 0; }
+      .conn-edit input { font-size: 12px; }
+      .conn-edit .conn-actions { margin-top: 14px; }
+      .conn-edit .ok { color: var(--sp-success-text); margin-top: 10px; font-size: 12px; }
+      .conn-edit .err { color: var(--sp-error-text); margin-top: 10px; font-size: 12px; white-space: pre-wrap; }
+
       /* Team-default visibility editor inside each connection row. */
       .team-views { margin-top: 12px; }
       .team-views > summary { cursor: pointer; font-weight: 600; color: var(--sp-text-2); }
