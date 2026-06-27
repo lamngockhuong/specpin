@@ -24,6 +24,13 @@ const CONNECTIONS_KEY = "specpin:connections";
 const ENABLED_KEY = "specpin:enabled";
 const LOCAL_SPECS_KEY = "specpin:localSpecs";
 const LOCALE_KEY = "specpin:locale";
+export const SURFACE_KEY = "specpin:defaultSurface";
+
+/** Which surface a toolbar-icon click opens. Honored on Chrome only (the
+ *  background applies it via chrome.action.setPopup + sidePanel behavior);
+ *  Firefox always opens the popup from the toolbar and the sidebar from its
+ *  native toggle. */
+export type DefaultSurface = "popup" | "sidepanel";
 
 export async function getConfig(): Promise<ConnectionConfig | null> {
   const stored = await browser.storage.local.get(CONFIG_KEY);
@@ -68,6 +75,17 @@ export async function getLocale(): Promise<string | null> {
 
 export async function setLocale(locale: string): Promise<void> {
   await browser.storage.local.set({ [LOCALE_KEY]: locale });
+}
+
+/** The toolbar-click surface preference (default "popup" preserves today's
+ *  behavior on a fresh install). */
+export async function getDefaultSurface(): Promise<DefaultSurface> {
+  const stored = await browser.storage.local.get(SURFACE_KEY);
+  return (stored[SURFACE_KEY] as DefaultSurface | undefined) ?? "popup";
+}
+
+export async function setDefaultSurface(surface: DefaultSurface): Promise<void> {
+  await browser.storage.local.set({ [SURFACE_KEY]: surface });
 }
 
 export async function getLocalSpecs(): Promise<LocalSpecsState | null> {

@@ -19,8 +19,10 @@ specpin serve  ── Go sidecar ──  localhost HTTP + SSE (token-authenticat
 browser extension (WXT, MV3)
    - background SW: SidecarRegistry (N connections) + per-connection cache + SSE relay
    - content script: matchElement(fingerprint) -> render (tooltip / sidebar / modal)
-   - popup + options: connection manager, locale toggle, on/off, capture
+   - popup + side panel + options: connection manager, locale toggle, on/off, capture
 ```
+
+Extension cung cấp hai bề mặt điều khiển tương đương dùng chung messaging của background: **popup** (dropdown tạm thời) và **side panel** (`entrypoints/sidepanel/`, một trang gắn cố định hiển thị description + business rules của spec ngay inline và tự refresh khi đổi tab/điều hướng và khi có `SPECS_CHANGED`). Cả hai fetch qua một helper chung `fetchSurfaceState()`. WXT map một entrypoint `sidepanel` duy nhất sang Chrome `side_panel` và Firefox `sidebar_action`. Một tùy chọn `defaultSurface` được lưu quyết định click icon trên thanh công cụ mở popup hay side panel; background áp dụng nó trên Chrome qua `chrome.action.setPopup` + `sidePanel.setPanelBehavior` (Firefox giữ popup trên nút thanh công cụ và mở sidebar từ nút gốc của nó).
 
 Dữ liệu tuân theo nguyên tắc one schema, two validators: JSON Schema được publish (`packages/spec-schema/schema/v1.json`) là single source of truth. Phía TS validate bằng ajv; Go sidecar nhúng cùng file đó và validate bằng `santhosh-tekuri/jsonschema/v6`. CI cross-validate một fixture corpus dùng chung qua cả hai và fail nếu có drift.
 

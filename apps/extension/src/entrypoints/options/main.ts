@@ -1,3 +1,4 @@
+import { type DefaultSurface, getDefaultSurface, setDefaultSurface } from "../../shared/config.js";
 import {
   type ConnectionStatus,
   type SetLocalSpecsResult,
@@ -22,6 +23,7 @@ const connections = byId("connections");
 const localSpecs = byId("localSpecs") as HTMLTextAreaElement;
 const localFiles = byId("localFiles") as HTMLInputElement;
 const localResult = byId("localResult");
+const surface = byId("surface") as HTMLSelectElement;
 
 // The sidecar binds localhost only; reject anything else before sending.
 const LOCAL_URL = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/;
@@ -119,6 +121,15 @@ async function refresh(): Promise<void> {
   const status = await sendToBackground<StatusResult>({ type: "GET_STATUS" });
   renderConnections(status.connections ?? []);
 }
+
+// Toolbar-click surface preference. The background watches this storage key and
+// applies it (Chrome only); no message round-trip needed.
+void getDefaultSurface().then((s) => {
+  surface.value = s;
+});
+surface.addEventListener("change", () => {
+  void setDefaultSurface(surface.value as DefaultSurface);
+});
 
 byId("add").addEventListener("click", async () => {
   const url = baseUrl.value.trim().replace(/\/+$/, "");

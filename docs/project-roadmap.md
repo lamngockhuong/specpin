@@ -92,6 +92,9 @@ Goal: robustness, flexibility, polish. No timeline committed.
 - Multi-language specs: `title`/`description`/`businessRules` are object-only `LocalizedString` (locale-keyed; flat strings rejected by both validators). Runtime language toggle in the popup (mirrored in the sidebar) with `defaultLocale` -> first-present fallback; translations authored per locale in the capture form. `description` values are now non-empty.
 - Multi-project display: one extension connects to many sidecars at once via a `SidecarRegistry`; specs route to each page by the project's `domains`, tagged by project. Empty-`domains` projects need an explicit `applyToAllSites` opt-in (no silent every-site match). Per-connection token isolation, error isolation, jittered reconnect, and a general SW-wake watch re-establish (also fixes the latent single-connection case). Options page is now a connection manager (add/remove/reconnect, per-tab popup view, project labels on specs).
 
+**Side panel surface shipped (2026-06-27)** on branch `feat/extension-sidepanel-surface` (plan: `plans/260627-1119-extension-sidepanel-surface/`):
+- Side panel (`entrypoints/sidepanel/`) as a persistent docked alternative to the popup: wider full-height layout, spec description + business rules shown inline, auto-refresh on tab activation / URL change / `SPECS_CHANGED`. Popup and side panel share one `fetchSurfaceState()` helper. WXT maps the single entrypoint to Chrome `side_panel` + Firefox `sidebar_action`. A stored `defaultSurface` preference (Options) chooses the toolbar-click surface on Chrome; Firefox keeps the popup on the toolbar button and opens the sidebar from its native toggle.
+
 Deferred from these slices pending a real corpus / usage feedback: the hybrid weighted scorer (needs a before/after DOM corpus to tune), the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
 
 ### Planned Features

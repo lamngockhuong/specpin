@@ -94,6 +94,9 @@ Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa ca
 - Multi-language specs: `title`/`description`/`businessRules` là `LocalizedString` chỉ dạng object (đánh key theo locale; string phẳng bị từ chối bởi cả hai validator). Runtime language toggle trong popup (được phản chiếu trong sidebar) với fallback `defaultLocale` -> first-present; các bản dịch được soạn per locale trong form capture. Các giá trị `description` bây giờ không rỗng.
 - Multi-project display: một extension kết nối tới nhiều sidecar cùng lúc qua một `SidecarRegistry`; spec định tuyến tới từng page theo `domains` của project, được tag theo project. Các project empty-`domains` cần một opt-in `applyToAllSites` rõ ràng (không match mọi site một cách im lặng). Cô lập token per-connection, cô lập lỗi, reconnect được jitter, và một tổng quát SW-wake watch re-establish (cũng sửa trường hợp latent single-connection). Trang Options bây giờ là một connection manager (add/remove/reconnect, view per-tab popup, project labels trên spec).
 
+**Đã ship bề mặt side panel (2026-06-27)** trên nhánh `feat/extension-sidepanel-surface` (plan: `plans/260627-1119-extension-sidepanel-surface/`):
+- Side panel (`entrypoints/sidepanel/`) là lựa chọn gắn cố định thay cho popup: layout rộng full-height, hiển thị description + business rules của spec ngay inline, tự refresh khi activate tab / đổi URL / `SPECS_CHANGED`. Popup và side panel dùng chung một helper `fetchSurfaceState()`. WXT map một entrypoint duy nhất sang Chrome `side_panel` + Firefox `sidebar_action`. Một tùy chọn `defaultSurface` được lưu (Options) chọn bề mặt mở khi click icon trên Chrome; Firefox giữ popup trên nút thanh công cụ và mở sidebar từ nút gốc của nó.
+
 Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi sử dụng: hybrid weighted scorer (cần corpus DOM trước/sau để tinh chỉnh), nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
 
 ### Tính năng đã lên kế hoạch

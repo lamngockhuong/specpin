@@ -43,6 +43,20 @@
         border-radius: var(--sp-radius-control);
       }
       input::placeholder { color: var(--sp-text-3); }
+      select {
+        width: 100%; padding: 11px 12px;
+        font: 13px/1.4 var(--sp-font-ui);
+        color: var(--sp-text);
+        background: var(--sp-elevated);
+        border: 1px solid var(--sp-border);
+        border-radius: var(--sp-radius-control);
+        cursor: pointer;
+      }
+      select:focus {
+        outline: none;
+        border-color: var(--sp-accent);
+        box-shadow: 0 0 0 3px var(--sp-accent-glow);
+      }
       input[type="file"] {
         width: 100%; padding: 9px 12px;
         font: 12px/1.4 var(--sp-font-mono);
@@ -160,6 +174,22 @@
       <label class="inline"><input id="applyAll" type="checkbox" /> Apply to all sites if this project pins no domains</label>
       <button id="add" type="button">Test &amp; add project</button>
       <div id="addResult"></div>
+    </div>
+
+    <div class="card">
+      <div class="header">
+        <h1>Toolbar icon</h1>
+      </div>
+      <p class="lead">
+        What clicking the Specpin toolbar icon opens. <strong>Chrome only</strong>:
+        on Firefox the icon always opens the popup, and the side panel is opened
+        from Firefox's own sidebar toggle (View &rarr; Sidebar).
+      </p>
+      <label for="surface">When I click the toolbar icon</label>
+      <select id="surface">
+        <option value="popup">Open the popup</option>
+        <option value="sidepanel">Open the side panel</option>
+      </select>
     </div>
 
     <div class="card">
