@@ -3,6 +3,7 @@ import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import { setLocale } from "../../shared/config.js";
 import "../../shared/tokens.gen.css";
+import "../../shared/scrollbar.css";
 import {
   type Message,
   type SpecsForOrigin,

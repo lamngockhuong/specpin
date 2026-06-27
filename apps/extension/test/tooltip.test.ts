@@ -16,6 +16,16 @@ function fire(el: Element, type: string): void {
   el.dispatchEvent(new Event(type, { bubbles: true }));
 }
 
+function mouse(target: Element | Window, type: string, init: MouseEventInit = {}): void {
+  target.dispatchEvent(new MouseEvent(type, { bubbles: true, button: 0, ...init }));
+}
+
+function pin(): { tip: HTMLElement; badge: HTMLElement } {
+  const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+  fire(badge, "click");
+  return { tip: must(shadowOf().querySelector(".tip")) as HTMLElement, badge };
+}
+
 const spec: Spec = {
   id: "login",
   title: { en: "Login button" },
@@ -122,6 +132,67 @@ describe("TooltipRenderer", () => {
     const tip = must(shadowOf().querySelector(".tip"));
     expect(tip.classList.contains("show")).toBe(true);
     expect(shadowOf().querySelectorAll(".tip")).toHaveLength(1);
+    renderer.destroy();
+  });
+
+  it("the pinned tip can be dragged by its title to a new position", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const { tip } = pin();
+    const title = must(tip.querySelector("h4"));
+
+    mouse(title, "mousedown", { clientX: 100, clientY: 100 });
+    expect(tip.classList.contains("dragging")).toBe(true);
+    mouse(window, "mousemove", { clientX: 180, clientY: 240 });
+    mouse(window, "mouseup");
+
+    expect(tip.classList.contains("dragging")).toBe(false);
+    // rect.left is 0 in jsdom, so offset == mousedown coords; moved delta is 80/140.
+    expect(tip.style.left).toBe("80px");
+    expect(tip.style.top).toBe("140px");
+    renderer.destroy();
+  });
+
+  it("a dragged tip stays put through scroll (no re-anchor to the badge)", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const { tip } = pin();
+    mouse(must(tip.querySelector("h4")), "mousedown", { clientX: 100, clientY: 100 });
+    mouse(window, "mousemove", { clientX: 180, clientY: 240 });
+    mouse(window, "mouseup");
+
+    const left = tip.style.left;
+    window.dispatchEvent(new Event("scroll"));
+    expect(tip.style.left).toBe(left);
+    renderer.destroy();
+  });
+
+  it("reopening a tip resets the dragged position back to the badge anchor", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const { tip, badge } = pin();
+    mouse(must(tip.querySelector("h4")), "mousedown", { clientX: 100, clientY: 100 });
+    mouse(window, "mousemove", { clientX: 180, clientY: 240 });
+    mouse(window, "mouseup");
+    expect(tip.style.left).toBe("80px");
+
+    fire(must(shadowOf().querySelector(".pin-close")), "click");
+    fire(badge, "click");
+    // Re-anchored next to the badge (left clamped to the 8px gutter in jsdom).
+    expect(tip.style.left).toBe("8px");
+    renderer.destroy();
+  });
+
+  it("dragging only starts from the title, not the body text", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const { tip } = pin();
+    mouse(must(tip.querySelector("p")), "mousedown", { clientX: 100, clientY: 100 });
+    expect(tip.classList.contains("dragging")).toBe(false);
     renderer.destroy();
   });
 
