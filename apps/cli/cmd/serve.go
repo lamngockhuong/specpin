@@ -52,10 +52,17 @@ func runServe(cmd *cobra.Command, _ []string) error {
 	}
 
 	st := store.New(specsDir)
-	project := ""
-	if m, err := st.LoadManifest(); err == nil {
-		project = m.Project
+	// Fail early on a missing/unreadable manifest.json instead of serving a dir
+	// whose every /specs request would return load_failed. The usual cause is
+	// --dir pointed at the repo root rather than its .specs/ subdirectory.
+	m, err := st.LoadManifest()
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("no manifest.json in %s (point --dir at the .specs directory, or run `specpin init` first)", specsDir)
+		}
+		return fmt.Errorf("read manifest.json in %s: %w", specsDir, err)
 	}
+	project := m.Project
 
 	token, err := generateToken()
 	if err != nil {

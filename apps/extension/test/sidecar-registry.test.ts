@@ -1,4 +1,4 @@
-import type { SpecsResponse } from "@specpin/api-client";
+import { SidecarError, type SpecsResponse } from "@specpin/api-client";
 import { describe, expect, it } from "vitest";
 import { SidecarConnection } from "../src/background/sidecar-connection.js";
 import { SidecarRegistry } from "../src/background/sidecar-registry.js";
@@ -113,6 +113,27 @@ describe("SidecarRegistry routing", () => {
     expect(statuses.find((s) => s.id === "bad")?.connected).toBe(false);
     expect(statuses.find((s) => s.id === "bad")?.error).toBeTruthy();
     expect(r.specsForOrigin("https://good.test").specs.map((s) => s.id)).toEqual(["good-spec"]);
+  });
+
+  it("surfaces a SidecarError's details as errorDetail (plain errors leave it undefined)", async () => {
+    const watch = { n: 0 };
+    const r = registryWith({
+      typed: fakeSource(
+        new SidecarError(500, "load_failed", ["no manifest.json in /x (point --dir at .specs)"]),
+        watch,
+      ),
+      plain: fakeSource(new Error("sidecar down"), watch),
+    });
+    await r.reestablish([conn("typed"), conn("plain")], false);
+
+    const typed = r.statuses().find((s) => s.id === "typed");
+    expect(typed?.error).toBe("load_failed");
+    expect(typed?.errorDetail).toBe("no manifest.json in /x (point --dir at .specs)");
+
+    // A non-SidecarError carries no structured detail.
+    const plain = r.statuses().find((s) => s.id === "plain");
+    expect(plain?.error).toBeTruthy();
+    expect(plain?.errorDetail).toBeUndefined();
   });
 
   it("never exposes the token in a connection status", async () => {
