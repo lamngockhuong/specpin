@@ -29,6 +29,13 @@ export default defineConfig({
       ...(manifestVersion === 3 ? ["sidePanel"] : []),
     ],
     host_permissions: ["http://127.0.0.1/*", "http://localhost/*"],
+    // Firefox (MV2) needs an explicit, stable add-on ID or the `storage` API
+    // refuses to work for temporary add-ons (random ID each load via
+    // about:debugging). Chrome/MV3 derives its ID from the store/key, so this
+    // is scoped to Firefox only.
+    ...(manifestVersion === 2
+      ? { browser_specific_settings: { gecko: { id: "specpin@ohnice.app" } } }
+      : {}),
     ...(manifestVersion === 3
       ? { action: { default_icon: iconSet } }
       : { browser_action: { default_icon: iconSet } }),
