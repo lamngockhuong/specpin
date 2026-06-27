@@ -9,6 +9,7 @@ import {
 } from "../../shared/messaging.js";
 import { parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
 import "../../shared/tokens.gen.css";
+import "../../shared/switch.css";
 
 const byId = (id: string): HTMLElement => {
   const el = document.getElementById(id);

@@ -5,6 +5,7 @@ import { setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
+import "../../shared/switch.css";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
 import {
   buildFilterModel,
@@ -83,14 +84,6 @@ async function refresh(): Promise<void> {
 
 byId("enabled").addEventListener("change", async (e) => {
   await sendToBackground({ type: "SET_ENABLED", enabled: (e.target as HTMLInputElement).checked });
-  await refresh();
-});
-byId("reload").addEventListener("click", async () => {
-  await sendToBackground({ type: "RELOAD" });
-  await refresh();
-});
-byId("reconnect").addEventListener("click", async () => {
-  await sendToBackground({ type: "RECONNECT" });
   await refresh();
 });
 byId("capture").addEventListener("click", async () => {

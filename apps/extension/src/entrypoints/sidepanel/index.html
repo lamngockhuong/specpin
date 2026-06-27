@@ -45,23 +45,7 @@
       .toggle-row { margin-top: 10px; }
       .toggle-row label { color: var(--sp-text-2); font-weight: 500; cursor: pointer; }
 
-      /* On/off toggle: native checkbox restyled as a track + knob. */
-      #enabled {
-        appearance: none; -webkit-appearance: none;
-        width: 40px; height: 22px; margin: 0;
-        border-radius: 999px;
-        background: var(--sp-control);
-        border: 1px solid var(--sp-border);
-        position: relative; cursor: pointer; transition: background 0.15s, border-color 0.15s;
-      }
-      #enabled::before {
-        content: ""; position: absolute; top: 2px; left: 2px;
-        width: 16px; height: 16px; border-radius: 50%;
-        background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-        transition: transform 0.15s;
-      }
-      #enabled:checked { background: var(--sp-accent); border-color: var(--sp-accent); }
-      #enabled:checked::before { transform: translateX(18px); }
+      /* On/off toggle switch is shared via src/shared/switch.css (.switch). */
 
       .meta {
         margin-top: 14px; padding-top: 14px;
@@ -223,7 +207,7 @@
     </div>
     <div class="row toggle-row">
       <label for="enabled">Show specs on this page</label>
-      <input type="checkbox" id="enabled" aria-label="Show all Specpin specs on this page" />
+      <input type="checkbox" id="enabled" class="switch" aria-label="Show all Specpin specs on this page" />
     </div>
     <div class="row meta"><span id="project"></span><span id="count" class="pill"></span></div>
     <ul id="projects"></ul>
@@ -234,10 +218,6 @@
     <div id="filters" class="filters" hidden></div>
     <input type="search" id="search" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
-    <div class="actions">
-      <button id="reload" type="button">Reload</button>
-      <button id="reconnect" type="button">Reconnect</button>
-    </div>
     <div class="actions">
       <button id="capture" type="button">+ Capture spec</button>
       <select id="mode" title="Display mode">
