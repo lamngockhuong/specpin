@@ -133,6 +133,26 @@ describe("SidecarRegistry routing", () => {
     r.setLocalSpecs(null, 2);
     expect(r.manualSpecCount()).toBe(0);
   });
+
+  it("clears the manual bundle authoritatively and resets the guard for a later reload", () => {
+    const r = registryWith({});
+    expect(r.clearLocalSpecs()).toBe(false); // nothing held -> no-op
+    r.setLocalSpecs(resp("Manual", [], "m-spec"), 100);
+    expect(r.manualSpecCount()).toBe(1);
+    // Storage-truth clear always wins regardless of seq (it is not a concurrent write).
+    expect(r.clearLocalSpecs()).toBe(true);
+    expect(r.manualSpecCount()).toBe(0);
+    // Guard reset: a later reload of any seq re-applies (no stale-seq rejection).
+    expect(r.setLocalSpecs(resp("Manual", [], "m2"), 50)).toBe(true);
+    expect(r.manualSpecCount()).toBe(1);
+  });
+
+  it("setLocalSpecs still drops an out-of-order concurrent write (seq guard)", () => {
+    const r = registryWith({});
+    r.setLocalSpecs(resp("Manual", [], "m-spec"), 5);
+    expect(r.setLocalSpecs(resp("Manual", [], "m2"), 3)).toBe(false); // stale -> dropped
+    expect(r.manualSpecCount()).toBe(1);
+  });
 });
 
 describe("SidecarRegistry watch re-establish (RT-FM1)", () => {

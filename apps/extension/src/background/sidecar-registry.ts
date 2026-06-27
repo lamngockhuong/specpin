@@ -122,6 +122,18 @@ export class SidecarRegistry {
     return true;
   }
 
+  /** Drop the in-memory Manual bundle as an authoritative reconcile: storage no
+   *  longer has it, so memory must match. Unlike `setLocalSpecs` this is NOT a
+   *  seq-ordered write (the guard orders concurrent Options writes; a clear from
+   *  storage truth is not one of them), so it always wins and resets the guard so
+   *  a later reload of any seq re-applies. Returns whether a bundle was held. */
+  clearLocalSpecs(): boolean {
+    if (this.manual === null) return false;
+    this.manual = null;
+    this.lastLocalSeq = 0;
+    return true;
+  }
+
   /** The specs that apply to a page origin, each tagged with its source. Only
    *  origin-matching connections contribute (the confidentiality boundary). Specs
    *  are never deduped across connections: two projects may share a spec id. */

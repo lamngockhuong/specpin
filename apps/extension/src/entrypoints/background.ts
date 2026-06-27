@@ -8,6 +8,7 @@ import {
   getDefaultSurface,
   getEnabled,
   getLocalSpecs,
+  LOCAL_SPECS_KEY,
   SURFACE_KEY,
   setConfig,
   setConnections,
@@ -54,6 +55,24 @@ export default defineBackground(() => {
     browser.runtime.sendMessage({ type: "SPECS_CHANGED" } satisfies Message).catch(() => {});
   }
 
+  // Reconcile the in-memory manual bundle against storage truth: apply the stored
+  // bundle, or drop a stale in-memory one storage no longer has. The clear path is
+  // the fix for a wiped/cleared `specpin:localSpecs` (e.g. a DevTools storage
+  // clear): the apply path can only ADD, so without this a leaked bundle would
+  // render for the life of the worker. Broadcasts only when the registry actually
+  // changed (skips the no-op echo from an in-process write that already updated it).
+  async function reconcileLocalSpecs(broadcast: boolean): Promise<void> {
+    try {
+      const local = await getLocalSpecs();
+      const applied = local
+        ? registry.setLocalSpecs(local.specs, local.seq)
+        : registry.clearLocalSpecs();
+      if (applied && broadcast) await broadcastSpecsChanged();
+    } catch {
+      // Best-effort; the keepalive alarm reconciles on its next tick.
+    }
+  }
+
   // Rebuild every connection from storage and (re)start watches. Runs at module
   // eval and on each service-worker wake (onStartup / onInstalled / alarm), so a
   // suspended SW that lost its watches re-establishes them generally, for one or
@@ -63,8 +82,7 @@ export default defineBackground(() => {
     // Defensive: a storage rejection here would otherwise surface as an unhandled
     // rejection from the fire-and-forget callers below.
     try {
-      const local = await getLocalSpecs();
-      if (local) registry.setLocalSpecs(local.specs, local.seq);
+      await reconcileLocalSpecs(false);
       const connections = await getConnections();
       const enabled = await getEnabled();
       await registry.reestablish(connections, enabled);
@@ -108,7 +126,12 @@ export default defineBackground(() => {
   // Re-apply when the Settings page changes the preference so the toolbar
   // behavior switches without a reload.
   browser.storage.onChanged.addListener((changes, area) => {
-    if (area === "local" && SURFACE_KEY in changes) void applySurfaceBehavior();
+    if (area !== "local") return;
+    if (SURFACE_KEY in changes) void applySurfaceBehavior();
+    // Mirror an out-of-band manual-bundle change (e.g. a DevTools storage clear,
+    // which the in-process write path never routes through SET_LOCAL_SPECS) into
+    // the live registry at once, rather than waiting for the keepalive alarm.
+    if (LOCAL_SPECS_KEY in changes) void reconcileLocalSpecs(true);
   });
   // The MV3 worker suspends when idle and SSE cannot wake it, so a watch can lag
   // up to one alarm period behind a change. This alarm re-establishes watches
@@ -120,9 +143,14 @@ export default defineBackground(() => {
 
   browser.runtime.onMessage.addListener((raw, sender): Promise<unknown> | undefined => {
     const message = raw as Message;
-    // Privileged (state-mutating) messages must originate from an extension page
-    // (popup/options), never from a web-page content script (carries sender.tab).
-    if (PRIVILEGED_MESSAGE_TYPES.has(message.type) && sender?.tab !== undefined) {
+    // Privileged (state-mutating) messages must originate from a trusted extension
+    // surface (popup, options, side panel), never from a web-page content script.
+    // The boundary is the sender URL (browser-set, not spoofable): extension pages
+    // load from the extension's own origin, content scripts never do. The earlier
+    // `sender.tab` check broke when Options became a standalone tab -- which, like
+    // a content script, carries sender.tab -- so every privileged call returned
+    // "forbidden". Fail closed: a missing URL is not trusted.
+    if (PRIVILEGED_MESSAGE_TYPES.has(message.type) && !isExtensionPageSender(sender)) {
       return Promise.resolve({ ok: false, error: "forbidden" });
     }
     switch (message.type) {
@@ -152,6 +180,14 @@ export default defineBackground(() => {
         return undefined;
     }
   });
+
+  // True when the message came from one of this extension's own pages. Extension
+  // surfaces load from `chrome-extension://<id>/` (Firefox: `moz-extension://`),
+  // which getURL("") returns; a web-page content script's URL never starts with it.
+  function isExtensionPageSender(sender: { url?: string } | undefined): boolean {
+    const base = browser.runtime.getURL("");
+    return sender?.url?.startsWith(base) ?? false;
+  }
 
   function originOf(sender: { tab?: { url?: string } } | undefined): string {
     const url = sender?.tab?.url;

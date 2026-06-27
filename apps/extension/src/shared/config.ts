@@ -22,7 +22,7 @@ export interface LocalSpecsState {
 const CONFIG_KEY = "specpin:config";
 const CONNECTIONS_KEY = "specpin:connections";
 const ENABLED_KEY = "specpin:enabled";
-const LOCAL_SPECS_KEY = "specpin:localSpecs";
+export const LOCAL_SPECS_KEY = "specpin:localSpecs";
 const LOCALE_KEY = "specpin:locale";
 export const SURFACE_KEY = "specpin:defaultSurface";
 
