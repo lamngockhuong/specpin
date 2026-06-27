@@ -37,6 +37,13 @@
       .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sp-text-3); }
       .dot.ok { background: var(--sp-success-dot); }
       .dot.off { background: var(--sp-error-text); }
+      .dot.warn { background: var(--sp-warning-border); }
+
+      /* Global on/off toggle for ALL spec sources (sidecar + manual). On its own
+         row, separate from the connection status, so it does not read as a
+         sidecar-only control. */
+      .toggle-row { margin-top: 10px; }
+      .toggle-row label { color: var(--sp-text-2); font-weight: 500; cursor: pointer; }
 
       /* On/off toggle: native checkbox restyled as a track + knob. */
       #enabled {
@@ -194,7 +201,10 @@
     </div>
     <div class="row status">
       <span><span id="status-dot" class="dot"></span><span id="status-text">Loading&hellip;</span></span>
-      <input type="checkbox" id="enabled" aria-label="Enable Specpin on this page" />
+    </div>
+    <div class="row toggle-row">
+      <label for="enabled">Show specs on this page</label>
+      <input type="checkbox" id="enabled" aria-label="Show all Specpin specs on this page" />
     </div>
     <div class="row meta"><span id="project"></span><span id="count" class="pill"></span></div>
     <ul id="projects"></ul>

@@ -32,15 +32,15 @@ function conn(partial: Partial<ConnectionStatus>): ConnectionStatus {
 function status(connections: ConnectionStatus[]): StatusResult {
   return {
     configured: true,
-    connected: true,
     enabled: true,
-    activeSource: "sidecar",
     connections,
   };
 }
 
 const project = () => document.getElementById("project")?.textContent;
 const count = () => document.getElementById("count")?.textContent;
+const statusText = () => document.getElementById("status-text")?.textContent;
+const dotClass = () => document.getElementById("status-dot")?.className;
 
 describe("renderStatus origin scoping", () => {
   beforeEach(setupDom);
@@ -86,5 +86,60 @@ describe("renderStatus origin scoping", () => {
     renderStatus(status([a, b]), "https://anything.test", 5);
     expect(project()).toBe("");
     expect(count()).toBe("5 specs");
+  });
+});
+
+describe("renderStatus connection health (origin-scoped)", () => {
+  beforeEach(setupDom);
+
+  const allSites = (id: string, connected: boolean) =>
+    conn({ id, project: id, label: id, matchesAllSites: true, connected, specCount: 1 });
+
+  it("shows Connected when every serving sidecar is up", () => {
+    renderStatus(status([allSites("a", true), allSites("b", true)]), "https://x.test", 2);
+    expect(statusText()).toBe("Connected (sidecar)");
+    expect(dotClass()).toBe("dot ok");
+  });
+
+  it("shows a degraded Partially connected (n/m) when some serving sidecars are down", () => {
+    renderStatus(status([allSites("a", true), allSites("b", false)]), "https://x.test", 1);
+    expect(statusText()).toBe("Partially connected (1/2)");
+    expect(dotClass()).toBe("dot warn");
+  });
+
+  it("names the source as Disconnected (sidecar) when all serving sidecars are down", () => {
+    renderStatus(status([allSites("a", false), allSites("b", false)]), "https://x.test", 0);
+    expect(statusText()).toBe("Disconnected (sidecar)");
+    expect(dotClass()).toBe("dot off");
+  });
+
+  it("ignores connections that do not serve the active origin", () => {
+    // A down sidecar pinned to another domain must not degrade this page.
+    const here = conn({ id: "here", matchesAllSites: true, connected: true, specCount: 1 });
+    const elsewhere = conn({ id: "elsewhere", domains: ["other.test"], connected: false });
+    renderStatus(status([here, elsewhere]), "https://x.test", 1);
+    expect(statusText()).toBe("Connected (sidecar)");
+    expect(dotClass()).toBe("dot ok");
+  });
+
+  it("reports Connected (manual) when no sidecar serves the page but specs render", () => {
+    const elsewhere = conn({ id: "elsewhere", domains: ["other.test"], connected: true });
+    renderStatus(status([elsewhere]), "https://x.test", 3);
+    expect(statusText()).toBe("Connected (manual)");
+    expect(dotClass()).toBe("dot ok");
+  });
+
+  it("reports no project (not 'no specs') for a configured page that nothing serves", () => {
+    // The spec list owns the "No specs for this page" empty state; the header
+    // must not duplicate it.
+    const elsewhere = conn({ id: "elsewhere", domains: ["other.test"], connected: true });
+    renderStatus(status([elsewhere]), "https://x.test", 0);
+    expect(statusText()).toBe("No project for this page");
+    expect(dotClass()).toBe("dot");
+  });
+
+  it("reports Not configured when nothing is set up", () => {
+    renderStatus({ configured: false, enabled: false }, "https://x.test", 0);
+    expect(statusText()).toBe("Not configured");
   });
 });

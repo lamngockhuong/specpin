@@ -42,6 +42,12 @@ export class SidecarConnection {
   private connected = false;
   private lastError: string | null = null;
   private lastErrorDetail: string | null = null;
+  // Domains from the last successful load. A failed reload clears `cache` (and
+  // with it the live domains), which would drop a domain-pinned project out of
+  // the origin-scoped status the moment it goes down -- the popup would then show
+  // "No specs for this page" instead of a disconnect. Keeping the last-known
+  // domains lets the status still recognize the project's own pages while down.
+  private lastDomains: string[] = [];
 
   constructor(
     conn: Connection,
@@ -68,6 +74,8 @@ export class SidecarConnection {
       this.token = conn.token;
       this.client = new SidecarClient({ baseUrl: conn.baseUrl, token: conn.token });
       this.source = new SidecarSource(this.client);
+      // New endpoint: the prior project's domains no longer apply.
+      this.lastDomains = [];
     }
   }
 
@@ -88,6 +96,7 @@ export class SidecarConnection {
       this.connected = true;
       this.lastError = null;
       this.lastErrorDetail = null;
+      this.lastDomains = specs.value.manifest?.domains ?? [];
     } else {
       this.cache = null;
       this.viewsCache = null;
@@ -177,10 +186,13 @@ export class SidecarConnection {
     this.stopWatch();
     this.cache = null;
     this.viewsCache = null;
+    this.lastDomains = [];
   }
 
   status(): ConnectionStatus {
-    const domains = this.cache?.manifest?.domains ?? [];
+    // Live domains when connected; the last-known set while down so a domain-
+    // pinned project still scopes to its own pages in the disconnect status.
+    const domains = this.cache?.manifest?.domains ?? this.lastDomains;
     return {
       id: this.id,
       label: this.label,

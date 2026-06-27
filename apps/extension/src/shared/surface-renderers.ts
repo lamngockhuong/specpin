@@ -16,21 +16,51 @@ export const byId = (id: string): HTMLElement => {
 };
 
 export function renderStatus(status: StatusResult, origin: string, originSpecCount: number): void {
-  const dot = byId("status-dot");
-  dot.className = `dot ${status.connected ? "ok" : status.configured ? "off" : ""}`;
-  byId("status-text").textContent = !status.configured
-    ? "Not configured"
-    : status.connected
-      ? `Connected (${status.activeSource})`
-      : "Disconnected";
+  // Health is scoped to the connections that actually serve the active tab: a
+  // sidecar bound to another domain must not color this page's status. The global
+  // status.connected (any-connection some()) stayed green even when a serving
+  // sidecar was down, masking partial failures -- this derives state per origin.
+  const serving = (status.connections ?? []).filter((c) => statusServesOrigin(c, origin));
+  const up = serving.filter((c) => c.connected).length;
+
+  let dotClass = "dot";
+  let text: string;
+  if (!status.configured) {
+    text = "Not configured";
+  } else if (serving.length > 0) {
+    // Tri-state over the serving sidecars: all up, some up (degraded), none up.
+    if (up === serving.length) {
+      dotClass = "dot ok";
+      text = "Connected (sidecar)";
+    } else if (up > 0) {
+      dotClass = "dot warn";
+      text = `Partially connected (${up}/${serving.length})`;
+    } else {
+      // Name the source so the user knows the sidecar is what needs reconnecting
+      // (the project name + Reconnect button sit right below this).
+      dotClass = "dot off";
+      text = "Disconnected (sidecar)";
+    }
+  } else if (originSpecCount > 0) {
+    // No sidecar serves this page yet specs render here: they come from Manual import.
+    dotClass = "dot ok";
+    text = "Connected (manual)";
+  } else {
+    // Header describes the connection/source situation (no project or manual
+    // batch is pinned here); the spec list owns the "No specs for this page"
+    // empty state, so the two never repeat the same sentence.
+    text = "No project for this page";
+  }
+  byId("status-dot").className = dotClass;
+  byId("status-text").textContent = text;
+
   (byId("enabled") as HTMLInputElement).checked = status.enabled;
   // Project name + spec count are scoped to the ACTIVE TAB's origin, never the
   // global first-connected project or the cross-project total: a project that
-  // does not serve this page must not be named here. A single matching project
+  // does not serve this page must not be named here. A single serving project
   // names the header; 0 or 2+ leave it blank (renderProjects lists the 2+ case).
-  const matching = (status.connections ?? []).filter((c) => statusServesOrigin(c, origin));
   byId("project").textContent =
-    matching.length === 1 ? matching[0].label || matching[0].project || "" : "";
+    serving.length === 1 ? serving[0].label || serving[0].project || "" : "";
   byId("count").textContent = originSpecCount ? `${originSpecCount} specs` : "";
 }
 
@@ -65,6 +95,9 @@ export interface FilterOptions {
   perSpec?: boolean;
   /** A personal override is active somewhere, so the Reset control is meaningful. */
   hasOverrides?: boolean;
+  /** Specpin's master on/off. When off, the whole block is hidden (defaults to on
+   *  so existing callers keep rendering). */
+  enabled?: boolean;
   onToggle: (key: FacetKey, visible: boolean) => void;
   onReset: () => void;
 }
@@ -80,7 +113,13 @@ export function renderFilters(
   container.replaceChildren();
   const hasFacets =
     inventory.tags.length > 0 || inventory.files.length > 0 || inventory.specs.length > 0;
-  if (!hasFacets && opts.path === undefined) {
+  // The "This page" hide toggle is meaningful only when there are specs here to
+  // hide, or the page is already hidden (so the user can reverse it).
+  const showPageGroup = opts.path !== undefined && (hasFacets || (opts.pageHidden ?? false));
+  // Hide the whole block when Specpin is off or there is nothing to filter on
+  // this page (no project / no specs): an empty "Filter > This page" block is
+  // just noise.
+  if (opts.enabled === false || (!hasFacets && !showPageGroup)) {
     container.hidden = true;
     return;
   }
@@ -111,7 +150,7 @@ export function renderFilters(
   if (opts.perSpec && inventory.specs.length) {
     container.appendChild(facetGroup("Specs", inventory.specs, opts.onToggle));
   }
-  if (opts.path !== undefined) {
+  if (showPageGroup && opts.path !== undefined) {
     container.appendChild(pageGroup(opts.path, opts.pageHidden ?? false, opts.onToggle));
   }
 }
@@ -130,6 +169,7 @@ export function renderFilterSection(
     pageHidden: model.pageHidden,
     perSpec,
     hasOverrides: model.hasOverrides,
+    enabled: model.enabled,
     onToggle: async (key, visible) => {
       await applyFacetToggle(model.state, key, visible);
       await refresh();
