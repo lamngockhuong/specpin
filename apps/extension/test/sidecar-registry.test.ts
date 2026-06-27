@@ -339,6 +339,39 @@ describe("SidecarConnection.update (edit endpoint)", () => {
   });
 });
 
+describe("SidecarConnection.status while disconnected", () => {
+  /** Source that loads canned specs until `state.fail` is flipped, then throws. */
+  function flakySource(domains: string[], state: { fail: boolean }): SpecSource {
+    return {
+      id: "sidecar",
+      isAvailable: async () => true,
+      loadSpecs: async () => {
+        if (state.fail) throw new SidecarError(500, "load_failed", []);
+        return resp("Acme", domains);
+      },
+      saveSpec: async () => {},
+      updateSpec: async () => {},
+    };
+  }
+
+  it("retains the last-known domains so a domain-pinned project still scopes to its page when down", async () => {
+    const state = { fail: false };
+    const c = new SidecarConnection(conn("1"), { source: flakySource(["acme.test"], state) });
+    await c.reload();
+    expect(c.status().connected).toBe(true);
+    expect(c.status().domains).toEqual(["acme.test"]);
+
+    // Sidecar goes down: reload fails and clears the live cache.
+    state.fail = true;
+    await c.reload();
+    const s = c.status();
+    expect(s.connected).toBe(false);
+    expect(s.domains).toEqual(["acme.test"]); // retained, not wiped to []
+    // A domain-pinned project must not flip to match-all while it is down.
+    expect(s.matchesAllSites).toBe(false);
+  });
+});
+
 describe("SidecarRegistry.updateSpec routing", () => {
   const editedSpec = (id: string): Spec => resp("X", [], id).specs[0] as unknown as Spec;
 

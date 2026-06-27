@@ -349,13 +349,13 @@ export default defineBackground(() => {
   async function handleStatus(): Promise<StatusResult> {
     const enabled = await getEnabled();
     const connections = registry.statuses();
-    const connected = connections.some((c) => c.connected);
     const locales = registry.allLocales();
+    // Connection health + active source are derived per active-tab origin by the
+    // surface (renderStatus) from `connections`; no global flags here (they
+    // masked partial failures and named projects on pages they do not serve).
     return {
       configured: registry.isConfigured() || registry.hasContent(),
-      connected,
       enabled,
-      activeSource: connected ? "sidecar" : registry.hasContent() ? "manual" : null,
       locales: locales.length ? locales : ["en"],
       connections,
       manualBatches: registry.manualBatchSummaries(),

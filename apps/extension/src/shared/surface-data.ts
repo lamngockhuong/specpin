@@ -67,6 +67,9 @@ export interface FilterModel {
   path: string;
   pageHidden: boolean;
   hasOverrides: boolean;
+  /** Specpin's master on/off. The whole filter block is hidden when off (nothing
+   *  renders to filter), independent of any cached facets. */
+  enabled: boolean;
 }
 
 /** Assemble everything `renderFilters` needs from a fetched surface state. */
@@ -77,7 +80,14 @@ export function buildFilterModel(specs: SpecsForOrigin, path: string): FilterMod
     state,
   );
   const hasOverrides = state.personal.forceHide.length > 0 || state.personal.forceShow.length > 0;
-  return { inventory, state, path, pageHidden: pageHiddenFor(path, state), hasOverrides };
+  return {
+    inventory,
+    state,
+    path,
+    pageHidden: pageHiddenFor(path, state),
+    hasOverrides,
+    enabled: specs.enabled,
+  };
 }
 
 /** Apply a facet toggle: compute the next personal override and persist it via
