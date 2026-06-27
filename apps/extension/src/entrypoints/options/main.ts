@@ -82,8 +82,8 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
     await sendToBackground({ type: "UPDATE_CONNECTION", id: c.id, enabled: toggleBox.checked });
     await refresh();
   });
-  // Static label; the switch state conveys enabled/disabled.
-  toggle.append(document.createTextNode("Enabled"), toggleBox);
+  // Label tracks the switch state so it never contradicts the knob position.
+  toggle.append(document.createTextNode(c.enabled ? "Enabled" : "Disabled"), toggleBox);
   actions.append(toggle);
   const edit = document.createElement("button");
   edit.className = "secondary";
