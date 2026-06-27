@@ -52,7 +52,7 @@ async function refresh(): Promise<void> {
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
-  renderStatus(status);
+  renderStatus(status, origin, specs.specs.length);
   renderProjects(status.connections ?? [], origin);
   renderLocalePicker(status.locales ?? [], activeLocale);
   // The popup stays compact: group-level filters only (per-spec lives in the panel).

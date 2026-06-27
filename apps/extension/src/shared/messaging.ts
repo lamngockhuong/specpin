@@ -111,8 +111,10 @@ export interface StatusResult {
   connected: boolean;
   enabled: boolean;
   activeSource: string | null;
-  project: string | null;
-  specCount: number;
+  // Per-tab project name + spec count are NOT here: they are origin-scoped and
+  // derived by the surface from `connections` + the active origin (see
+  // renderStatus). A global "first connected project" field would reintroduce
+  // naming a project on a page it does not serve.
   /** Locales the popup language picker can offer: the union of connected
    *  projects' `manifest.settings.locales`, never empty (defaults to the
    *  project's defaultLocale, else "en"). */

@@ -325,15 +325,12 @@ export default defineBackground(() => {
     const enabled = await getEnabled();
     const connections = registry.statuses();
     const connected = connections.some((c) => c.connected);
-    const firstConnected = connections.find((c) => c.connected) ?? connections[0];
     const locales = registry.allLocales();
     return {
       configured: registry.isConfigured() || registry.hasContent(),
       connected,
       enabled,
       activeSource: connected ? "sidecar" : registry.hasContent() ? "manual" : null,
-      project: firstConnected?.project ?? null,
-      specCount: connections.reduce((n, c) => n + c.specCount, 0) + registry.manualSpecCount(),
       locales: locales.length ? locales : ["en"],
       connections,
     };
