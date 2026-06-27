@@ -4,6 +4,7 @@ import { setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
+import { MANUAL_CONNECTION_ID } from "../../shared/connection-types.js";
 import {
   type Message,
   type SpecsForOrigin,
@@ -83,6 +84,22 @@ function renderSpecs(res: SpecsForOrigin): void {
       void toggleSpec(facets, !visible);
     });
     li.appendChild(eye);
+
+    // Edit button (sidecar specs only; Manual import is read-only). Delegates to
+    // the active tab's content script, which opens the in-page edit form (the
+    // form + capture picker must run in the page context).
+    if (spec.connectionId !== MANUAL_CONNECTION_ID) {
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "spec-edit";
+      edit.textContent = "Edit";
+      edit.title = "Edit this spec";
+      edit.addEventListener("click", (e) => {
+        e.stopPropagation();
+        void sendToActiveTab({ type: "EDIT_SPEC", specId: spec.id });
+      });
+      li.appendChild(edit);
+    }
 
     if (multiProject && spec.project) {
       const project = document.createElement("span");

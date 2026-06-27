@@ -97,6 +97,12 @@ Team admins can set project-wide defaults in the Options page (**Team visibility
 
 Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, then fill the form. Pick a **Language**, enter the title/description/rules for it, then choose another language (or **+ Add language**) to add a translation - switching languages keeps what you already entered. The default language requires a title and description. If more than one project serves the page, pick the **Target project**. On save the spec is validated, written to the chosen `.spec.json` (pretty-printed), and shows up in `git diff`. Captured specs carry `meta.source: "manual"`.
 
+## 11. Edit an existing spec
+
+Open a spec for editing from either surface: click a tooltip badge to pin it and hit **Edit spec**, or click **Edit** on a spec card in the side panel. The same form opens pre-filled with the spec's content for every authored language; change the title, description, business rules, tags, or display mode and click **Save changes**. The spec keeps its `id` and provenance (`createdBy`/`createdAt`/`source`); only `updatedAt` is bumped. The change writes back through the owning sidecar and live-updates the page via SSE, the same as editing the `.spec.json` on disk.
+
+To point a spec at a different element, click **Re-link element** in the edit form, then click the new element on the page; the form reopens with your edits intact and the new fingerprint applied on save. Manual-import specs are read-only and show no Edit affordance. (Side panel Edit drives the in-page form, so keep the panel docked next to the page it describes.)
+
 ## Connect several projects at once
 
 One extension can serve many projects. Run a sidecar per project on its own port (each prints its own token), and add each in Options:

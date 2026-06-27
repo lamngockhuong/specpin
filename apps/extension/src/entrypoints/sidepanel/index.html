@@ -108,6 +108,13 @@
         color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui);
       }
       #specs .spec-vis:hover { color: var(--sp-text); }
+      /* Per-spec Edit button, sat left of the eye toggle. */
+      #specs .spec-edit {
+        position: absolute; top: 10px; right: 52px;
+        background: transparent; border: none; cursor: pointer; padding: 2px;
+        color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui);
+      }
+      #specs .spec-edit:hover { color: var(--sp-accent); }
       #specs > li.spec.spec-hidden { opacity: 0.55; }
 
       /* Spec list: full-height, each spec a card with inline detail. */

@@ -1,5 +1,5 @@
 import { captureFingerprint } from "@specpin/fingerprint-core";
-import type { DisplayMode, Manifest } from "@specpin/spec-schema";
+import type { DisplayMode, ElementFingerprint, Manifest } from "@specpin/spec-schema";
 import { browser, defineContentScript } from "#imports";
 import { CaptureForm } from "../content/capture-form.js";
 import { CapturePicker } from "../content/capture-mode.js";
@@ -86,6 +86,7 @@ export default defineContentScript({
               location.href,
               openInPanel,
               highlight,
+              openEditForm,
             )
           : null;
     };
@@ -182,6 +183,51 @@ export default defineContentScript({
       );
     }
 
+    // Run the capture picker and resolve a new fingerprint for a re-link (or null
+    // if the user cancels). Used by the edit form's "Re-link element" action.
+    function relinkElement(): Promise<ElementFingerprint | null> {
+      return new Promise((resolve) => {
+        picker.start(
+          (el) => resolve(captureFingerprint(el)),
+          () => resolve(null),
+        );
+      });
+    }
+
+    // Open the in-place edit form for a spec id. Both the tooltip Edit button
+    // (via the render session) and the side panel (via EDIT_SPEC) route here, so
+    // the form + picker always run in the page context. Manual specs are
+    // read-only and never editable.
+    function openEditForm(specId: string): void {
+      // One authoring flow at a time: if a capture or another edit is already
+      // open, ignore (re-opening form.open() would close the first and discard
+      // its unsaved edits). Both surfaces' Edit buttons route here.
+      if (captureActive) return;
+      const spec = specs.find((s) => s.id === specId && s.connectionId !== MANUAL_CONNECTION_ID);
+      if (!spec) return;
+      // Freeze re-renders while editing so the spec's element is not re-rendered
+      // out from under the form (RT-FM6, shared with capture).
+      captureActive = true;
+      form.open(spec.fingerprint, {
+        defaultFile: spec._file ?? defaultFileName(),
+        locales: availableLocales,
+        defaultLocale: manifest?.settings?.defaultLocale ?? locale,
+        initial: spec,
+        onRelink: relinkElement,
+        onSubmit: async (_file, updated) => {
+          const result = await sendToBackground<SaveSpecResult>({
+            type: "UPDATE_SPEC",
+            id: spec.id,
+            spec: updated,
+            connectionId: spec.connectionId,
+          });
+          if (result.ok) endCapture();
+          return result;
+        },
+        onCancel: endCapture,
+      });
+    }
+
     async function toggleEnabled(): Promise<void> {
       await sendToBackground({ type: "SET_ENABLED", enabled: !enabled });
       await refresh();
@@ -208,6 +254,9 @@ export default defineContentScript({
           break;
         case "START_CAPTURE":
           startCapture();
+          break;
+        case "EDIT_SPEC":
+          openEditForm(message.specId);
           break;
         case "SET_DISPLAY_MODE":
           forcedMode = message.mode;

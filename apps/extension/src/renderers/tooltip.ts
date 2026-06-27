@@ -13,6 +13,7 @@ interface Pin {
   text: LocalizedSpecText;
   tags: string[];
   project: string;
+  editable: boolean;
 }
 
 const HOST_ID = "specpin-tooltip-host";
@@ -63,6 +64,12 @@ ${SHADOW_PREAMBLE}
   color: var(--sp-text-3); font: 600 14px/1 var(--sp-font-ui); border-radius: 4px;
 }
 .tip .pin-close:hover { background: var(--sp-border); color: var(--sp-text); }
+.tip .pin-edit {
+  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
+  background: var(--sp-control); color: var(--sp-text); border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
+}
+.tip .pin-edit:hover { filter: brightness(0.97); }
 .tip .pin-open {
   margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
   background: var(--sp-accent); color: var(--sp-accent-on); border: none;
@@ -87,6 +94,7 @@ export class TooltipRenderer implements SpecRenderer {
   private pins: Pin[] = [];
   private pinnedBadge: HTMLElement | null = null;
   private onOpenInPanel?: (specId: string) => void;
+  private onEdit?: (specId: string) => void;
   private readonly doc: Document;
   private reposition = () => this.positionAll();
   // Drag state for the pinned tip. `dragged` is reset on every (re)open so the
@@ -133,6 +141,7 @@ export class TooltipRenderer implements SpecRenderer {
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
     const layer = this.ensureRoot();
     if (meta?.onOpenInPanel) this.onOpenInPanel = meta.onOpenInPanel;
+    if (meta?.onEdit) this.onEdit = meta.onEdit;
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     const badge = this.doc.createElement("div");
     badge.className = "badge";
@@ -140,7 +149,15 @@ export class TooltipRenderer implements SpecRenderer {
     if (meta?.needsReview) badge.dataset.review = "true";
     const project = meta?.showProject && meta.project ? meta.project : "";
 
-    const pin: Pin = { target, badge, specId: spec.id, text, tags: spec.tags ?? [], project };
+    const pin: Pin = {
+      target,
+      badge,
+      specId: spec.id,
+      text,
+      tags: spec.tags ?? [],
+      project,
+      editable: meta?.editable ?? true,
+    };
     badge.addEventListener("mouseenter", () => {
       if (!this.pinnedBadge) this.showTip(pin, false);
     });
@@ -177,6 +194,7 @@ export class TooltipRenderer implements SpecRenderer {
     const tags = pin.tags.length
       ? `<div class="tags">${escapeHtml(pin.tags.join(", "))}</div>`
       : "";
+    const canEdit = pin.editable && !!this.onEdit;
     tip.innerHTML =
       (pinned ? `<button type="button" class="pin-close" aria-label="Close">×</button>` : "") +
       (pin.project ? `<span class="project">${escapeHtml(pin.project)}</span>` : "") +
@@ -184,10 +202,14 @@ export class TooltipRenderer implements SpecRenderer {
       `<p>${escapeHtml(pin.text.description)}</p>` +
       rulesListHtml(pin.text.businessRules) +
       tags +
+      (pinned && canEdit ? `<button type="button" class="pin-edit">Edit spec</button>` : "") +
       (pinned ? `<button type="button" class="pin-open">Open in side panel</button>` : "");
     tip.classList.toggle("pinned", pinned);
     if (pinned) {
       tip.querySelector(".pin-close")?.addEventListener("click", () => this.unpin());
+      tip.querySelector(".pin-edit")?.addEventListener("click", () => {
+        this.onEdit?.(pin.specId);
+      });
       tip.querySelector(".pin-open")?.addEventListener("click", () => {
         this.onOpenInPanel?.(pin.specId);
       });

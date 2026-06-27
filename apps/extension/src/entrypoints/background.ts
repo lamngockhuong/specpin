@@ -228,6 +228,8 @@ export default defineBackground(() => {
         return handleReconnect(message.id);
       case "SAVE_SPEC":
         return handleSaveSpec(message.file, message.spec, originOf(sender), message.connectionId);
+      case "UPDATE_SPEC":
+        return handleUpdateSpec(message.id, message.spec, originOf(sender), message.connectionId);
       case "SET_LOCAL_SPECS":
         return handleSetLocalSpecs(message.specs, message.seq);
       case "SET_PERSONAL_VISIBILITY":
@@ -485,6 +487,17 @@ export default defineBackground(() => {
     connectionId?: string,
   ): Promise<SaveSpecResult> {
     const result = await registry.saveSpec(origin, file, spec, connectionId);
+    if (result.ok) await broadcastSpecsChanged();
+    return result;
+  }
+
+  async function handleUpdateSpec(
+    id: string,
+    spec: Spec,
+    origin: string,
+    connectionId?: string,
+  ): Promise<SaveSpecResult> {
+    const result = await registry.updateSpec(origin, id, spec, connectionId);
     if (result.ok) await broadcastSpecsChanged();
     return result;
   }

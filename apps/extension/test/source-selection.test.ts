@@ -8,6 +8,7 @@ function fakeSource(id: string, available: boolean): SpecSource {
     isAvailable: async () => available,
     loadSpecs: async () => ({ manifest: {} as never, specs: [] }),
     saveSpec: async () => {},
+    updateSpec: async () => {},
   };
 }
 

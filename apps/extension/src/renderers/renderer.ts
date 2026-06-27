@@ -27,6 +27,12 @@ export interface RenderMeta {
    *  on the page. Threaded from the content script like onOpenInPanel so
    *  renderers stay DOM-pure; omitted in tests/stubs makes the jump a no-op. */
   onHighlight?: (el: Element) => void;
+  /** Callback a renderer invokes to open the in-place edit form for this spec.
+   *  Threaded from the content script like onOpenInPanel; renderers stay DOM-pure. */
+  onEdit?: (specId: string) => void;
+  /** False for read-only specs (Manual import); renderers hide the Edit
+   *  affordance when false. Defaults to editable when omitted. */
+  editable?: boolean;
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already

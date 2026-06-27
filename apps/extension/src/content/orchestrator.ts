@@ -2,7 +2,7 @@ import { matchElement } from "@specpin/fingerprint-core";
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { createRenderer, resolveMode } from "../renderers/registry.js";
 import type { SpecRenderer } from "../renderers/renderer.js";
-import type { TaggedSpec } from "../shared/connection-types.js";
+import { MANUAL_CONNECTION_ID, type TaggedSpec } from "../shared/connection-types.js";
 import {
   EMPTY_VISIBILITY,
   makeVisibilityFilter,
@@ -46,6 +46,7 @@ export function renderSession(
   url = "",
   onOpenInPanel?: (specId: string) => void,
   onHighlight?: (el: Element) => void,
+  onEdit?: (specId: string) => void,
 ): RenderSession {
   const byMode = new Map<DisplayMode, SpecRenderer>();
   const matches = new Map<string, Element>();
@@ -93,6 +94,9 @@ export function renderSession(
       showProject,
       onOpenInPanel,
       onHighlight,
+      onEdit,
+      // Manual-import specs are read-only; everything else can be edited.
+      editable: (spec as Partial<TaggedSpec>).connectionId !== MANUAL_CONNECTION_ID,
     });
     matches.set(spec.id, match.el);
     stats.rendered += 1;

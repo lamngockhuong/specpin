@@ -45,6 +45,11 @@ export interface CaptureFormOptions {
   onCancel?: () => void;
   /** Optional existing spec to edit: its locales preload so they are preserved. */
   initial?: Spec;
+  /** Edit mode only: run the page picker and resolve a new fingerprint for the
+   *  spec (or null if the user cancelled). When provided, a "Re-link element"
+   *  action appears. The form hides itself while the picker runs, then restores
+   *  with field edits intact. */
+  onRelink?: () => Promise<ElementFingerprint | null>;
   /** Projects that serve this page. When more than one, the form asks which to
    *  save into (avoids nondeterministic first-match routing for overlapping
    *  domains). */
@@ -74,12 +79,15 @@ export function mergeLocalized(
 
 /** Build a schema-shaped Spec from per-locale capture fields. Title/description
  *  collect every locale with a non-empty value; business rules pair across
- *  locales by line index. Pure + testable. */
+ *  locales by line index. When `existing` is given (edit mode) the spec keeps its
+ *  id and provenance (createdBy/createdAt/source) and only bumps updatedAt;
+ *  otherwise a fresh id + manual provenance are minted. Pure + testable. */
 export function buildSpec(
   fields: CaptureFields,
   fingerprint: ElementFingerprint,
   nowIso: string,
   idSuffix: string,
+  existing?: Spec,
 ): Spec {
   const title: LocalizedString = {};
   const description: LocalizedString = {};
@@ -103,18 +111,20 @@ export function buildSpec(
     fields.byLocale[fields.defaultLocale]?.title ?? Object.values(fields.byLocale)[0]?.title ?? "";
   const base = slugify(baseTitle) || "spec";
 
+  // Editing preserves the stable id and provenance (createdBy/createdAt/source)
+  // and only bumps updatedAt; capture mints a fresh id + manual provenance.
   const spec: Spec = {
-    id: `${base}-${idSuffix}`,
+    id: existing?.id ?? `${base}-${idSuffix}`,
     title,
     description,
     businessRules,
     tags: fields.tags.map((t) => t.trim()).filter(Boolean),
     fingerprint,
     meta: {
-      createdBy: fields.createdBy?.trim() || "manual",
-      createdAt: nowIso,
+      createdBy: existing?.meta?.createdBy ?? (fields.createdBy?.trim() || "manual"),
+      createdAt: existing?.meta?.createdAt ?? nowIso,
       updatedAt: nowIso,
-      source: "manual",
+      source: existing?.meta?.source ?? "manual",
     },
   };
   if (fields.preferredDisplayMode) spec.preferredDisplayMode = fields.preferredDisplayMode;
@@ -180,6 +190,11 @@ button.primary:hover { background: var(--sp-accent-hover); border-color: var(--s
 }
 .errors.show { display: block; }
 .errors ul { margin: 4px 0 0; padding-left: 16px; }
+#sp-relink { margin-top: 8px; width: 100%; }
+.relink-note {
+  display: none; margin-top: 8px; font-size: 11px; color: var(--sp-text-3);
+}
+.relink-note.show { display: block; }
 `;
 
 const ADD_LOCALE_VALUE = "__add__";
@@ -198,6 +213,10 @@ export class CaptureForm {
 
   open(fingerprint: ElementFingerprint, options: CaptureFormOptions): void {
     this.close();
+    // Editing reuses the existing spec (id + provenance preserved); the fingerprint
+    // is mutable so a re-link can repoint the spec without losing field edits.
+    const editing = !!options.initial;
+    let activeFingerprint = fingerprint;
     const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES);
     const wrap = this.doc.createElement("div");
     wrap.className = "backdrop";
@@ -213,7 +232,10 @@ export class CaptureForm {
     let current = options.defaultLocale || locales[0] || "en";
 
     const targets = options.targets ?? [];
-    wrap.innerHTML = this.template(options.defaultFile, locales, current, targets);
+    wrap.innerHTML = this.template(options.defaultFile, locales, current, targets, {
+      editing,
+      relinkable: editing && !!options.onRelink,
+    });
     shadow.appendChild(wrap);
     this.host = host;
 
@@ -224,10 +246,14 @@ export class CaptureForm {
     const rulesEl = q<HTMLTextAreaElement>("#sp-rules");
     const localeSel = q<HTMLSelectElement>("#sp-locale");
 
-    // Preload content for editing an existing spec.
+    // Preload content for editing an existing spec: per-locale text plus the
+    // locale-independent tags + display mode (else saving would wipe them).
     if (options.initial) {
       for (const loc of localesOf(options.initial))
         byLocale[loc] = contentForLocale(options.initial, loc);
+      q<HTMLInputElement>("#sp-tags").value = (options.initial.tags ?? []).join(", ");
+      if (options.initial.preferredDisplayMode)
+        q<HTMLSelectElement>("#sp-mode").value = options.initial.preferredDisplayMode;
     }
 
     const stashCurrent = (): void => {
@@ -274,6 +300,21 @@ export class CaptureForm {
       loadLocale(value);
     });
 
+    // Re-link: hide the form (not close, so field edits survive), run the page
+    // picker via onRelink, then restore. A returned fingerprint repoints the spec.
+    if (options.onRelink) {
+      q<HTMLButtonElement>("#sp-relink").addEventListener("click", async () => {
+        stashCurrent();
+        if (this.host) this.host.style.display = "none";
+        const fp = await options.onRelink?.();
+        if (this.host) this.host.style.display = "";
+        if (fp) {
+          activeFingerprint = fp;
+          shadow.querySelector(".relink-note")?.classList.add("show");
+        }
+      });
+    }
+
     const cancel = () => {
       this.close();
       options.onCancel?.();
@@ -316,16 +357,26 @@ export class CaptureForm {
       }
 
       const idSuffix = randomSuffix();
-      const spec = buildSpec(fields, fingerprint, new Date().toISOString(), idSuffix);
+      const spec = buildSpec(
+        fields,
+        activeFingerprint,
+        new Date().toISOString(),
+        idSuffix,
+        options.initial,
+      );
 
       const validation = validateSpec(spec);
       if (!validation.valid) {
         this.showErrors(errorsBox, [formatErrors(validation.errors)]);
         return;
       }
-      const file = q<HTMLInputElement>("#sp-file").value.trim() || options.defaultFile;
+      // Edit is id-addressed: file + target project are not selectable (the form
+      // hides them), and the owning connection is supplied by the caller.
+      const file = editing
+        ? ""
+        : q<HTMLInputElement>("#sp-file").value.trim() || options.defaultFile;
       const targetSel = shadow.querySelector<HTMLSelectElement>("#sp-target");
-      const connectionId = targetSel?.value || undefined;
+      const connectionId = editing ? undefined : targetSel?.value || undefined;
       const result = await options.onSubmit(file, spec, connectionId);
       if (result.ok) this.close();
       else this.showErrors(errorsBox, result.errors ?? ["Save failed; check the sidecar."]);
@@ -337,6 +388,7 @@ export class CaptureForm {
     locales: string[],
     current: string,
     targets: { id: string; project: string }[],
+    opts: { editing: boolean; relinkable: boolean },
   ): string {
     const localeOptions = locales
       .map(
@@ -345,8 +397,9 @@ export class CaptureForm {
       )
       .join("");
     // Ask which project to save into only when more than one serves this page.
+    // Edit is id-addressed, so the target project + file are not selectable.
     const targetField =
-      targets.length > 1
+      !opts.editing && targets.length > 1
         ? `<label>Target project</label><select id="sp-target">${targets
             .map(
               (t) =>
@@ -354,9 +407,16 @@ export class CaptureForm {
             )
             .join("")}</select>`
         : "";
+    const fileField = opts.editing
+      ? ""
+      : `<label>Target file</label><input id="sp-file" value="${escapeAttr(defaultFile)}" />`;
+    const relinkField = opts.relinkable
+      ? `<button type="button" id="sp-relink">Re-link element</button>
+        <div class="relink-note">Re-linked to a new element. Save to apply.</div>`
+      : "";
     return `
       <div class="card">
-        <h3>Capture spec</h3>
+        <h3>${opts.editing ? "Edit spec" : "Capture spec"}</h3>
         ${targetField}
         <label>Language <span class="hint">(title &amp; description per language)</span></label>
         <select id="sp-locale">${localeOptions}<option value="${ADD_LOCALE_VALUE}">+ Add language&hellip;</option></select>
@@ -370,11 +430,12 @@ export class CaptureForm {
           <option value="tooltip">tooltip</option>
           <option value="sidebar">sidebar</option>
         </select>
-        <label>Target file</label><input id="sp-file" value="${escapeAttr(defaultFile)}" />
+        ${fileField}
+        ${relinkField}
         <div class="errors"><strong>Could not save:</strong><ul></ul></div>
         <div class="actions">
           <button id="sp-cancel">Cancel</button>
-          <button id="sp-save" class="primary">Save spec</button>
+          <button id="sp-save" class="primary">${opts.editing ? "Save changes" : "Save spec"}</button>
         </div>
       </div>`;
   }

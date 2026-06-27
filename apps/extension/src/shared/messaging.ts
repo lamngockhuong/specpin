@@ -40,6 +40,13 @@ export type Message =
     }
   // `connectionId` targets the destination project when several serve the page.
   | { type: "SAVE_SPEC"; file: string; spec: Spec; connectionId?: string }
+  // Update an existing spec in place (id-addressed). Same trust model as
+  // SAVE_SPEC: from the page content script, routed by origin to the owning
+  // connection. `connectionId` pins the owning project (the spec's source).
+  | { type: "UPDATE_SPEC"; id: string; spec: Spec; connectionId?: string }
+  // Side panel -> active tab content script: open the in-page edit form for this
+  // spec id (the form + capture picker only run in the page context).
+  | { type: "EDIT_SPEC"; specId: string }
   // Manual-import specs pushed from the Options page (extension-page origin only).
   // `specs: null` clears them. `seq` guards against out-of-order tab writes.
   | { type: "SET_LOCAL_SPECS"; specs: SpecsResponse | null; seq: number }
