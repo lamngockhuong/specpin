@@ -1,8 +1,8 @@
 {
   "id": "login-submit-btn",
-  "title": "Login button",
-  "description": "Calls POST /auth/login.",
-  "businessRules": ["Lock account after 5 failures"],
+  "title": { "en": "Login button", "vi": "Nút đăng nhập" },
+  "description": { "en": "Calls POST /auth/login.", "vi": "Gọi POST /auth/login." },
+  "businessRules": [{ "en": "Lock account after 5 failures" }],
   "tags": ["auth", "critical"],
   "preferredDisplayMode": "sidebar",
   "fingerprint": {

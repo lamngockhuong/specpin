@@ -1,7 +1,9 @@
 {
   "id": "bad-date",
-  "title": "Bad datetime",
-  "description": "meta.createdAt must satisfy the date-time format (parity between ajv and Go).",
+  "title": { "en": "Bad datetime" },
+  "description": {
+    "en": "meta.createdAt must satisfy the date-time format (parity between ajv and Go)."
+  },
   "fingerprint": {
     "cssSelector": "button",
     "xpath": "/button",

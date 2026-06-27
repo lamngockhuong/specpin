@@ -1,4 +1,4 @@
-import type { SidecarClient, SpecsResponse } from "@specpin/api-client";
+import type { SidecarClient, SpecsResponse, SubscribeOptions } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import type { SpecSource } from "./source.js";
 
@@ -26,7 +26,7 @@ export class SidecarSource implements SpecSource {
     return this.client.saveSpec(file, spec);
   }
 
-  watch(onChange: () => void): () => void {
-    return this.client.subscribe(onChange);
+  watch(onChange: () => void, options?: Omit<SubscribeOptions, "fetch">): () => void {
+    return this.client.subscribe(onChange, options);
   }
 }

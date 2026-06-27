@@ -9,9 +9,9 @@ afterEach(() => {
 
 const spec: Spec = {
   id: "login",
-  title: "Login button",
-  description: "submits the login form",
-  businessRules: ["Lock after 5 failures"],
+  title: { en: "Login button" },
+  description: { en: "submits the login form" },
+  businessRules: [{ en: "Lock after 5 failures" }],
   tags: ["auth"],
   fingerprint: {
     cssSelector: "button",

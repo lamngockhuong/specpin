@@ -1,0 +1,13 @@
+{
+  "id": "flat-title",
+  "title": "A flat string title is no longer valid; title must be a locale-keyed object.",
+  "description": { "en": "Object-only schema: flat strings are rejected by both validators." },
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

@@ -40,13 +40,19 @@ export interface Spec {
    * Stable unique id within the project, e.g. "login-submit-btn".
    */
   id: string;
-  title: string;
-  description: string;
-  businessRules?: string[];
+  title: LocalizedString;
+  description: LocalizedString;
+  businessRules?: LocalizedString[];
   tags?: string[];
   preferredDisplayMode?: DisplayMode;
   fingerprint: ElementFingerprint;
   meta?: SpecMeta;
+}
+/**
+ * Locale-keyed text: a BCP-47 locale maps to a non-empty string. At least one entry. Flat strings are not accepted.
+ */
+export interface LocalizedString {
+  [k: string]: string;
 }
 /**
  * Multi-signal capture of a DOM element, separated from business content so relinking never touches the spec text.
@@ -114,6 +120,10 @@ export interface Manifest {
 }
 export interface ManifestSettings {
   defaultLocale?: string;
+  /**
+   * BCP-47 locales this project authors specs in. The extension's language picker offers the union of connected projects' locales.
+   */
+  locales?: string[];
   matchConfidenceThreshold?: number;
   defaultDisplayMode?: DisplayMode;
 }

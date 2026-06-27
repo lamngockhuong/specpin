@@ -27,9 +27,11 @@
       .header { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
       .logo { width: 28px; height: 28px; display: block; }
       h1 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+      h2 { font-size: 15px; font-weight: 700; margin: 24px 0 10px; }
       p.lead { color: var(--sp-text-2); margin: 0 0 24px; }
       label { display: block; margin: 18px 0 6px; font-weight: 600; color: var(--sp-text); }
-      input {
+      label.inline { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; font-weight: 500; }
+      input[type="text"], input[type="password"] {
         width: 100%; padding: 11px 12px;
         font: 13px/1.4 var(--sp-font-mono);
         color: var(--sp-text);
@@ -52,11 +54,6 @@
         box-shadow: 0 0 0 3px var(--sp-accent-glow);
       }
       .card + .card { margin-top: 20px; }
-      button.secondary {
-        background: var(--sp-control); color: var(--sp-text);
-        border-color: var(--sp-border); box-shadow: none; margin-top: 10px;
-      }
-      button.secondary:hover { background: var(--sp-elevated); border-color: var(--sp-border); }
       button {
         width: 100%; margin-top: 24px; padding: 12px 14px;
         font: 700 14px/1 var(--sp-font-ui);
@@ -69,38 +66,53 @@
         transition: background 0.12s, border-color 0.12s;
       }
       button:hover { background: var(--sp-accent-hover); border-color: var(--sp-accent-hover); }
-      #result, #localResult {
+      button.secondary {
+        width: auto; margin: 0; padding: 7px 12px;
+        font: 600 12px/1 var(--sp-font-ui);
+        background: var(--sp-control); color: var(--sp-text);
+        border-color: var(--sp-border); box-shadow: none;
+      }
+      button.secondary:hover { background: var(--sp-elevated); border-color: var(--sp-border); }
+
+      /* Connection rows */
+      .conn {
+        padding: 14px; margin-bottom: 10px;
+        border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
+        background: var(--sp-elevated);
+      }
+      .conn-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .conn-title { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+      .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sp-text-3); flex: none; }
+      .dot.ok { background: var(--sp-success-dot); }
+      .dot.err { background: var(--sp-error-text); }
+      .conn-meta { color: var(--sp-text-3); font: 12px/1.5 var(--sp-font-mono); margin-top: 6px; word-break: break-all; }
+      .conn-actions { display: flex; gap: 8px; flex: none; }
+      .warn {
+        margin-top: 10px; padding: 9px 11px;
+        color: var(--sp-warning); background: var(--sp-warning-bg);
+        border: 1px solid var(--sp-warning-border); border-radius: var(--sp-radius-control);
+        font-size: 12px;
+      }
+      .empty { color: var(--sp-text-3); font-style: italic; }
+
+      #addResult, #localResult {
         display: none;
         margin-top: 18px; padding: 12px 14px;
         border: 1px solid transparent;
         border-radius: var(--sp-radius-control);
-        align-items: center; gap: 10px;
         white-space: pre-wrap;
       }
-      #result::before, #localResult::before {
-        content: ""; flex: none; width: 18px; height: 18px;
-        background: currentColor;
-        -webkit-mask: var(--icon) center / contain no-repeat;
-        mask: var(--icon) center / contain no-repeat;
+      #addResult.ok, #localResult.ok {
+        display: block; color: var(--sp-success-text);
+        background: var(--sp-success-bg); border-color: var(--sp-success-border);
       }
-      #result.ok, #localResult.ok {
-        display: flex;
-        color: var(--sp-success-text);
-        background: var(--sp-success-bg);
-        border-color: var(--sp-success-border);
-        --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>');
-      }
-      #result.err, #localResult.err {
-        display: flex;
-        color: var(--sp-error-text);
-        background: var(--sp-error-bg);
-        border-color: var(--sp-error-border);
-        --icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5"/><path d="M12 16h.01"/></svg>');
+      #addResult.err, #localResult.err {
+        display: block; color: var(--sp-error-text);
+        background: var(--sp-error-bg); border-color: var(--sp-error-border);
       }
       code {
         font: 12px/1 var(--sp-font-mono);
-        background: var(--sp-control);
-        color: var(--sp-text-2);
+        background: var(--sp-control); color: var(--sp-text-2);
         padding: 2px 5px; border-radius: 4px;
       }
     </style>
@@ -109,18 +121,25 @@
     <div class="card">
       <div class="header">
         <img class="logo" src="/icon/128.png" alt="" />
-        <h1>Specpin connection</h1>
+        <h1>Connected projects</h1>
       </div>
       <p class="lead">
-        Run <code>specpin serve</code> in your project, then paste the printed URL and token here.
-        Specpin attaches living docs to existing UIs; it does not generate code.
+        Run <code>specpin serve</code> in each project, then add its URL and token below.
+        Specs show on a page only if the project's manifest <code>domains</code> include that page.
       </p>
+
+      <div id="connections"></div>
+
+      <h2>Add a project</h2>
       <label for="baseUrl">Sidecar URL</label>
       <input id="baseUrl" type="text" placeholder="http://127.0.0.1:PORT" />
+      <label for="label">Label <span style="font-weight: 400; color: var(--sp-text-3)">(optional)</span></label>
+      <input id="label" type="text" placeholder="e.g. Acme CRM" />
       <label for="token">Token</label>
-      <input id="token" type="text" placeholder="paste bearer token" />
-      <button id="save" type="button">Test connection &amp; save</button>
-      <div id="result"></div>
+      <input id="token" type="password" placeholder="paste bearer token" autocomplete="off" />
+      <label class="inline"><input id="applyAll" type="checkbox" /> Apply to all sites if this project pins no domains</label>
+      <button id="add" type="button">Test &amp; add project</button>
+      <div id="addResult"></div>
     </div>
 
     <div class="card">
@@ -135,7 +154,7 @@
       <label for="localSpecs">Bundle JSON</label>
       <textarea id="localSpecs" placeholder='{ "manifest": { … }, "files": { "login.spec.json": { … } } }'></textarea>
       <button id="loadLocal" type="button">Load manual specs</button>
-      <button id="clearLocal" type="button" class="secondary">Clear manual specs</button>
+      <button id="clearLocal" type="button" class="secondary" style="width: 100%; margin-top: 10px">Clear manual specs</button>
       <div id="localResult"></div>
     </div>
     <script type="module" src="./main.ts"></script>

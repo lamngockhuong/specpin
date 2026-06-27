@@ -4,8 +4,8 @@ import { createRenderer, isImplemented, resolveMode } from "../src/renderers/reg
 
 const baseSpec: Spec = {
   id: "x",
-  title: "X",
-  description: "d",
+  title: { en: "X" },
+  description: { en: "d" },
   fingerprint: {
     cssSelector: "button",
     xpath: "",

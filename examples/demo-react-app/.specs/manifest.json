@@ -6,6 +6,7 @@
   "specFiles": ["login.spec.json"],
   "settings": {
     "defaultLocale": "en",
+    "locales": ["en", "vi"],
     "matchConfidenceThreshold": 0.6,
     "defaultDisplayMode": "tooltip"
   }

@@ -32,6 +32,20 @@ export const schemaV1: Record<string, unknown> = {
         "vanilla"
       ]
     },
+    "LocalizedString": {
+      "title": "LocalizedString",
+      "description": "Locale-keyed text: a BCP-47 locale maps to a non-empty string. At least one entry. Flat strings are not accepted.",
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 50,
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      },
+      "propertyNames": {
+        "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+      }
+    },
     "SpecSource": {
       "title": "SpecSource",
       "description": "Provenance of a spec. \"manual\" is human-authored; \"ai-generated\" output must be reviewed.",
@@ -183,16 +197,15 @@ export const schemaV1: Record<string, unknown> = {
           "description": "Stable unique id within the project, e.g. \"login-submit-btn\"."
         },
         "title": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/LocalizedString"
         },
         "description": {
-          "type": "string"
+          "$ref": "#/$defs/LocalizedString"
         },
         "businessRules": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/LocalizedString"
           }
         },
         "tags": {
@@ -246,6 +259,14 @@ export const schemaV1: Record<string, unknown> = {
       "properties": {
         "defaultLocale": {
           "type": "string"
+        },
+        "locales": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+          },
+          "description": "BCP-47 locales this project authors specs in. The extension's language picker offers the union of connected projects' locales."
         },
         "matchConfidenceThreshold": {
           "type": "number",

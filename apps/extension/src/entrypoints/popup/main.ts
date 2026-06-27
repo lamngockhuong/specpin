@@ -1,12 +1,23 @@
 import type { DisplayMode } from "@specpin/spec-schema";
+import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
+import { pickLocale } from "../../content/localize-spec.js";
+import { getLocale, setLocale } from "../../shared/config.js";
+import { statusServesOrigin } from "../../shared/origin-match.js";
 import "../../shared/tokens.gen.css";
 import {
+  type ConnectionStatus,
   type SpecsForOrigin,
   type StatusResult,
   sendToActiveTab,
   sendToBackground,
 } from "../../shared/messaging.js";
+
+// The popup is the authoritative language picker: it persists the choice and
+// pushes it to the active tab's content script. Latest fetched values drive the
+// spec list rendering and the picker options.
+let activeLocale = "en";
+let lastSpecs: SpecsForOrigin | null = null;
 
 const byId = (id: string): HTMLElement => {
   const el = document.getElementById(id);
@@ -50,7 +61,11 @@ function renderSpecs(res: SpecsForOrigin): void {
     const li = document.createElement("li");
     const title = document.createElement("div");
     title.className = "t";
-    title.textContent = spec.title;
+    title.textContent = resolveLocalized(
+      spec.title,
+      activeLocale,
+      res.manifest?.settings?.defaultLocale,
+    );
     const file = document.createElement("div");
     file.className = "muted";
     file.textContent = spec._file;
@@ -59,11 +74,58 @@ function renderSpecs(res: SpecsForOrigin): void {
   }
 }
 
+/** List the connected projects that serve the active tab. */
+function renderProjects(list: ConnectionStatus[], origin: string): void {
+  const ul = byId("projects");
+  ul.replaceChildren();
+  const matching = list.filter((c) => statusServesOrigin(c, origin));
+  // With a single project the meta row already names it; avoid duplicate noise.
+  if (matching.length < 2) return;
+  for (const c of matching) {
+    const li = document.createElement("li");
+    const dot = document.createElement("span");
+    dot.className = `pdot ${c.connected ? "ok" : c.error ? "err" : ""}`;
+    const name = document.createElement("span");
+    name.className = "pname";
+    name.textContent = c.label || c.project || c.baseUrl;
+    const count = document.createElement("span");
+    count.className = "pcount";
+    count.textContent = `${c.specCount}`;
+    li.append(dot, name, count);
+    ul.appendChild(li);
+  }
+}
+
+function renderLocalePicker(locales: string[]): void {
+  const row = byId("locale-row");
+  const select = byId("locale") as HTMLSelectElement;
+  // Hide the picker when there is nothing to choose between.
+  if (locales.length < 2) {
+    row.hidden = true;
+    return;
+  }
+  row.hidden = false;
+  // Build options via the DOM (no innerHTML) so locale values are never an
+  // HTML-injection sink, matching the escaping the other renderers apply.
+  select.replaceChildren();
+  for (const l of locales) {
+    const opt = document.createElement("option");
+    opt.value = l;
+    opt.textContent = l;
+    if (l === activeLocale) opt.selected = true;
+    select.appendChild(opt);
+  }
+}
+
 async function refresh(): Promise<void> {
   const status = await sendToBackground<StatusResult>({ type: "GET_STATUS" });
   renderStatus(status);
   const origin = await activeOrigin();
   const res = await sendToBackground<SpecsForOrigin>({ type: "GET_SPECS_FOR_ORIGIN", origin });
+  lastSpecs = res;
+  activeLocale = pickLocale(await getLocale(), res.manifest?.settings?.defaultLocale);
+  renderProjects(status.connections ?? [], origin);
+  renderLocalePicker(status.locales ?? []);
   renderSpecs(res);
 }
 
@@ -86,6 +148,12 @@ byId("capture").addEventListener("click", async () => {
 byId("mode").addEventListener("change", async (e) => {
   const value = (e.target as HTMLSelectElement).value;
   await sendToActiveTab({ type: "SET_DISPLAY_MODE", mode: (value || null) as DisplayMode | null });
+});
+byId("locale").addEventListener("change", async (e) => {
+  activeLocale = (e.target as HTMLSelectElement).value;
+  await setLocale(activeLocale);
+  await sendToActiveTab({ type: "SET_LOCALE", locale: activeLocale });
+  if (lastSpecs) renderSpecs(lastSpecs);
 });
 byId("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
 

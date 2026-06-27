@@ -1,8 +1,7 @@
 {
-  "id": "bad-mode",
-  "title": { "en": "Bad display mode" },
-  "description": { "en": "popup is not a valid DisplayMode." },
-  "preferredDisplayMode": "popup",
+  "id": "non-string-locale-value",
+  "title": { "en": 123 },
+  "description": { "en": "A locale value must be a string, not a number." },
   "fingerprint": {
     "cssSelector": "button",
     "xpath": "/button",

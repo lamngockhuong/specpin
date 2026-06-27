@@ -22,7 +22,8 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 | `project` | string | yes | tên hiển thị |
 | `domains` | string[] | yes | các origin nơi UI chạy, ví dụ `["localhost:3000"]`; rỗng = bất kỳ |
 | `specFiles` | string[] | yes | tên của các file `<area>.spec.json` |
-| `settings.defaultLocale` | string | no | |
+| `settings.defaultLocale` | string | no | fallback locale khi lựa chọn của người xem không có trên một spec |
+| `settings.locales` | string[] | no | BCP-47 locales mà project này soạn spec trong đó; language picker của extension cung cấp hợp (union) của các project được kết nối |
 | `settings.matchConfidenceThreshold` | number 0-1 | no | dành riêng cho hybrid scorer đang được hoãn lại |
 | `settings.defaultDisplayMode` | DisplayMode | no | render mode dự phòng (fallback) |
 
@@ -38,13 +39,28 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 | Field | Type | Required | Ghi chú |
 |-------|------|----------|-------|
 | `id` | string | yes | duy nhất trong phạm vi project |
-| `title` | string | yes | |
-| `description` | string | yes | |
-| `businessRules` | string[] | no | |
-| `tags` | string[] | no | |
+| `title` | LocalizedString | yes | object đánh key theo locale (xem phía dưới) |
+| `description` | LocalizedString | yes | object đánh key theo locale; mỗi giá trị không rỗng |
+| `businessRules` | LocalizedString[] | no | mỗi rule là một object đánh key theo locale |
+| `tags` | string[] | no | không localize |
 | `preferredDisplayMode` | DisplayMode | no | ghi đè `settings.defaultDisplayMode` |
 | `fingerprint` | ElementFingerprint | yes | liên kết tới element |
 | `meta` | SpecMeta | no | nguồn gốc (provenance) + timestamp |
+
+## LocalizedString
+
+Nội dung business của spec (`title`, `description`, mỗi item trong `businessRules`) là một **object đánh key theo locale**, không phải string phẳng:
+
+```json
+{ "en": "Log in button", "vi": "Nút đăng nhập" }
+```
+
+- Các key là mã locale BCP-47 (`^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$`), ví dụ `en`, `vi`, `en-US`.
+- Ít nhất một entry được yêu cầu (`minProperties: 1`); mỗi giá trị là string không rỗng (`minLength: 1`); tối đa 50 entry.
+- **String phẳng bị từ chối** bởi cả hai validator (nghĩa là `"title": "Log in"` không hợp lệ).
+- Thứ tự fallback khi render cho một locale: locale được yêu cầu, rồi `defaultLocale` của manifest, rồi giá trị đầu tiên có mặt. Một danh sách `businessRules` được dịch một phần sẽ bỏ các item không có giá trị cho locale đã giải quyết (không bao giờ render một rule trống).
+
+Giá trị `description` không rỗng (`minLength: 1`), nên một description trống bây giờ không hợp lệ (trước đây là empty string được phép trước khi localize).
 
 ## ElementFingerprint
 
@@ -59,7 +75,7 @@ Optional: `testId`, `ariaLabel`, `id` (đều nullable), `textContent` (nullable
 
 ## DisplayMode
 
-`"overlay" | "tooltip" | "sidebar" | "modal" | "inline-badge"`. Phase 1 hiện thực `tooltip` và `sidebar`; ba mode còn lại được dành riêng (forward-compatible) và fall back về `tooltip` lúc render.
+`"overlay" | "tooltip" | "sidebar" | "modal" | "inline-badge"`. `tooltip`, `sidebar`, và `modal` đã được hiện thực; `overlay` và `inline-badge` được dành riêng (forward-compatible) và fall back về `tooltip` lúc render.
 
 ## Validation
 

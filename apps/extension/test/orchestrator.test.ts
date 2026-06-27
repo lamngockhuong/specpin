@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { originMatchesDomains } from "../src/content/orchestrator.js";
+import { originMatchesDomains } from "../src/shared/origin-match.js";
 
 describe("originMatchesDomains", () => {
   it("matches when domains empty (any origin)", () => {

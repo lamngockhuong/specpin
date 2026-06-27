@@ -88,7 +88,11 @@ Goal: robustness, flexibility, polish. No timeline committed.
 - Manual spec source: render specs with no sidecar by pasting a validated `{ manifest, files }` bundle in Options; read-only, size-capped, prototype-pollution-guarded; controller now selects sidecar -> manual by availability.
 - Modal renderer: centered focus-trapped dialog listing page specs (third display mode), AbortController teardown.
 
-Deferred from this slice pending a real corpus / usage feedback: the hybrid weighted scorer (needs a before/after DOM corpus to tune), the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
+**Second slice shipped (2026-06-26)** on branch `feat/i18n-specs-multi-project` (plan: `plans/260626-1555-i18n-specs-multi-project/`):
+- Multi-language specs: `title`/`description`/`businessRules` are object-only `LocalizedString` (locale-keyed; flat strings rejected by both validators). Runtime language toggle in the popup (mirrored in the sidebar) with `defaultLocale` -> first-present fallback; translations authored per locale in the capture form. `description` values are now non-empty.
+- Multi-project display: one extension connects to many sidecars at once via a `SidecarRegistry`; specs route to each page by the project's `domains`, tagged by project. Empty-`domains` projects need an explicit `applyToAllSites` opt-in (no silent every-site match). Per-connection token isolation, error isolation, jittered reconnect, and a general SW-wake watch re-establish (also fixes the latent single-connection case). Options page is now a connection manager (add/remove/reconnect, per-tab popup view, project labels on specs).
+
+Deferred from these slices pending a real corpus / usage feedback: the hybrid weighted scorer (needs a before/after DOM corpus to tune), the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
 
 ### Planned Features
 
@@ -99,15 +103,14 @@ Deferred from this slice pending a real corpus / usage feedback: the hybrid weig
 - `MatchResult` interface already stable, scorer slots in without breaking callers
 
 **Additional Spec Sources:**
-- FileSystem Access API source (browser prompt for `.specs/` directory access, no sidecar needed)
-- Manual CSV/JSON import source (paste or upload existing specs)
-- Source registry already pluggable (`SpecSource` interface), sidecar is first implementation
+- Manual import source - **delivered** (read-only `{ manifest, files }` bundle in Options)
+- FileSystem Access API source (browser prompt for `.specs/` directory access, no sidecar needed) - still deferred
+- Source registry already pluggable (`SpecSource` interface)
 
 **Additional Renderers:**
-- Overlay (fullscreen modal with backdrop, for detailed editing)
-- Modal (centered dialog, for focused review)
-- Inline badge (visual marker next to element, click to expand)
-- Renderer registry already pluggable (`SpecRenderer` interface), tooltip + sidebar are first implementations
+- Modal (centered dialog, for focused review) - **delivered**
+- Overlay (fullscreen modal with backdrop) and inline badge (marker next to element) - still deferred
+- Renderer registry already pluggable (`SpecRenderer` interface): tooltip + sidebar + modal implemented
 
 **Safari Support:**
 - Package extension for Safari (awaiting Apple MV3 parity clarity as of 2026-06)
@@ -243,6 +246,9 @@ Planned after public release:
 | 2026-06-25 | Sidecar port: auto-pick free port (not fixed default) | Avoids first-run port conflicts, extension already reads pasted URL |
 | 2026-06-25 | Capture mode: manual-only (no AI assist in MVP) | Keeps all LLM work out of MVP, no model dep or key management |
 | 2026-06-25 | License: Apache-2.0 | Decided during Phase 1 completion (was deferred gate in plan) |
+| 2026-06-26 | Localized spec content is object-only (`LocalizedString`), flat strings invalid | Pre-release, no external corpus and no compat promise; the schema is revised in place (still `v1.json`, no `v2.json` fork, no manifest version bump). One resolver reads all localized fields |
+| 2026-06-26 | Empty-`domains` project needs explicit `applyToAllSites` opt-in | A silent every-site wildcard would leak a project's specs onto unrelated/attacker pages; the user opts in per connection |
+| 2026-06-26 | SW-suspend watch loss fixed generally (shared `reestablish()` for 1 and N connections) | Same path serves the single-connection case too, fixing a latent MV3 bug rather than only the new multi-connection one |
 
 ## References
 

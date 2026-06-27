@@ -101,4 +101,4 @@ Binds `127.0.0.1` only (auto-picked port unless `--port`); every request needs `
 
 ## Status
 
-Phase 1 MVP. Deferred to 1.1: FileSystem/Manual sources, hybrid fingerprint scoring, remaining renderers, Safari packaging, and `specpin generate` (AI).
+Phase 1 MVP + 1.1 slices delivered: `specpin validate` + CI spec-lint, Manual source, modal renderer, multi-language specs (object-only `LocalizedString` + in-extension language toggle/authoring), and multi-project connections (SidecarRegistry, origin-gated aggregation, per-connection token isolation). Still deferred: FileSystem Access source, hybrid fingerprint scoring, overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI).

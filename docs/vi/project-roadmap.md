@@ -90,7 +90,11 @@ Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa ca
 - Manual spec source: hiển thị spec không cần sidecar bằng cách dán bundle `{ manifest, files }` đã validate trong Options; read-only, giới hạn kích thước, chặn prototype-pollution; controller chọn sidecar -> manual theo tính khả dụng.
 - Modal renderer: hộp thoại giữa màn hình có bẫy focus liệt kê spec trên trang (chế độ hiển thị thứ ba), dọn dẹp bằng AbortController.
 
-Hoãn lại từ lát cắt này, chờ corpus thực tế / phản hồi sử dụng: hybrid weighted scorer (cần corpus DOM trước/sau để tinh chỉnh), nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
+**Đã ship lát cắt thứ hai (2026-06-26)** trên nhánh `feat/i18n-specs-multi-project` (plan: `plans/260626-1555-i18n-specs-multi-project/`):
+- Multi-language specs: `title`/`description`/`businessRules` là `LocalizedString` chỉ dạng object (đánh key theo locale; string phẳng bị từ chối bởi cả hai validator). Runtime language toggle trong popup (được phản chiếu trong sidebar) với fallback `defaultLocale` -> first-present; các bản dịch được soạn per locale trong form capture. Các giá trị `description` bây giờ không rỗng.
+- Multi-project display: một extension kết nối tới nhiều sidecar cùng lúc qua một `SidecarRegistry`; spec định tuyến tới từng page theo `domains` của project, được tag theo project. Các project empty-`domains` cần một opt-in `applyToAllSites` rõ ràng (không match mọi site một cách im lặng). Cô lập token per-connection, cô lập lỗi, reconnect được jitter, và một tổng quát SW-wake watch re-establish (cũng sửa trường hợp latent single-connection). Trang Options bây giờ là một connection manager (add/remove/reconnect, view per-tab popup, project labels trên spec).
+
+Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi sử dụng: hybrid weighted scorer (cần corpus DOM trước/sau để tinh chỉnh), nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
 
 ### Tính năng đã lên kế hoạch
 
@@ -101,15 +105,14 @@ Hoãn lại từ lát cắt này, chờ corpus thực tế / phản hồi sử d
 - Interface `MatchResult` đã ổn định, scorer ghép vào mà không phá vỡ caller
 
 **Các nguồn Spec bổ sung:**
-- Nguồn FileSystem Access API (browser hỏi quyền truy cập thư mục `.specs/`, không cần sidecar)
-- Nguồn import CSV/JSON thủ công (dán hoặc upload các spec sẵn có)
-- Source registry đã pluggable (interface `SpecSource`), sidecar là bản hiện thực đầu tiên
+- Manual import source (đã giao) (bundle `{ manifest, files }` read-only trong Options)
+- Nguồn FileSystem Access API (browser hỏi quyền truy cập thư mục `.specs/`, không cần sidecar) (vẫn hoãn lại)
+- Source registry đã pluggable (interface `SpecSource`)
 
 **Các Renderer bổ sung:**
-- Overlay (modal toàn màn hình có backdrop, dùng cho chỉnh sửa chi tiết)
-- Modal (dialog căn giữa, dùng cho review tập trung)
-- Inline badge (đánh dấu trực quan cạnh element, click để mở rộng)
-- Renderer registry đã pluggable (interface `SpecRenderer`), tooltip + sidebar là bản hiện thực đầu tiên
+- Modal (đã giao) (centered dialog, dùng cho review tập trung)
+- Overlay (modal toàn màn hình có backdrop) và inline badge (đánh dấu trực quan cạnh element) (vẫn hoãn lại)
+- Renderer registry đã pluggable (interface `SpecRenderer`): tooltip + sidebar + modal đã hiện thực
 
 **Hỗ trợ Safari:**
 - Đóng gói extension cho Safari (đang chờ Apple làm rõ tính tương đương MV3 tính đến 2026-06)
@@ -245,6 +248,9 @@ Dự kiến sau khi release public:
 | 2026-06-25 | Port sidecar: tự chọn port trống (không phải default cố định) | Tránh xung đột port lần chạy đầu, extension vốn đã đọc URL được dán |
 | 2026-06-25 | Chế độ capture: chỉ thủ công (không AI assist trong MVP) | Giữ mọi công việc LLM ra khỏi MVP, không phụ thuộc model hay quản lý key |
 | 2026-06-25 | License: Apache-2.0 | Quyết định khi hoàn thành Phase 1 (vốn là gate hoãn lại trong plan) |
+| 2026-06-26 | Nội dung spec được localize là chỉ dạng object (`LocalizedString`), string phẳng không hợp lệ | Pre-release, không có corpus bên ngoài và không có cam kết tương thích; schema được sửa tại chỗ (vẫn `v1.json`, không fork `v2.json`, không bump version manifest). Một resolver đọc tất cả trường được localize |
+| 2026-06-26 | Project empty-`domains` cần opt-in `applyToAllSites` rõ ràng | Một wildcard every-site im lặng sẽ rò rỉ spec của project vào các page không liên quan/kẻ tấn công; người dùng opt in per connection |
+| 2026-06-26 | SW-suspend watch loss được sửa tổng quát (chia sẻ `reestablish()` cho 1 và N connection) | Cùng path phục vụ trường hợp single-connection, sửa một bug MV3 latent thay vì chỉ cái multi-connection mới |
 
 ## Tham chiếu (References)
 
