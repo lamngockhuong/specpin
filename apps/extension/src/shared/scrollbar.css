@@ -1,0 +1,21 @@
+/* Thin rounded scrollbars shared by the popup body, side panel, and their inner
+   scroll areas. Firefox uses the standard properties; Chromium uses the -webkit
+   pseudo-elements. Colors track the --sp-* palette (from tokens.gen.css). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sp-border) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sp-border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sp-text-3);
+}

@@ -4,6 +4,7 @@ import { browser } from "#imports";
 import { chromeApi } from "../../shared/chrome-api.js";
 import { setLocale } from "../../shared/config.js";
 import "../../shared/tokens.gen.css";
+import "../../shared/scrollbar.css";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
 import { buildFilterModel, fetchSurfaceState } from "../../shared/surface-data.js";
 import {
