@@ -2,9 +2,15 @@ import { SidecarError, type SpecsResponse } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import { describe, expect, it } from "vitest";
 import { SidecarConnection } from "../src/background/sidecar-connection.js";
-import { SidecarRegistry } from "../src/background/sidecar-registry.js";
+import { findDuplicateBatches, SidecarRegistry } from "../src/background/sidecar-registry.js";
+import type { ManualBatch } from "../src/shared/config.js";
 import type { Connection } from "../src/shared/connection-types.js";
 import type { SpecSource } from "../src/sources/source.js";
+
+/** Wrap a SpecsResponse as a stored Manual-import batch. */
+function batch(id: string, specs: SpecsResponse): ManualBatch {
+  return { id, label: specs.manifest?.project ?? id, source: "paste", importedAt: 0, specs };
+}
 
 function resp(project: string, domains: string[], specId = "spec"): SpecsResponse {
   return {
@@ -152,35 +158,108 @@ describe("SidecarRegistry routing", () => {
     expect(serialized).not.toMatch(/token/i);
   });
 
-  it("counts Manual-import specs (not part of statuses())", () => {
+  it("counts Manual-import specs across batches (not part of statuses())", () => {
     const r = registryWith({});
     expect(r.manualSpecCount()).toBe(0);
-    r.setLocalSpecs(resp("Manual", [], "m-spec"), 1);
+    r.setLocalBatches([batch("1", resp("Manual", [], "m-spec"))]);
     // Manual specs are real content but are not a connection.
     expect(r.statuses()).toEqual([]);
     expect(r.manualSpecCount()).toBe(1);
-    r.setLocalSpecs(null, 2);
+    r.clearLocalSpecs();
     expect(r.manualSpecCount()).toBe(0);
   });
+});
 
-  it("clears the manual bundle authoritatively and resets the guard for a later reload", () => {
+describe("SidecarRegistry manual batches", () => {
+  it("each batch contributes only to origins its domains cover", () => {
     const r = registryWith({});
-    expect(r.clearLocalSpecs()).toBe(false); // nothing held -> no-op
-    r.setLocalSpecs(resp("Manual", [], "m-spec"), 100);
-    expect(r.manualSpecCount()).toBe(1);
-    // Storage-truth clear always wins regardless of seq (it is not a concurrent write).
+    r.setLocalBatches([
+      batch("1", resp("A", ["a.test"], "a-spec")),
+      batch("2", resp("B", ["b.test"], "b-spec")),
+    ]);
+    expect(r.specsForOrigin("https://a.test").specs.map((s) => s.id)).toEqual(["a-spec"]);
+    expect(r.specsForOrigin("https://b.test").specs.map((s) => s.id)).toEqual(["b-spec"]);
+    expect(r.specsForOrigin("https://other.test").specs).toEqual([]);
+  });
+
+  it("an empty-domains batch matches every origin (page-owned match-all)", () => {
+    const r = registryWith({});
+    r.setLocalBatches([batch("1", resp("All", [], "all-spec"))]);
+    expect(r.specsForOrigin("https://anything.test").specs.map((s) => s.id)).toEqual(["all-spec"]);
+  });
+
+  it("dedupes a repeated spec id across batches (first batch wins)", () => {
+    const r = registryWith({});
+    r.setLocalBatches([
+      batch("1", resp("First", [], "dup")),
+      batch("2", resp("Second", [], "dup")),
+    ]);
+    const specs = r.specsForOrigin("https://x.test").specs;
+    expect(specs).toHaveLength(1);
+    expect(specs[0]?.project).toBe("First");
+    // The second batch's specs still count toward the total (it is loaded).
+    expect(r.manualSpecCount()).toBe(2);
+  });
+
+  it("sums manualSpecCount across batches and reports hasContent", () => {
+    const r = registryWith({});
+    r.setLocalBatches([batch("1", resp("A", [], "a")), batch("2", resp("B", [], "b"))]);
+    expect(r.manualSpecCount()).toBe(2);
+    expect(r.hasContent()).toBe(true);
+  });
+
+  it("setLocalBatches returns false (no broadcast) when the list is unchanged", () => {
+    const r = registryWith({});
+    const list = [batch("1", resp("A", [], "a"))];
+    expect(r.setLocalBatches(list)).toBe(true);
+    // Same ids + spec counts -> sameBatchList -> no change.
+    expect(r.setLocalBatches([batch("1", resp("A", [], "a"))])).toBe(false);
+    // A different id is a real change.
+    expect(r.setLocalBatches([batch("2", resp("A", [], "a"))])).toBe(true);
+  });
+
+  it("clearLocalSpecs empties the list and is a no-op when already empty", () => {
+    const r = registryWith({});
+    expect(r.clearLocalSpecs()).toBe(false);
+    r.setLocalBatches([batch("1", resp("A", [], "a"))]);
     expect(r.clearLocalSpecs()).toBe(true);
     expect(r.manualSpecCount()).toBe(0);
-    // Guard reset: a later reload of any seq re-applies (no stale-seq rejection).
-    expect(r.setLocalSpecs(resp("Manual", [], "m2"), 50)).toBe(true);
-    expect(r.manualSpecCount()).toBe(1);
   });
 
-  it("setLocalSpecs still drops an out-of-order concurrent write (seq guard)", () => {
+  it("manualBatchSummaries reports metadata without a specs payload", () => {
     const r = registryWith({});
-    r.setLocalSpecs(resp("Manual", [], "m-spec"), 5);
-    expect(r.setLocalSpecs(resp("Manual", [], "m2"), 3)).toBe(false); // stale -> dropped
-    expect(r.manualSpecCount()).toBe(1);
+    r.setLocalBatches([batch("1", resp("A", ["a.test"], "a"))]);
+    const summaries = r.manualBatchSummaries();
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0]).toMatchObject({
+      id: "1",
+      project: "A",
+      domains: ["a.test"],
+      specCount: 1,
+    });
+    expect(summaries[0]).not.toHaveProperty("specs");
+  });
+});
+
+describe("findDuplicateBatches", () => {
+  it("flags a prior batch with the same normalized project (trim + case-insensitive)", () => {
+    const existing = [batch("1", resp("  Acme CRM ", [], "x"))];
+    const dups = findDuplicateBatches(resp("acme crm", [], "y"), existing);
+    expect(dups.map((d) => d.id)).toEqual(["1"]);
+    expect(dups[0]?.project).toBe("  Acme CRM ");
+  });
+
+  it("never flags an untitled (empty project) bundle", () => {
+    const existing = [batch("1", resp("", [], "x"))];
+    expect(findDuplicateBatches(resp("", [], "y"), existing)).toEqual([]);
+  });
+
+  it("counts overlapping spec ids for the warning text", () => {
+    const existing = [batch("1", resp("A", [], "shared"))];
+    const dups = findDuplicateBatches(resp("A", [], "shared"), existing);
+    expect(dups[0]?.overlapSpecIds).toBe(1);
+    const noOverlap = findDuplicateBatches(resp("A", [], "different"), existing);
+    expect(noOverlap[0]?.overlapSpecIds).toBe(0);
   });
 });
 

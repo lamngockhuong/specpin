@@ -147,7 +147,7 @@ src/
     sidepanel/        - docked surface (Chrome side_panel / Firefox sidebar_action)
     options/          - connection manager (add/remove/reconnect) + manual import + team views authoring
   background/
-    sidecar-registry.ts   - map của các connection + manual source; tổng hợp được gate theo origin + views threading
+    sidecar-registry.ts   - map của các connection + danh sách manual-import batch; tổng hợp được gate theo origin (domains theo từng batch, dedupe id giữa các batch) + views threading
     sidecar-connection.ts - client + cache + SSE watch + team views cache của một project (được cô lập)
   content/
     orchestrator.ts   - vòng lặp match; thread locale + project label + visibility filtering vào renderer
@@ -168,11 +168,11 @@ src/
     connection-types.ts        - Connection / ConnectionStatus / TaggedSpec không phụ thuộc browser
     origin-match.ts            - matching origin/domain thuần (dùng chung bởi SW + popup)
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
-    config.ts                  - storage helper (connections, locale, enabled, manual, personal visibility)
+    config.ts                  - storage helper (connections, locale, enabled, danh sách manual-import batch + migration legacy, personal visibility)
 ```
 
 **Key flows:**
-- Background SW: một `SidecarRegistry` giữ N connection (mỗi cái có client + cache + team views cache + SSE watch riêng) cộng manual source. `reestablish()` xây dựng lại chúng từ storage khi mỗi lần SW wake. `GET_SPECS_FOR_ORIGIN` trả về tổng hợp đã khớp origin, được tag theo project, đã filter theo visibility (xem `shared/visibility.ts`).
+- Background SW: một `SidecarRegistry` giữ N connection (mỗi cái có client + cache + team views cache + SSE watch riêng) cộng một danh sách manual-import batch (thêm khi import, xóa theo từng batch, clear tất cả; mọi mutation được serialize qua cùng writer `mutate()` như connection). `reestablish()` xây dựng lại chúng từ storage khi mỗi lần SW wake. `GET_SPECS_FOR_ORIGIN` trả về tổng hợp đã khớp origin, được tag theo project, đã filter theo visibility (xem `shared/visibility.ts`).
 - Content script: khi load, hỏi BG lấy spec của origin (đã được visibility-filter). Với mỗi cái, `matchElement(fingerprint)`; render qua mode đang active (tooltip | sidebar | modal), giải quyết localized text cho viewer locale. Lắng nghe capture toggle, locale change, `SPECS_CHANGED`, và các thay đổi visibility state.
 - Capture: picker highlight các element; khi click, form soạn title/description/rules per locale (và chọn một target project khi nhiều cái phục vụ page). Khi save, validate, POST tới connection đã chọn, reload.
 - Renderers: hiện thực `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); đọc localized text qua `localizeSpec`, và caption project khi nhiều hơn một đóng góp cho page. Tooltip renderer: click badge để pin tip mở (một lúc một cái), nút đóng, action "Open in side panel" highlight card side-panel tương ứng (best-effort auto-open trên Chrome, Firefox không thể mở sidebar lập trình).

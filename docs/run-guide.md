@@ -147,7 +147,9 @@ specpin bundle --dir .specs            # print bundle JSON to stdout (copy/paste
 specpin bundle --dir .specs --out bundle.json   # write it to a file instead
 ```
 
-`bundle` only reads and assembles; it does not validate (run `specpin validate` for schema checks, or rely on the in-page validation on import). Either path validates against the schema before anything is stored. Manual specs persist until you click **Clear manual specs**, and merge into a page's specs alongside any connected projects whose `domains` match the page (manual specs use their own manifest `domains`).
+`bundle` only reads and assembles; it does not validate (run `specpin validate` for schema checks, or rely on the in-page validation on import). Either path validates against the schema before anything is stored.
+
+**Each import appends a batch.** Loading a bundle (paste or files) adds it as a new batch rather than replacing the previous one, so several imports coexist. If a new import duplicates an earlier one (same project name) it is still loaded, with a non-blocking note naming the prior batch. The loaded batches are listed below the buttons, grouped by site (a batch's manifest `domains`, or "All sites" when it pins none; a multi-domain batch appears under each of its domains). Each batch has its own **Remove**; **Clear all manual specs** empties the whole list. Manual specs persist across browser restarts and merge into a page's specs alongside any connected projects whose `domains` match the page (manual specs use their own manifest `domains`; repeated spec ids across batches render once).
 
 ## Validate specs offline
 

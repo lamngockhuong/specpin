@@ -1,8 +1,9 @@
-import type { ViewsConfig } from "@specpin/api-client";
+import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import { type DefaultSurface, getDefaultSurface, setDefaultSurface } from "../../shared/config.js";
 import {
+  type AddLocalBatchResult,
   type ConnectionStatus,
-  type SetLocalSpecsResult,
+  type ManualBatchSummary,
   type StatusResult,
   sendToBackground,
 } from "../../shared/messaging.js";
@@ -24,6 +25,7 @@ const connections = byId("connections");
 const localSpecs = byId("localSpecs") as HTMLTextAreaElement;
 const localFiles = byId("localFiles") as HTMLInputElement;
 const localResult = byId("localResult");
+const localBatches = byId("localBatches");
 const surface = byId("surface") as HTMLSelectElement;
 
 // The sidecar binds localhost only; reject anything else before sending.
@@ -285,9 +287,82 @@ function renderConnections(list: ConnectionStatus[]): void {
   for (const c of list) connections.appendChild(connectionRow(c));
 }
 
+/** Build one manual-batch row with DOM nodes only (no innerHTML) so label/
+ *  project/file names from a crafted bundle are never an injection sink, matching
+ *  connectionRow. A multi-domain batch renders one row per group; Remove drops it
+ *  by id, so it disappears from every group at once. */
+function batchRow(b: ManualBatchSummary): HTMLElement {
+  const row = document.createElement("div");
+  row.className = "conn";
+
+  const head = document.createElement("div");
+  head.className = "conn-head";
+  const title = document.createElement("div");
+  title.className = "conn-title";
+  const name = document.createElement("span");
+  name.textContent = b.label;
+  title.append(name);
+
+  const actions = document.createElement("div");
+  actions.className = "conn-actions";
+  const remove = document.createElement("button");
+  remove.className = "secondary";
+  remove.textContent = "Remove";
+  remove.addEventListener("click", async () => {
+    await sendToBackground({ type: "REMOVE_LOCAL_BATCH", id: b.id });
+    showResult(localResult, true, "Batch removed.");
+    await refresh();
+  });
+  actions.append(remove);
+  head.append(title, actions);
+
+  const meta = document.createElement("div");
+  meta.className = "conn-meta";
+  const how = b.source === "files" ? (b.fileNames?.join(", ") ?? "files") : "pasted";
+  // importedAt is 0 for legacy-migrated batches (unknown time); omit it then.
+  const when = b.importedAt ? ` · ${new Date(b.importedAt).toLocaleString()}` : "";
+  meta.textContent = `${b.project || "untitled"} · ${b.specCount} spec(s) · ${how}${when}`;
+
+  row.append(head, meta);
+  return row;
+}
+
+/** Render the loaded batches grouped by individual site/domain: a batch pinned to
+ *  [a.com, b.com] appears under both groups; an empty-domain batch under "All
+ *  sites". This is what "remove by site" means: find a site, see every batch
+ *  active there. Group keys are sorted for a stable order. */
+function renderManualBatches(batches: ManualBatchSummary[]): void {
+  localBatches.replaceChildren();
+  if (!batches.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = "No manual specs loaded.";
+    localBatches.appendChild(empty);
+    return;
+  }
+  const groups = new Map<string, ManualBatchSummary[]>();
+  for (const b of batches) {
+    const keys = b.domains.length ? b.domains : ["All sites"];
+    for (const key of keys) {
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)?.push(b);
+    }
+  }
+  for (const site of [...groups.keys()].sort()) {
+    const group = document.createElement("div");
+    group.className = "batch-group";
+    const heading = document.createElement("h3");
+    heading.textContent = site;
+    group.appendChild(heading);
+    for (const b of groups.get(site) ?? []) group.appendChild(batchRow(b));
+    localBatches.appendChild(group);
+  }
+}
+
 async function refresh(): Promise<void> {
   const status = await sendToBackground<StatusResult>({ type: "GET_STATUS" });
   renderConnections(status.connections ?? []);
+  renderManualBatches(status.manualBatches ?? []);
 }
 
 // Toolbar-click surface preference. The background watches this storage key and
@@ -330,6 +405,44 @@ byId("add").addEventListener("click", async () => {
   await refresh();
 });
 
+/** Send a validated bundle as a NEW batch (append, never overwrite). Surfaces the
+ *  cap error on rejection, a non-blocking duplicate warning otherwise, and
+ *  refreshes the list. Returns whether the batch was added (so callers clear their
+ *  input only on success). */
+async function addBatch(
+  bundle: SpecsResponse,
+  source: "paste" | "files",
+  fileNames?: string[],
+): Promise<boolean> {
+  const res = await sendToBackground<AddLocalBatchResult>({
+    type: "ADD_LOCAL_BATCH",
+    bundle,
+    source,
+    fileNames,
+  });
+  if (!res.ok) {
+    showResult(localResult, false, res.error ?? "Could not add batch.");
+    return false;
+  }
+  if (res.duplicateOf.length) {
+    // Name each prior batch and, when known, how many spec ids overlap with it.
+    const names = res.duplicateOf
+      .map((d) =>
+        d.overlapSpecIds ? `"${d.label}" (${d.overlapSpecIds} shared spec(s))` : `"${d.label}"`,
+      )
+      .join(", ");
+    showResult(
+      localResult,
+      true,
+      `Loaded (total ${res.specCount} spec(s)). Note: duplicates ${names} you imported earlier.`,
+    );
+  } else {
+    showResult(localResult, true, `Loaded. Total ${res.specCount} spec(s) across all batches.`);
+  }
+  await refresh();
+  return true;
+}
+
 byId("loadLocal").addEventListener("click", async () => {
   const text = localSpecs.value.trim();
   if (!text) {
@@ -343,13 +456,7 @@ byId("loadLocal").addEventListener("click", async () => {
     showResult(localResult, false, `Invalid bundle:\n- ${errors.join("\n- ")}`);
     return;
   }
-  const res = await sendToBackground<SetLocalSpecsResult>({
-    type: "SET_LOCAL_SPECS",
-    specs,
-    seq: Date.now(),
-  });
-  showResult(localResult, res.ok, `Loaded ${res.specCount} spec(s) from manual import.`);
-  await refresh();
+  if (await addBatch(specs, "paste")) localSpecs.value = "";
 });
 
 byId("loadFiles").addEventListener("click", async () => {
@@ -367,24 +474,14 @@ byId("loadFiles").addEventListener("click", async () => {
     showResult(localResult, false, `Invalid selection:\n- ${errors.join("\n- ")}`);
     return;
   }
-  const res = await sendToBackground<SetLocalSpecsResult>({
-    type: "SET_LOCAL_SPECS",
-    specs,
-    seq: Date.now(),
-  });
-  showResult(localResult, res.ok, `Loaded ${res.specCount} spec(s) from ${picked.length} file(s).`);
-  localFiles.value = "";
-  await refresh();
+  const fileNames = picked.map((f) => f.name.split(/[/\\]/).pop() ?? f.name);
+  if (await addBatch(specs, "files", fileNames)) localFiles.value = "";
 });
 
 byId("clearLocal").addEventListener("click", async () => {
-  await sendToBackground<SetLocalSpecsResult>({
-    type: "SET_LOCAL_SPECS",
-    specs: null,
-    seq: Date.now(),
-  });
+  await sendToBackground({ type: "CLEAR_LOCAL_SPECS" });
   localSpecs.value = "";
-  showResult(localResult, true, "Manual specs cleared.");
+  showResult(localResult, true, "All manual specs cleared.");
   await refresh();
 });
 

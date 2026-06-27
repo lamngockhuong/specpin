@@ -1,9 +1,11 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { Manifest, Spec } from "@specpin/spec-schema";
+import type { ManualBatch } from "../shared/config.js";
 import {
   type Connection,
   type ConnectionStatus,
   MANUAL_CONNECTION_ID,
+  type ManualBatchSummary,
   type TaggedSpec,
 } from "../shared/connection-types.js";
 import { originMatchesDomains } from "../shared/origin-match.js";
@@ -34,8 +36,7 @@ export interface OriginSpecs {
  */
 export class SidecarRegistry {
   private readonly connections = new Map<string, SidecarConnection>();
-  private manual: SpecsResponse | null = null;
-  private lastLocalSeq = 0;
+  private manual: ManualBatch[] = [];
 
   constructor(private readonly deps: RegistryDeps = {}) {}
 
@@ -112,25 +113,22 @@ export class SidecarRegistry {
     for (const conn of this.connections.values()) conn.stopWatch();
   }
 
-  /** Apply Manual-import specs (or clear with null) when this write is newer than
-   *  the last applied one; the seq guard stops two Options tabs clobbering each
-   *  other. Returns false for stale writes. */
-  setLocalSpecs(specs: SpecsResponse | null, seq: number): boolean {
-    if (seq <= this.lastLocalSeq) return false;
-    this.lastLocalSeq = seq;
-    this.manual = specs;
+  /** Set the whole Manual-import batch list from storage truth (the single
+   *  writer). Returns whether the live list actually changed, so the caller
+   *  broadcasts only on a real change (echo-suppression without a seq guard,
+   *  mirroring how the connection list reconciles). Compared by id + spec count,
+   *  not deep-equal, to stay cheap (a batch is immutable once stored). */
+  setLocalBatches(batches: ManualBatch[]): boolean {
+    if (sameBatchList(this.manual, batches)) return false;
+    this.manual = batches;
     return true;
   }
 
-  /** Drop the in-memory Manual bundle as an authoritative reconcile: storage no
-   *  longer has it, so memory must match. Unlike `setLocalSpecs` this is NOT a
-   *  seq-ordered write (the guard orders concurrent Options writes; a clear from
-   *  storage truth is not one of them), so it always wins and resets the guard so
-   *  a later reload of any seq re-applies. Returns whether a bundle was held. */
+  /** Drop all Manual-import batches as an authoritative reconcile: storage no
+   *  longer has them, so memory must match. Returns whether anything was held. */
   clearLocalSpecs(): boolean {
-    if (this.manual === null) return false;
-    this.manual = null;
-    this.lastLocalSeq = 0;
+    if (this.manual.length === 0) return false;
+    this.manual = [];
     return true;
   }
 
@@ -151,17 +149,23 @@ export class SidecarRegistry {
       collectLocales(localeSet, cache.manifest);
     }
 
-    // Manual import is page-owned (the user explicitly loaded it); its empty
-    // `domains` keeps the historical match-all behavior.
-    if (this.manual) {
-      const domains = this.manual.manifest?.domains ?? [];
-      if (originMatchesDomains(origin, domains)) {
-        const project = this.manual.manifest?.project ?? "";
-        for (const spec of this.manual.specs)
-          specs.push({ ...spec, connectionId: MANUAL_CONNECTION_ID, project });
-        manifest ??= this.manual.manifest ?? null;
-        collectLocales(localeSet, this.manual.manifest ?? null);
+    // Manual import is page-owned (the user explicitly loaded it); each batch's
+    // empty `domains` keeps the historical match-all behavior. Spec ids are
+    // deduped ACROSS batches (a `Spec.id` is unique only within a project, so a
+    // re-imported project must not render two pins on the same element): first
+    // matching batch wins.
+    const seenManualIds = new Set<string>();
+    for (const batch of this.manual) {
+      const domains = batch.specs.manifest?.domains ?? [];
+      if (!originMatchesDomains(origin, domains)) continue;
+      const project = batch.specs.manifest?.project ?? "";
+      for (const spec of batch.specs.specs) {
+        if (seenManualIds.has(spec.id)) continue;
+        seenManualIds.add(spec.id);
+        specs.push({ ...spec, connectionId: MANUAL_CONNECTION_ID, project });
       }
+      manifest ??= batch.specs.manifest ?? null;
+      collectLocales(localeSet, batch.specs.manifest ?? null);
     }
 
     return { specs, manifest, locales: [...localeSet] };
@@ -258,11 +262,26 @@ export class SidecarRegistry {
     return [...this.connections.values()].map((c) => c.status());
   }
 
-  /** Number of Manual-import specs currently loaded (0 if none). Manual specs are
-   *  not part of `statuses()` (they are not a connection), so callers summing a
-   *  total spec count must add this separately. */
+  /** Number of Manual-import specs currently loaded across all batches (0 if
+   *  none). Manual specs are not part of `statuses()` (they are not a connection),
+   *  so callers summing a total spec count must add this separately. */
   manualSpecCount(): number {
-    return this.manual?.specs.length ?? 0;
+    return this.manual.reduce((n, b) => n + b.specs.specs.length, 0);
+  }
+
+  /** Per-batch summaries for the Options list. Carries no `specs` payload, so it
+   *  is safe to send over GET_STATUS. */
+  manualBatchSummaries(): ManualBatchSummary[] {
+    return this.manual.map((b) => ({
+      id: b.id,
+      label: b.label,
+      source: b.source,
+      fileNames: b.fileNames,
+      project: b.specs.manifest?.project ?? "",
+      domains: b.specs.manifest?.domains ?? [],
+      specCount: b.specs.specs.length,
+      importedAt: b.importedAt,
+    }));
   }
 
   /** Whether any connection is configured. */
@@ -272,7 +291,7 @@ export class SidecarRegistry {
 
   /** Whether any specs are currently available (a connection cache or manual). */
   hasContent(): boolean {
-    if (this.manual) return true;
+    if (this.manual.length) return true;
     for (const conn of this.connections.values()) if (conn.getCache()) return true;
     return false;
   }
@@ -289,9 +308,43 @@ export class SidecarRegistry {
     const set = new Set<string>();
     for (const conn of this.connections.values())
       collectLocales(set, conn.getCache()?.manifest ?? null);
-    if (this.manual) collectLocales(set, this.manual.manifest ?? null);
+    for (const b of this.manual) collectLocales(set, b.specs.manifest ?? null);
     return [...set];
   }
+}
+
+/** Same length and, per index, same `id` and spec count. A batch is immutable
+ *  once stored, so id + count is a sufficient change signal (cheaper than a deep
+ *  compare) for echo-suppression in setLocalBatches. */
+function sameBatchList(a: ManualBatch[], b: ManualBatch[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i]?.id !== b[i]?.id) return false;
+    if (a[i]?.specs.specs.length !== b[i]?.specs.specs.length) return false;
+  }
+  return true;
+}
+
+/** Prior batches a candidate bundle duplicates, by normalized project name (trim
+ *  + case-insensitive). An empty project never matches (avoids flagging untitled
+ *  bundles). `overlapSpecIds` counts shared spec ids for the warning text only;
+ *  cheap because it runs once per import and the list is capped. */
+export function findDuplicateBatches(
+  candidate: SpecsResponse,
+  existing: ManualBatch[],
+): { id: string; label: string; project: string; overlapSpecIds: number }[] {
+  const norm = (p: string | undefined): string => (p ?? "").trim().toLowerCase();
+  const candProject = norm(candidate.manifest?.project);
+  if (!candProject) return [];
+  const candIds = new Set(candidate.specs.map((s) => s.id));
+  return existing
+    .filter((batch) => norm(batch.specs.manifest?.project) === candProject)
+    .map((batch) => ({
+      id: batch.id,
+      label: batch.label,
+      project: batch.specs.manifest?.project ?? "",
+      overlapSpecIds: batch.specs.specs.filter((s) => candIds.has(s.id)).length,
+    }));
 }
 
 function collectLocales(set: Set<string>, manifest: Manifest | null): void {
