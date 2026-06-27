@@ -2,10 +2,13 @@ import type { SpecsResponse } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
 import { SidecarRegistry } from "../background/sidecar-registry.js";
+import { chromeApi } from "../shared/chrome-api.js";
 import {
   getConnections,
+  getDefaultSurface,
   getEnabled,
   getLocalSpecs,
+  SURFACE_KEY,
   setConfig,
   setConnections,
   setEnabled,
@@ -45,6 +48,10 @@ export default defineBackground(() => {
           .catch(() => {});
       }
     }
+    // Also notify extension pages (the persistent side panel re-fetches on this).
+    // tabs.sendMessage above only reaches content scripts; runtime.sendMessage
+    // reaches runtime pages. Fire-and-forget: rejects when no page is listening.
+    browser.runtime.sendMessage({ type: "SPECS_CHANGED" } satisfies Message).catch(() => {});
   }
 
   // Rebuild every connection from storage and (re)start watches. Runs at module
@@ -66,10 +73,43 @@ export default defineBackground(() => {
     }
   }
 
-  void reestablish();
+  // Apply the toolbar-click surface preference. Chrome only: a click opens the
+  // popup when one is set (default_popup), so to open the side panel instead we
+  // clear the popup AND turn on openPanelOnActionClick; to restore the popup we
+  // set it back. Firefox lacks chrome.sidePanel (it uses sidebar_action with its
+  // own toggle), so the whole block is skipped there. Best-effort: failures here
+  // never break the worker.
+  async function applySurfaceBehavior(): Promise<void> {
+    const api = chromeApi();
+    if (!api?.sidePanel || !api.action) return;
+    try {
+      const surface = await getDefaultSurface();
+      const openOnClick = surface === "sidepanel";
+      // Resolve the built popup filename from the manifest so a WXT rename does
+      // not strand the restore path.
+      const popup = api.runtime.getManifest().action?.default_popup ?? "popup.html";
+      await api.action.setPopup({ popup: openOnClick ? "" : popup });
+      await api.sidePanel.setPanelBehavior({ openPanelOnActionClick: openOnClick });
+    } catch {
+      // Non-fatal: the native side-panel button still reaches the panel.
+    }
+  }
 
-  browser.runtime.onStartup?.addListener(() => void reestablish());
-  browser.runtime.onInstalled?.addListener(() => void reestablish());
+  // Both run at module eval and on every service-worker wake (onStartup /
+  // onInstalled): re-establish watches and re-apply the toolbar-click surface.
+  function initWorker(): void {
+    void reestablish();
+    void applySurfaceBehavior();
+  }
+
+  initWorker();
+  browser.runtime.onStartup?.addListener(initWorker);
+  browser.runtime.onInstalled?.addListener(initWorker);
+  // Re-apply when the Settings page changes the preference so the toolbar
+  // behavior switches without a reload.
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area === "local" && SURFACE_KEY in changes) void applySurfaceBehavior();
+  });
   // The MV3 worker suspends when idle and SSE cannot wake it, so a watch can lag
   // up to one alarm period behind a change. This alarm re-establishes watches
   // (and the module re-evaluates on any wake); 1 minute is the packed floor.

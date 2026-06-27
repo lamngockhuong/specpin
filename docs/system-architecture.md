@@ -17,8 +17,10 @@ specpin serve  ── Go sidecar ──  localhost HTTP + SSE (token-authenticat
 browser extension (WXT, MV3)
    - background SW: SidecarRegistry (N connections) + per-connection cache + SSE relay
    - content script: matchElement(fingerprint) -> render (tooltip / sidebar / modal)
-   - popup + options: connection manager, locale toggle, on/off, capture
+   - popup + side panel + options: connection manager, locale toggle, on/off, capture
 ```
+
+The extension exposes two equivalent control surfaces backed by the same background messaging: the **popup** (ephemeral dropdown) and a **side panel** (`entrypoints/sidepanel/`, a persistent docked page that shows spec description + business rules inline and auto-refreshes on tab/navigation changes and `SPECS_CHANGED`). Both fetch through one shared `fetchSurfaceState()` helper. WXT maps the single `sidepanel` entrypoint to Chrome `side_panel` and Firefox `sidebar_action`. A stored `defaultSurface` preference decides whether a toolbar click opens the popup or the side panel; the background applies it on Chrome via `chrome.action.setPopup` + `sidePanel.setPanelBehavior` (Firefox keeps the popup on the toolbar button and opens the sidebar from its native toggle).
 
 Data flows one schema, two validators: the published JSON Schema (`packages/spec-schema/schema/v1.json`) is the single source of truth. The TS side validates with ajv; the Go sidecar embeds the same file and validates with `santhosh-tekuri/jsonschema/v6`. CI cross-validates a shared fixture corpus through both and fails on drift.
 

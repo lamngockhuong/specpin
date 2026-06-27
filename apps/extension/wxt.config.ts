@@ -19,7 +19,15 @@ export default defineConfig({
   manifest: ({ manifestVersion }) => ({
     name: "Specpin",
     description: "Pin business specifications to UI elements. Read-only MVP.",
-    permissions: ["storage", "activeTab", "tabs", "alarms"],
+    // `sidePanel` is a Chrome MV3 permission; Firefox (MV2) uses sidebar_action
+    // and would warn on an unknown permission, so add it only for MV3.
+    permissions: [
+      "storage",
+      "activeTab",
+      "tabs",
+      "alarms",
+      ...(manifestVersion === 3 ? ["sidePanel"] : []),
+    ],
     host_permissions: ["http://127.0.0.1/*", "http://localhost/*"],
     ...(manifestVersion === 3
       ? { action: { default_icon: iconSet } }
