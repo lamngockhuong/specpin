@@ -1,10 +1,10 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { browser } from "#imports";
-import type { ConnectionStatus, TaggedSpec } from "./connection-types.js";
+import type { ConnectionStatus, ManualBatchSummary, TaggedSpec } from "./connection-types.js";
 import type { PersonalVisibility, VisibilityState } from "./visibility.js";
 
-export type { ConnectionStatus, TaggedSpec } from "./connection-types.js";
+export type { ConnectionStatus, ManualBatchSummary, TaggedSpec } from "./connection-types.js";
 
 // Message protocol between content script, popup, options, and the background
 // service worker. The SW owns the api-client + token + cache + SSE.
@@ -47,9 +47,17 @@ export type Message =
   // Side panel -> active tab content script: open the in-page edit form for this
   // spec id (the form + capture picker only run in the page context).
   | { type: "EDIT_SPEC"; specId: string }
-  // Manual-import specs pushed from the Options page (extension-page origin only).
-  // `specs: null` clears them. `seq` guards against out-of-order tab writes.
-  | { type: "SET_LOCAL_SPECS"; specs: SpecsResponse | null; seq: number }
+  // Manual-import batches pushed from the Options page (extension-page origin
+  // only). Each ADD appends a new batch (never overwrites); REMOVE drops one by
+  // id; CLEAR empties the whole list.
+  | {
+      type: "ADD_LOCAL_BATCH";
+      bundle: SpecsResponse;
+      source: "paste" | "files";
+      fileNames?: string[];
+    }
+  | { type: "REMOVE_LOCAL_BATCH"; id: string }
+  | { type: "CLEAR_LOCAL_SPECS" }
   | { type: "SPECS_CHANGED" }
   | { type: "START_CAPTURE" }
   | { type: "SET_DISPLAY_MODE"; mode: DisplayMode | null }
@@ -79,7 +87,11 @@ export type Message =
 // origin. Add new privileged types here.
 export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   "SAVE_CONFIG",
-  "SET_LOCAL_SPECS",
+  // Manual-import mutations: an unprivileged content script must never be able to
+  // append, drop, or wipe a user's loaded batches.
+  "ADD_LOCAL_BATCH",
+  "REMOVE_LOCAL_BATCH",
+  "CLEAR_LOCAL_SPECS",
   // RT-SA2: connection mutations must come from an extension page, not a web
   // page's content script. RECONNECT is included because it can re-issue a
   // connection's bearer token to the sidecar.
@@ -98,11 +110,22 @@ export interface SaveSpecResult {
   errors?: string[];
 }
 
-export interface SetLocalSpecsResult {
+export interface AddLocalBatchResult {
+  ok: boolean;
+  /** False + reason when rejected (e.g. MAX_MANUAL_BATCHES reached). */
+  error?: string;
+  batchId?: string;
+  /** Total specs across all batches after the add. */
+  specCount: number;
+  /** Prior batches the new one duplicates (same normalized project); empty when
+   *  none. Surfaced as a non-blocking warning in the Options page. */
+  duplicateOf: { id: string; label: string; project: string; overlapSpecIds: number }[];
+}
+
+/** Result of a remove/clear: ok plus the new total spec count across batches. */
+export interface ManualMutationResult {
   ok: boolean;
   specCount: number;
-  /** False when an older (out-of-order) write was ignored. */
-  applied?: boolean;
 }
 
 export interface SpecsForOrigin {
@@ -131,6 +154,8 @@ export interface StatusResult {
   locales?: string[];
   /** Per-connection status for the management UI (Phase 4 consumes this). */
   connections?: ConnectionStatus[];
+  /** Manual-import batch summaries for the Options list (no specs payload). */
+  manualBatches?: ManualBatchSummary[];
 }
 
 export interface TestConnectionResult {

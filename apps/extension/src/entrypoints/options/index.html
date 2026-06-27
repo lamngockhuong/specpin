@@ -129,6 +129,14 @@
       }
       .empty { color: var(--sp-text-3); font-style: italic; }
 
+      /* Manual-import batch list, grouped by site. */
+      #localBatches { margin-top: 16px; }
+      .batch-group { margin-top: 14px; }
+      .batch-group > h3 {
+        margin: 0 0 8px; font: 12px/1.4 var(--sp-font-mono);
+        color: var(--sp-text-3); word-break: break-all;
+      }
+
       #addResult, #localResult {
         display: none;
         margin-top: 18px; padding: 12px 14px;
@@ -228,8 +236,9 @@
       <label for="localSpecs" style="margin-top: 24px">Or paste bundle JSON</label>
       <textarea id="localSpecs" placeholder='{ "manifest": { … }, "files": { "login.spec.json": { … } } }'></textarea>
       <button id="loadLocal" type="button">Load pasted bundle</button>
-      <button id="clearLocal" type="button" class="secondary" style="width: 100%; margin-top: 10px">Clear manual specs</button>
+      <button id="clearLocal" type="button" class="secondary" style="width: 100%; margin-top: 10px">Clear all manual specs</button>
       <div id="localResult"></div>
+      <div id="localBatches"></div>
     </div>
     <script type="module" src="./main.ts"></script>
   </body>

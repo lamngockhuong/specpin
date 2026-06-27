@@ -1,6 +1,7 @@
 import type { SpecsResponse } from "@specpin/api-client";
 import { describe, expect, it } from "vitest";
 import { SidecarRegistry } from "../src/background/sidecar-registry.js";
+import type { ManualBatch } from "../src/shared/config.js";
 import { ManualSource } from "../src/sources/manual.js";
 
 function specsResponse(project: string): SpecsResponse {
@@ -8,6 +9,10 @@ function specsResponse(project: string): SpecsResponse {
     manifest: { version: "1.0", project, domains: [], specFiles: [] } as never,
     specs: [],
   };
+}
+
+function batch(id: string, project: string): ManualBatch {
+  return { id, label: project, source: "paste", importedAt: 0, specs: specsResponse(project) };
 }
 
 describe("ManualSource", () => {
@@ -21,9 +26,9 @@ describe("ManualSource", () => {
 });
 
 describe("SidecarRegistry + manual import", () => {
-  it("serves manual specs (no sidecar) for any origin (empty domains)", () => {
+  it("serves manual batches (no sidecar) for any origin (empty domains)", () => {
     const r = new SidecarRegistry();
-    r.setLocalSpecs(specsResponse("Manual"), 1);
+    r.setLocalBatches([batch("a", "Manual")]);
     const { specs, manifest } = r.specsForOrigin("http://anywhere.test");
     expect(manifest?.project).toBe("Manual");
     expect(r.hasContent()).toBe(true);
@@ -31,19 +36,11 @@ describe("SidecarRegistry + manual import", () => {
     expect(specs.every((s) => s.connectionId === "manual")).toBe(true);
   });
 
-  it("ignores stale (out-of-order) local writes via the seq guard", () => {
+  it("clears manual content when the list empties", () => {
     const r = new SidecarRegistry();
-    expect(r.setLocalSpecs(specsResponse("new"), 5)).toBe(true);
-    expect(r.setLocalSpecs(specsResponse("old"), 3)).toBe(false);
-    expect(r.setLocalSpecs(specsResponse("same"), 5)).toBe(false);
-    expect(r.setLocalSpecs(specsResponse("newer"), 6)).toBe(true);
-  });
-
-  it("clears manual content when removed", () => {
-    const r = new SidecarRegistry();
-    r.setLocalSpecs(specsResponse("X"), 1);
+    r.setLocalBatches([batch("a", "X")]);
     expect(r.hasContent()).toBe(true);
-    r.setLocalSpecs(null, 2);
+    r.clearLocalSpecs();
     expect(r.hasContent()).toBe(false);
     expect(r.specsForOrigin("http://x.test").specs).toEqual([]);
   });

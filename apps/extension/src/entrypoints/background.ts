@@ -1,7 +1,7 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
-import { SidecarRegistry } from "../background/sidecar-registry.js";
+import { findDuplicateBatches, SidecarRegistry } from "../background/sidecar-registry.js";
 import { chromeApi } from "../shared/chrome-api.js";
 import {
   getConnections,
@@ -10,6 +10,9 @@ import {
   getLocalSpecs,
   getPersonalVisibility,
   LOCAL_SPECS_KEY,
+  MAX_MANUAL_BATCHES,
+  type ManualBatch,
+  normalizeLocalSpecsState,
   SURFACE_KEY,
   setConfig,
   setConnections,
@@ -20,10 +23,11 @@ import {
 } from "../shared/config.js";
 import type { Connection } from "../shared/connection-types.js";
 import {
+  type AddLocalBatchResult,
+  type ManualMutationResult,
   type Message,
   PRIVILEGED_MESSAGE_TYPES,
   type SaveSpecResult,
-  type SetLocalSpecsResult,
   type SpecsForOrigin,
   type StatusResult,
   type TestConnectionResult,
@@ -92,22 +96,36 @@ export default defineBackground(() => {
     browser.runtime.sendMessage({ type: "SPECS_CHANGED" } satisfies Message).catch(() => {});
   }
 
-  // Reconcile the in-memory manual bundle against storage truth: apply the stored
-  // bundle, or drop a stale in-memory one storage no longer has. The clear path is
-  // the fix for a wiped/cleared `specpin:localSpecs` (e.g. a DevTools storage
-  // clear): the apply path can only ADD, so without this a leaked bundle would
-  // render for the life of the worker. Broadcasts only when the registry actually
-  // changed (skips the no-op echo from an in-process write that already updated it).
-  async function reconcileLocalSpecs(broadcast: boolean): Promise<void> {
-    try {
-      const local = await getLocalSpecs();
-      const applied = local
-        ? registry.setLocalSpecs(local.specs, local.seq)
-        : registry.clearLocalSpecs();
-      if (applied && broadcast) await broadcastSpecsChanged();
-    } catch {
-      // Best-effort; the keepalive alarm reconciles on its next tick.
-    }
+  // Reconcile the in-memory manual batch list against storage truth: set the
+  // stored batches, or drop a stale in-memory list storage no longer has. The
+  // clear path is the fix for a wiped/cleared `specpin:localSpecs` (e.g. a
+  // DevTools storage clear) the in-process write path never routes through a
+  // message. Runs under mutate() so it shares the single writer with the add/
+  // remove/clear handlers; sets the registry unconditionally from storage truth
+  // and broadcasts only when the live list actually changed (sameBatchList
+  // suppresses the no-op echo from our own write). A legacy single-bundle value
+  // is upgraded and persisted once so its batch gains a real unique id.
+  function reconcileLocalSpecs(broadcast: boolean): Promise<void> {
+    return mutate(async () => {
+      try {
+        // One read of the key: normalize the raw value here instead of calling
+        // getLocalSpecs() (which would read storage a second time).
+        const raw = (await browser.storage.local.get(LOCAL_SPECS_KEY))[LOCAL_SPECS_KEY] as
+          | { batches?: unknown; specs?: unknown }
+          | undefined;
+        const isLegacy = !!raw && typeof raw === "object" && !("batches" in raw) && "specs" in raw;
+        const local = normalizeLocalSpecsState(raw);
+        const applied = local
+          ? registry.setLocalBatches(local.batches)
+          : registry.clearLocalSpecs();
+        // Bake the migrated uuid into storage so remove-by-id works and no fixed
+        // legacy id can collide. Done once: the rewritten value is the new shape.
+        if (isLegacy && local) await setLocalSpecs(local);
+        if (applied && broadcast) await broadcastSpecsChanged();
+      } catch {
+        // Best-effort; the keepalive alarm reconciles on its next tick.
+      }
+    });
   }
 
   // Rebuild every connection from storage and (re)start watches. Runs at module
@@ -182,9 +200,10 @@ export default defineBackground(() => {
     }
     if (area !== "local") return;
     if (SURFACE_KEY in changes) void applySurfaceBehavior();
-    // Mirror an out-of-band manual-bundle change (e.g. a DevTools storage clear,
-    // which the in-process write path never routes through SET_LOCAL_SPECS) into
-    // the live registry at once, rather than waiting for the keepalive alarm.
+    // Mirror an out-of-band manual-batch change (e.g. a DevTools storage clear,
+    // which the in-process write path never routes through a message) into the
+    // live registry at once, rather than waiting for the keepalive alarm. Our own
+    // writes echo here too but no-op via sameBatchList.
     if (LOCAL_SPECS_KEY in changes) void reconcileLocalSpecs(true);
   });
   // The MV3 worker suspends when idle and SSE cannot wake it, so a watch can lag
@@ -230,8 +249,12 @@ export default defineBackground(() => {
         return handleSaveSpec(message.file, message.spec, originOf(sender), message.connectionId);
       case "UPDATE_SPEC":
         return handleUpdateSpec(message.id, message.spec, originOf(sender), message.connectionId);
-      case "SET_LOCAL_SPECS":
-        return handleSetLocalSpecs(message.specs, message.seq);
+      case "ADD_LOCAL_BATCH":
+        return handleAddLocalBatch(message);
+      case "REMOVE_LOCAL_BATCH":
+        return handleRemoveLocalBatch(message.id);
+      case "CLEAR_LOCAL_SPECS":
+        return handleClearLocalSpecs();
       case "SET_PERSONAL_VISIBILITY":
         return handleSetPersonalVisibility(message.visibility);
       case "GET_TEAM_VIEWS":
@@ -335,6 +358,7 @@ export default defineBackground(() => {
       activeSource: connected ? "sidecar" : registry.hasContent() ? "manual" : null,
       locales: locales.length ? locales : ["en"],
       connections,
+      manualBatches: registry.manualBatchSummaries(),
     };
   }
 
@@ -502,17 +526,61 @@ export default defineBackground(() => {
     return result;
   }
 
-  async function handleSetLocalSpecs(
-    specs: SpecsResponse | null,
-    seq: number,
-  ): Promise<SetLocalSpecsResult> {
-    const applied = registry.setLocalSpecs(specs, seq);
-    if (!applied) {
-      return { ok: true, applied: false, specCount: countAll() };
-    }
-    await setLocalSpecs(specs === null ? null : { specs, seq });
-    await broadcastSpecsChanged();
-    return { ok: true, applied: true, specCount: countAll() };
+  // Append one Manual-import batch. RMW under mutate() (single writer): re-read
+  // storage, reject at the batch cap, assign a uuid + timestamp, persist FIRST
+  // (storage is truth) then sync the registry from it, and report which prior
+  // batches the new one duplicates.
+  function handleAddLocalBatch(message: {
+    bundle: SpecsResponse;
+    source: "paste" | "files";
+    fileNames?: string[];
+  }): Promise<AddLocalBatchResult> {
+    return mutate(async () => {
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      if (state.batches.length >= MAX_MANUAL_BATCHES) {
+        return {
+          ok: false,
+          error: `Limit reached (${MAX_MANUAL_BATCHES} batches). Remove some first.`,
+          specCount: countAll(),
+          duplicateOf: [],
+        };
+      }
+      const duplicateOf = findDuplicateBatches(message.bundle, state.batches);
+      const batch: ManualBatch = {
+        id: crypto.randomUUID(),
+        label: message.bundle.manifest?.project || message.fileNames?.[0] || "Pasted bundle",
+        source: message.source,
+        fileNames: message.fileNames,
+        importedAt: Date.now(),
+        specs: message.bundle,
+      };
+      const next = { batches: [...state.batches, batch] };
+      await setLocalSpecs(next);
+      registry.setLocalBatches(next.batches);
+      await broadcastSpecsChanged();
+      return { ok: true, batchId: batch.id, specCount: countAll(), duplicateOf };
+    });
+  }
+
+  function handleRemoveLocalBatch(id: string): Promise<ManualMutationResult> {
+    return mutate(async () => {
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const next = { batches: state.batches.filter((b) => b.id !== id) };
+      await setLocalSpecs(next); // empty list removes the key (config.ts)
+      if (next.batches.length) registry.setLocalBatches(next.batches);
+      else registry.clearLocalSpecs();
+      await broadcastSpecsChanged();
+      return { ok: true, specCount: countAll() };
+    });
+  }
+
+  function handleClearLocalSpecs(): Promise<ManualMutationResult> {
+    return mutate(async () => {
+      await setLocalSpecs(null);
+      registry.clearLocalSpecs();
+      await broadcastSpecsChanged();
+      return { ok: true, specCount: countAll() };
+    });
   }
 
   function countAll(): number {

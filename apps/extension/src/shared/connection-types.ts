@@ -27,6 +27,21 @@ export interface Connection {
  *  label lets multi-project pages disambiguate colliding spec ids. */
 export type TaggedSpec = SpecWithFile & { connectionId: string; project: string };
 
+/** One Manual-import batch as shown in the Options list. Carries NO `specs`
+ *  payload (only counts + metadata), so it is safe to send over GET_STATUS to any
+ *  extension surface. Lives here (not messaging.ts) so the registry can build it
+ *  without importing the message layer; messaging.ts re-exports it. */
+export interface ManualBatchSummary {
+  id: string;
+  label: string;
+  source: "paste" | "files";
+  fileNames?: string[];
+  project: string;
+  domains: string[];
+  specCount: number;
+  importedAt: number;
+}
+
 /** Per-connection state for the management UI. NEVER carries the bearer token
  *  (RT-SA6): an unprivileged GET_STATUS must not be able to read secrets. */
 export interface ConnectionStatus {
