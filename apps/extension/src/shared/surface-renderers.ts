@@ -59,8 +59,8 @@ export function renderStatus(status: StatusResult, origin: string, originSpecCou
       dotClass = "dot warn";
       text = `Partially connected (${up}/${serving.length})`;
     } else {
-      // Name the source so the user knows the sidecar is what needs reconnecting
-      // (the project name + Reconnect button sit right below this).
+      // Name the source so the user knows the sidecar is what dropped; it
+      // reconnects automatically (the project name sits right below this).
       dotClass = "dot off";
       text = "Disconnected (sidecar)";
     }
