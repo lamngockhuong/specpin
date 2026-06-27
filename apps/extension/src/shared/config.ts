@@ -1,4 +1,5 @@
 import type { SpecsResponse } from "@specpin/api-client";
+import type { DisplayMode } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import type { Connection } from "./connection-types.js";
 import type { PersonalVisibility } from "./visibility.js";
@@ -25,6 +26,7 @@ const CONNECTIONS_KEY = "specpin:connections";
 const ENABLED_KEY = "specpin:enabled";
 export const LOCAL_SPECS_KEY = "specpin:localSpecs";
 const LOCALE_KEY = "specpin:locale";
+const DISPLAY_MODE_KEY = "specpin:displayMode";
 export const SURFACE_KEY = "specpin:defaultSurface";
 /** Personal visibility override. In `storage.sync` (not local) so a user's
  *  show/hide choices follow them across machines on the same browser profile. */
@@ -79,6 +81,23 @@ export async function getLocale(): Promise<string | null> {
 
 export async function setLocale(locale: string): Promise<void> {
   await browser.storage.local.set({ [LOCALE_KEY]: locale });
+}
+
+/** The viewer's forced display mode, or null for per-spec mode (each spec uses
+ *  its own preferredDisplayMode). Persisted so the choice survives popup close,
+ *  side-panel re-render, and page reload (the content script reads it on init). */
+export async function getDisplayMode(): Promise<DisplayMode | null> {
+  const stored = await browser.storage.local.get(DISPLAY_MODE_KEY);
+  return (stored[DISPLAY_MODE_KEY] as DisplayMode | undefined) ?? null;
+}
+
+export async function setDisplayMode(mode: DisplayMode | null): Promise<void> {
+  // null = per-spec mode: drop the key so a default profile carries nothing.
+  if (mode === null) {
+    await browser.storage.local.remove(DISPLAY_MODE_KEY);
+    return;
+  }
+  await browser.storage.local.set({ [DISPLAY_MODE_KEY]: mode });
 }
 
 /** The toolbar-click surface preference (default "popup" preserves today's

@@ -19,6 +19,10 @@ export interface RenderStats {
 export interface RenderSession {
   stats: RenderStats;
   renderers: SpecRenderer[];
+  /** Matched element per rendered spec id, so a surface that only knows a spec id
+   *  (popup / side panel, via the HIGHLIGHT_ELEMENT message) can resolve the
+   *  element to highlight without re-running the matcher. */
+  matches: Map<string, Element>;
   destroy(): void;
 }
 
@@ -41,8 +45,10 @@ export function renderSession(
   state: VisibilityState = EMPTY_VISIBILITY,
   url = "",
   onOpenInPanel?: (specId: string) => void,
+  onHighlight?: (el: Element) => void,
 ): RenderSession {
   const byMode = new Map<DisplayMode, SpecRenderer>();
+  const matches = new Map<string, Element>();
   const stats: RenderStats = { rendered: 0, needsReview: 0, unmatched: 0 };
   // The viewer's chosen locale drives rendering; fall back to the project's
   // default then "en" so callers without a manifest still render.
@@ -86,7 +92,9 @@ export function renderSession(
       project: (spec as Partial<TaggedSpec>).project,
       showProject,
       onOpenInPanel,
+      onHighlight,
     });
+    matches.set(spec.id, match.el);
     stats.rendered += 1;
   }
 
@@ -94,6 +102,7 @@ export function renderSession(
   return {
     stats,
     renderers,
+    matches,
     destroy: () => {
       for (const r of renderers) r.destroy();
     },

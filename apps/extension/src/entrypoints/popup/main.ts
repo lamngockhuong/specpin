@@ -1,8 +1,8 @@
-import type { DisplayMode } from "@specpin/spec-schema";
 import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import { chromeApi } from "../../shared/chrome-api.js";
 import { setLocale } from "../../shared/config.js";
+import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
@@ -33,6 +33,14 @@ function renderSpecs(res: SpecsForOrigin): void {
   }
   for (const spec of res.specs) {
     const li = document.createElement("li");
+    li.className = "spec";
+    // Clicking a spec scrolls to and highlights its element on the page, then
+    // closes the popup so the page (and the highlight) is unobstructed.
+    li.title = "Click to highlight on the page";
+    li.addEventListener("click", async () => {
+      await sendToActiveTab({ type: "HIGHLIGHT_ELEMENT", specId: spec.id });
+      window.close();
+    });
     const title = document.createElement("div");
     title.className = "t";
     title.textContent = resolveLocalized(
@@ -76,10 +84,7 @@ byId("capture").addEventListener("click", async () => {
   await sendToActiveTab({ type: "START_CAPTURE" });
   window.close(); // let the user click the target element on the page
 });
-byId("mode").addEventListener("change", async (e) => {
-  const value = (e.target as HTMLSelectElement).value;
-  await sendToActiveTab({ type: "SET_DISPLAY_MODE", mode: (value || null) as DisplayMode | null });
-});
+void wireDisplayModePicker(byId("mode") as HTMLSelectElement);
 byId("locale").addEventListener("change", async (e) => {
   activeLocale = (e.target as HTMLSelectElement).value;
   await setLocale(activeLocale);

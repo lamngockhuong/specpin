@@ -71,7 +71,6 @@ ${SHADOW_PREAMBLE}
 .card .d { color: var(--sp-text-2); margin-top: 4px; }
 .card ul { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .card li { margin: 2px 0; }
-.flash { outline: 3px solid var(--sp-accent) !important; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
 `;
 
@@ -153,7 +152,17 @@ export class ModalRenderer implements SpecRenderer {
       `<div class="t">${escapeHtml(text.title)}</div>` +
       `<div class="d">${escapeHtml(text.description)}</div>` +
       rulesListHtml(text.businessRules);
-    card.addEventListener("click", () => this.jumpTo(target), { signal: this.ac.signal });
+    const onHighlight = meta?.onHighlight;
+    // Close first so the dialog does not cover the element, then hand off to the
+    // content script's highlighter (scroll + outline).
+    card.addEventListener(
+      "click",
+      () => {
+        this.close();
+        onHighlight?.(target);
+      },
+      { signal: this.ac.signal },
+    );
     list.appendChild(card);
     this.updateSummary();
   }
@@ -179,13 +188,6 @@ export class ModalRenderer implements SpecRenderer {
       e.preventDefault();
       this.closeBtn?.focus();
     }
-  }
-
-  private jumpTo(target: Element): void {
-    this.close();
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
-    target.classList.add("flash");
-    this.doc.defaultView?.setTimeout(() => target.classList.remove("flash"), 1200);
   }
 
   private close(): void {

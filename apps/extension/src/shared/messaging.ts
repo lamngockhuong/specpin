@@ -55,6 +55,9 @@ export type Message =
   | { type: "OPEN_SPEC_IN_PANEL"; specId: string }
   // background -> side panel runtime page: scroll the matching card into view.
   | { type: "HIGHLIGHT_SPEC"; specId: string }
+  // popup / side panel -> active tab's content script: scroll to and highlight
+  // the matched element on the page for this spec id.
+  | { type: "HIGHLIGHT_ELEMENT"; specId: string }
   // Personal visibility override change: popup/side panel -> background, which
   // persists it to storage.sync (debounced) and broadcasts SPECS_CHANGED.
   | { type: "SET_PERSONAL_VISIBILITY"; visibility: PersonalVisibility }

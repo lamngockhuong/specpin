@@ -23,6 +23,10 @@ export interface RenderMeta {
    *  action). The orchestrator threads it from the content script; renderers stay
    *  DOM-pure and testable with a stub. */
   onOpenInPanel?: (specId: string) => void;
+  /** Callback a renderer invokes to scroll to and highlight the matched element
+   *  on the page. Threaded from the content script like onOpenInPanel so
+   *  renderers stay DOM-pure; omitted in tests/stubs makes the jump a no-op. */
+  onHighlight?: (el: Element) => void;
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already

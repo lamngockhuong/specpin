@@ -1,5 +1,5 @@
 import type { Spec } from "@specpin/spec-schema";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ModalRenderer } from "../src/renderers/modal.js";
 
 function spec(id: string, title: string): Spec {
@@ -64,6 +64,22 @@ describe("ModalRenderer", () => {
     expect(modalHost()?.shadowRoot?.querySelector(".card .t")?.textContent).toBe("Đăng nhập");
     // Description has no vi -> falls back to en.
     expect(modalHost()?.shadowRoot?.querySelector(".card .d")?.textContent).toBe("desc");
+    r.destroy();
+  });
+
+  it("clicking a card closes the dialog and highlights the matched element", () => {
+    const r = new ModalRenderer(document);
+    const target = document.createElement("button");
+    document.body.appendChild(target);
+    const onHighlight = vi.fn();
+    r.render(spec("a", "One"), target, { confidence: 1, needsReview: false, onHighlight });
+
+    const card = modalHost()?.shadowRoot?.querySelector<HTMLElement>(".card");
+    card?.click();
+
+    expect(onHighlight).toHaveBeenCalledWith(target);
+    const root = modalHost()?.shadowRoot?.querySelector(".root");
+    expect(root?.hasAttribute("hidden")).toBe(true);
     r.destroy();
   });
 
