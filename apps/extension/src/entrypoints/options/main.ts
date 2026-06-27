@@ -71,7 +71,7 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
   // Per-project on/off. Disabling stops this project's watch and removes its
   // specs from every page; the row stays so it can be re-enabled.
   const toggle = document.createElement("label");
-  toggle.className = "inline conn-toggle";
+  toggle.className = "conn-toggle";
   toggle.title = c.enabled ? "Disable this project" : "Enable this project";
   const toggleBox = document.createElement("input");
   toggleBox.type = "checkbox";
