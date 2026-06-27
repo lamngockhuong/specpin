@@ -17,6 +17,11 @@ interface Pin {
 
 const HOST_ID = "specpin-tooltip-host";
 
+// When max < min (viewport narrower than the tip) the outer Math.max wins and
+// pins to min, so no extra guard is needed.
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(value, max));
+
 const STYLES = `
 ${SHADOW_PREAMBLE}
 .layer { position: absolute; top: 0; left: 0; z-index: 2147483647; }
@@ -41,6 +46,10 @@ ${SHADOW_PREAMBLE}
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); display: none; pointer-events: none;
 }
 .tip.pinned { pointer-events: auto; }
+/* When pinned, the title area is the drag handle so the tip can be moved off
+   elements it covers. Body text stays selectable; only the header grabs. */
+.tip.pinned .project, .tip.pinned h4 { cursor: move; user-select: none; }
+.tip.dragging { box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45); }
 .tip .project { display: block; margin: 0 0 4px; font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sp-text-3); }
 .tip h4 { margin: 0 0 4px; padding-right: 18px; font-size: 13px; font-weight: 700; color: var(--sp-text); }
 .tip p { margin: 0 0 6px; color: var(--sp-text-2); }
@@ -80,6 +89,12 @@ export class TooltipRenderer implements SpecRenderer {
   private onOpenInPanel?: (specId: string) => void;
   private readonly doc: Document;
   private reposition = () => this.positionAll();
+  // Drag state for the pinned tip. `dragged` is reset on every (re)open so the
+  // tip starts anchored to its badge; once dragged it stays put through scroll.
+  // `x`/`y` are the grab offset; `w`/`h` are the tip size measured once at grab
+  // (it does not change mid-drag) to avoid a layout reflow on every mousemove.
+  private dragOffset: { x: number; y: number; w: number; h: number } | null = null;
+  private dragged = false;
 
   constructor(doc: Document = document) {
     this.doc = doc;
@@ -106,6 +121,8 @@ export class TooltipRenderer implements SpecRenderer {
     this.shadow = shadow;
     this.layer = layer;
     this.tip = tip;
+
+    tip.addEventListener("mousedown", this.startDrag);
 
     const win = this.doc.defaultView;
     win?.addEventListener("scroll", this.reposition, true);
@@ -154,6 +171,9 @@ export class TooltipRenderer implements SpecRenderer {
   private showTip(pin: Pin, pinned: boolean): void {
     const tip = this.tip;
     if (!tip) return;
+    // Fresh open: drop any prior drag so the tip re-anchors to its badge.
+    this.dragged = false;
+    tip.classList.remove("dragging");
     const tags = pin.tags.length
       ? `<div class="tags">${escapeHtml(pin.tags.join(", "))}</div>`
       : "";
@@ -204,9 +224,54 @@ export class TooltipRenderer implements SpecRenderer {
 
   private positionAll(): void {
     for (const pin of this.pins) this.positionBadge(pin);
-    // Keep the pinned tip anchored to its badge through scroll/resize.
-    if (this.pinnedBadge) this.positionTip(this.pinnedBadge);
+    // Keep the pinned tip anchored to its badge through scroll/resize, unless the
+    // user has dragged it somewhere deliberately.
+    if (this.pinnedBadge && !this.dragged) this.positionTip(this.pinnedBadge);
   }
+
+  // Drag the pinned tip by its title area. Document-absolute coordinates keep
+  // the moved tip consistent with the badges (which are also document-anchored).
+  private startDrag = (e: MouseEvent): void => {
+    const tip = this.tip;
+    const win = this.doc.defaultView;
+    if (!tip || !win || e.button !== 0) return;
+    if (!tip.classList.contains("pinned")) return;
+    const handle = e.target as Element | null;
+    if (!handle?.closest("h4, .project")) return;
+    e.preventDefault();
+    const rect = tip.getBoundingClientRect();
+    this.dragOffset = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      w: rect.width,
+      h: rect.height,
+    };
+    tip.classList.add("dragging");
+    win.addEventListener("mousemove", this.onDrag, true);
+    win.addEventListener("mouseup", this.endDrag, true);
+  };
+
+  private onDrag = (e: MouseEvent): void => {
+    const tip = this.tip;
+    const win = this.doc.defaultView;
+    if (!tip || !win || !this.dragOffset) return;
+    e.preventDefault();
+    this.dragged = true;
+    const { x, y, w, h } = this.dragOffset;
+    // Clamp to the viewport so the tip cannot be dragged out of reach.
+    const left = clamp(e.clientX - x, 4, win.innerWidth - w - 4);
+    const top = clamp(e.clientY - y, 4, win.innerHeight - h - 4);
+    tip.style.left = `${left + win.scrollX}px`;
+    tip.style.top = `${top + win.scrollY}px`;
+  };
+
+  private endDrag = (): void => {
+    this.dragOffset = null;
+    this.tip?.classList.remove("dragging");
+    const win = this.doc.defaultView;
+    win?.removeEventListener("mousemove", this.onDrag, true);
+    win?.removeEventListener("mouseup", this.endDrag, true);
+  };
 
   /** Number of currently rendered pins (used in tests). */
   get pinCount(): number {
@@ -217,6 +282,7 @@ export class TooltipRenderer implements SpecRenderer {
     const win = this.doc.defaultView;
     win?.removeEventListener("scroll", this.reposition, true);
     win?.removeEventListener("resize", this.reposition);
+    this.endDrag();
     this.host?.remove();
     this.host = this.shadow = null;
     this.layer = this.tip = null;
