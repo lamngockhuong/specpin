@@ -41,6 +41,7 @@ export class SidecarConnection {
   private unwatch: (() => void) | null = null;
   private connected = false;
   private lastError: string | null = null;
+  private lastErrorDetail: string | null = null;
 
   constructor(
     conn: Connection,
@@ -86,12 +87,20 @@ export class SidecarConnection {
       this.cache = specs.value;
       this.connected = true;
       this.lastError = null;
+      this.lastErrorDetail = null;
     } else {
       this.cache = null;
       this.viewsCache = null;
       this.connected = false;
-      this.lastError =
-        specs.reason instanceof SidecarError ? specs.reason.code : String(specs.reason);
+      if (specs.reason instanceof SidecarError) {
+        this.lastError = specs.reason.code;
+        // Surface the sidecar's `details` so the UI can show why (e.g. the
+        // missing manifest path) instead of just the opaque code.
+        this.lastErrorDetail = specs.reason.details.length ? specs.reason.details.join("; ") : null;
+      } else {
+        this.lastError = String(specs.reason);
+        this.lastErrorDetail = null;
+      }
       return;
     }
     this.viewsCache = views.status === "fulfilled" ? (views.value ?? null) : null;
@@ -175,6 +184,7 @@ export class SidecarConnection {
       project: this.cache?.manifest?.project ?? null,
       connected: this.connected,
       error: this.lastError ?? undefined,
+      errorDetail: this.lastErrorDetail ?? undefined,
       specCount: this.cache?.specs.length ?? 0,
       domains,
       matchesAllSites: domains.length === 0 && this.applyToAllSites,

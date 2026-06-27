@@ -35,7 +35,11 @@ export interface ConnectionStatus {
   baseUrl: string;
   project: string | null;
   connected: boolean;
+  /** Machine error code from the last failed reload (e.g. "load_failed"). */
   error?: string;
+  /** Human-readable detail behind `error`, passed through from the sidecar's
+   *  `details` (e.g. the missing-file path). Absent when there is no extra detail. */
+  errorDetail?: string;
   specCount: number;
   domains: string[];
   /** True when this project pins no domains and is opted in to all sites. */

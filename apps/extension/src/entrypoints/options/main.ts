@@ -71,7 +71,8 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
 
   const meta = document.createElement("div");
   meta.className = "conn-meta";
-  const state = c.connected ? "connected" : c.error ? `error: ${c.error}` : "disconnected";
+  const errorText = `error: ${c.error}${c.errorDetail ? ` (${c.errorDetail})` : ""}`;
+  const state = c.connected ? "connected" : c.error ? errorText : "disconnected";
   const domains = c.domains.length ? c.domains.join(", ") : "no domains pinned";
   meta.textContent = `${c.baseUrl} · ${state} · ${c.specCount} spec(s) · ${domains}`;
 
