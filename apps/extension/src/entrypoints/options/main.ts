@@ -289,8 +289,8 @@ function renderConnections(list: ConnectionStatus[]): void {
 
 /** Build one manual-batch row with DOM nodes only (no innerHTML) so label/
  *  project/file names from a crafted bundle are never an injection sink, matching
- *  connectionRow. A multi-domain batch renders one row per group; Remove drops it
- *  by id, so it disappears from every group at once. */
+ *  connectionRow. One row per import: the batch's pinned sites are listed inline
+ *  and Remove drops the whole batch by id. */
 function batchRow(b: ManualBatchSummary): HTMLElement {
   const row = document.createElement("div");
   row.className = "conn";
@@ -323,14 +323,20 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
   const when = b.importedAt ? ` · ${new Date(b.importedAt).toLocaleString()}` : "";
   meta.textContent = `${b.project || "untitled"} · ${b.specCount} spec(s) · ${how}${when}`;
 
-  row.append(head, meta);
+  // Pinned sites shown inline. An empty-domain batch matches every site.
+  const sites = document.createElement("div");
+  sites.className = "conn-meta";
+  sites.textContent = b.domains.length
+    ? `Sites: ${b.domains.join(", ")}`
+    : "Sites: all sites (no domains pinned)";
+
+  row.append(head, meta, sites);
   return row;
 }
 
-/** Render the loaded batches grouped by individual site/domain: a batch pinned to
- *  [a.com, b.com] appears under both groups; an empty-domain batch under "All
- *  sites". This is what "remove by site" means: find a site, see every batch
- *  active there. Group keys are sorted for a stable order. */
+/** Render the loaded batches, one card per import (in import order). Each card
+ *  lists the sites its bundle is pinned to inline, so a multi-domain batch shows
+ *  once instead of once per site, and Remove drops exactly that one batch. */
 function renderManualBatches(batches: ManualBatchSummary[]): void {
   localBatches.replaceChildren();
   if (!batches.length) {
@@ -340,23 +346,7 @@ function renderManualBatches(batches: ManualBatchSummary[]): void {
     localBatches.appendChild(empty);
     return;
   }
-  const groups = new Map<string, ManualBatchSummary[]>();
-  for (const b of batches) {
-    const keys = b.domains.length ? b.domains : ["All sites"];
-    for (const key of keys) {
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)?.push(b);
-    }
-  }
-  for (const site of [...groups.keys()].sort()) {
-    const group = document.createElement("div");
-    group.className = "batch-group";
-    const heading = document.createElement("h3");
-    heading.textContent = site;
-    group.appendChild(heading);
-    for (const b of groups.get(site) ?? []) group.appendChild(batchRow(b));
-    localBatches.appendChild(group);
-  }
+  for (const b of batches) localBatches.appendChild(batchRow(b));
 }
 
 async function refresh(): Promise<void> {
