@@ -32,7 +32,7 @@ make build        # syncs the embedded schema, produces bin/specpin
 pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000
 ```
 
-Demo đã ship sẵn `examples/demo-react-app/.specs/` với các spec đã seed.
+Demo là một Acme CRM nhiều màn hình nhỏ gọn (đăng nhập, dashboard, danh sách và chi tiết khách hàng, cài đặt, tạo giao dịch) và ship sẵn `examples/demo-react-app/.specs/` với các spec đã seed cho mọi màn hình. Đăng nhập với giá trị bất kỳ để vào các màn hình đã xác thực; điều hướng qua thanh nav trên cùng.
 
 ## 4. Khởi động sidecar trong một repo có thư mục `.specs/`
 

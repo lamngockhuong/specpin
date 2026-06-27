@@ -1,0 +1,191 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "group": "Dashboard",
+  "specs": [
+    {
+      "id": "dashboard-stat-revenue",
+      "title": { "en": "Revenue (won) stat", "vi": "Chỉ số doanh thu (đã chốt)" },
+      "description": {
+        "en": "Sum of deal amounts in the Won stage for the current quarter.",
+        "vi": "Tổng giá trị các giao dịch ở trạng thái Đã chốt trong quý hiện tại."
+      },
+      "businessRules": [
+        {
+          "en": "Counts only deals with stage = Won and closeDate within the quarter",
+          "vi": "Chỉ tính giao dịch có trạng thái = Đã chốt và ngày chốt trong quý"
+        },
+        {
+          "en": "Displayed in the account's base currency",
+          "vi": "Hiển thị theo tiền tệ gốc của tài khoản"
+        }
+      ],
+      "tags": ["dashboard", "metrics"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "dashboard-stat-revenue",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='dashboard-stat-revenue']",
+        "xpath": "//div[@data-spec-id='dashboard-stat-revenue']",
+        "domPath": ["main", "div", "div"],
+        "tagName": "div",
+        "textContent": "Revenue (won)",
+        "attributes": {},
+        "nearbyLabels": ["Revenue (won)"],
+        "positionHint": { "index": 0, "siblingCount": 3 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "dashboard-stat-deals",
+      "title": { "en": "Open deals stat", "vi": "Chỉ số giao dịch đang mở" },
+      "description": {
+        "en": "Count of deals not yet in a terminal stage (Won or Lost).",
+        "vi": "Số giao dịch chưa ở trạng thái kết thúc (Đã chốt hoặc Thất bại)."
+      },
+      "businessRules": [
+        {
+          "en": "Excludes deals in Won and Lost stages",
+          "vi": "Loại trừ giao dịch ở trạng thái Đã chốt và Thất bại"
+        }
+      ],
+      "tags": ["dashboard", "metrics"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "dashboard-stat-deals",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='dashboard-stat-deals']",
+        "xpath": "//div[@data-spec-id='dashboard-stat-deals']",
+        "domPath": ["main", "div", "div"],
+        "tagName": "div",
+        "textContent": "Open deals",
+        "attributes": {},
+        "nearbyLabels": ["Open deals"],
+        "positionHint": { "index": 1, "siblingCount": 3 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "dashboard-stat-tasks",
+      "title": { "en": "Tasks due stat", "vi": "Chỉ số công việc đến hạn" },
+      "description": {
+        "en": "Number of follow-up tasks assigned to the current user that are due today or overdue.",
+        "vi": "Số công việc theo dõi được giao cho người dùng hiện tại, đến hạn hôm nay hoặc đã quá hạn."
+      },
+      "businessRules": [
+        {
+          "en": "Scoped to the signed-in user only",
+          "vi": "Chỉ tính cho người dùng đang đăng nhập"
+        }
+      ],
+      "tags": ["dashboard", "metrics"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "dashboard-stat-tasks",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='dashboard-stat-tasks']",
+        "xpath": "//div[@data-spec-id='dashboard-stat-tasks']",
+        "domPath": ["main", "div", "div"],
+        "tagName": "div",
+        "textContent": "Tasks due",
+        "attributes": {},
+        "nearbyLabels": ["Tasks due"],
+        "positionHint": { "index": 2, "siblingCount": 3 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "dashboard-activity",
+      "title": { "en": "Recent activity feed", "vi": "Dòng hoạt động gần đây" },
+      "description": {
+        "en": "Reverse-chronological log of pipeline events visible to the user's team.",
+        "vi": "Nhật ký sự kiện pipeline theo thứ tự thời gian đảo ngược mà nhóm của người dùng thấy được."
+      },
+      "businessRules": [
+        { "en": "Shows the 20 most recent events", "vi": "Hiển thị 20 sự kiện gần nhất" },
+        {
+          "en": "Respects record-level visibility permissions",
+          "vi": "Tuân thủ quyền hiển thị ở cấp bản ghi"
+        }
+      ],
+      "tags": ["dashboard"],
+      "preferredDisplayMode": "sidebar",
+      "fingerprint": {
+        "testId": "dashboard-activity",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='dashboard-activity']",
+        "xpath": "//ul[@data-spec-id='dashboard-activity']",
+        "domPath": ["main", "ul"],
+        "tagName": "ul",
+        "textContent": null,
+        "attributes": {},
+        "nearbyLabels": ["Recent activity"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "dashboard-new-deal-cta",
+      "title": { "en": "New deal button", "vi": "Nút tạo giao dịch mới" },
+      "description": {
+        "en": "Navigates to the new-deal form at /deals/new.",
+        "vi": "Điều hướng đến biểu mẫu tạo giao dịch mới tại /deals/new."
+      },
+      "businessRules": [
+        {
+          "en": "Visible only to users with the deal:create permission",
+          "vi": "Chỉ hiển thị cho người dùng có quyền deal:create"
+        }
+      ],
+      "tags": ["dashboard", "deals"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "dashboard-new-deal-cta",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='dashboard-new-deal-cta']",
+        "xpath": "//a[@data-spec-id='dashboard-new-deal-cta']",
+        "domPath": ["main", "p", "a"],
+        "tagName": "a",
+        "textContent": "+ New deal",
+        "attributes": {},
+        "nearbyLabels": ["+ New deal"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    }
+  ]
+}

@@ -192,21 +192,28 @@ src/
 
 ## examples/demo-react-app
 
-**Purpose**: Sample React 19 + Vite app with seeded `.specs/` for instant tryout.
+**Purpose**: Sample React 19 + Vite app with seeded `.specs/` for instant tryout. A small multi-screen "Acme CRM" so specs can be tried across real navigation.
 
 **Structure:**
 ```
 src/
-  App.tsx           - main component, login form + dashboard cards
-  main.tsx          - React 19 entry
+  main.tsx          - React 19 entry (BrowserRouter + AuthProvider)
+  App.tsx           - route table (login public; rest behind the auth gate)
+  auth.tsx          - in-memory demo auth (no backend)
+  styles.ts         - shared inline-style tokens
+  data.ts           - mock CRM customers/deals + derived dashboard figures
+  components/        - Layout (nav + Outlet), RequireAuth (redirect guard)
+  screens/          - Login, Dashboard, Customers, CustomerDetail, Settings, NewDeal
 .specs/
-  manifest.json     - v1 manifest (version, createdAt, updatedAt)
-  login.spec.json   - spec for login form (email input, submit button)
-  localhost.spec.json - spec for dashboard cards
+  manifest.json     - v1 manifest, lists the 5 spec files
+  login.spec.json   - login form specs
+  dashboard.spec.json, customers.spec.json, settings.spec.json, deals.spec.json
 ```
 
 **Key features:**
-- Elements tagged with `data-spec-id` for exact matching.
+- Elements tagged with `data-spec-id` for exact matching (one spec per anchor).
+- Bilingual specs (en/vi) spanning tooltip/sidebar/modal display modes.
+- Routing via `react-router-dom`; lightweight in-memory auth gate (demo only).
 - Seeded specs validated by CI schema job (prevents rot).
 - Runs on port 3000 (Vite dev server).
 
@@ -302,7 +309,7 @@ Two jobs (JS, Go):
 | packages/api-client | ~350 | 4 TS |
 | apps/cli | ~970 | 17 Go |
 | apps/extension | ~2,100 | 35 TS |
-| examples/demo-react-app | ~200 | 3 TS + 2 specs |
+| examples/demo-react-app | ~770 | 13 TS + 5 specs |
 | **Total (source, excl. generated)** | **~4,820** | **83 TS + 17 Go** |
 
 ## Where Things Live

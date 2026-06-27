@@ -1,0 +1,266 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "group": "Customers",
+  "specs": [
+    {
+      "id": "customers-search",
+      "title": { "en": "Customer search", "vi": "Tìm kiếm khách hàng" },
+      "description": {
+        "en": "Filters the customer table by name or company as you type.",
+        "vi": "Lọc bảng khách hàng theo tên hoặc công ty khi bạn gõ."
+      },
+      "businessRules": [
+        {
+          "en": "Case-insensitive substring match",
+          "vi": "So khớp chuỗi con không phân biệt hoa thường"
+        },
+        {
+          "en": "Searches only records the user may view",
+          "vi": "Chỉ tìm trong các bản ghi người dùng được phép xem"
+        }
+      ],
+      "tags": ["customers"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "customers-search",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='customers-search']",
+        "xpath": "//input[@data-spec-id='customers-search']",
+        "domPath": ["main", "div", "input"],
+        "tagName": "input",
+        "textContent": null,
+        "attributes": { "type": "search" },
+        "nearbyLabels": ["Search by name or company"],
+        "positionHint": { "index": 0, "siblingCount": 2 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "customers-add",
+      "title": { "en": "Add customer button", "vi": "Nút thêm khách hàng" },
+      "description": {
+        "en": "Opens the form to create a new customer record.",
+        "vi": "Mở biểu mẫu tạo bản ghi khách hàng mới."
+      },
+      "businessRules": [
+        {
+          "en": "Requires the customer:create permission",
+          "vi": "Yêu cầu quyền customer:create"
+        }
+      ],
+      "tags": ["customers"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "customers-add",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='customers-add']",
+        "xpath": "//button[@data-spec-id='customers-add']",
+        "domPath": ["main", "div", "button"],
+        "tagName": "button",
+        "textContent": "+ Add customer",
+        "attributes": { "type": "button" },
+        "nearbyLabels": ["+ Add customer"],
+        "positionHint": { "index": 1, "siblingCount": 2 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "customers-table",
+      "title": { "en": "Customers table", "vi": "Bảng khách hàng" },
+      "description": {
+        "en": "Lists customers with name, company, and open-deal count. Each name links to the detail screen.",
+        "vi": "Liệt kê khách hàng với tên, công ty và số giao dịch đang mở. Mỗi tên liên kết đến màn hình chi tiết."
+      },
+      "businessRules": [
+        {
+          "en": "Default sort is by name ascending",
+          "vi": "Sắp xếp mặc định theo tên tăng dần"
+        }
+      ],
+      "tags": ["customers"],
+      "preferredDisplayMode": "sidebar",
+      "fingerprint": {
+        "testId": "customers-table",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='customers-table']",
+        "xpath": "//table[@data-spec-id='customers-table']",
+        "domPath": ["main", "table"],
+        "tagName": "table",
+        "textContent": null,
+        "attributes": {},
+        "nearbyLabels": ["Name", "Company", "Open deals"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "customer-email",
+      "title": { "en": "Customer email", "vi": "Email khách hàng" },
+      "description": {
+        "en": "Primary contact address for the customer; opens the mail client.",
+        "vi": "Địa chỉ liên hệ chính của khách hàng; mở ứng dụng email."
+      },
+      "businessRules": [
+        {
+          "en": "Masked for users without the contact:view-email permission",
+          "vi": "Được che với người dùng không có quyền contact:view-email"
+        }
+      ],
+      "tags": ["customers", "contact"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "customer-email",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='customer-email']",
+        "xpath": "//a[@data-spec-id='customer-email']",
+        "domPath": ["main", "p", "a"],
+        "tagName": "a",
+        "textContent": null,
+        "attributes": {},
+        "nearbyLabels": ["Email:"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "customer-deal-history",
+      "title": { "en": "Deal history", "vi": "Lịch sử giao dịch" },
+      "description": {
+        "en": "All deals tied to this customer with amount and current stage.",
+        "vi": "Tất cả giao dịch gắn với khách hàng này kèm giá trị và trạng thái hiện tại."
+      },
+      "businessRules": [
+        {
+          "en": "Includes deals in every stage, newest first",
+          "vi": "Bao gồm giao dịch ở mọi trạng thái, mới nhất trước"
+        }
+      ],
+      "tags": ["customers", "deals"],
+      "preferredDisplayMode": "modal",
+      "fingerprint": {
+        "testId": "customer-deal-history",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='customer-deal-history']",
+        "xpath": "//table[@data-spec-id='customer-deal-history']",
+        "domPath": ["main", "table"],
+        "tagName": "table",
+        "textContent": null,
+        "attributes": {},
+        "nearbyLabels": ["Deal", "Amount", "Stage"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "customer-notes",
+      "title": { "en": "Customer notes", "vi": "Ghi chú khách hàng" },
+      "description": {
+        "en": "Free-text internal notes about the customer relationship.",
+        "vi": "Ghi chú nội bộ dạng văn bản tự do về mối quan hệ khách hàng."
+      },
+      "businessRules": [
+        {
+          "en": "Visible to internal users only, never to the customer",
+          "vi": "Chỉ hiển thị cho người dùng nội bộ, không bao giờ cho khách hàng"
+        }
+      ],
+      "tags": ["customers"],
+      "preferredDisplayMode": "sidebar",
+      "fingerprint": {
+        "testId": "customer-notes",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='customer-notes']",
+        "xpath": "//p[@data-spec-id='customer-notes']",
+        "domPath": ["main", "p"],
+        "tagName": "p",
+        "textContent": null,
+        "attributes": {},
+        "nearbyLabels": ["Notes"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "customer-delete",
+      "title": { "en": "Delete customer", "vi": "Xoá khách hàng" },
+      "description": {
+        "en": "Destructive action that removes the customer and its deals after confirmation.",
+        "vi": "Hành động phá huỷ, xoá khách hàng và các giao dịch sau khi xác nhận."
+      },
+      "businessRules": [
+        {
+          "en": "Requires a confirmation dialog before proceeding",
+          "vi": "Yêu cầu hộp thoại xác nhận trước khi thực hiện"
+        },
+        {
+          "en": "Soft-deletes for 30 days before permanent removal",
+          "vi": "Xoá mềm trong 30 ngày trước khi xoá vĩnh viễn"
+        }
+      ],
+      "tags": ["customers", "critical"],
+      "preferredDisplayMode": "modal",
+      "fingerprint": {
+        "testId": "customer-delete",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='customer-delete']",
+        "xpath": "//button[@data-spec-id='customer-delete']",
+        "domPath": ["main", "div", "button"],
+        "tagName": "button",
+        "textContent": "Delete customer",
+        "attributes": { "type": "button" },
+        "nearbyLabels": ["Delete customer"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    }
+  ]
+}
