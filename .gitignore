@@ -44,5 +44,3 @@ docs/journals/
 .env.*
 !.env.example
 
-# Local-only demo specs (not shipped demo state)
-examples/demo-react-app/.specs/localhost.spec.json
