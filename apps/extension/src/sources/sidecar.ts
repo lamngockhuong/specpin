@@ -31,6 +31,10 @@ export class SidecarSource implements SpecSource {
     return this.client.saveSpec(file, spec);
   }
 
+  updateSpec(id: string, spec: Spec): Promise<void> {
+    return this.client.updateSpec(id, spec);
+  }
+
   loadViews(): Promise<ViewsConfig> {
     return this.client.getViews();
   }

@@ -1,4 +1,5 @@
 import { SidecarError, type SpecsResponse } from "@specpin/api-client";
+import type { Spec } from "@specpin/spec-schema";
 import { describe, expect, it } from "vitest";
 import { SidecarConnection } from "../src/background/sidecar-connection.js";
 import { SidecarRegistry } from "../src/background/sidecar-registry.js";
@@ -34,7 +35,11 @@ function resp(project: string, domains: string[], specId = "spec"): SpecsRespons
 }
 
 /** Fake source: returns canned specs (or throws), and tracks live watch count. */
-function fakeSource(data: SpecsResponse | Error, watch: { n: number }): SpecSource {
+function fakeSource(
+  data: SpecsResponse | Error,
+  watch: { n: number },
+  rec?: { updated: string[] },
+): SpecSource {
   return {
     id: "sidecar",
     isAvailable: async () => true,
@@ -43,6 +48,9 @@ function fakeSource(data: SpecsResponse | Error, watch: { n: number }): SpecSour
       return data;
     },
     saveSpec: async () => {},
+    updateSpec: async (id) => {
+      rec?.updated.push(id);
+    },
     watch: () => {
       watch.n++;
       return () => {
@@ -249,5 +257,73 @@ describe("SidecarConnection.update (edit endpoint)", () => {
     // When watching is disabled the reconnect must drop the watch, not keep it.
     await r.reconnect("a", false);
     expect(watch.n).toBe(0);
+  });
+});
+
+describe("SidecarRegistry.updateSpec routing", () => {
+  const editedSpec = (id: string): Spec => resp("X", [], id).specs[0] as unknown as Spec;
+
+  it("routes an update to the connection serving the origin", async () => {
+    const recA = { updated: [] as string[] };
+    const recB = { updated: [] as string[] };
+    const r = registryWith({
+      a: fakeSource(resp("A", ["a.test"], "a-spec"), { n: 0 }, recA),
+      b: fakeSource(resp("B", ["b.test"], "b-spec"), { n: 0 }, recB),
+    });
+    await r.reestablish([conn("a"), conn("b")], false);
+
+    const res = await r.updateSpec("https://a.test", "a-spec", editedSpec("a-spec"));
+    expect(res.ok).toBe(true);
+    expect(recA.updated).toEqual(["a-spec"]);
+    expect(recB.updated).toEqual([]);
+  });
+
+  it("selects the connection by connectionId when several serve the origin", async () => {
+    const recA = { updated: [] as string[] };
+    const recB = { updated: [] as string[] };
+    const r = registryWith({
+      a: fakeSource(resp("A", [], "spec"), { n: 0 }, recA),
+      b: fakeSource(resp("B", [], "spec"), { n: 0 }, recB),
+    });
+    // Both opt in to all sites so both serve the origin; connectionId disambiguates.
+    await r.reestablish([conn("a", true), conn("b", true)], false);
+
+    const res = await r.updateSpec("https://any.test", "spec", editedSpec("spec"), "b");
+    expect(res.ok).toBe(true);
+    expect(recA.updated).toEqual([]);
+    expect(recB.updated).toEqual(["spec"]);
+  });
+
+  it("rejects when no connected project serves the origin", async () => {
+    const r = registryWith({ a: fakeSource(resp("A", ["a.test"]), { n: 0 }) });
+    await r.reestablish([conn("a")], false);
+
+    const res = await r.updateSpec("https://evil.test", "spec", editedSpec("spec"));
+    expect(res.ok).toBe(false);
+    expect(res.errors).toEqual(["no connected project serves this page"]);
+  });
+
+  it("surfaces a source error as a failed result", async () => {
+    const r = new SidecarRegistry({
+      createConnection: (c, deps) =>
+        new SidecarConnection(c, {
+          ...deps,
+          source: {
+            id: "sidecar",
+            isAvailable: async () => true,
+            loadSpecs: async () => resp("A", ["a.test"]),
+            saveSpec: async () => {},
+            updateSpec: async () => {
+              throw new Error("boom");
+            },
+            watch: () => () => {},
+          },
+        }),
+    });
+    await r.reestablish([conn("a")], false);
+
+    const res = await r.updateSpec("https://a.test", "spec", editedSpec("spec"));
+    expect(res.ok).toBe(false);
+    expect(res.errors?.[0]).toContain("boom");
   });
 });

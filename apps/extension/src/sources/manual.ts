@@ -26,4 +26,8 @@ export class ManualSource implements SpecSource {
   async saveSpec(): Promise<void> {
     throw new Error("Manual source is read-only; use the sidecar for capture.");
   }
+
+  async updateSpec(): Promise<void> {
+    throw new Error("Manual source is read-only; use the sidecar for capture.");
+  }
 }

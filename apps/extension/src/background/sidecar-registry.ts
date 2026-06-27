@@ -206,19 +206,47 @@ export class SidecarRegistry {
    *  picks that connection (if it serves the origin); otherwise the first match.
    *  Routing is always bounded by `matchesOrigin`, so a page cannot write to a
    *  project that does not serve it. */
+  /** The connection a write for this origin should target: the one named by
+   *  `connectionId` (if it serves the origin), else the first serving connection.
+   *  Always bounded by `matchesOrigin`, so a page can never write to a project that
+   *  does not serve it (RT-SA7). Shared by saveSpec + updateSpec. */
+  private writeTarget(origin: string, connectionId?: string): SidecarConnection | undefined {
+    const candidates = [...this.connections.values()].filter(
+      (c) => c.getCache() && c.matchesOrigin(origin),
+    );
+    return connectionId ? candidates.find((c) => c.id === connectionId) : candidates[0];
+  }
+
   async saveSpec(
     origin: string,
     file: string,
     spec: Spec,
     connectionId?: string,
   ): Promise<{ ok: boolean; errors?: string[] }> {
-    const candidates = [...this.connections.values()].filter(
-      (c) => c.getCache() && c.matchesOrigin(origin),
-    );
-    const target = connectionId ? candidates.find((c) => c.id === connectionId) : candidates[0];
+    const target = this.writeTarget(origin, connectionId);
     if (!target) return { ok: false, errors: ["no connected project serves this page"] };
     try {
       await target.saveSpec(file, spec);
+      await target.reload();
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, errors: [String(e)] };
+    }
+  }
+
+  /** Update an existing spec (by id) in a connection serving the origin. Same
+   *  routing + origin boundary as saveSpec; update is id-addressed, so no file
+   *  argument is needed (the sidecar locates the spec across .spec.json files). */
+  async updateSpec(
+    origin: string,
+    id: string,
+    spec: Spec,
+    connectionId?: string,
+  ): Promise<{ ok: boolean; errors?: string[] }> {
+    const target = this.writeTarget(origin, connectionId);
+    if (!target) return { ok: false, errors: ["no connected project serves this page"] };
+    try {
+      await target.updateSpec(id, spec);
       await target.reload();
       return { ok: true };
     } catch (e) {

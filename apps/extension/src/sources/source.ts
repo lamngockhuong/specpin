@@ -10,6 +10,10 @@ export interface SpecSource {
   isAvailable(): Promise<boolean>;
   loadSpecs(): Promise<SpecsResponse>;
   saveSpec(file: string, spec: Spec): Promise<void>;
+  /** Update an existing spec in place, addressed by its stable `id`. The backing
+   *  store locates the spec across files, so no file argument is needed. Read-only
+   *  sources (Manual) reject this. */
+  updateSpec(id: string, spec: Spec): Promise<void>;
   /** Optional team-default visibility config (sidecar /views). Sources that do
    *  not support it (FileSystem/Manual) omit these; the registry treats a missing
    *  loadViews as "no team default". */
