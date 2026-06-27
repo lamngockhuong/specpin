@@ -1,5 +1,6 @@
+import { MANUAL_CONNECTION_ID, type TaggedSpec } from "./connection-types.js";
 import type { ConnectionStatus, StatusResult } from "./messaging.js";
-import { statusServesOrigin } from "./origin-match.js";
+import { connectionServesOrigin } from "./origin-match.js";
 import { applyFacetToggle, type FilterModel, resetPersonalVisibility } from "./surface-data.js";
 import type { FacetInventory, FacetItem, FacetKey } from "./visibility.js";
 
@@ -15,12 +16,34 @@ export const byId = (id: string): HTMLElement => {
   return el;
 };
 
+/** A muted `<li>` for a spec-list empty state (no specs, Specpin off, or no
+ *  search match). Shared so the popup and side panel build it the same way. */
+export function mutedRow(text: string): HTMLElement {
+  const li = document.createElement("li");
+  li.className = "muted";
+  li.textContent = text;
+  return li;
+}
+
+/** Small `sidecar`/`manual` provenance badge for a spec row. A spec tagged with
+ *  the page-owned Manual source reads `manual`; everything else came from a
+ *  sidecar connection. DOM-built (no innerHTML) so it is never an injection sink,
+ *  matching the other renderers. Shared by the popup and the side panel. */
+export function sourceBadge(spec: Pick<TaggedSpec, "connectionId">): HTMLElement {
+  const manual = spec.connectionId === MANUAL_CONNECTION_ID;
+  const tag = document.createElement("span");
+  tag.className = `src src-${manual ? "manual" : "sidecar"}`;
+  tag.textContent = manual ? "manual" : "sidecar";
+  tag.title = manual ? "From a Manual import (read-only)" : "From a sidecar connection";
+  return tag;
+}
+
 export function renderStatus(status: StatusResult, origin: string, originSpecCount: number): void {
   // Health is scoped to the connections that actually serve the active tab: a
   // sidecar bound to another domain must not color this page's status. The global
   // status.connected (any-connection some()) stayed green even when a serving
   // sidecar was down, masking partial failures -- this derives state per origin.
-  const serving = (status.connections ?? []).filter((c) => statusServesOrigin(c, origin));
+  const serving = (status.connections ?? []).filter((c) => connectionServesOrigin(c, origin));
   const up = serving.filter((c) => c.connected).length;
 
   let dotClass = "dot";
@@ -68,7 +91,7 @@ export function renderStatus(status: StatusResult, origin: string, originSpecCou
 export function renderProjects(list: ConnectionStatus[], origin: string): void {
   const ul = byId("projects");
   ul.replaceChildren();
-  const matching = list.filter((c) => statusServesOrigin(c, origin));
+  const matching = list.filter((c) => connectionServesOrigin(c, origin));
   // With a single project the meta row already names it; avoid duplicate noise.
   if (matching.length < 2) return;
   for (const c of matching) {

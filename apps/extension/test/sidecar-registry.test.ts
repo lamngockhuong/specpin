@@ -439,3 +439,63 @@ describe("SidecarRegistry.updateSpec routing", () => {
     expect(res.errors?.[0]).toContain("boom");
   });
 });
+
+describe("SidecarRegistry per-project enable/disable", () => {
+  const disabled = (id: string): Connection => ({ ...conn(id), enabled: false });
+
+  it("a disabled connection contributes no specs even when its domains match", async () => {
+    const watch = { n: 0 };
+    const r = registryWith({
+      a: fakeSource(resp("Project A", ["a.test"], "a-spec"), watch),
+    });
+    await r.reestablish([disabled("a")], false);
+    expect(r.specsForOrigin("https://a.test").specs).toEqual([]);
+  });
+
+  it("a disabled connection contributes no team-hidden facets", async () => {
+    const watch = { n: 0 };
+    const r = registryWith({
+      a: fakeSource(resp("Project A", ["a.test"], "a-spec"), watch),
+    });
+    await r.reestablish([disabled("a")], false);
+    expect(r.teamHiddenForOrigin("https://a.test")).toEqual([]);
+  });
+
+  it("reports the enabled flag in statuses()", async () => {
+    const watch = { n: 0 };
+    const r = registryWith({
+      on: fakeSource(resp("On", ["a.test"], "on-spec"), watch),
+      off: fakeSource(resp("Off", ["a.test"], "off-spec"), watch),
+    });
+    await r.reestablish([conn("on"), disabled("off")], false);
+    const byId = Object.fromEntries(r.statuses().map((s) => [s.id, s.enabled]));
+    expect(byId).toEqual({ on: true, off: false });
+  });
+
+  it("setConnectionEnabled stops the watch when disabling and restarts it when enabling", async () => {
+    const watch = { n: 0 };
+    const r = registryWith({ a: fakeSource(resp("A", ["a.test"], "a-spec"), watch) });
+    await r.reestablish([conn("a")], true);
+    expect(watch.n).toBe(1);
+
+    // Disabling tears down the live SSE watch.
+    await r.setConnectionEnabled("a", false, true);
+    expect(watch.n).toBe(0);
+
+    // Re-enabling restores it (global switch on).
+    await r.setConnectionEnabled("a", true, true);
+    expect(watch.n).toBe(1);
+  });
+
+  it("re-enabling does not start a watch when the global switch is off", async () => {
+    const watch = { n: 0 };
+    const r = registryWith({ a: fakeSource(resp("A", ["a.test"], "a-spec"), watch) });
+    await r.reestablish([disabled("a")], false);
+    expect(watch.n).toBe(0);
+
+    await r.setConnectionEnabled("a", true, false);
+    expect(watch.n).toBe(0);
+    // Specs are reachable again once enabled, watch or not.
+    expect(r.specsForOrigin("https://a.test").specs.map((s) => s.id)).toEqual(["a-spec"]);
+  });
+});

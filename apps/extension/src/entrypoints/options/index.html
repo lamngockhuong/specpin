@@ -20,7 +20,7 @@
           radial-gradient(110% 70% at 50% 0%, var(--sp-grad-top), var(--sp-grad-bottom)) fixed;
       }
       .card {
-        max-width: 560px;
+        max-width: 720px;
         margin: 0 auto;
         padding: 32px;
         background: var(--sp-surface);
@@ -120,7 +120,12 @@
       .dot.ok { background: var(--sp-success-dot); }
       .dot.err { background: var(--sp-error-text); }
       .conn-meta { color: var(--sp-text-3); font: 12px/1.5 var(--sp-font-mono); margin-top: 6px; word-break: break-all; }
-      .conn-actions { display: flex; gap: 8px; flex: none; }
+      .conn-actions { display: flex; gap: 8px; flex: none; align-items: center; }
+      /* Per-project on/off toggle inside a connection row. */
+      .conn-toggle { margin: 0; font-size: 12px; font-weight: 600; color: var(--sp-text-2); white-space: nowrap; }
+      .conn-toggle input { cursor: pointer; }
+      /* Dim a disabled project but keep its controls usable. */
+      .conn-disabled { opacity: 0.6; }
       .warn {
         margin-top: 10px; padding: 9px 11px;
         color: var(--sp-warning); background: var(--sp-warning-bg);

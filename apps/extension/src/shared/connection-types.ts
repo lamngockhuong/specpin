@@ -20,6 +20,11 @@ export interface Connection {
   /** RT-SA1: a project whose manifest pins no `domains` matches a page ONLY when
    *  the user explicitly opts in here. Without it such a project matches nothing. */
   applyToAllSites?: boolean;
+  /** Per-project on/off. Distinct from the global SET_ENABLED master switch: a
+   *  disabled connection serves no page, stops its SSE watch, and drops out of the
+   *  status, but stays listed in Options to be re-enabled. Undefined = enabled
+   *  (backward compatible with connections stored before this field existed). */
+  enabled?: boolean;
 }
 
 /** A spec tagged with the connection (project) it came from. Extends
@@ -59,4 +64,8 @@ export interface ConnectionStatus {
   domains: string[];
   /** True when this project pins no domains and is opted in to all sites. */
   matchesAllSites: boolean;
+  /** Per-project on/off state. False means the user disabled this connection: it
+   *  serves no page and is excluded from the surface "serving" set, but is still
+   *  listed in Options so it can be re-enabled. */
+  enabled: boolean;
 }

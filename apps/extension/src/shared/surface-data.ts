@@ -1,6 +1,8 @@
+import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import { pickLocale } from "../content/localize-spec.js";
 import { getLocale } from "./config.js";
+import type { TaggedSpec } from "./connection-types.js";
 import { type SpecsForOrigin, type StatusResult, sendToBackground } from "./messaging.js";
 import {
   EMPTY_VISIBILITY,
@@ -53,6 +55,28 @@ export async function fetchSurfaceState(): Promise<SurfaceState> {
   const specs = await sendToBackground<SpecsForOrigin>({ type: "GET_SPECS_FOR_ORIGIN", origin });
   const activeLocale = pickLocale(await getLocale(), specs.manifest?.settings?.defaultLocale);
   return { status, specs, origin, path, activeLocale };
+}
+
+/** Case-insensitive match of a search query against a spec's localized title,
+ *  file path, and tags (plus the localized description when `includeBody`). A
+ *  blank query matches everything. Pure, so both surfaces share one predicate
+ *  and it is unit-testable without a DOM. */
+export function specMatchesQuery(
+  spec: TaggedSpec,
+  query: string,
+  locale: string,
+  defaultLocale: string | undefined,
+  includeBody = false,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const haystack = [
+    resolveLocalized(spec.title, locale, defaultLocale),
+    spec._file,
+    ...(spec.tags ?? []),
+    ...(includeBody ? [resolveLocalized(spec.description, locale, defaultLocale)] : []),
+  ];
+  return haystack.some((s) => s?.toLowerCase().includes(q));
 }
 
 /** The visibility cascade state carried by a specs response, or the empty
