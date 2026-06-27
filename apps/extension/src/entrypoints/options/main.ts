@@ -9,6 +9,7 @@ import {
 } from "../../shared/messaging.js";
 import { parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
 import "../../shared/tokens.gen.css";
+import "../../shared/switch.css";
 
 const byId = (id: string): HTMLElement => {
   const el = document.getElementById(id);
@@ -53,7 +54,7 @@ function showResult(target: HTMLElement, ok: boolean, text: string): void {
  *  domain values are never an injection sink. The token is never rendered. */
 function connectionRow(c: ConnectionStatus): HTMLElement {
   const row = document.createElement("div");
-  row.className = "conn";
+  row.className = c.enabled ? "conn" : "conn conn-disabled";
 
   const head = document.createElement("div");
   head.className = "conn-head";
@@ -67,6 +68,24 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
 
   const actions = document.createElement("div");
   actions.className = "conn-actions";
+
+  // Per-project on/off. Disabling stops this project's watch and removes its
+  // specs from every page; the row stays so it can be re-enabled.
+  const toggle = document.createElement("label");
+  toggle.className = "conn-toggle";
+  toggle.title = c.enabled ? "Disable this project" : "Enable this project";
+  const toggleBox = document.createElement("input");
+  toggleBox.type = "checkbox";
+  // Styled as a track+knob switch, matching the popup's on/off control.
+  toggleBox.className = "switch";
+  toggleBox.checked = c.enabled;
+  toggleBox.addEventListener("change", async () => {
+    await sendToBackground({ type: "UPDATE_CONNECTION", id: c.id, enabled: toggleBox.checked });
+    await refresh();
+  });
+  // Label tracks the switch state so it never contradicts the knob position.
+  toggle.append(document.createTextNode(c.enabled ? "Enabled" : "Disabled"), toggleBox);
+  actions.append(toggle);
   const edit = document.createElement("button");
   edit.className = "secondary";
   edit.textContent = "Edit";
@@ -90,7 +109,9 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
   const meta = document.createElement("div");
   meta.className = "conn-meta";
   const errorText = `error: ${c.error}${c.errorDetail ? ` (${c.errorDetail})` : ""}`;
-  const state = c.connected ? "connected" : c.error ? errorText : "disconnected";
+  const liveState = c.connected ? "connected" : c.error ? errorText : "disconnected";
+  // A disabled project serves no page regardless of reachability, so say so first.
+  const state = c.enabled ? liveState : `disabled · ${liveState}`;
   const domains = c.domains.length ? c.domains.join(", ") : "no domains pinned";
   meta.textContent = `${c.baseUrl} · ${state} · ${c.specCount} spec(s) · ${domains}`;
 

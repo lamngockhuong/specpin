@@ -5,14 +5,21 @@ import { setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
+import "../../shared/switch.css";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
-import { buildFilterModel, fetchSurfaceState } from "../../shared/surface-data.js";
+import {
+  buildFilterModel,
+  fetchSurfaceState,
+  specMatchesQuery,
+} from "../../shared/surface-data.js";
 import {
   byId,
+  mutedRow,
   renderFilterSection,
   renderLocalePicker,
   renderProjects,
   renderStatus,
+  sourceBadge,
 } from "../../shared/surface-renderers.js";
 
 // The popup is the authoritative language picker: it persists the choice and
@@ -20,18 +27,24 @@ import {
 // spec list rendering and the picker options.
 let activeLocale = "en";
 let lastSpecs: SpecsForOrigin | null = null;
+let searchQuery = "";
 
 function renderSpecs(res: SpecsForOrigin): void {
   const list = byId("specs");
   list.innerHTML = "";
   if (res.specs.length === 0) {
-    const li = document.createElement("li");
-    li.className = "muted";
-    li.textContent = res.enabled ? "No specs for this page." : "Specpin is off.";
-    list.appendChild(li);
+    list.appendChild(mutedRow(res.enabled ? "No specs for this page." : "Specpin is off."));
     return;
   }
-  for (const spec of res.specs) {
+  const defaultLocale = res.manifest?.settings?.defaultLocale;
+  const matches = res.specs.filter((spec) =>
+    specMatchesQuery(spec, searchQuery, activeLocale, defaultLocale),
+  );
+  if (matches.length === 0) {
+    list.appendChild(mutedRow("No specs match your search."));
+    return;
+  }
+  for (const spec of matches) {
     const li = document.createElement("li");
     li.className = "spec";
     // Clicking a spec scrolls to and highlights its element on the page, then
@@ -43,10 +56,11 @@ function renderSpecs(res: SpecsForOrigin): void {
     });
     const title = document.createElement("div");
     title.className = "t";
-    title.textContent = resolveLocalized(
-      spec.title,
-      activeLocale,
-      res.manifest?.settings?.defaultLocale,
+    title.append(
+      document.createTextNode(
+        resolveLocalized(spec.title, activeLocale, res.manifest?.settings?.defaultLocale),
+      ),
+      sourceBadge(spec),
     );
     const file = document.createElement("div");
     file.className = "muted";
@@ -72,14 +86,6 @@ byId("enabled").addEventListener("change", async (e) => {
   await sendToBackground({ type: "SET_ENABLED", enabled: (e.target as HTMLInputElement).checked });
   await refresh();
 });
-byId("reload").addEventListener("click", async () => {
-  await sendToBackground({ type: "RELOAD" });
-  await refresh();
-});
-byId("reconnect").addEventListener("click", async () => {
-  await sendToBackground({ type: "RECONNECT" });
-  await refresh();
-});
 byId("capture").addEventListener("click", async () => {
   await sendToActiveTab({ type: "START_CAPTURE" });
   window.close(); // let the user click the target element on the page
@@ -89,6 +95,10 @@ byId("locale").addEventListener("change", async (e) => {
   activeLocale = (e.target as HTMLSelectElement).value;
   await setLocale(activeLocale);
   await sendToActiveTab({ type: "SET_LOCALE", locale: activeLocale });
+  if (lastSpecs) renderSpecs(lastSpecs);
+});
+byId("search").addEventListener("input", (e) => {
+  searchQuery = (e.target as HTMLInputElement).value;
   if (lastSpecs) renderSpecs(lastSpecs);
 });
 byId("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());

@@ -447,6 +447,7 @@ export default defineBackground(() => {
     id: string;
     label?: string;
     applyToAllSites?: boolean;
+    enabled?: boolean;
     baseUrl?: string;
     token?: string;
   }): Promise<{ ok: boolean; project?: string | null; error?: string }> {
@@ -457,6 +458,7 @@ export default defineBackground(() => {
               ...c,
               label: message.label ?? c.label,
               applyToAllSites: message.applyToAllSites ?? c.applyToAllSites,
+              enabled: message.enabled ?? c.enabled,
               baseUrl: message.baseUrl || c.baseUrl,
               // Omitted (or blank) token keeps the stored secret; a non-empty one
               // replaces it. `||` (not `??`) so an empty string never wipes it.
@@ -466,6 +468,12 @@ export default defineBackground(() => {
       );
       await setConnections(connections);
       registry.setConnections(connections);
+      // Per-project on/off is a lightweight edit (no endpoint re-validation): apply
+      // the watch/reload lifecycle for the toggled connection. The `enabled` flag
+      // was already set on the connection by setConnections above.
+      if (message.enabled !== undefined) {
+        await registry.setConnectionEnabled(message.id, message.enabled, await getEnabled());
+      }
       // Endpoint edits (URL/token) change the live client, so re-validate and
       // report connect/error like ADD_CONNECTION does. Route through reconnect()
       // (stop -> reload -> start) so the OLD SSE watch is torn down and the NEW

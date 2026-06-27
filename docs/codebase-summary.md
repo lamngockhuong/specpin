@@ -167,10 +167,12 @@ src/
     origin-match.ts            - pure origin/domain matching (shared by SW + popup)
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
     config.ts                  - storage helpers (connections, locale, enabled, manual-import batch list + legacy migration, personal visibility)
+    surface-renderers.ts       - shared helpers for popup/side panel: sourceBadge() (sidecar vs manual pill)
+    surface-data.ts            - shared spec filtering: specMatchesQuery() (title/file/tags/description predicate)
 ```
 
 **Key flows:**
-- Background SW: a `SidecarRegistry` holds N connections (each its own client + cache + team views cache + SSE watch) plus a Manual-import batch list (append on import, remove per batch, clear all; all mutations serialized through the same `mutate()` writer as connections). `reestablish()` rebuilds them from storage on each SW wake. `GET_SPECS_FOR_ORIGIN` returns the origin-matched aggregate, tagged by project, filtered by visibility (see `shared/visibility.ts`).
+- Background SW: a `SidecarRegistry` holds N connections (each its own client + cache + team views cache + SSE watch; each has an optional `enabled` field, undefined = enabled, gated centrally at `SidecarConnection.matchesOrigin`) plus a Manual-import batch list (append on import, remove per batch, clear all; all mutations serialized through the same `mutate()` writer as connections). `reestablish()` rebuilds them from storage on each SW wake. `GET_SPECS_FOR_ORIGIN` returns the origin-matched aggregate, tagged by project, filtered by visibility (see `shared/visibility.ts`).
 - Content script: on load, ask BG for the origin's specs (already visibility-filtered). For each, `matchElement(fingerprint)`; render via the active mode (tooltip | sidebar | modal), resolving localized text for the viewer locale. Listens for capture toggle, locale change, `SPECS_CHANGED`, and visibility state changes.
 - Capture: picker highlights elements; on click the form authors title/description/rules per locale (and picks a target project when several serve the page). On save, validate, POST to the chosen connection, reload.
 - Renderers: implement `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); read localized text via `localizeSpec`, and caption the project when more than one contributes to the page. Tooltip renderer: click badge to pin tip open (one at a time), close button, "Open in side panel" action that highlights the matching side-panel card (best-effort auto-open on Chrome, Firefox cannot programmatically open sidebar).

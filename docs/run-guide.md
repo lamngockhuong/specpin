@@ -69,7 +69,7 @@ pnpm --filter @specpin/extension build:firefox    # firefox-mv2 in .output/
 
 ## 6. Connect
 
-Open the extension Options page (**Connected projects**), paste the URL and token from step 4 into the add form, optionally name it, click **Test & add project**. The project appears in the list with its status, project name, spec count, and domains. Add more projects the same way; **Edit**, **Remove**, and **Reconnect** act per row. **Edit** opens an inline form to change a project's URL, label, or token (leave the token blank to keep the current one) and re-tests the connection on save.
+Open the extension Options page (**Connected projects**), paste the URL and token from step 4 into the add form, optionally name it, click **Test & add project**. The project appears in the list with its status, project name, spec count, and domains. Each connection has an enable/disable toggle; a disabled project serves no page (its specs disappear everywhere) and its SSE watch stops, but it stays listed so it can be re-enabled. Add more projects the same way; **Edit**, **Remove**, and **Reconnect** act per row. **Edit** opens an inline form to change a project's URL, label, or token (leave the token blank to keep the current one) and re-tests the connection on save.
 
 A project whose manifest pins no `domains` is inactive by default (its specs would otherwise show on every site). The row shows a warning and an **Apply to all sites** checkbox; tick it only if you intend that project's specs to appear everywhere.
 
@@ -77,11 +77,11 @@ A project whose manifest pins no `domains` is inactive by default (its specs wou
 
 Visit the demo app (`http://localhost:3000`). Matched specs appear as tooltips on their elements (the badge turns amber when a match needs review). Edit a `.spec.json` on disk and the page live-updates via SSE.
 
-The popup lists the specs for the current page, toggles Specpin on/off, switches display mode, picks the spec language, and offers Reload / Reconnect. When more than one project serves the page, the popup lists each matching project and renderers caption each spec with its project.
+The popup lists the specs for the current page, toggles Specpin on/off, switches display mode, picks the spec language, and offers Reload / Reconnect. Each spec row shows a small source badge (`sidecar` or `manual`) marking which source it came from. An always-visible search box above the list filters specs live by title, file, and tags. When more than one project serves the page, the popup lists each matching project and renderers caption each spec with its project.
 
 ### Side panel (docked)
 
-The same controls are also available as a **side panel** that stays open while you browse. Unlike the popup it shows each spec's description and business rules inline, and it refreshes automatically as you switch tabs or navigate. Open it from the popup's **Open as side panel** link (Chrome) or Firefox's native sidebar toggle (**View -> Sidebar -> Specpin**). To make the toolbar icon open the side panel instead of the popup, set **Toolbar icon -> Open the side panel** on the Options page (Chrome only; on Firefox the toolbar icon always opens the popup).
+The same controls are also available as a **side panel** that stays open while you browse. Unlike the popup it shows each spec's description and business rules inline, and it refreshes automatically as you switch tabs or navigate. The search box also filters by description in the side panel. Open it from the popup's **Open as side panel** link (Chrome) or Firefox's native sidebar toggle (**View -> Sidebar -> Specpin**). To make the toolbar icon open the side panel instead of the popup, set **Toolbar icon -> Open the side panel** on the Options page (Chrome only; on Firefox the toolbar icon always opens the popup).
 
 ## 8. Switch language
 

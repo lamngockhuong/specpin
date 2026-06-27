@@ -4,6 +4,7 @@ import { setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
+import "../../shared/switch.css";
 import { MANUAL_CONNECTION_ID } from "../../shared/connection-types.js";
 import {
   type Message,
@@ -11,13 +12,20 @@ import {
   sendToActiveTab,
   sendToBackground,
 } from "../../shared/messaging.js";
-import { buildFilterModel, fetchSurfaceState, visibilityOf } from "../../shared/surface-data.js";
+import {
+  buildFilterModel,
+  fetchSurfaceState,
+  specMatchesQuery,
+  visibilityOf,
+} from "../../shared/surface-data.js";
 import {
   byId,
+  mutedRow,
   renderFilterSection,
   renderLocalePicker,
   renderProjects,
   renderStatus,
+  sourceBadge,
 } from "../../shared/surface-renderers.js";
 import { isVisible, setSpecVisibility, type VisibilityState } from "../../shared/visibility.js";
 
@@ -27,6 +35,7 @@ import { isVisible, setSpecVisibility, type VisibilityState } from "../../shared
 // (description + business rules) inline, since it has the vertical room.
 let activeLocale = "en";
 let lastSpecs: SpecsForOrigin | null = null;
+let searchQuery = "";
 let currentPath = "/";
 let currentState: VisibilityState = { teamHidden: [], personal: { forceHide: [], forceShow: [] } };
 
@@ -48,16 +57,20 @@ function renderSpecs(res: SpecsForOrigin): void {
   const list = byId("specs");
   list.replaceChildren();
   if (res.specs.length === 0) {
-    const li = document.createElement("li");
-    li.className = "muted";
-    li.textContent = res.enabled ? "No specs for this page." : "Specpin is off.";
-    list.appendChild(li);
+    list.appendChild(mutedRow(res.enabled ? "No specs for this page." : "Specpin is off."));
     return;
   }
   const defaultLocale = res.manifest?.settings?.defaultLocale;
   const multiProject = new Set(res.specs.map((s) => s.project)).size > 1;
   const state = visibilityOf(res);
-  for (const spec of res.specs) {
+  const matches = res.specs.filter((spec) =>
+    specMatchesQuery(spec, searchQuery, activeLocale, defaultLocale, true),
+  );
+  if (matches.length === 0) {
+    list.appendChild(mutedRow("No specs match your search."));
+    return;
+  }
+  for (const spec of matches) {
     const li = document.createElement("li");
     li.className = "spec";
     // Stable anchor so a tooltip "open in side panel" can scroll to this card.
@@ -110,7 +123,10 @@ function renderSpecs(res: SpecsForOrigin): void {
 
     const title = document.createElement("div");
     title.className = "t";
-    title.textContent = resolveLocalized(spec.title, activeLocale, defaultLocale);
+    title.append(
+      document.createTextNode(resolveLocalized(spec.title, activeLocale, defaultLocale)),
+      sourceBadge(spec),
+    );
     li.appendChild(title);
 
     const description = resolveLocalized(spec.description, activeLocale, defaultLocale);
@@ -171,14 +187,6 @@ byId("enabled").addEventListener("change", async (e) => {
   await sendToBackground({ type: "SET_ENABLED", enabled: (e.target as HTMLInputElement).checked });
   await refresh();
 });
-byId("reload").addEventListener("click", async () => {
-  await sendToBackground({ type: "RELOAD" });
-  await refresh();
-});
-byId("reconnect").addEventListener("click", async () => {
-  await sendToBackground({ type: "RECONNECT" });
-  await refresh();
-});
 byId("capture").addEventListener("click", async () => {
   // Unlike the popup, the panel stays open: the user clicks the page element
   // while the panel remains docked alongside.
@@ -189,6 +197,10 @@ byId("locale").addEventListener("change", async (e) => {
   activeLocale = (e.target as HTMLSelectElement).value;
   await setLocale(activeLocale);
   await sendToActiveTab({ type: "SET_LOCALE", locale: activeLocale });
+  if (lastSpecs) renderSpecs(lastSpecs);
+});
+byId("search").addEventListener("input", (e) => {
+  searchQuery = (e.target as HTMLInputElement).value;
   if (lastSpecs) renderSpecs(lastSpecs);
 });
 byId("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());

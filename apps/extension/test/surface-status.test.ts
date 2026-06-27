@@ -26,6 +26,7 @@ function conn(partial: Partial<ConnectionStatus>): ConnectionStatus {
     specCount: partial.specCount ?? 0,
     domains: partial.domains ?? [],
     matchesAllSites: partial.matchesAllSites ?? false,
+    enabled: partial.enabled ?? true,
   };
 }
 
@@ -120,6 +121,23 @@ describe("renderStatus connection health (origin-scoped)", () => {
     renderStatus(status([here, elsewhere]), "https://x.test", 1);
     expect(statusText()).toBe("Connected (sidecar)");
     expect(dotClass()).toBe("dot ok");
+  });
+
+  it("excludes a disabled connection from the serving set", () => {
+    // A disabled project serves no page even though it matches the origin: the
+    // header must not name it and health must not count it.
+    const off = conn({
+      id: "off",
+      project: "Off",
+      label: "Off",
+      matchesAllSites: true,
+      connected: true,
+      specCount: 2,
+      enabled: false,
+    });
+    renderStatus(status([off]), "https://x.test", 0);
+    expect(statusText()).toBe("No project for this page");
+    expect(project()).toBe("");
   });
 
   it("reports Connected (manual) when no sidecar serves the page but specs render", () => {

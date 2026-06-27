@@ -35,6 +35,8 @@ export type Message =
       id: string;
       label?: string;
       applyToAllSites?: boolean;
+      // Per-project on/off (lightweight edit, no endpoint re-validation).
+      enabled?: boolean;
       baseUrl?: string;
       token?: string;
     }

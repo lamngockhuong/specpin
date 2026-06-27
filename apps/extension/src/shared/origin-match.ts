@@ -34,3 +34,17 @@ export function statusServesOrigin(
   if (status.domains.length === 0) return status.matchesAllSites;
   return originMatchesDomains(origin, status.domains);
 }
+
+/**
+ * Does a connection serve this origin AND remain enabled? Layers the per-project
+ * on/off switch on top of `statusServesOrigin`: a disabled project is excluded
+ * from the surface "serving" set (status health + project list) even when its
+ * domains match the page. `enabled` is optional so a connection shape missing the
+ * field (older callers) is treated as enabled.
+ */
+export function connectionServesOrigin(
+  status: { domains: string[]; matchesAllSites: boolean; enabled?: boolean },
+  origin: string,
+): boolean {
+  return status.enabled !== false && statusServesOrigin(status, origin);
+}

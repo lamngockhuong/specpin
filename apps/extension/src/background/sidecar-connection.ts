@@ -31,6 +31,9 @@ export class SidecarConnection {
   baseUrl: string;
   label?: string;
   applyToAllSites: boolean;
+  /** Per-project on/off. A disabled connection serves no origin and never starts
+   *  a watch. Undefined config = enabled (backward compatible). */
+  enabled: boolean;
 
   private client: SidecarClient;
   private source: SpecSource;
@@ -57,6 +60,7 @@ export class SidecarConnection {
     this.baseUrl = conn.baseUrl;
     this.label = conn.label;
     this.applyToAllSites = conn.applyToAllSites ?? false;
+    this.enabled = conn.enabled ?? true;
     this.token = conn.token;
     this.client = new SidecarClient({ baseUrl: conn.baseUrl, token: conn.token });
     this.injectedSource = deps.source !== undefined;
@@ -69,6 +73,7 @@ export class SidecarConnection {
   update(conn: Connection): void {
     this.label = conn.label;
     this.applyToAllSites = conn.applyToAllSites ?? false;
+    this.enabled = conn.enabled ?? true;
     if (!this.injectedSource && (conn.baseUrl !== this.baseUrl || conn.token !== this.token)) {
       this.baseUrl = conn.baseUrl;
       this.token = conn.token;
@@ -154,6 +159,9 @@ export class SidecarConnection {
    *  NOT silently match every site (RT-SA1): it matches only with opt-in. Shares
    *  the rule with the popup via `statusServesOrigin`. */
   matchesOrigin(origin: string): boolean {
+    // Disabled connections serve no page: this single gate removes them from spec
+    // aggregation, team-hidden facets, and write routing (all funnel through here).
+    if (!this.enabled) return false;
     const domains = this.cache?.manifest?.domains ?? [];
     return statusServesOrigin(
       { domains, matchesAllSites: domains.length === 0 && this.applyToAllSites },
@@ -162,6 +170,9 @@ export class SidecarConnection {
   }
 
   startWatch(): void {
+    // A disabled connection never watches, so startWatchAll() and the SW-wake
+    // reestablish() never resurrect its SSE stream.
+    if (!this.enabled) return;
     // Idempotent: a live watch already auto-reconnects internally, so keep it
     // rather than tearing down the SSE stream and re-subscribing. This makes the
     // periodic SW-keepalive a no-op when the worker is healthy; only a worker
@@ -204,6 +215,7 @@ export class SidecarConnection {
       specCount: this.cache?.specs.length ?? 0,
       domains,
       matchesAllSites: domains.length === 0 && this.applyToAllSites,
+      enabled: this.enabled,
     };
   }
 }

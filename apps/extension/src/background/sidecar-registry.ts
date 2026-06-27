@@ -74,6 +74,23 @@ export class SidecarRegistry {
     this.connections.delete(id);
   }
 
+  /** Apply a per-project on/off change: set the flag and reconcile the live watch.
+   *  Disabling stops the SSE watch (and, via the flag, drops the project from
+   *  aggregation); enabling reloads the cache and restarts the watch when the
+   *  global switch is on. Self-contained: it sets `enabled` itself rather than
+   *  relying on a prior `setConnections`, so callers can use it directly. */
+  async setConnectionEnabled(id: string, enabled: boolean, watch: boolean): Promise<void> {
+    const conn = this.connections.get(id);
+    if (!conn) return;
+    conn.enabled = enabled;
+    if (!enabled) {
+      conn.stopWatch();
+      return;
+    }
+    await conn.reload();
+    if (watch) conn.startWatch();
+  }
+
   /** One connection (by id) or all of them; an unknown id yields none. */
   private targetsFor(id?: string): SidecarConnection[] {
     if (!id) return [...this.connections.values()];

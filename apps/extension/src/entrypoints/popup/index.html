@@ -43,23 +43,7 @@
       .toggle-row { margin-top: 10px; }
       .toggle-row label { color: var(--sp-text-2); font-weight: 500; cursor: pointer; }
 
-      /* On/off toggle: native checkbox restyled as a track + knob. */
-      #enabled {
-        appearance: none; -webkit-appearance: none;
-        width: 40px; height: 22px; margin: 0;
-        border-radius: 999px;
-        background: var(--sp-control);
-        border: 1px solid var(--sp-border);
-        position: relative; cursor: pointer; transition: background 0.15s, border-color 0.15s;
-      }
-      #enabled::before {
-        content: ""; position: absolute; top: 2px; left: 2px;
-        width: 16px; height: 16px; border-radius: 50%;
-        background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-        transition: transform 0.15s;
-      }
-      #enabled:checked { background: var(--sp-accent); border-color: var(--sp-accent); }
-      #enabled:checked::before { transform: translateX(18px); }
+      /* On/off toggle switch is shared via src/shared/switch.css (.switch). */
 
       .meta {
         margin-top: 14px; padding-top: 14px;
@@ -107,6 +91,16 @@
       .filter-marker { font: 600 9px/1 var(--sp-font-mono); text-transform: uppercase; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--sp-border); color: var(--sp-text-3); }
       .filter-marker-you { color: var(--sp-accent); border-color: var(--sp-accent); }
 
+      /* Spec search box: client-side filter over the loaded list. */
+      #search {
+        width: 100%; margin-top: 12px; padding: 8px 10px;
+        font: 500 12px/1.3 var(--sp-font-ui);
+        color: var(--sp-text); background: var(--sp-control);
+        border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
+      }
+      #search:focus { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
+      #search::placeholder { color: var(--sp-text-3); }
+
       ul { list-style: none; margin: 12px 0; padding: 0; max-height: 220px; overflow: auto; }
       li {
         display: grid;
@@ -122,8 +116,18 @@
         mask: var(--pin) center / contain no-repeat;
         --pin: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>');
       }
-      li .t { grid-column: 2; font-weight: 600; color: var(--sp-text); }
+      li .t { grid-column: 2; font-weight: 600; color: var(--sp-text); display: flex; align-items: center; gap: 6px; }
       li .muted { grid-column: 2; color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; }
+
+      /* Provenance badge: which source a spec came from (sidecar vs manual). */
+      .src {
+        flex: none;
+        font: 600 9px/1 var(--sp-font-mono);
+        text-transform: uppercase; letter-spacing: 0.04em;
+        padding: 2px 5px; border-radius: 4px;
+        border: 1px solid var(--sp-border); color: var(--sp-text-3);
+      }
+      .src-sidecar { color: var(--sp-accent); border-color: var(--sp-accent); }
       #specs li.spec { cursor: pointer; border-radius: var(--sp-radius-control); padding: 7px 6px; margin: 0 -6px; }
       #specs li.spec:hover { background: var(--sp-control); }
       li.muted { display: block; color: var(--sp-text-3); padding: 10px 0; }
@@ -181,7 +185,7 @@
     </div>
     <div class="row toggle-row">
       <label for="enabled">Show specs on this page</label>
-      <input type="checkbox" id="enabled" aria-label="Show all Specpin specs on this page" />
+      <input type="checkbox" id="enabled" class="switch" aria-label="Show all Specpin specs on this page" />
     </div>
     <div class="row meta"><span id="project"></span><span id="count" class="pill"></span></div>
     <ul id="projects"></ul>
@@ -190,11 +194,8 @@
       <select id="locale" title="Spec language"></select>
     </div>
     <div id="filters" class="filters" hidden></div>
+    <input type="search" id="search" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
-    <div class="actions">
-      <button id="reload" type="button">Reload</button>
-      <button id="reconnect" type="button">Reconnect</button>
-    </div>
     <div class="actions">
       <button id="capture" type="button">+ Capture spec</button>
       <select id="mode" title="Display mode">
