@@ -14,7 +14,6 @@ export type Message =
   | { type: "TEST_CONNECTION" }
   | { type: "SAVE_CONFIG"; baseUrl: string; token: string }
   | { type: "SET_ENABLED"; enabled: boolean }
-  | { type: "RELOAD" }
   // Reconnect one connection by id, or all when omitted.
   | { type: "RECONNECT"; id?: string }
   // Multi-project connection management (extension-page origin only).

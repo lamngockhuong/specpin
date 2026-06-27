@@ -10,7 +10,7 @@
          + dark theme come from those tokens. */
       * { box-sizing: border-box; }
       body {
-        width: 320px;
+        width: 400px;
         margin: 0;
         padding: 16px;
         font: 13px/1.45 var(--sp-font-ui);
@@ -101,7 +101,7 @@
       #search:focus { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
       #search::placeholder { color: var(--sp-text-3); }
 
-      ul { list-style: none; margin: 12px 0; padding: 0; max-height: 220px; overflow: auto; }
+      ul { list-style: none; margin: 12px 0; padding: 0; max-height: 220px; overflow-y: auto; overflow-x: hidden; }
       li {
         display: grid;
         grid-template-columns: auto 1fr;
@@ -116,8 +116,8 @@
         mask: var(--pin) center / contain no-repeat;
         --pin: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>');
       }
-      li .t { grid-column: 2; font-weight: 600; color: var(--sp-text); display: flex; align-items: center; gap: 6px; }
-      li .muted { grid-column: 2; color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; }
+      li .t { grid-column: 2; min-width: 0; font-weight: 600; color: var(--sp-text); display: flex; align-items: center; gap: 6px; }
+      li .muted { grid-column: 2; min-width: 0; color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
       /* Provenance badge: which source a spec came from (sidecar vs manual). */
       .src {

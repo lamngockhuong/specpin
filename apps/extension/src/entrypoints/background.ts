@@ -241,8 +241,6 @@ export default defineBackground(() => {
         return handleUpdateConnection(message);
       case "SET_ENABLED":
         return handleSetEnabled(message.enabled);
-      case "RELOAD":
-        return handleReload();
       case "RECONNECT":
         return handleReconnect(message.id);
       case "SAVE_SPEC":
@@ -496,14 +494,6 @@ export default defineBackground(() => {
     else registry.startWatchAll();
     await broadcastSpecsChanged();
     return { ok: true };
-  }
-
-  async function handleReload(): Promise<{ ok: boolean; specCount: number }> {
-    await registry.reload();
-    await broadcastSpecsChanged();
-    // "ok" means content is available after reload: a reachable sidecar or
-    // loaded manual specs (manual-only must not report failure).
-    return { ok: registry.anyConnected() || registry.hasContent(), specCount: countAll() };
   }
 
   async function handleReconnect(id?: string): Promise<{ ok: boolean }> {
