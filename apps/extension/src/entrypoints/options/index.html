@@ -123,7 +123,25 @@
       .conn-actions { display: flex; gap: 8px; flex: none; align-items: center; }
       /* Per-project on/off toggle inside a connection row. */
       .conn-toggle { margin: 0; font-size: 12px; font-weight: 600; color: var(--sp-text-2); white-space: nowrap; }
-      .conn-toggle input { cursor: pointer; }
+
+      /* On/off switch: native checkbox restyled as a track + knob (mirrors the
+         popup's #enabled control). */
+      .switch {
+        appearance: none; -webkit-appearance: none;
+        width: 40px; height: 22px; margin: 0; flex: none;
+        border-radius: 999px;
+        background: var(--sp-control);
+        border: 1px solid var(--sp-border);
+        position: relative; cursor: pointer; transition: background 0.15s, border-color 0.15s;
+      }
+      .switch::before {
+        content: ""; position: absolute; top: 2px; left: 2px;
+        width: 16px; height: 16px; border-radius: 50%;
+        background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s;
+      }
+      .switch:checked { background: var(--sp-accent); border-color: var(--sp-accent); }
+      .switch:checked::before { transform: translateX(18px); }
       /* Dim a disabled project but keep its controls usable. */
       .conn-disabled { opacity: 0.6; }
       .warn {

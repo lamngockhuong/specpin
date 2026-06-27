@@ -75,12 +75,15 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
   toggle.title = c.enabled ? "Disable this project" : "Enable this project";
   const toggleBox = document.createElement("input");
   toggleBox.type = "checkbox";
+  // Styled as a track+knob switch, matching the popup's on/off control.
+  toggleBox.className = "switch";
   toggleBox.checked = c.enabled;
   toggleBox.addEventListener("change", async () => {
     await sendToBackground({ type: "UPDATE_CONNECTION", id: c.id, enabled: toggleBox.checked });
     await refresh();
   });
-  toggle.append(toggleBox, document.createTextNode(c.enabled ? " Enabled" : " Disabled"));
+  // Static label; the switch state conveys enabled/disabled.
+  toggle.append(document.createTextNode("Enabled"), toggleBox);
   actions.append(toggle);
   const edit = document.createElement("button");
   edit.className = "secondary";
