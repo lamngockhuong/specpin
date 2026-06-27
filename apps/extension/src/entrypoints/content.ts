@@ -3,11 +3,12 @@ import type { DisplayMode, Manifest } from "@specpin/spec-schema";
 import { browser, defineContentScript } from "#imports";
 import { CaptureForm } from "../content/capture-form.js";
 import { CapturePicker } from "../content/capture-mode.js";
+import { highlightElement } from "../content/highlight.js";
 import { registerKeyboard } from "../content/keyboard.js";
 import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
 import { type RenderSession, renderSession } from "../content/orchestrator.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
-import { getLocale, setLocale } from "../shared/config.js";
+import { getDisplayMode, getLocale, setDisplayMode, setLocale } from "../shared/config.js";
 import { MANUAL_CONNECTION_ID, type TaggedSpec } from "../shared/connection-types.js";
 import {
   type Message,
@@ -47,6 +48,10 @@ export default defineContentScript({
     const openInPanel = (specId: string): void => {
       void sendToBackground({ type: "OPEN_SPEC_IN_PANEL", specId });
     };
+    // Scroll to and highlight a matched page element. Threaded into every render
+    // session so the sidebar/modal renderers stay DOM-pure; also invoked directly
+    // for the HIGHLIGHT_ELEMENT message from the popup / side panel.
+    const highlight = (el: Element): void => highlightElement(el, document);
     // RT-FM6: a re-render must not run while the user is mid-capture; queue it
     // and apply on capture exit instead.
     let captureActive = false;
@@ -80,6 +85,7 @@ export default defineContentScript({
               visibility,
               location.href,
               openInPanel,
+              highlight,
             )
           : null;
     };
@@ -122,6 +128,9 @@ export default defineContentScript({
     function cycleMode(): void {
       const idx = forcedMode ? IMPLEMENTED_MODES.indexOf(forcedMode) : -1;
       forcedMode = IMPLEMENTED_MODES[(idx + 1) % IMPLEMENTED_MODES.length] ?? null;
+      // Persist so the keyboard cycle survives reload and the popup/side-panel
+      // picker reflects it (matches the SET_DISPLAY_MODE persistence there).
+      void setDisplayMode(forcedMode);
       rerender();
     }
 
@@ -208,9 +217,18 @@ export default defineContentScript({
           // The popup already persisted the choice; just re-render with it.
           void applyLocale(message.locale, false);
           break;
+        case "HIGHLIGHT_ELEMENT": {
+          // Resolve the spec id against the current render's matches and frame it.
+          const el = session?.matches.get(message.specId);
+          if (el) highlight(el);
+          break;
+        }
       }
     });
 
+    // Restore the persisted display-mode override before the first render so a
+    // reloaded page honors the chosen mode instead of resetting to per-spec.
+    forcedMode = await getDisplayMode();
     await refresh();
   },
 });

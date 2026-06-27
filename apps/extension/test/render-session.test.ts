@@ -1,5 +1,5 @@
 import type { Spec } from "@specpin/spec-schema";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderSession } from "../src/content/orchestrator.js";
 import { must } from "./test-utils.js";
 
@@ -50,6 +50,33 @@ describe("renderSession", () => {
     );
     expect(session.renderers).toHaveLength(1);
     expect(must(session.renderers[0]).mode).toBe("sidebar");
+    session.destroy();
+  });
+
+  it("maps matched elements by spec id and threads onHighlight to renderers", () => {
+    document.body.innerHTML = `<button data-testid="a">a</button>`;
+    const onHighlight = vi.fn();
+    const session = renderSession(
+      [spec("a", "a", "sidebar")],
+      null,
+      document,
+      null,
+      undefined,
+      undefined,
+      undefined,
+      "",
+      undefined,
+      onHighlight,
+    );
+    const target = document.querySelector('[data-testid="a"]');
+    expect(session.matches.get("a")).toBe(target);
+
+    // Clicking the rendered sidebar card hands the matched element to onHighlight.
+    const card = document
+      .getElementById("specpin-sidebar-host")
+      ?.shadowRoot?.querySelector<HTMLElement>(".card");
+    card?.click();
+    expect(onHighlight).toHaveBeenCalledWith(target);
     session.destroy();
   });
 

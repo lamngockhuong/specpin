@@ -118,7 +118,9 @@
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-card);
         padding: 12px 14px; margin-bottom: 10px;
+        cursor: pointer; transition: border-color 0.12s, transform 0.12s;
       }
+      #specs > li.spec:hover { border-color: var(--sp-accent); transform: translateY(-1px); }
       #specs .project {
         display: block; margin-bottom: 6px;
         font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;

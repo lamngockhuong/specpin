@@ -94,13 +94,13 @@ ${SHADOW_PREAMBLE}
 .card .d { color: var(--sp-text-2); margin-top: 4px; }
 .card ul { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .card li { margin: 2px 0; }
-.flash { outline: 3px solid var(--sp-accent) !important; outline-offset: 2px; }
 `;
 
 /**
  * Sidebar renderer: a fixed panel listing every matched spec on the page
- * (review mode). Clicking a row scrolls to and flashes its element. Shadow DOM
- * isolated like the tooltip renderer.
+ * (review mode). Clicking a row scrolls to and highlights its element via the
+ * content script's onHighlight callback. Shadow DOM isolated like the tooltip
+ * renderer.
  */
 export class SidebarRenderer implements SpecRenderer {
   readonly mode: DisplayMode = "sidebar";
@@ -183,7 +183,8 @@ export class SidebarRenderer implements SpecRenderer {
       `<div class="t">${escapeHtml(text.title)}</div>` +
       `<div class="d">${escapeHtml(text.description)}</div>` +
       rulesListHtml(text.businessRules);
-    card.addEventListener("click", () => this.jumpTo(target));
+    const onHighlight = meta?.onHighlight;
+    card.addEventListener("click", () => onHighlight?.(target));
     list.appendChild(card);
     this.rows.push({ spec, target, el: card });
     this.updateSummary();
@@ -200,12 +201,6 @@ export class SidebarRenderer implements SpecRenderer {
         this.reviewPill.classList.remove("show");
       }
     }
-  }
-
-  private jumpTo(target: Element): void {
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
-    target.classList.add("flash");
-    this.doc.defaultView?.setTimeout(() => target.classList.remove("flash"), 1200);
   }
 
   get rowCount(): number {

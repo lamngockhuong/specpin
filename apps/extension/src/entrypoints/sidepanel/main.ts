@@ -1,7 +1,7 @@
-import type { DisplayMode } from "@specpin/spec-schema";
 import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import { setLocale } from "../../shared/config.js";
+import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
 import {
@@ -61,6 +61,11 @@ function renderSpecs(res: SpecsForOrigin): void {
     li.className = "spec";
     // Stable anchor so a tooltip "open in side panel" can scroll to this card.
     li.dataset.specId = spec.id;
+    // Clicking the card scrolls to and highlights the matched element on the page.
+    li.title = "Click to highlight on the page";
+    li.addEventListener("click", () => {
+      void sendToActiveTab({ type: "HIGHLIGHT_ELEMENT", specId: spec.id });
+    });
 
     const facets = { id: spec.id, tags: spec.tags, file: spec._file };
     const visible = isVisible(facets, currentPath, state);
@@ -72,7 +77,11 @@ function renderSpecs(res: SpecsForOrigin): void {
     eye.className = "spec-vis";
     eye.textContent = visible ? "Hide" : "Show";
     eye.title = visible ? "Hide this spec" : "Show this spec";
-    eye.addEventListener("click", () => void toggleSpec(facets, !visible));
+    // Don't let the eye's click bubble to the card's highlight handler.
+    eye.addEventListener("click", (e) => {
+      e.stopPropagation();
+      void toggleSpec(facets, !visible);
+    });
     li.appendChild(eye);
 
     if (multiProject && spec.project) {
@@ -158,10 +167,7 @@ byId("capture").addEventListener("click", async () => {
   // while the panel remains docked alongside.
   await sendToActiveTab({ type: "START_CAPTURE" });
 });
-byId("mode").addEventListener("change", async (e) => {
-  const value = (e.target as HTMLSelectElement).value;
-  await sendToActiveTab({ type: "SET_DISPLAY_MODE", mode: (value || null) as DisplayMode | null });
-});
+void wireDisplayModePicker(byId("mode") as HTMLSelectElement);
 byId("locale").addEventListener("change", async (e) => {
   activeLocale = (e.target as HTMLSelectElement).value;
   await setLocale(activeLocale);
