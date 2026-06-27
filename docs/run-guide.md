@@ -30,7 +30,7 @@ make build        # syncs the embedded schema, produces bin/specpin
 pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000
 ```
 
-The demo already ships `examples/demo-react-app/.specs/` with seeded specs.
+The demo is a small multi-screen Acme CRM (login, dashboard, customers list and detail, settings, new-deal) and ships `examples/demo-react-app/.specs/` with seeded specs across every screen. Log in with any values to reach the authed screens; navigate via the top nav bar.
 
 ## 4. Start the sidecar in a repo with a `.specs/` directory
 

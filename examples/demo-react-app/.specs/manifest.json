@@ -3,7 +3,13 @@
   "version": "1.0",
   "project": "Acme CRM Demo",
   "domains": ["localhost:3000", "127.0.0.1:3000", "localhost:3001", "127.0.0.1:3001"],
-  "specFiles": ["login.spec.json"],
+  "specFiles": [
+    "login.spec.json",
+    "dashboard.spec.json",
+    "customers.spec.json",
+    "settings.spec.json",
+    "deals.spec.json"
+  ],
   "settings": {
     "defaultLocale": "en",
     "locales": ["en", "vi"],

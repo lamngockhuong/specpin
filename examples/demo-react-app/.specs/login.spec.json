@@ -75,6 +75,83 @@
         "updatedAt": "2026-06-25T08:00:00Z",
         "source": "manual"
       }
+    },
+    {
+      "id": "login-password-field",
+      "title": { "en": "Password field", "vi": "Trường mật khẩu" },
+      "description": {
+        "en": "Secret credential for login. Never logged or echoed; sent only over HTTPS.",
+        "vi": "Thông tin bí mật khi đăng nhập. Không ghi log hay hiển thị; chỉ gửi qua HTTPS."
+      },
+      "businessRules": [
+        { "en": "Minimum 8 characters", "vi": "Tối thiểu 8 ký tự" },
+        {
+          "en": "Compared server-side against an Argon2id hash",
+          "vi": "So khớp phía máy chủ với mã băm Argon2id"
+        }
+      ],
+      "tags": ["auth", "security"],
+      "preferredDisplayMode": "sidebar",
+      "fingerprint": {
+        "testId": "login-password",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "form.login input[type=password]",
+        "xpath": "//form[@class='login']//input[@type='password']",
+        "domPath": ["form", "label", "input"],
+        "tagName": "input",
+        "textContent": null,
+        "attributes": { "type": "password" },
+        "nearbyLabels": ["Password"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "forgot-password-link",
+      "title": { "en": "Forgot password link", "vi": "Liên kết quên mật khẩu" },
+      "description": {
+        "en": "Starts the password-reset flow by emailing a one-time link.",
+        "vi": "Bắt đầu quy trình đặt lại mật khẩu bằng cách gửi liên kết dùng một lần qua email."
+      },
+      "businessRules": [
+        {
+          "en": "Reset link expires after 30 minutes",
+          "vi": "Liên kết đặt lại hết hạn sau 30 phút"
+        },
+        {
+          "en": "Always shows a generic confirmation to avoid leaking which emails exist",
+          "vi": "Luôn hiển thị xác nhận chung để tránh lộ email nào tồn tại"
+        }
+      ],
+      "tags": ["auth"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "forgot-password",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "form.login a[href='#reset']",
+        "xpath": "//form[@class='login']//a[@href='#reset']",
+        "domPath": ["form", "a"],
+        "tagName": "a",
+        "textContent": "Forgot password?",
+        "attributes": { "href": "#reset" },
+        "nearbyLabels": ["Log in"],
+        "positionHint": { "index": 4, "siblingCount": 5 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
     }
   ]
 }

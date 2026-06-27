@@ -1,0 +1,155 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "group": "Settings",
+  "specs": [
+    {
+      "id": "settings-display-name",
+      "title": { "en": "Display name", "vi": "Tên hiển thị" },
+      "description": {
+        "en": "The name shown to teammates across the app.",
+        "vi": "Tên hiển thị cho đồng đội trên toàn ứng dụng."
+      },
+      "businessRules": [
+        { "en": "1 to 60 characters", "vi": "Từ 1 đến 60 ký tự" },
+        {
+          "en": "Trimmed; cannot be only whitespace",
+          "vi": "Được cắt khoảng trắng; không được chỉ gồm khoảng trắng"
+        }
+      ],
+      "tags": ["settings", "profile"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "settings-display-name",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='settings-display-name']",
+        "xpath": "//input[@data-spec-id='settings-display-name']",
+        "domPath": ["main", "form", "label", "input"],
+        "tagName": "input",
+        "textContent": null,
+        "attributes": { "type": "text" },
+        "nearbyLabels": ["Display name"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "settings-notifications",
+      "title": { "en": "Email notifications toggle", "vi": "Bật/tắt thông báo email" },
+      "description": {
+        "en": "Controls whether the user receives activity emails.",
+        "vi": "Kiểm soát việc người dùng có nhận email hoạt động hay không."
+      },
+      "businessRules": [
+        {
+          "en": "Off still sends security and billing emails",
+          "vi": "Khi tắt vẫn gửi email bảo mật và thanh toán"
+        }
+      ],
+      "tags": ["settings"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "settings-notifications",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='settings-notifications']",
+        "xpath": "//input[@data-spec-id='settings-notifications']",
+        "domPath": ["main", "form", "div", "label", "input"],
+        "tagName": "input",
+        "textContent": null,
+        "attributes": { "type": "checkbox" },
+        "nearbyLabels": ["Email notifications"],
+        "positionHint": { "index": 0, "siblingCount": 2 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "settings-save",
+      "title": { "en": "Save changes button", "vi": "Nút lưu thay đổi" },
+      "description": {
+        "en": "Persists the settings form.",
+        "vi": "Lưu lại biểu mẫu cài đặt."
+      },
+      "businessRules": [
+        {
+          "en": "Disabled until a field changes",
+          "vi": "Bị vô hiệu cho đến khi có trường thay đổi"
+        }
+      ],
+      "tags": ["settings"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "settings-save",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='settings-save']",
+        "xpath": "//button[@data-spec-id='settings-save']",
+        "domPath": ["main", "form", "button"],
+        "tagName": "button",
+        "textContent": "Save changes",
+        "attributes": { "type": "submit" },
+        "nearbyLabels": ["Save changes"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "settings-delete-account",
+      "title": { "en": "Delete account", "vi": "Xoá tài khoản" },
+      "description": {
+        "en": "Permanently deletes the user's account and data after confirmation.",
+        "vi": "Xoá vĩnh viễn tài khoản và dữ liệu của người dùng sau khi xác nhận."
+      },
+      "businessRules": [
+        {
+          "en": "Requires explicit confirmation",
+          "vi": "Yêu cầu xác nhận rõ ràng"
+        },
+        {
+          "en": "Blocked while the account owns active billing",
+          "vi": "Bị chặn khi tài khoản còn gói thanh toán đang hoạt động"
+        }
+      ],
+      "tags": ["settings", "critical"],
+      "preferredDisplayMode": "modal",
+      "fingerprint": {
+        "testId": "settings-delete-account",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='settings-delete-account']",
+        "xpath": "//button[@data-spec-id='settings-delete-account']",
+        "domPath": ["main", "div", "button"],
+        "tagName": "button",
+        "textContent": "Delete account",
+        "attributes": { "type": "button" },
+        "nearbyLabels": ["Danger zone", "Delete account"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    }
+  ]
+}

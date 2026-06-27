@@ -1,0 +1,184 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "group": "Deals",
+  "specs": [
+    {
+      "id": "deal-name",
+      "title": { "en": "Deal name", "vi": "Tên giao dịch" },
+      "description": {
+        "en": "Human-readable label for the deal.",
+        "vi": "Nhãn dễ đọc cho giao dịch."
+      },
+      "businessRules": [
+        { "en": "Required; cannot be empty", "vi": "Bắt buộc; không được để trống" }
+      ],
+      "tags": ["deals"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "deal-name",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='deal-name']",
+        "xpath": "//input[@data-spec-id='deal-name']",
+        "domPath": ["main", "form", "label", "input"],
+        "tagName": "input",
+        "textContent": null,
+        "attributes": { "type": "text" },
+        "nearbyLabels": ["Deal name"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "deal-amount",
+      "title": { "en": "Deal amount", "vi": "Giá trị giao dịch" },
+      "description": {
+        "en": "Expected value of the deal in USD.",
+        "vi": "Giá trị dự kiến của giao dịch tính bằng USD."
+      },
+      "businessRules": [
+        { "en": "Must be a positive number", "vi": "Phải là số dương" },
+        {
+          "en": "Stored in cents to avoid float rounding",
+          "vi": "Lưu theo đơn vị xu để tránh sai số dấu phẩy động"
+        }
+      ],
+      "tags": ["deals", "critical"],
+      "preferredDisplayMode": "sidebar",
+      "fingerprint": {
+        "testId": "deal-amount",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='deal-amount']",
+        "xpath": "//input[@data-spec-id='deal-amount']",
+        "domPath": ["main", "form", "label", "input"],
+        "tagName": "input",
+        "textContent": null,
+        "attributes": { "type": "number" },
+        "nearbyLabels": ["Amount (USD)"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "deal-stage",
+      "title": { "en": "Deal stage", "vi": "Trạng thái giao dịch" },
+      "description": {
+        "en": "Pipeline stage the deal currently sits in.",
+        "vi": "Giai đoạn pipeline mà giao dịch đang ở."
+      },
+      "businessRules": [
+        {
+          "en": "Won and Lost are terminal stages",
+          "vi": "Đã chốt và Thất bại là trạng thái kết thúc"
+        }
+      ],
+      "tags": ["deals"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "deal-stage",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='deal-stage']",
+        "xpath": "//select[@data-spec-id='deal-stage']",
+        "domPath": ["main", "form", "label", "select"],
+        "tagName": "select",
+        "textContent": null,
+        "attributes": {},
+        "nearbyLabels": ["Stage"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "deal-owner",
+      "title": { "en": "Deal owner", "vi": "Người phụ trách giao dịch" },
+      "description": {
+        "en": "Team member responsible for moving the deal forward.",
+        "vi": "Thành viên nhóm chịu trách nhiệm thúc đẩy giao dịch."
+      },
+      "businessRules": [
+        {
+          "en": "Defaults to the creating user",
+          "vi": "Mặc định là người tạo giao dịch"
+        }
+      ],
+      "tags": ["deals"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "deal-owner",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='deal-owner']",
+        "xpath": "//select[@data-spec-id='deal-owner']",
+        "domPath": ["main", "form", "label", "select"],
+        "tagName": "select",
+        "textContent": null,
+        "attributes": {},
+        "nearbyLabels": ["Owner"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    },
+    {
+      "id": "deal-submit",
+      "title": { "en": "Create deal button", "vi": "Nút tạo giao dịch" },
+      "description": {
+        "en": "Validates and submits the new-deal form.",
+        "vi": "Kiểm tra và gửi biểu mẫu tạo giao dịch mới."
+      },
+      "businessRules": [
+        {
+          "en": "Blocks submit until name and a positive amount are present",
+          "vi": "Chặn gửi cho đến khi có tên và giá trị dương"
+        }
+      ],
+      "tags": ["deals"],
+      "preferredDisplayMode": "modal",
+      "fingerprint": {
+        "testId": "deal-submit",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "[data-spec-id='deal-submit']",
+        "xpath": "//button[@data-spec-id='deal-submit']",
+        "domPath": ["main", "form", "button"],
+        "tagName": "button",
+        "textContent": "Create deal",
+        "attributes": { "type": "submit" },
+        "nearbyLabels": ["Create deal"],
+        "positionHint": { "index": 0, "siblingCount": 1 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "demo",
+        "createdAt": "2026-06-28T00:00:00Z",
+        "updatedAt": "2026-06-28T00:00:00Z",
+        "source": "manual"
+      }
+    }
+  ]
+}

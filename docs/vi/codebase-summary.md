@@ -194,21 +194,28 @@ src/
 
 ## examples/demo-react-app
 
-**Purpose**: App mẫu React 19 + Vite với `.specs/` đã seed để dùng thử ngay.
+**Purpose**: App mẫu React 19 + Vite với `.specs/` đã seed để dùng thử ngay. Một "Acme CRM" nhiều màn hình nhỏ gọn để thử spec qua điều hướng thực tế.
 
 **Structure:**
 ```
 src/
-  App.tsx           - main component, login form + dashboard cards
-  main.tsx          - React 19 entry
+  main.tsx          - React 19 entry (BrowserRouter + AuthProvider)
+  App.tsx           - bảng route (login công khai; phần còn lại sau cổng auth)
+  auth.tsx          - auth demo trong bộ nhớ (không backend)
+  styles.ts         - token style inline dùng chung
+  data.ts           - khách hàng/giao dịch CRM giả lập + số liệu dashboard suy ra
+  components/        - Layout (nav + Outlet), RequireAuth (chốt chuyển hướng)
+  screens/          - Login, Dashboard, Customers, CustomerDetail, Settings, NewDeal
 .specs/
-  manifest.json     - v1 manifest (version, createdAt, updatedAt)
-  login.spec.json   - spec for login form (email input, submit button)
-  localhost.spec.json - spec for dashboard cards
+  manifest.json     - v1 manifest, liệt kê 5 file spec
+  login.spec.json   - spec cho form đăng nhập
+  dashboard.spec.json, customers.spec.json, settings.spec.json, deals.spec.json
 ```
 
 **Key features:**
-- Element được gắn `data-spec-id` để match chính xác.
+- Element được gắn `data-spec-id` để match chính xác (mỗi anchor một spec).
+- Spec song ngữ (en/vi) trải các chế độ hiển thị tooltip/sidebar/modal.
+- Điều hướng bằng `react-router-dom`; cổng auth trong bộ nhớ nhẹ (chỉ cho demo).
 - Spec đã seed được validate bởi CI schema job (chống lỗi thời).
 - Chạy trên port 3000 (Vite dev server).
 
@@ -304,7 +311,7 @@ Hai job (JS, Go):
 | packages/api-client | ~350 | 4 TS |
 | apps/cli | ~970 | 17 Go |
 | apps/extension | ~2,100 | 35 TS |
-| examples/demo-react-app | ~200 | 3 TS + 2 specs |
+| examples/demo-react-app | ~770 | 13 TS + 5 specs |
 | **Tổng (source, không tính generated)** | **~4,820** | **83 TS + 17 Go** |
 
 ## Where Things Live
