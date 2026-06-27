@@ -14,7 +14,10 @@
           "en": "Counts only deals with stage = Won and closeDate within the quarter",
           "vi": "Chỉ tính giao dịch có trạng thái = Đã chốt và ngày chốt trong quý"
         },
-        { "en": "Displayed in the account's base currency", "vi": "Hiển thị theo tiền tệ gốc của tài khoản" }
+        {
+          "en": "Displayed in the account's base currency",
+          "vi": "Hiển thị theo tiền tệ gốc của tài khoản"
+        }
       ],
       "tags": ["dashboard", "metrics"],
       "preferredDisplayMode": "tooltip",

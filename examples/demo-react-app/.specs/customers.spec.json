@@ -10,7 +10,10 @@
         "vi": "Lọc bảng khách hàng theo tên hoặc công ty khi bạn gõ."
       },
       "businessRules": [
-        { "en": "Case-insensitive substring match", "vi": "So khớp chuỗi con không phân biệt hoa thường" },
+        {
+          "en": "Case-insensitive substring match",
+          "vi": "So khớp chuỗi con không phân biệt hoa thường"
+        },
         {
           "en": "Searches only records the user may view",
           "vi": "Chỉ tìm trong các bản ghi người dùng được phép xem"
