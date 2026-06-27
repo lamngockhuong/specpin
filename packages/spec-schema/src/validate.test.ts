@@ -77,7 +77,7 @@ describe("validateSpec", () => {
 describe("validateSpecFile", () => {
   it("accepts a file wrapping the example spec", () => {
     const r = validateSpecFile({
-      $schema: "https://specpin.dev/schema/v1.json",
+      $schema: "https://specpin.ohnice.app/schema/v1.json",
       group: "Login Page",
       specs: [exampleSpec],
     });

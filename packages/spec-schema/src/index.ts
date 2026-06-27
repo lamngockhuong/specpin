@@ -30,4 +30,4 @@ export {
 } from "./validate.js";
 
 /** $id of the published schema; also the value of the `$schema` field in files. */
-export const SCHEMA_V1_ID = "https://specpin.dev/schema/v1.json";
+export const SCHEMA_V1_ID = "https://specpin.ohnice.app/schema/v1.json";

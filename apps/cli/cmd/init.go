@@ -48,7 +48,7 @@ func runInit(cmd *cobra.Command, _ []string) error {
 		domains = []string{}
 	}
 	manifest := map[string]any{
-		"$schema":   "https://specpin.dev/schema/v1.json",
+		"$schema":   "https://specpin.ohnice.app/schema/v1.json",
 		"version":   "1.0",
 		"project":   initProject,
 		"domains":   domains,

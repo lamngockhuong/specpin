@@ -15,7 +15,7 @@ import (
 //go:embed v1.json
 var V1JSON []byte
 
-const schemaID = "https://specpin.dev/schema/v1.json"
+const schemaID = "https://specpin.ohnice.app/schema/v1.json"
 
 // Validator holds the compiled schemas for the validation entry points.
 type Validator struct {
