@@ -26,8 +26,18 @@ export type Message =
       applyToAllSites?: boolean;
     }
   | { type: "REMOVE_CONNECTION"; id: string }
-  // Edit an existing connection's non-secret fields (label, opt-in).
-  | { type: "UPDATE_CONNECTION"; id: string; label?: string; applyToAllSites?: boolean }
+  // Edit an existing connection. `label`/`applyToAllSites` are the lightweight
+  // (no reconnect) edits. `baseUrl`/`token` change the live endpoint: when either
+  // is present the handler recreates the client and re-validates. An omitted
+  // `token` keeps the stored secret (RT-SA6: it is never rendered back to edit).
+  | {
+      type: "UPDATE_CONNECTION";
+      id: string;
+      label?: string;
+      applyToAllSites?: boolean;
+      baseUrl?: string;
+      token?: string;
+    }
   // `connectionId` targets the destination project when several serve the page.
   | { type: "SAVE_SPEC"; file: string; spec: Spec; connectionId?: string }
   // Manual-import specs pushed from the Options page (extension-page origin only).
@@ -101,8 +111,10 @@ export interface StatusResult {
   connected: boolean;
   enabled: boolean;
   activeSource: string | null;
-  project: string | null;
-  specCount: number;
+  // Per-tab project name + spec count are NOT here: they are origin-scoped and
+  // derived by the surface from `connections` + the active origin (see
+  // renderStatus). A global "first connected project" field would reintroduce
+  // naming a project on a page it does not serve.
   /** Locales the popup language picker can offer: the union of connected
    *  projects' `manifest.settings.locales`, never empty (defaults to the
    *  project's defaultLocale, else "en"). */

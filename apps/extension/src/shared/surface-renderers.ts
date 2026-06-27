@@ -15,7 +15,7 @@ export const byId = (id: string): HTMLElement => {
   return el;
 };
 
-export function renderStatus(status: StatusResult): void {
+export function renderStatus(status: StatusResult, origin: string, originSpecCount: number): void {
   const dot = byId("status-dot");
   dot.className = `dot ${status.connected ? "ok" : status.configured ? "off" : ""}`;
   byId("status-text").textContent = !status.configured
@@ -24,8 +24,14 @@ export function renderStatus(status: StatusResult): void {
       ? `Connected (${status.activeSource})`
       : "Disconnected";
   (byId("enabled") as HTMLInputElement).checked = status.enabled;
-  byId("project").textContent = status.project ?? "";
-  byId("count").textContent = status.specCount ? `${status.specCount} specs` : "";
+  // Project name + spec count are scoped to the ACTIVE TAB's origin, never the
+  // global first-connected project or the cross-project total: a project that
+  // does not serve this page must not be named here. A single matching project
+  // names the header; 0 or 2+ leave it blank (renderProjects lists the 2+ case).
+  const matching = (status.connections ?? []).filter((c) => statusServesOrigin(c, origin));
+  byId("project").textContent =
+    matching.length === 1 ? matching[0].label || matching[0].project || "" : "";
+  byId("count").textContent = originSpecCount ? `${originSpecCount} specs` : "";
 }
 
 /** List the connected projects that serve the active tab. */

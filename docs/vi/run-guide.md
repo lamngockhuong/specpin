@@ -71,7 +71,7 @@ pnpm --filter @specpin/extension build:firefox    # firefox-mv2 in .output/
 
 ## 6. Kết nối
 
-Mở trang Options của extension (**Connected projects**), dán URL và token từ bước 4 vào form add, tùy chọn đặt tên cho nó, click **Test & add project**. Project xuất hiện trong danh sách với status, project name, spec count, và domains của nó. Add thêm project bằng cách tương tự; **Remove** và **Reconnect** hoạt động per row.
+Mở trang Options của extension (**Connected projects**), dán URL và token từ bước 4 vào form add, tùy chọn đặt tên cho nó, click **Test & add project**. Project xuất hiện trong danh sách với status, project name, spec count, và domains của nó. Add thêm project bằng cách tương tự; **Edit**, **Remove** và **Reconnect** hoạt động per row. **Edit** mở form inline để đổi URL, label, hoặc token của project (để trống token nếu muốn giữ token hiện tại) và test lại kết nối khi save.
 
 Một project mà manifest của nó không pin `domains` thì không hoạt động theo mặc định (spec của nó sẽ hiển thị trên mọi site nếu không). Row hiển thị một cảnh báo và checkbox **Apply to all sites**; chỉ tick nó nếu bạn muốn spec của project đó xuất hiện ở mọi nơi.
 

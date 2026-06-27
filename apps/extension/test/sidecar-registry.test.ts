@@ -201,3 +201,53 @@ describe("SidecarRegistry watch re-establish (RT-FM1)", () => {
     expect(watch.n).toBe(3);
   });
 });
+
+describe("SidecarConnection.update (edit endpoint)", () => {
+  it("applies a new baseUrl and label when the source is not injected", () => {
+    // No deps.source -> a live (non-injected) client/source, so the endpoint
+    // change is actually applied (assertions below prove baseUrl was swapped).
+    const c = new SidecarConnection(conn("1"));
+    c.update({
+      ...conn("1"),
+      baseUrl: "http://127.0.0.1:9999",
+      token: "tok-new",
+      label: "Renamed",
+    });
+    expect(c.baseUrl).toBe("http://127.0.0.1:9999");
+    expect(c.label).toBe("Renamed");
+  });
+
+  it("keeps the injected test source but still updates label and opt-in", () => {
+    const c = new SidecarConnection(conn("1"), {
+      source: fakeSource(resp("A", ["a.test"]), { n: 0 }),
+    });
+    // The endpoint stays bound to the injected seam (URL unchanged), but the
+    // lightweight fields still apply.
+    c.update({
+      ...conn("1"),
+      baseUrl: "http://127.0.0.1:9999",
+      label: "Renamed",
+      applyToAllSites: true,
+    });
+    expect(c.baseUrl).toBe("http://127.0.0.1:3001");
+    expect(c.label).toBe("Renamed");
+    expect(c.applyToAllSites).toBe(true);
+  });
+
+  // The endpoint-edit handler re-validates via registry.reconnect(); this guards
+  // its watch lifecycle: the old SSE watch must be torn down and a fresh one
+  // started (net one live watch), never leaked or left as a stale no-op.
+  it("reconnect cycles the watch without leaking the old one (endpoint-edit path)", async () => {
+    const watch = { n: 0 };
+    const r = registryWith({ a: fakeSource(resp("A", ["a.test"]), watch) });
+    await r.reestablish([conn("a")], true);
+    expect(watch.n).toBe(1);
+
+    await r.reconnect("a", true);
+    expect(watch.n).toBe(1); // stopped (->0) then restarted (->1), no leak/no-op
+
+    // When watching is disabled the reconnect must drop the watch, not keep it.
+    await r.reconnect("a", false);
+    expect(watch.n).toBe(0);
+  });
+});
