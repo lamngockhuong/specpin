@@ -5,7 +5,7 @@
  */
 export const schemaV1: Record<string, unknown> = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://specpin.dev/schema/v1.json",
+  "$id": "https://specpin.ohnice.app/schema/v1.json",
   "title": "SpecFile",
   "description": "Root of an <area>.spec.json file. Validates as a SpecFile.",
   "$ref": "#/$defs/SpecFile",

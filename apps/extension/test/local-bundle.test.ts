@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseLocalBundle, parseLocalFiles } from "../src/sources/local-bundle.js";
 
 const manifest = {
-  $schema: "https://specpin.dev/schema/v1.json",
+  $schema: "https://specpin.ohnice.app/schema/v1.json",
   version: "1.0",
   project: "Test",
   domains: ["localhost:3000"],

@@ -25,7 +25,7 @@ const schema = JSON.parse(schemaText);
 
 const genRoot = {
   $schema: schema.$schema,
-  $id: "https://specpin.dev/schema/v1.types.json",
+  $id: "https://specpin.ohnice.app/schema/v1.types.json",
   title: "SpecpinSchemaRoots",
   type: "object",
   required: ["specFile", "manifest", "views"],
