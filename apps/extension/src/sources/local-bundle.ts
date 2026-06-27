@@ -107,3 +107,49 @@ export function parseLocalBundle(text: string): BundleResult {
 
   return { specs: { manifest: bundle.manifest as Manifest, specs }, errors: [] };
 }
+
+/** One picked file: its name and already-read text content. */
+export interface NamedFile {
+  name: string;
+  text: string;
+}
+
+/**
+ * Assemble a Manual-import bundle from individually picked files (the multi-file
+ * picker in the Options page), then validate via parseLocalBundle. Classifies
+ * files by name (manifest.json vs *.spec.json), builds the { manifest, files }
+ * envelope, and delegates ALL validation (schema, size cap, prototype-pollution,
+ * MAX_FILES/MAX_SPECS) to the single parseLocalBundle path. Pure (no DOM, no
+ * FileReader) so it is directly testable. Never throws on bad input.
+ */
+export function parseLocalFiles(files: NamedFile[]): BundleResult {
+  const errors: string[] = [];
+  let manifest: unknown;
+  const specFiles: Record<string, unknown> = {};
+
+  for (const { name, text } of files) {
+    // Tolerate path-prefixed names (some pickers expose webkitRelativePath).
+    const base = name.split(/[/\\]/).pop() ?? name;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (e) {
+      errors.push(`${base}: invalid JSON: ${e instanceof Error ? e.message : String(e)}`);
+      continue;
+    }
+    if (base === "manifest.json") {
+      if (manifest !== undefined) errors.push("Multiple manifest.json files selected.");
+      manifest = parsed;
+    } else if (base.endsWith(".spec.json")) {
+      specFiles[base] = parsed;
+    } else {
+      errors.push(`${base}: expected manifest.json or a *.spec.json file`);
+    }
+  }
+
+  if (manifest === undefined) errors.push("No manifest.json among the selected files.");
+  if (Object.keys(specFiles).length === 0) errors.push("No *.spec.json files selected.");
+  if (errors.length > 0) return { errors };
+
+  return parseLocalBundle(JSON.stringify({ manifest, files: specFiles }));
+}

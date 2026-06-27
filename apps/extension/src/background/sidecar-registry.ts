@@ -184,6 +184,13 @@ export class SidecarRegistry {
     return [...this.connections.values()].map((c) => c.status());
   }
 
+  /** Number of Manual-import specs currently loaded (0 if none). Manual specs are
+   *  not part of `statuses()` (they are not a connection), so callers summing a
+   *  total spec count must add this separately. */
+  manualSpecCount(): number {
+    return this.manual?.specs.length ?? 0;
+  }
+
   /** Whether any connection is configured. */
   isConfigured(): boolean {
     return this.connections.size > 0;
