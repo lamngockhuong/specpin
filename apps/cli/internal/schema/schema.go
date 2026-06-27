@@ -17,11 +17,12 @@ var V1JSON []byte
 
 const schemaID = "https://specpin.dev/schema/v1.json"
 
-// Validator holds the compiled schemas for the three validation entry points.
+// Validator holds the compiled schemas for the validation entry points.
 type Validator struct {
 	spec     *jsonschema.Schema
 	manifest *jsonschema.Schema
 	specFile *jsonschema.Schema
+	views    *jsonschema.Schema
 }
 
 // NewValidator compiles the embedded schema. Format assertions are enabled so
@@ -50,8 +51,12 @@ func NewValidator() (*Validator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compile Manifest schema: %w", err)
 	}
+	views, err := c.Compile(schemaID + "#/$defs/ViewsConfig")
+	if err != nil {
+		return nil, fmt.Errorf("compile ViewsConfig schema: %w", err)
+	}
 
-	return &Validator{spec: spec, manifest: manifest, specFile: specFile}, nil
+	return &Validator{spec: spec, manifest: manifest, specFile: specFile, views: views}, nil
 }
 
 func validate(sch *jsonschema.Schema, raw []byte) []string {
@@ -100,3 +105,6 @@ func (v *Validator) ValidateManifest(raw []byte) []string { return validate(v.ma
 
 // ValidateSpecFile validates a whole <area>.spec.json file.
 func (v *Validator) ValidateSpecFile(raw []byte) []string { return validate(v.specFile, raw) }
+
+// ValidateViews validates a .specs/views.json document (ViewsConfig).
+func (v *Validator) ValidateViews(raw []byte) []string { return validate(v.views, raw) }

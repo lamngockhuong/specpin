@@ -60,3 +60,59 @@ describe("renderSession", () => {
     expect(document.getElementById("specpin-sidebar-host")).toBeNull();
   });
 });
+
+function tagged(id: string, testId: string, tags: string[]): Spec {
+  return { ...spec(id, testId, "tooltip"), tags };
+}
+
+const EMPTY_STATE = { teamHidden: [], personal: { forceHide: [], forceShow: [] } };
+
+describe("renderSession visibility filtering", () => {
+  it("empty state renders every matched spec (regression lock)", () => {
+    document.body.innerHTML = `<button data-testid="a">a</button><button data-testid="b">b</button>`;
+    const session = renderSession(
+      [tagged("a", "a", ["auth"]), tagged("b", "b", ["nav"])],
+      null,
+      document,
+      null,
+      undefined,
+      undefined,
+      EMPTY_STATE,
+      "https://x.test/",
+    );
+    expect(session.stats.rendered).toBe(2);
+    session.destroy();
+  });
+
+  it("hiding tag:auth drops the auth spec from rendering", () => {
+    document.body.innerHTML = `<button data-testid="a">a</button><button data-testid="b">b</button>`;
+    const session = renderSession(
+      [tagged("a", "a", ["auth"]), tagged("b", "b", ["nav"])],
+      null,
+      document,
+      null,
+      undefined,
+      undefined,
+      { teamHidden: ["tag:auth"], personal: { forceHide: [], forceShow: [] } },
+      "https://x.test/",
+    );
+    expect(session.stats.rendered).toBe(1);
+    session.destroy();
+  });
+
+  it("a url gate hides the whole page", () => {
+    document.body.innerHTML = `<button data-testid="a">a</button><button data-testid="b">b</button>`;
+    const session = renderSession(
+      [tagged("a", "a", ["auth"]), tagged("b", "b", ["nav"])],
+      null,
+      document,
+      null,
+      undefined,
+      undefined,
+      { teamHidden: ["url:/admin/**"], personal: { forceHide: [], forceShow: [] } },
+      "https://x.test/admin/users",
+    );
+    expect(session.stats.rendered).toBe(0);
+    session.destroy();
+  });
+});

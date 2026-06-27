@@ -1,7 +1,8 @@
-import type { SpecsResponse } from "@specpin/api-client";
+import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import type { ConnectionStatus, TaggedSpec } from "./connection-types.js";
+import type { PersonalVisibility, VisibilityState } from "./visibility.js";
 
 export type { ConnectionStatus, TaggedSpec } from "./connection-types.js";
 
@@ -37,7 +38,20 @@ export type Message =
   | { type: "SET_DISPLAY_MODE"; mode: DisplayMode | null }
   // Viewer locale change, dispatched popup -> active tab's content script. The
   // popup persists the choice to storage; the content script re-renders with it.
-  | { type: "SET_LOCALE"; locale: string };
+  | { type: "SET_LOCALE"; locale: string }
+  // Tooltip pin "open in side panel": content -> background. Best-effort opens
+  // the side panel (Chrome only; may no-op if the user gesture is lost) and
+  // broadcasts HIGHLIGHT_SPEC so an already-open panel scrolls to the card.
+  | { type: "OPEN_SPEC_IN_PANEL"; specId: string }
+  // background -> side panel runtime page: scroll the matching card into view.
+  | { type: "HIGHLIGHT_SPEC"; specId: string }
+  // Personal visibility override change: popup/side panel -> background, which
+  // persists it to storage.sync (debounced) and broadcasts SPECS_CHANGED.
+  | { type: "SET_PERSONAL_VISIBILITY"; visibility: PersonalVisibility }
+  // Options page: read one connection's team-default views (.specs/views.json).
+  | { type: "GET_TEAM_VIEWS"; connectionId: string }
+  // Options page: write a connection's team-default views to Git via the sidecar.
+  | { type: "SAVE_TEAM_VIEWS"; connectionId: string; views: ViewsConfig };
 
 // Message types that mutate stored state and must originate from an extension
 // page (popup/options/side panel), never from a web-page content script. The
@@ -53,6 +67,10 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   "REMOVE_CONNECTION",
   "UPDATE_CONNECTION",
   "RECONNECT",
+  // Mutates the personal visibility override in storage.sync.
+  "SET_PERSONAL_VISIBILITY",
+  // Writes the team-default views.json to Git via the sidecar.
+  "SAVE_TEAM_VIEWS",
 ]);
 
 export interface SaveSpecResult {
@@ -73,6 +91,9 @@ export interface SpecsForOrigin {
   enabled: boolean;
   /** Union of the matching projects' locales, for the language picker. */
   locales?: string[];
+  /** Merged visibility cascade (team default + personal override) for this
+   *  origin. Absent/empty means today's behavior (all visible). */
+  visibility?: VisibilityState;
 }
 
 export interface StatusResult {

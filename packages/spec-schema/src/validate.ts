@@ -6,6 +6,7 @@ import {
   validateManifest as manifestValidator,
   validateSpecFile as specFileValidator,
   validateSpec as specValidator,
+  validateViews as viewsValidator,
 } from "./validators.gen.cjs";
 
 export interface ValidationResult {
@@ -31,6 +32,11 @@ export function validateManifest(data: unknown): ValidationResult {
 /** Validate a whole <area>.spec.json file ({ group, specs[] }). */
 export function validateSpecFile(data: unknown): ValidationResult {
   return run(specFileValidator, data);
+}
+
+/** Validate a .specs/views.json team-default visibility config. */
+export function validateViews(data: unknown): ValidationResult {
+  return run(viewsValidator, data);
 }
 
 /** Human-readable one-line summary of validation errors (e.g. for HTTP 400 bodies). */

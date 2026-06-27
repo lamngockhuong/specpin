@@ -17,6 +17,7 @@ export type {
   SpecFile,
   SpecMeta,
   SpecSource,
+  ViewsConfig,
 } from "./types.gen.js";
 export {
   type ErrorObject,
@@ -25,6 +26,7 @@ export {
   validateManifest,
   validateSpec,
   validateSpecFile,
+  validateViews,
 } from "./validate.js";
 
 /** $id of the published schema; also the value of the `$schema` field in files. */

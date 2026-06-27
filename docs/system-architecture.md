@@ -22,7 +22,7 @@ browser extension (WXT, MV3)
 
 The extension exposes two equivalent control surfaces backed by the same background messaging: the **popup** (ephemeral dropdown) and a **side panel** (`entrypoints/sidepanel/`, a persistent docked page that shows spec description + business rules inline and auto-refreshes on tab/navigation changes and `SPECS_CHANGED`). Both fetch through one shared `fetchSurfaceState()` helper. WXT maps the single `sidepanel` entrypoint to Chrome `side_panel` and Firefox `sidebar_action`. A stored `defaultSurface` preference decides whether a toolbar click opens the popup or the side panel; the background applies it on Chrome via `chrome.action.setPopup` + `sidePanel.setPanelBehavior` (Firefox keeps the popup on the toolbar button and opens the sidebar from its native toggle).
 
-Data flows one schema, two validators: the published JSON Schema (`packages/spec-schema/schema/v1.json`) is the single source of truth. The TS side validates with ajv; the Go sidecar embeds the same file and validates with `santhosh-tekuri/jsonschema/v6`. CI cross-validates a shared fixture corpus through both and fails on drift.
+Data flows one schema, two validators: the published JSON Schema (`packages/spec-schema/schema/v1.json`) is the single source of truth. The TS side validates with ajv; the Go sidecar embeds the same file and validates with `santhosh-tekuri/jsonschema/v6`. CI cross-validates a shared fixture corpus through both and fails on drift. This applies to all schema entities: `Spec`, `SpecManifest`, `SpecFile`, and `ViewsConfig`.
 
 ## Packages
 
@@ -53,6 +53,17 @@ The background holds a `SidecarRegistry`: a map of independent sidecar connectio
 
 Spec business content (`title`, `description`, `businessRules`) is stored as locale-keyed objects (`LocalizedString`); see `docs/schema-reference.md`. A single `resolveLocalized(value, locale, defaultLocale)` resolver (prototype-pollution safe) is the only reader; renderers never touch the raw object. A viewer picks a language in the popup (mirrored in the sidebar); the choice persists and re-renders all display modes, falling back to `defaultLocale` then the first present value. Translations are authored in the capture/edit form per locale.
 
+## Spec Visibility Filtering
+
+A unified facet model controls which specs render. Each spec has facet keys: `tag:<t>` (one per tag), `file:<file>`, `spec:<id>`. Page-level gate: `url:<glob>` (matches the current page path using `*` for one segment, `**` for across segments). One predicate `isVisible(spec, url, state)` in `apps/extension/src/shared/visibility.ts` decides rendering.
+
+Two-layer sync cascade: `effectiveDisabled = (teamHidden union personalForceHide) minus personalForceShow`.
+
+- **Team default** from `.specs/views.json` (Git-committed, shared). Authored via the extension Options page (per connection), written to `.specs/views.json` via sidecar `PUT /views` (schema-validated). When absent, sidecar returns the empty default `{ version: "1.0", hidden: [] }` via `GET /views` (all specs visible).
+- **Personal override** in `chrome.storage.sync` (per browser profile, cross-machine). A personal force-show of `spec:<id>` is a hard per-spec rescue (wins over a tag/file hide). Tag/file/url force-show only un-hides its own key. The `url:` page gate wins over everything.
+
+Empty state everywhere = all visible (backward compatible). Filter UI: facet checklists (Tags / Files / This page) in popup + side panel; per-spec eye toggle in side panel; Reset clears personal overrides.
+
 ## Security model (sidecar)
 
 - Binds `127.0.0.1` only; the port is auto-picked unless `--port` is given.
@@ -60,6 +71,7 @@ Spec business content (`title`, `description`, `businessRules`) is stored as loc
 - CORS accepts only extension origins (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`); web origins are rejected.
 - Writes are confined to `.specs/` (path-traversal guard), atomic, and pretty-printed for clean Git diffs.
 - **Multi-token trust model.** With N connections the extension stores N localhost bearer tokens. Tokens stay in background/extension storage: they are never echoed into the Options DOM, never included in `ConnectionStatus` (so an unprivileged status query cannot read them), and connection-mutating messages are privileged (rejected from a web-page content script). Capture writes are routed only to a connection whose `domains` cover the page origin.
+- **Endpoints**: `GET /ping`, `GET /manifest`, `GET /specs`, `GET /specs/:id`, `POST /specs`, `PUT /specs/:id`, `DELETE /specs/:id`, `GET /views`, `PUT /views`, `GET /events` (SSE). All except `/ping` require bearer auth; `PUT /views` validates the payload against the `ViewsConfig` schema on both TS and Go sides.
 
 ## Design references
 

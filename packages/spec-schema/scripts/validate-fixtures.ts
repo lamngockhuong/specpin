@@ -1,19 +1,26 @@
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateManifest, validateSpec, validateSpecFile } from "../src/validate.js";
+import {
+  validateManifest,
+  validateSpec,
+  validateSpecFile,
+  validateViews,
+} from "../src/validate.js";
 
 // Cross-validator (ajv side): every fixture under tests/fixtures/specs/valid
 // must validate; every fixture under .../invalid must fail. The Go side runs the
 // identical corpus (apps/cli/internal/schema/fixtures_test.go); CI runs both, so
 // any disagreement between ajv and the Go validator fails the build.
 const here = dirname(fileURLToPath(import.meta.url));
-const fixturesDir = resolve(here, "../../../tests/fixtures/specs");
+const specsDir = resolve(here, "../../../tests/fixtures/specs");
+const viewsDir = resolve(here, "../../../tests/fixtures/views");
 
 async function readFixtures(
+  baseDir: string,
   kind: "valid" | "invalid",
 ): Promise<Array<{ name: string; data: unknown }>> {
-  const dir = join(fixturesDir, kind);
+  const dir = join(baseDir, kind);
   const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
   return Promise.all(
     files.map(async (name) => ({
@@ -26,13 +33,25 @@ async function readFixtures(
 async function main(): Promise<void> {
   const failures: string[] = [];
 
-  for (const { name, data } of await readFixtures("valid")) {
+  for (const { name, data } of await readFixtures(specsDir, "valid")) {
     const { valid, errors } = validateSpec(data);
-    if (!valid) failures.push(`valid/${name} should pass but failed: ${JSON.stringify(errors)}`);
+    if (!valid)
+      failures.push(`specs/valid/${name} should pass but failed: ${JSON.stringify(errors)}`);
   }
-  for (const { name, data } of await readFixtures("invalid")) {
+  for (const { name, data } of await readFixtures(specsDir, "invalid")) {
     const { valid } = validateSpec(data);
-    if (valid) failures.push(`invalid/${name} should fail but passed`);
+    if (valid) failures.push(`specs/invalid/${name} should fail but passed`);
+  }
+
+  // views.json corpus, cross-checked against validateViews on both sides.
+  for (const { name, data } of await readFixtures(viewsDir, "valid")) {
+    const { valid, errors } = validateViews(data);
+    if (!valid)
+      failures.push(`views/valid/${name} should pass but failed: ${JSON.stringify(errors)}`);
+  }
+  for (const { name, data } of await readFixtures(viewsDir, "invalid")) {
+    const { valid } = validateViews(data);
+    if (valid) failures.push(`views/invalid/${name} should fail but passed`);
   }
 
   // Guard against demo rot: the seeded demo specs must stay schema-valid.

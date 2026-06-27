@@ -278,6 +278,32 @@ export const schemaV1: Record<string, unknown> = {
         }
       }
     },
+    "ViewsConfig": {
+      "title": "ViewsConfig",
+      "description": "The .specs/views.json team-default visibility config. `hidden` is a flat list of facet keys (tag: / file: / spec: / url:) the team hides by default; the extension parses the prefix.",
+      "type": "object",
+      "required": [
+        "version",
+        "hidden"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Optional pointer to this schema for editor tooling."
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hidden": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "Manifest": {
       "title": "Manifest",
       "description": "The .specs/manifest.json index + project configuration.",

@@ -24,7 +24,7 @@ browser extension (WXT, MV3)
 
 Extension cung cấp hai bề mặt điều khiển tương đương dùng chung messaging của background: **popup** (dropdown tạm thời) và **side panel** (`entrypoints/sidepanel/`, một trang gắn cố định hiển thị description + business rules của spec ngay inline và tự refresh khi đổi tab/điều hướng và khi có `SPECS_CHANGED`). Cả hai fetch qua một helper chung `fetchSurfaceState()`. WXT map một entrypoint `sidepanel` duy nhất sang Chrome `side_panel` và Firefox `sidebar_action`. Một tùy chọn `defaultSurface` được lưu quyết định click icon trên thanh công cụ mở popup hay side panel; background áp dụng nó trên Chrome qua `chrome.action.setPopup` + `sidePanel.setPanelBehavior` (Firefox giữ popup trên nút thanh công cụ và mở sidebar từ nút gốc của nó).
 
-Dữ liệu tuân theo nguyên tắc one schema, two validators: JSON Schema được publish (`packages/spec-schema/schema/v1.json`) là single source of truth. Phía TS validate bằng ajv; Go sidecar nhúng cùng file đó và validate bằng `santhosh-tekuri/jsonschema/v6`. CI cross-validate một fixture corpus dùng chung qua cả hai và fail nếu có drift.
+Dữ liệu tuân theo nguyên tắc one schema, two validators: JSON Schema được publish (`packages/spec-schema/schema/v1.json`) là single source of truth. Phía TS validate bằng ajv; Go sidecar nhúng cùng file đó và validate bằng `santhosh-tekuri/jsonschema/v6`. CI cross-validate một fixture corpus dùng chung qua cả hai và fail nếu có drift. Điều này áp dụng cho tất cả schema entity: `Spec`, `SpecManifest`, `SpecFile`, và `ViewsConfig`.
 
 ## Packages
 
@@ -55,6 +55,17 @@ Background giữ một `SidecarRegistry`: một map của các sidecar connectio
 
 Nội dung business của spec (`title`, `description`, `businessRules`) được lưu dưới dạng object đánh key theo locale (`LocalizedString`); xem `docs/schema-reference.md`. Một resolver `resolveLocalized(value, locale, defaultLocale)` duy nhất (bảo vệ prototype-pollution) là người đọc duy nhất; renderer không bao giờ chạm vào raw object. Người xem chọn ngôn ngữ trong popup (được phản chiếu trong sidebar); lựa chọn được lưu lại và render lại tất cả display mode, fall back về `defaultLocale` rồi giá trị đầu tiên có mặt. Các bản dịch được soạn trong form capture/edit per locale.
 
+## Spec Visibility Filtering
+
+Một mô hình facet thống nhất kiểm soát spec nào sẽ render. Mỗi spec có các facet key: `tag:<t>` (một cho mỗi tag), `file:<file>`, `spec:<id>`. Cổng ở tầng page: `url:<glob>` (khớp path page hiện tại dùng `*` cho một segment, `**` cho nhiều segment). Một predicate `isVisible(spec, url, state)` trong `apps/extension/src/shared/visibility.ts` quyết định việc render.
+
+Tầng đồng bộ hai lớp: `effectiveDisabled = (teamHidden union personalForceHide) minus personalForceShow`.
+
+- **Team default** từ `.specs/views.json` (Git-commit, dùng chung). Được soạn qua trang Options của extension (per connection), ghi vào `.specs/views.json` qua sidecar `PUT /views` (schema-validate). Khi không có, sidecar trả về default rỗng `{ version: "1.0", hidden: [] }` qua `GET /views` (mọi spec đều visible).
+- **Personal override** trong `chrome.storage.sync` (per profile trình duyệt, qua máy). Một personal force-show của `spec:<id>` là một hard rescue per-spec (thắng hide theo tag/file). Tag/file/url force-show chỉ bỏ hide key của chính nó. Cổng `url:` page thắng mọi thứ.
+
+Trạng thái rỗng ở mọi nơi = mọi thứ visible (tương thích ngược). UI filter: facet checklist (Tags / Files / This page) trong popup + side panel; nút mắt per-spec trong side panel; Reset xóa các override cá nhân.
+
 ## Security model (sidecar)
 
 - Chỉ bind `127.0.0.1`; port được auto-pick trừ khi truyền `--port`.
@@ -62,6 +73,7 @@ Nội dung business của spec (`title`, `description`, `businessRules`) đượ
 - CORS chỉ chấp nhận extension origin (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`); các web origin bị từ chối.
 - Việc ghi (write) bị giới hạn trong `.specs/` (có path-traversal guard), atomic, và được pretty-print để Git diff sạch.
 - **Mô hình tin cậy multi-token.** Với N connection, extension lưu N localhost bearer token. Token ở trong background/extension storage: chúng không bao giờ được echo vào DOM của Options, không bao giờ được bao gồm trong `ConnectionStatus` (nên một truy vấn status không có đặc quyền không thể đọc chúng), và các message thay đổi connection là có đặc quyền (bị từ chối từ content script của web-page). Capture write chỉ được định tuyến tới một connection mà `domains` của nó bao phủ page origin.
+- **Endpoint**: `GET /ping`, `GET /manifest`, `GET /specs`, `GET /specs/:id`, `POST /specs`, `PUT /specs/:id`, `DELETE /specs/:id`, `GET /views`, `PUT /views`, `GET /events` (SSE). Tất cả ngoại trừ `/ping` yêu cầu bearer auth; `PUT /views` validate payload theo schema `ViewsConfig` trên cả hai phía TS và Go.
 
 ## Design references
 

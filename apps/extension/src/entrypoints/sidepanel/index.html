@@ -86,6 +86,30 @@
         cursor: pointer;
       }
 
+      /* Facet filter checklist (shared markup with the popup). */
+      .filters { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--sp-border); }
+      .filters[hidden] { display: none; }
+      .filter-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+      .filter-title { font: 600 11px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--sp-text-3); }
+      .filter-reset { font-size: 11px; }
+      .filter-group { margin-top: 6px; }
+      .filter-group > summary { cursor: pointer; font-weight: 600; color: var(--sp-text-2); padding: 4px 0; }
+      .filter-row { display: flex; align-items: center; gap: 8px; padding: 4px 0 4px 6px; }
+      .filter-row input { flex: none; margin: 0; cursor: pointer; }
+      .filter-name { flex: 1; color: var(--sp-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .filter-count { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; }
+      .filter-marker { font: 600 9px/1 var(--sp-font-mono); text-transform: uppercase; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--sp-border); color: var(--sp-text-3); }
+      .filter-marker-you { color: var(--sp-accent); border-color: var(--sp-accent); }
+
+      /* Per-spec visibility eye toggle on each card (side panel only). */
+      #specs .spec-vis {
+        position: absolute; top: 10px; right: 10px;
+        background: transparent; border: none; cursor: pointer; padding: 2px;
+        color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui);
+      }
+      #specs .spec-vis:hover { color: var(--sp-text); }
+      #specs > li.spec.spec-hidden { opacity: 0.55; }
+
       /* Spec list: full-height, each spec a card with inline detail. */
       #specs { list-style: none; margin: 12px 0; padding: 0; }
       #specs > li.spec {
@@ -106,6 +130,12 @@
       #specs .rules { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-2); }
       #specs .rules li { margin: 3px 0; }
       #specs > li.muted { color: var(--sp-text-3); padding: 10px 0; }
+      /* Transient flash when a tooltip pin opens a spec here. */
+      #specs > li.spec.highlight {
+        border-color: var(--sp-accent);
+        box-shadow: 0 0 0 3px var(--sp-accent-glow);
+        transition: box-shadow 0.3s, border-color 0.3s;
+      }
 
       .actions { display: flex; gap: 8px; margin-top: 12px; }
       button {
@@ -163,6 +193,7 @@
       <label for="locale">Language</label>
       <select id="locale" title="Spec language"></select>
     </div>
+    <div id="filters" class="filters" hidden></div>
     <ul id="specs"></ul>
     <div class="actions">
       <button id="reload" type="button">Reload</button>

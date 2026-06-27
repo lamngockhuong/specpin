@@ -1,4 +1,4 @@
-import type { SpecsResponse } from "@specpin/api-client";
+import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 
 // SpecSource abstracts where specs come from. Phase 1 ships only SidecarSource,
@@ -10,6 +10,11 @@ export interface SpecSource {
   isAvailable(): Promise<boolean>;
   loadSpecs(): Promise<SpecsResponse>;
   saveSpec(file: string, spec: Spec): Promise<void>;
+  /** Optional team-default visibility config (sidecar /views). Sources that do
+   *  not support it (FileSystem/Manual) omit these; the registry treats a missing
+   *  loadViews as "no team default". */
+  loadViews?(): Promise<ViewsConfig>;
+  saveViews?(config: ViewsConfig): Promise<void>;
   /** Optional live-change subscription; returns an unsubscribe function.
    *  `options.jitterMs` randomizes reconnect timing across concurrent watches. */
   watch?(onChange: () => void, options?: { jitterMs?: number }): () => void;

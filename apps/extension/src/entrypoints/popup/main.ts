@@ -5,9 +5,10 @@ import { chromeApi } from "../../shared/chrome-api.js";
 import { setLocale } from "../../shared/config.js";
 import "../../shared/tokens.gen.css";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
-import { fetchSurfaceState } from "../../shared/surface-data.js";
+import { buildFilterModel, fetchSurfaceState } from "../../shared/surface-data.js";
 import {
   byId,
+  renderFilterSection,
   renderLocalePicker,
   renderProjects,
   renderStatus,
@@ -47,12 +48,14 @@ function renderSpecs(res: SpecsForOrigin): void {
 }
 
 async function refresh(): Promise<void> {
-  const { status, specs, origin, activeLocale: locale } = await fetchSurfaceState();
+  const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
   renderStatus(status);
   renderProjects(status.connections ?? [], origin);
   renderLocalePicker(status.locales ?? [], activeLocale);
+  // The popup stays compact: group-level filters only (per-spec lives in the panel).
+  renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh);
   renderSpecs(specs);
 }
 

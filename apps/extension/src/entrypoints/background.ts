@@ -1,4 +1,4 @@
-import type { SpecsResponse } from "@specpin/api-client";
+import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
 import { SidecarRegistry } from "../background/sidecar-registry.js";
@@ -8,12 +8,15 @@ import {
   getDefaultSurface,
   getEnabled,
   getLocalSpecs,
+  getPersonalVisibility,
   LOCAL_SPECS_KEY,
   SURFACE_KEY,
   setConfig,
   setConnections,
   setEnabled,
   setLocalSpecs,
+  setPersonalVisibility,
+  VISIBILITY_KEY,
 } from "../shared/config.js";
 import type { Connection } from "../shared/connection-types.js";
 import {
@@ -25,6 +28,7 @@ import {
   type StatusResult,
   type TestConnectionResult,
 } from "../shared/messaging.js";
+import { buildVisibilityState, type PersonalVisibility } from "../shared/visibility.js";
 
 const KEEPALIVE_ALARM = "specpin-keepalive";
 
@@ -35,6 +39,39 @@ export default defineBackground(() => {
     // reconnect in lockstep (RT-FM2).
     jitterMs: 2_000,
   });
+
+  // In-memory cache of the personal visibility override, the source of truth for
+  // GET_SPECS_FOR_ORIGIN. Reads stay synchronous-fast and SET updates it before
+  // broadcasting so a re-fetch sees the new value immediately; the storage.sync
+  // write is debounced (sync caps writes at ~120/min) so checkbox-heavy filtering
+  // does not trip the throttle.
+  let personalVisibility: PersonalVisibility = { forceHide: [], forceShow: [] };
+  let visibilityLoaded = false;
+  let visibilityWriteTimer: ReturnType<typeof setTimeout> | undefined;
+
+  async function ensureVisibilityLoaded(): Promise<void> {
+    if (visibilityLoaded) return;
+    personalVisibility = await getPersonalVisibility();
+    visibilityLoaded = true;
+  }
+
+  function scheduleVisibilityWrite(): void {
+    if (visibilityWriteTimer) clearTimeout(visibilityWriteTimer);
+    visibilityWriteTimer = setTimeout(() => {
+      visibilityWriteTimer = undefined;
+      void setPersonalVisibility(personalVisibility);
+    }, 400);
+  }
+
+  // Flush any pending debounced write now. The MV3 worker can be evicted before
+  // the 400ms timer fires, so flush on suspend to avoid dropping the last toggle
+  // of a burst (the in-memory cache is already authoritative; this persists it).
+  function flushVisibilityWrite(): void {
+    if (!visibilityWriteTimer) return;
+    clearTimeout(visibilityWriteTimer);
+    visibilityWriteTimer = undefined;
+    void setPersonalVisibility(personalVisibility);
+  }
 
   // Best-effort "something changed, re-query" ping to every tab. It is NOT a
   // confidentiality boundary (RT-SA7): the content script re-calls
@@ -82,6 +119,7 @@ export default defineBackground(() => {
     // Defensive: a storage rejection here would otherwise surface as an unhandled
     // rejection from the fire-and-forget callers below.
     try {
+      await ensureVisibilityLoaded();
       await reconcileLocalSpecs(false);
       const connections = await getConnections();
       const enabled = await getEnabled();
@@ -123,9 +161,25 @@ export default defineBackground(() => {
   initWorker();
   browser.runtime.onStartup?.addListener(initWorker);
   browser.runtime.onInstalled?.addListener(initWorker);
+  browser.runtime.onSuspend?.addListener(flushVisibilityWrite);
   // Re-apply when the Settings page changes the preference so the toolbar
   // behavior switches without a reload.
   browser.storage.onChanged.addListener((changes, area) => {
+    // Personal visibility lives in storage.sync: an edit on another surface or
+    // another machine refreshes the live view here.
+    if (area === "sync") {
+      if (VISIBILITY_KEY in changes) {
+        const next = changes[VISIBILITY_KEY]?.newValue as PersonalVisibility | undefined;
+        const normalized = { forceHide: next?.forceHide ?? [], forceShow: next?.forceShow ?? [] };
+        // Our own debounced write fires this with the value already in the cache;
+        // only broadcast on a genuine change (e.g. an edit from another machine).
+        const changed = JSON.stringify(normalized) !== JSON.stringify(personalVisibility);
+        personalVisibility = normalized;
+        visibilityLoaded = true;
+        if (changed) void broadcastSpecsChanged();
+      }
+      return;
+    }
     if (area !== "local") return;
     if (SURFACE_KEY in changes) void applySurfaceBehavior();
     // Mirror an out-of-band manual-bundle change (e.g. a DevTools storage clear,
@@ -176,6 +230,14 @@ export default defineBackground(() => {
         return handleSaveSpec(message.file, message.spec, originOf(sender), message.connectionId);
       case "SET_LOCAL_SPECS":
         return handleSetLocalSpecs(message.specs, message.seq);
+      case "SET_PERSONAL_VISIBILITY":
+        return handleSetPersonalVisibility(message.visibility);
+      case "GET_TEAM_VIEWS":
+        return Promise.resolve(registry.getViews(message.connectionId));
+      case "SAVE_TEAM_VIEWS":
+        return handleSaveTeamViews(message.connectionId, message.views);
+      case "OPEN_SPEC_IN_PANEL":
+        return handleOpenSpecInPanel(message.specId, sender);
       default:
         return undefined;
     }
@@ -203,7 +265,60 @@ export default defineBackground(() => {
     const enabled = await getEnabled();
     if (!enabled) return { manifest: null, specs: [], enabled };
     const { specs, manifest, locales } = registry.specsForOrigin(origin);
-    return { manifest, specs, enabled, locales };
+    await ensureVisibilityLoaded();
+    // Cascade: union the serving connections' team-default hidden sets (hide-wins)
+    // under the personal override. The pure helper builds the state the
+    // content/popup/side-panel predicate consumes.
+    const visibility = buildVisibilityState(
+      registry.teamHiddenForOrigin(origin),
+      personalVisibility,
+    );
+    return { manifest, specs, enabled, locales, visibility };
+  }
+
+  async function handleSetPersonalVisibility(
+    visibility: PersonalVisibility,
+  ): Promise<{ ok: true }> {
+    // The message carries the full desired override, so the cache becomes
+    // authoritative at once; the wire write coalesces.
+    personalVisibility = visibility;
+    visibilityLoaded = true;
+    scheduleVisibilityWrite();
+    await broadcastSpecsChanged();
+    return { ok: true };
+  }
+
+  async function handleSaveTeamViews(
+    connectionId: string,
+    views: ViewsConfig,
+  ): Promise<{ ok: boolean; errors?: string[] }> {
+    const result = await registry.saveViews(connectionId, views);
+    if (result.ok) await broadcastSpecsChanged();
+    return result;
+  }
+
+  // Tooltip pin "open in side panel". Best-effort: Chrome can open the panel only
+  // with a live user gesture, which may be lost crossing the content->background
+  // boundary, so open() can reject; Firefox cannot open its sidebar at all. Either
+  // way HIGHLIGHT_SPEC is broadcast so an already-open panel scrolls to the card.
+  async function handleOpenSpecInPanel(
+    specId: string,
+    sender: { tab?: { id?: number; windowId?: number } } | undefined,
+  ): Promise<{ ok: true }> {
+    const api = chromeApi();
+    const windowId = sender?.tab?.windowId;
+    const tabId = sender?.tab?.id;
+    try {
+      if (api?.sidePanel && (windowId !== undefined || tabId !== undefined)) {
+        await api.sidePanel.open(windowId !== undefined ? { windowId } : { tabId });
+      }
+    } catch {
+      // Gesture lost or panel API unavailable: highlight-only fallback below.
+    }
+    browser.runtime
+      .sendMessage({ type: "HIGHLIGHT_SPEC", specId } satisfies Message)
+      .catch(() => {});
+    return { ok: true };
   }
 
   async function handleStatus(): Promise<StatusResult> {

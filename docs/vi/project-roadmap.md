@@ -97,6 +97,16 @@ Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa ca
 **Đã ship bề mặt side panel (2026-06-27)** trên nhánh `feat/extension-sidepanel-surface` (plan: `plans/260627-1119-extension-sidepanel-surface/`):
 - Side panel (`entrypoints/sidepanel/`) là lựa chọn gắn cố định thay cho popup: layout rộng full-height, hiển thị description + business rules của spec ngay inline, tự refresh khi activate tab / đổi URL / `SPECS_CHANGED`. Popup và side panel dùng chung một helper `fetchSurfaceState()`. WXT map một entrypoint duy nhất sang Chrome `side_panel` + Firefox `sidebar_action`. Một tùy chọn `defaultSurface` được lưu (Options) chọn bề mặt mở khi click icon trên Chrome; Firefox giữ popup trên nút thanh công cụ và mở sidebar từ nút gốc của nó.
 
+**Đã ship spec visibility toggle + tooltip UX (2026-06-27)** (plan: `plans/260627-1348-spec-visibility-toggle-tooltip-ux/`):
+- Cải tiến tooltip renderer: sửa full-width (`min(360px, 90vw)`); click badge để ghim tip mở (mỗi lần một cái, nút đóng); hành động "Open in side panel" highlight card side-panel tương ứng (best-effort auto-open trên Chrome, Firefox giảm xuống chỉ highlight). Các message mới `OPEN_SPEC_IN_PANEL` (content sang background) và `HIGHLIGHT_SPEC` (background sang side panel).
+- Mô hình facet thống nhất cho spec visibility: mỗi spec được các facet key `tag:<t>`, `file:<file>`, `spec:<id>`; `url:<glob>` là cổng cấp page. Một predicate `isVisible(spec, url, state)` trong `apps/extension/src/shared/visibility.ts` quyết định render. Path glob matcher: `*` = một segment, `**` = qua nhiều segment.
+- Chuỗi đồng bộ hai lớp: `effectiveDisabled = (teamHidden union personalForceHide) minus personalForceShow`. Mặc định team từ `.specs/views.json` (commit vào Git, chia sẻ, soạn qua trang Options, ghi qua sidecar `PUT /views`). Ghi đè cá nhân trong `chrome.storage.sync` (cross-machine, personal thắng). `spec:<id>` force-show là một rescue cứng theo per-spec (thắng trên tag/file hide); `url:` page gate thắng trên tất cả. Trạng thái rỗng = tất cả hiển thị (tương thích ngược).
+- Filter UI: checklist facet (Tags / Files / This page) trong popup + side panel; toggle mắt per-spec trong side panel; Reset xóa ghi đè cá nhân. Soạn team trên trang Options (per connection, editor dòng facet-key).
+- Schema: entity `ViewsConfig` mới trong `packages/spec-schema/schema/v1.json` = `{ version: string, hidden: string[] }`. Type TS được sinh ra + validator `validateViews`; Go `ValidateViews`; fixture cross-validate tại `tests/fixtures/views/{valid,invalid}` trên cả ajv và Go.
+- Sidecar: `GET /views` mới (trả về `.specs/views.json` hoặc mặc định rỗng `{version:"1.0",hidden:[]}` khi không có) và `PUT /views` (validate schema, atomic, pretty-print, confined `.specs/`). Watcher `.specs/` hiện có đã fire SSE khi ghi `views.json`.
+- api-client: `SidecarClient.getViews()` / `putViews()`, type `ViewsConfig` được export.
+- Message privileged mới: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (thêm vào `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` là non-privileged (read-only, từ content script).
+
 Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi sử dụng: hybrid weighted scorer (cần corpus DOM trước/sau để tinh chỉnh), nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
 
 ### Tính năng đã lên kế hoạch

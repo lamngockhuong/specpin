@@ -75,6 +75,26 @@ describe("SidecarClient requests", () => {
     await expect(client(fetchImpl).deleteSpec("login-btn")).resolves.toBeUndefined();
     expect(fetchImpl.mock.calls[0][1].method).toBe("DELETE");
   });
+
+  it("getViews() GETs /views and returns the config", async () => {
+    const views = { version: "1.0", hidden: ["tag:auth"] };
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(views));
+    const res = await client(fetchImpl).getViews();
+    expect(res).toEqual(views);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/views");
+    expect(init.method).toBe("GET");
+  });
+
+  it("putViews() PUTs the config to /views", async () => {
+    const views = { version: "1.0", hidden: ["url:/admin/**"] };
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(views));
+    await client(fetchImpl).putViews(views);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/views");
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(init.body as string)).toEqual(views);
+  });
 });
 
 describe("SidecarClient errors", () => {

@@ -4,3 +4,4 @@ import type { ValidateFunction } from "ajv";
 export const validateSpecFile: ValidateFunction;
 export const validateSpec: ValidateFunction;
 export const validateManifest: ValidateFunction;
+export const validateViews: ValidateFunction;

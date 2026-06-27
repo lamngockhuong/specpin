@@ -17,6 +17,7 @@ export type SpecSource = "ai-generated" | "manual";
 export interface SpecpinSchemaRoots {
   specFile: SpecFile;
   manifest: Manifest;
+  views: ViewsConfig;
 }
 /**
  * A Specpin <area>.spec.json file: a named group of specs pinned to UI elements.
@@ -126,4 +127,15 @@ export interface ManifestSettings {
   locales?: string[];
   matchConfidenceThreshold?: number;
   defaultDisplayMode?: DisplayMode;
+}
+/**
+ * The .specs/views.json team-default visibility config. `hidden` is a flat list of facet keys (tag: / file: / spec: / url:) the team hides by default; the extension parses the prefix.
+ */
+export interface ViewsConfig {
+  /**
+   * Optional pointer to this schema for editor tooling.
+   */
+  $schema?: string;
+  version: string;
+  hidden: string[];
 }

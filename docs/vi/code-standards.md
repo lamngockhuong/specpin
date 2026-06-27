@@ -241,9 +241,9 @@ Tất cả project Go dùng Makefile để điều phối build (không dùng go
 
 **One schema, two validators**:
 
-1. **Canonical source**: `packages/spec-schema/schema/v1.json` (118 dòng, sửa tay).
-2. **TS validator**: ajv standalone trong `packages/spec-schema/src/*.gen.*` (generate qua `pnpm gen`).
-3. **Go validator**: `santhosh-tekuri/jsonschema/v6` trên bản embedded copy tại `apps/cli/internal/schema/v1.json` (sync qua `make sync-schema`).
+1. **Canonical source**: `packages/spec-schema/schema/v1.json` (130+ dòng, sửa tay). Định nghĩa `Spec`, `SpecManifest`, `SpecFile`, `ViewsConfig`.
+2. **TS validator**: ajv standalone trong `packages/spec-schema/src/*.gen.*` (generate qua `pnpm gen`). Expose `validateSpec`, `validateManifest`, `validateSpecFile`, `validateViews`.
+3. **Go validator**: `santhosh-tekuri/jsonschema/v6` trên bản embedded copy tại `apps/cli/internal/schema/v1.json` (sync qua `make sync-schema`). Expose `ValidateSpec`, `ValidateManifest`, `ValidateSpecFile`, `ValidateViews`.
 
 **Quy trình khi thay đổi schema:**
 ```bash
@@ -260,7 +260,10 @@ make sync-schema
 # 4. Verify no drift
 make check-schema
 
-# 5. Run full test suite
+# 5. Update fixtures (specs + views) so both validators agree
+# Add/edit files in tests/fixtures/specs/{valid,invalid} and tests/fixtures/views/{valid,invalid}
+
+# 6. Run full test suite
 cd ../..
 pnpm test
 cd apps/cli
@@ -268,7 +271,7 @@ go test ./...
 ```
 
 **CI enforcement:**
-- Job JS: `turbo run schema-validate` (cross-validate fixture qua ajv).
+- Job JS: `turbo run schema-validate` (cross-validate fixture cho spec + view qua ajv).
 - Job Go: `make check-schema` (fail nếu bản embedded copy lệch).
 
 **Tuyệt đối không sửa tay:**
@@ -330,10 +333,10 @@ chore(deps): bump wxt to 0.20
 
 **Cho thay đổi schema:**
 - [ ] Đã sửa canonical schema (`packages/spec-schema/schema/v1.json`).
-- [ ] Đã regenerate TS type (`pnpm gen`).
-- [ ] Đã sync Go schema (`make sync-schema`).
-- [ ] Fixture được cập nhật để cover các field mới.
-- [ ] Cả hai validator đều pass fixture.
+- [ ] Đã regenerate TS type (`pnpm --filter @specpin/spec-schema gen`).
+- [ ] Đã sync Go schema (`cd apps/cli && make sync-schema`).
+- [ ] Fixture được cập nhật để cover các field mới (spec trong `tests/fixtures/specs/`, view trong `tests/fixtures/views/`).
+- [ ] Cả hai validator đều pass fixture (`pnpm schema-validate` và `go test ./...`).
 
 **Cho thay đổi extension:**
 - [ ] Giữ Shadow DOM isolation (không rò rỉ style của host page).

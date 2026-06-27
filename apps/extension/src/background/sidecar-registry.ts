@@ -1,4 +1,4 @@
-import type { SpecsResponse } from "@specpin/api-client";
+import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { Manifest, Spec } from "@specpin/spec-schema";
 import {
   type Connection,
@@ -165,6 +165,40 @@ export class SidecarRegistry {
     }
 
     return { specs, manifest, locales: [...localeSet] };
+  }
+
+  /** The team-default hidden facet lists of every connection serving this origin
+   *  (one array per connection). Fed to `buildVisibilityState`, which unions them
+   *  hide-wins. Only origin-matching connections contribute (same boundary as
+   *  `specsForOrigin`). */
+  teamHiddenForOrigin(origin: string): string[][] {
+    const sets: string[][] = [];
+    for (const conn of this.connections.values()) {
+      if (!conn.getCache() || !conn.matchesOrigin(origin)) continue;
+      sets.push(conn.hiddenFacets());
+    }
+    return sets;
+  }
+
+  /** The cached team-default views for one connection (for the Options editor),
+   *  or the empty default when unknown. */
+  getViews(connectionId: string): ViewsConfig {
+    return this.connections.get(connectionId)?.getViews() ?? { version: "1.0", hidden: [] };
+  }
+
+  /** Persist a team-default views config to one connection (Options authoring). */
+  async saveViews(
+    connectionId: string,
+    config: ViewsConfig,
+  ): Promise<{ ok: boolean; errors?: string[] }> {
+    const conn = this.connections.get(connectionId);
+    if (!conn) return { ok: false, errors: ["unknown connection"] };
+    try {
+      await conn.saveViews(config);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, errors: [String(e)] };
+    }
   }
 
   /** Save a captured spec to a connection serving the given origin (capture is

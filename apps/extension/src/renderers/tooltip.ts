@@ -9,6 +9,10 @@ import { rulesListHtml } from "./renderer.js";
 interface Pin {
   target: Element;
   badge: HTMLElement;
+  specId: string;
+  text: LocalizedSpecText;
+  tags: string[];
+  project: string;
 }
 
 const HOST_ID = "specpin-tooltip-host";
@@ -20,7 +24,7 @@ ${SHADOW_PREAMBLE}
   position: absolute; width: 16px; height: 16px; border-radius: 50%;
   background: var(--sp-accent); color: var(--sp-accent-on);
   font: 600 10px/16px var(--sp-font-ui);
-  text-align: center; cursor: help;
+  text-align: center; cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--sp-accent-glow);
   pointer-events: auto; user-select: none;
 }
@@ -28,7 +32,7 @@ ${SHADOW_PREAMBLE}
   background: var(--sp-warning-border); color: var(--sp-accent-on);
 }
 .tip {
-  position: absolute; max-width: 320px;
+  position: absolute; box-sizing: border-box; width: min(360px, 90vw);
   background: var(--sp-elevated); color: var(--sp-text);
   font: 13px/1.45 var(--sp-font-ui);
   padding: 11px 13px;
@@ -36,19 +40,33 @@ ${SHADOW_PREAMBLE}
   border-radius: var(--sp-radius-control);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); display: none; pointer-events: none;
 }
+.tip.pinned { pointer-events: auto; }
 .tip .project { display: block; margin: 0 0 4px; font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sp-text-3); }
-.tip h4 { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--sp-text); }
+.tip h4 { margin: 0 0 4px; padding-right: 18px; font-size: 13px; font-weight: 700; color: var(--sp-text); }
 .tip p { margin: 0 0 6px; color: var(--sp-text-2); }
 .tip ul { margin: 4px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .tip li { margin: 2px 0; }
 .tip .tags { margin-top: 6px; color: var(--sp-accent); font-family: var(--sp-font-mono); font-size: 11px; }
+.tip .pin-close {
+  position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
+  display: grid; place-items: center; padding: 0;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--sp-text-3); font: 600 14px/1 var(--sp-font-ui); border-radius: 4px;
+}
+.tip .pin-close:hover { background: var(--sp-border); color: var(--sp-text); }
+.tip .pin-open {
+  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
+  background: var(--sp-accent); color: var(--sp-accent-on); border: none;
+  border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
+}
 .tip.show { display: block; }
 `;
 
 /**
- * Tooltip renderer: a small badge anchored to each matched element; the full
- * spec appears on hover. All UI lives inside a Shadow DOM so host-page styles
- * cannot bleed in or out.
+ * Tooltip renderer: a small badge anchored to each matched element. Hovering a
+ * badge shows the spec for a quick peek; clicking it pins the tip open with a
+ * close button and an "open in side panel" action. Only one tip is pinned at a
+ * time. All UI lives inside a Shadow DOM so host-page styles cannot bleed.
  */
 export class TooltipRenderer implements SpecRenderer {
   readonly mode: DisplayMode = "tooltip";
@@ -58,6 +76,8 @@ export class TooltipRenderer implements SpecRenderer {
   private layer: HTMLElement | null = null;
   private tip: HTMLElement | null = null;
   private pins: Pin[] = [];
+  private pinnedBadge: HTMLElement | null = null;
+  private onOpenInPanel?: (specId: string) => void;
   private readonly doc: Document;
   private reposition = () => this.positionAll();
 
@@ -76,6 +96,10 @@ export class TooltipRenderer implements SpecRenderer {
     layer.className = "layer";
     const tip = this.doc.createElement("div");
     tip.className = "tip";
+    // Explicit width so the tip never shrink-to-fits inside its 0-width
+    // absolutely-positioned shadow host (that collapse was the "too narrow" bug).
+    tip.style.width = "min(360px, 90vw)";
+    tip.style.boxSizing = "border-box";
     shadow.append(layer, tip);
 
     this.host = host;
@@ -91,47 +115,83 @@ export class TooltipRenderer implements SpecRenderer {
 
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
     const layer = this.ensureRoot();
+    if (meta?.onOpenInPanel) this.onOpenInPanel = meta.onOpenInPanel;
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     const badge = this.doc.createElement("div");
     badge.className = "badge";
     badge.textContent = "S";
     if (meta?.needsReview) badge.dataset.review = "true";
     const project = meta?.showProject && meta.project ? meta.project : "";
-    badge.addEventListener("mouseenter", () => this.showTip(text, spec.tags ?? [], project, badge));
-    badge.addEventListener("mouseleave", () => this.hideTip());
+
+    const pin: Pin = { target, badge, specId: spec.id, text, tags: spec.tags ?? [], project };
+    badge.addEventListener("mouseenter", () => {
+      if (!this.pinnedBadge) this.showTip(pin, false);
+    });
+    badge.addEventListener("mouseleave", () => {
+      if (!this.pinnedBadge) this.hideTip();
+    });
+    badge.addEventListener("click", () => this.togglePin(pin));
     layer.appendChild(badge);
 
-    const pin: Pin = { target, badge };
     this.pins.push(pin);
     this.positionBadge(pin);
   }
 
-  private showTip(
-    text: LocalizedSpecText,
-    specTags: string[],
-    project: string,
-    badge: HTMLElement,
-  ): void {
-    if (!this.tip) return;
-    const tags = specTags.length
-      ? `<div class="tags">${escapeHtml(specTags.join(", "))}</div>`
+  private togglePin(pin: Pin): void {
+    if (this.pinnedBadge === pin.badge) {
+      this.unpin();
+      return;
+    }
+    this.pinnedBadge = pin.badge;
+    this.showTip(pin, true);
+  }
+
+  private unpin(): void {
+    this.pinnedBadge = null;
+    this.hideTip();
+  }
+
+  private showTip(pin: Pin, pinned: boolean): void {
+    const tip = this.tip;
+    if (!tip) return;
+    const tags = pin.tags.length
+      ? `<div class="tags">${escapeHtml(pin.tags.join(", "))}</div>`
       : "";
-    this.tip.innerHTML =
-      (project ? `<span class="project">${escapeHtml(project)}</span>` : "") +
-      `<h4>${escapeHtml(text.title)}</h4>` +
-      `<p>${escapeHtml(text.description)}</p>` +
-      rulesListHtml(text.businessRules) +
-      tags;
-    const rect = badge.getBoundingClientRect();
-    const win = this.doc.defaultView;
-    if (!win) return;
-    this.tip.style.left = `${rect.left + win.scrollX}px`;
-    this.tip.style.top = `${rect.bottom + win.scrollY + 6}px`;
-    this.tip.classList.add("show");
+    tip.innerHTML =
+      (pinned ? `<button type="button" class="pin-close" aria-label="Close">×</button>` : "") +
+      (pin.project ? `<span class="project">${escapeHtml(pin.project)}</span>` : "") +
+      `<h4>${escapeHtml(pin.text.title)}</h4>` +
+      `<p>${escapeHtml(pin.text.description)}</p>` +
+      rulesListHtml(pin.text.businessRules) +
+      tags +
+      (pinned ? `<button type="button" class="pin-open">Open in side panel</button>` : "");
+    tip.classList.toggle("pinned", pinned);
+    if (pinned) {
+      tip.querySelector(".pin-close")?.addEventListener("click", () => this.unpin());
+      tip.querySelector(".pin-open")?.addEventListener("click", () => {
+        this.onOpenInPanel?.(pin.specId);
+      });
+    }
+    this.positionTip(pin.badge);
+    tip.classList.add("show");
   }
 
   private hideTip(): void {
-    this.tip?.classList.remove("show");
+    this.tip?.classList.remove("show", "pinned");
+  }
+
+  private positionTip(badge: HTMLElement): void {
+    const tip = this.tip;
+    const win = this.doc.defaultView;
+    if (!tip || !win) return;
+    const rect = badge.getBoundingClientRect();
+    const tipW = tip.offsetWidth || 360;
+    const maxLeft = win.scrollX + win.innerWidth - tipW - 8;
+    let left = rect.left + win.scrollX;
+    if (left > maxLeft) left = maxLeft;
+    if (left < win.scrollX + 8) left = win.scrollX + 8;
+    tip.style.left = `${left}px`;
+    tip.style.top = `${rect.bottom + win.scrollY + 6}px`;
   }
 
   private positionBadge(pin: Pin): void {
@@ -144,6 +204,8 @@ export class TooltipRenderer implements SpecRenderer {
 
   private positionAll(): void {
     for (const pin of this.pins) this.positionBadge(pin);
+    // Keep the pinned tip anchored to its badge through scroll/resize.
+    if (this.pinnedBadge) this.positionTip(this.pinnedBadge);
   }
 
   /** Number of currently rendered pins (used in tests). */
@@ -159,5 +221,6 @@ export class TooltipRenderer implements SpecRenderer {
     this.host = this.shadow = null;
     this.layer = this.tip = null;
     this.pins = [];
+    this.pinnedBadge = null;
   }
 }

@@ -19,6 +19,10 @@ export interface RenderMeta {
    *  the project label to disambiguate (kept off for the common single-project
    *  case to avoid noise). */
   showProject?: boolean;
+  /** Callback a renderer invokes to open a spec in the side panel (tooltip pin
+   *  action). The orchestrator threads it from the content script; renderers stay
+   *  DOM-pure and testable with a stub. */
+  onOpenInPanel?: (specId: string) => void;
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already
