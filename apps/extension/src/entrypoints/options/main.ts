@@ -1,3 +1,4 @@
+import type { ViewsConfig } from "@specpin/api-client";
 import { type DefaultSurface, getDefaultSurface, setDefaultSurface } from "../../shared/config.js";
 import {
   type ConnectionStatus,
@@ -76,6 +77,10 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
 
   row.append(head, meta);
 
+  // Team-default visibility editor (sidecar-backed connections only). Writes
+  // .specs/views.json to Git, shared with everyone on the project.
+  if (c.connected) row.append(teamViewsSection(c));
+
   // Empty-domains projects are inactive until the user opts in (RT-SA1).
   if (c.domains.length === 0) {
     const warn = document.createElement("div");
@@ -103,6 +108,66 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
   }
 
   return row;
+}
+
+/** Team-default visibility editor for one connection. The hidden facet keys are
+ *  edited as one-per-line text (tag: / file: / spec: / url:) and saved to
+ *  .specs/views.json via the sidecar. The current views load lazily on expand. */
+function teamViewsSection(c: ConnectionStatus): HTMLElement {
+  const wrap = document.createElement("details");
+  wrap.className = "team-views";
+  const summary = document.createElement("summary");
+  summary.textContent = "Team default visibility (shared via Git)";
+  wrap.appendChild(summary);
+
+  const note = document.createElement("p");
+  note.className = "muted";
+  note.textContent =
+    "One facet key per line: tag:<t>, file:<name.spec.json>, spec:<id>, or url:<glob>. Saved to .specs/views.json and applied for everyone on this project.";
+  const area = document.createElement("textarea");
+  area.className = "views-editor";
+  area.rows = 4;
+  area.placeholder = "tag:internal\nurl:/admin/**";
+  const actions = document.createElement("div");
+  actions.className = "conn-actions";
+  const save = document.createElement("button");
+  save.className = "secondary";
+  save.textContent = "Save team default";
+  actions.appendChild(save);
+  const result = document.createElement("div");
+
+  let version = "1.0";
+  let loaded = false;
+  wrap.addEventListener("toggle", async () => {
+    if (!wrap.open || loaded) return;
+    loaded = true;
+    const views = await sendToBackground<ViewsConfig>({
+      type: "GET_TEAM_VIEWS",
+      connectionId: c.id,
+    });
+    version = views.version || "1.0";
+    area.value = (views.hidden ?? []).join("\n");
+  });
+
+  save.addEventListener("click", async () => {
+    const hidden = area.value
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const res = await sendToBackground<{ ok: boolean; errors?: string[] }>({
+      type: "SAVE_TEAM_VIEWS",
+      connectionId: c.id,
+      views: { version, hidden },
+    });
+    showResult(
+      result,
+      res.ok,
+      res.ok ? "Saved to .specs/views.json." : `Failed: ${res.errors?.join("; ") ?? "error"}`,
+    );
+  });
+
+  wrap.append(note, area, actions, result);
+  return wrap;
 }
 
 function renderConnections(list: ConnectionStatus[]): void {

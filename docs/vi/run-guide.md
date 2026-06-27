@@ -87,9 +87,15 @@ Các điều khiển tương tự cũng có ở dạng **side panel** luôn mở
 
 ## 8. Chuyển ngôn ngữ
 
-Nội dung spec (title, description, business rules) được localize. Dropdown **Language** của popup đặt active locale và render lại tất cả display mode; header của sidebar phản chiếu nó. Lựa chọn được lưu giữa các session. Một spec không có text cho locale được chọn sẽ fall back về `defaultLocale` của project, rồi đến bất kỳ locale nào có mặt. Dropdown cung cấp hợp (union) của `settings.locales` giữa các connected project.
+Nội dung spec (title, description, business rules) được localize. Dropdown **Language** của popup đặt active locale và render lại tất cả display mode; header của side panel phản chiếu nó. Lựa chọn được lưu giữa các session. Một spec không có text cho locale được chọn sẽ fall back về `defaultLocale` của project, rồi đến bất kỳ locale nào có mặt. Dropdown cung cấp hợp (union) của `settings.locales` giữa các connected project.
 
-## 9. Capture một spec mới (với bản dịch)
+## 9. Lọc spec theo tag, file, hoặc URL trang
+
+Popup và side panel cung cấp bộ lọc theo facet: Tags, Files, và This page (URL pattern). Bỏ check một facet sẽ ẩn tất cả spec khớp ngay lập tức. Một override cá nhân (force-show hoặc force-hide) đồng bộ giữa các máy qua `chrome.storage.sync`. Side panel cũng cung cấp nút toggle con mắt per spec để kiểm soát chi tiết hơn. **Reset** xóa tất cả override cá nhân.
+
+Admin team có thể đặt mặc định toàn project trong trang Options (mục **Team visibility** per kết nối): thêm các facet key (mỗi dòng một, ví dụ `tag:draft`, `file:login.spec.json`, `url:/admin/**`) để ẩn chúng với mọi người. Mặc định team được ghi vào `.specs/views.json` (commit vào Git) qua sidecar. Override cá nhân thắng mặc định team: một force-show cá nhân của `spec:<id>` là hard rescue (hiện spec đó ngay cả khi tag hoặc file của nó bị ẩn ở team). Cổng `url:` trang thắng mọi thứ (ẩn spec trên các trang không khớp glob). Trạng thái rỗng = tất cả hiển thị.
+
+## 10. Capture một spec mới (với bản dịch)
 
 Click **+ Capture spec** trong popup (hoặc nhấn `Alt+Shift+C`), click một element, rồi điền form. Chọn một **Language**, nhập title/description/rules cho nó, rồi chọn ngôn ngữ khác (hoặc **+ Add language**) để thêm bản dịch (việc chuyển ngôn ngữ giữ những gì bạn đã nhập). Ngôn ngữ mặc định yêu cầu title và description. Nếu nhiều hơn một project phục vụ page, chọn **Target project**. Khi save, spec được validate, ghi vào `.spec.json` đã chọn (pretty-printed), và hiển thị trong `git diff`. Các spec đã capture mang `meta.source: "manual"`.
 

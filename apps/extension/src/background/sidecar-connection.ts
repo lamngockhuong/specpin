@@ -1,4 +1,9 @@
-import { SidecarClient, SidecarError, type SpecsResponse } from "@specpin/api-client";
+import {
+  SidecarClient,
+  SidecarError,
+  type SpecsResponse,
+  type ViewsConfig,
+} from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 import type { Connection, ConnectionStatus } from "../shared/connection-types.js";
 import { statusServesOrigin } from "../shared/origin-match.js";
@@ -32,6 +37,7 @@ export class SidecarConnection {
   private token: string;
   private readonly injectedSource: boolean;
   private cache: SpecsResponse | null = null;
+  private viewsCache: ViewsConfig | null = null;
   private unwatch: (() => void) | null = null;
   private connected = false;
   private lastError: string | null = null;
@@ -64,22 +70,52 @@ export class SidecarConnection {
     }
   }
 
-  /** Reload this connection's specs. Captures failure on the instance instead of
-   *  throwing, so the registry can keep aggregating the others. */
+  /** Reload this connection's specs (and its team-default views). Captures
+   *  failure on the instance instead of throwing, so the registry can keep
+   *  aggregating the others. */
   async reload(): Promise<void> {
-    try {
-      this.cache = await this.source.loadSpecs();
+    // Fetch specs and views to the same sidecar in parallel (one round-trip, not
+    // two). allSettled keeps the views fetch isolated: an older sidecar without
+    // /views (404) must not drop the specs we loaded, and a specs failure marks
+    // the connection disconnected regardless of the views result.
+    const [specs, views] = await Promise.allSettled([
+      this.source.loadSpecs(),
+      this.source.loadViews?.() ?? Promise.resolve(null),
+    ]);
+    if (specs.status === "fulfilled") {
+      this.cache = specs.value;
       this.connected = true;
       this.lastError = null;
-    } catch (e) {
+    } else {
       this.cache = null;
+      this.viewsCache = null;
       this.connected = false;
-      this.lastError = e instanceof SidecarError ? e.code : String(e);
+      this.lastError =
+        specs.reason instanceof SidecarError ? specs.reason.code : String(specs.reason);
+      return;
     }
+    this.viewsCache = views.status === "fulfilled" ? (views.value ?? null) : null;
   }
 
   getCache(): SpecsResponse | null {
     return this.cache;
+  }
+
+  /** The team-default views config, or the empty default when unavailable. */
+  getViews(): ViewsConfig {
+    return this.viewsCache ?? { version: "1.0", hidden: [] };
+  }
+
+  /** This connection's team-hidden facet keys (empty when no views.json). */
+  hiddenFacets(): string[] {
+    return this.viewsCache?.hidden ?? [];
+  }
+
+  /** Persist a team-default views config, then refresh the cache. */
+  async saveViews(config: ViewsConfig): Promise<void> {
+    if (!this.source.saveViews) throw new Error("source does not support views");
+    await this.source.saveViews(config);
+    await this.reload();
   }
 
   /** Sidecar currently reachable (last reload succeeded). Cheaper than building
@@ -127,6 +163,7 @@ export class SidecarConnection {
   dispose(): void {
     this.stopWatch();
     this.cache = null;
+    this.viewsCache = null;
   }
 
   status(): ConnectionStatus {

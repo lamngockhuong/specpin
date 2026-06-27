@@ -9,13 +9,15 @@ import {
   sendToActiveTab,
   sendToBackground,
 } from "../../shared/messaging.js";
-import { fetchSurfaceState } from "../../shared/surface-data.js";
+import { buildFilterModel, fetchSurfaceState, visibilityOf } from "../../shared/surface-data.js";
 import {
   byId,
+  renderFilterSection,
   renderLocalePicker,
   renderProjects,
   renderStatus,
 } from "../../shared/surface-renderers.js";
+import { isVisible, setSpecVisibility, type VisibilityState } from "../../shared/visibility.js";
 
 // The side panel is a persistent surface (unlike the ephemeral popup): it stays
 // open while the user navigates, so it listens for tab activation / URL changes
@@ -23,6 +25,19 @@ import {
 // (description + business rules) inline, since it has the vertical room.
 let activeLocale = "en";
 let lastSpecs: SpecsForOrigin | null = null;
+let currentPath = "/";
+let currentState: VisibilityState = { teamHidden: [], personal: { forceHide: [], forceShow: [] } };
+
+// Per-spec eye toggle: a hard per-spec override that wins across axes (a spec
+// hidden by a tag can still be re-shown here). Persists then re-fetches.
+async function toggleSpec(
+  spec: { id: string; tags?: string[]; file?: string },
+  visible: boolean,
+): Promise<void> {
+  const next = setSpecVisibility(spec, currentPath, currentState, visible);
+  await sendToBackground({ type: "SET_PERSONAL_VISIBILITY", visibility: next });
+  await refresh();
+}
 
 /** Each spec is a card with title, description, file, and (when present) the
  *  business rules inline. Text goes through DOM nodes (never innerHTML) so spec
@@ -39,9 +54,25 @@ function renderSpecs(res: SpecsForOrigin): void {
   }
   const defaultLocale = res.manifest?.settings?.defaultLocale;
   const multiProject = new Set(res.specs.map((s) => s.project)).size > 1;
+  const state = visibilityOf(res);
   for (const spec of res.specs) {
     const li = document.createElement("li");
     li.className = "spec";
+    // Stable anchor so a tooltip "open in side panel" can scroll to this card.
+    li.dataset.specId = spec.id;
+
+    const facets = { id: spec.id, tags: spec.tags, file: spec._file };
+    const visible = isVisible(facets, currentPath, state);
+    if (!visible) li.classList.add("spec-hidden");
+
+    // Per-spec eye toggle (side panel only): show/hide this exact spec.
+    const eye = document.createElement("button");
+    eye.type = "button";
+    eye.className = "spec-vis";
+    eye.textContent = visible ? "Hide" : "Show";
+    eye.title = visible ? "Hide this spec" : "Show this spec";
+    eye.addEventListener("click", () => void toggleSpec(facets, !visible));
+    li.appendChild(eye);
 
     if (multiProject && spec.project) {
       const project = document.createElement("span");
@@ -84,12 +115,16 @@ function renderSpecs(res: SpecsForOrigin): void {
 }
 
 async function refresh(): Promise<void> {
-  const { status, specs, origin, activeLocale: locale } = await fetchSurfaceState();
+  const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
+  currentPath = path;
+  currentState = visibilityOf(specs);
   renderStatus(status);
   renderProjects(status.connections ?? [], origin);
   renderLocalePicker(status.locales ?? [], activeLocale);
+  // The side panel has the room for per-spec rows in addition to group filters.
+  renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh, true);
   renderSpecs(specs);
 }
 
@@ -141,8 +176,24 @@ browser.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
     queueRefresh();
   }
 });
+// Highlight a spec card when a tooltip pin asks to "open in side panel". The
+// card may not exist yet if the panel just opened, so retry briefly after the
+// next refresh settles.
+function highlightSpec(specId: string, attempt = 0): void {
+  const card = document.querySelector<HTMLElement>(`.spec[data-spec-id="${CSS.escape(specId)}"]`);
+  if (!card) {
+    if (attempt < 10) setTimeout(() => highlightSpec(specId, attempt + 1), 100);
+    return;
+  }
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  card.classList.add("highlight");
+  setTimeout(() => card.classList.remove("highlight"), 1600);
+}
+
 browser.runtime.onMessage.addListener((raw) => {
-  if ((raw as Message)?.type === "SPECS_CHANGED") queueRefresh();
+  const message = raw as Message;
+  if (message?.type === "SPECS_CHANGED") queueRefresh();
+  if (message?.type === "HIGHLIGHT_SPEC") highlightSpec(message.specId);
 });
 
 void refresh();

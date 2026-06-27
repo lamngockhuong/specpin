@@ -149,6 +149,17 @@
         background: var(--sp-control); color: var(--sp-text-2);
         padding: 2px 5px; border-radius: 4px;
       }
+
+      /* Team-default visibility editor inside each connection row. */
+      .team-views { margin-top: 12px; }
+      .team-views > summary { cursor: pointer; font-weight: 600; color: var(--sp-text-2); }
+      .team-views .muted { color: var(--sp-text-3); font-size: 12px; margin: 8px 0; }
+      .views-editor {
+        width: 100%; margin-bottom: 8px;
+        font: 12px/1.5 var(--sp-font-mono);
+      }
+      .team-views .ok { color: var(--sp-success-text); margin-top: 8px; font-size: 12px; }
+      .team-views .err { color: var(--sp-error-text); margin-top: 8px; font-size: 12px; }
     </style>
   </head>
   <body>

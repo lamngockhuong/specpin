@@ -9,6 +9,7 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 ```
 .specs/
 ├── manifest.json          # index + project config
+├── views.json             # team visibility defaults (optional, Git-committed)
 └── <area>.spec.json       # a group of specs (SpecFile)
 ```
 
@@ -75,8 +76,21 @@ Optional: `testId`, `ariaLabel`, `id` (all nullable), `textContent` (nullable), 
 
 `"overlay" | "tooltip" | "sidebar" | "modal" | "inline-badge"`. `tooltip`, `sidebar`, and `modal` are implemented; `overlay` and `inline-badge` are reserved (forward-compatible) and fall back to `tooltip` at render time.
 
+## ViewsConfig (`.specs/views.json`)
+
+Optional team-level spec visibility defaults. When present, acts as the baseline for which specs are hidden before personal overrides apply (see visibility cascade in `docs/system-architecture.md`).
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `version` | string | yes | e.g. `"1.0"` |
+| `hidden` | string[] | yes | flat list of facet keys (can be empty array) |
+
+Facet keys are strings like `tag:<name>`, `file:<filename>`, `spec:<id>`, or `url:<glob>`. A spec matches a facet if it has that tag, lives in that file, has that id, or appears on a page whose path matches the glob (`*` = one segment, `**` = across segments). The `url:` facet is a page-level gate (wins over everything).
+
+When `.specs/views.json` is absent, the sidecar returns the empty default `{ "version": "1.0", "hidden": [] }` on `GET /views`. All specs are visible unless the user sets a personal override. Team defaults are edited via the extension Options page (per connection) and written to `.specs/views.json` via `PUT /views` (schema-validated, atomic, pretty-printed). The sidecar watches `.specs/` so changes trigger SSE (existing watch covers `views.json` too).
+
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile`.
-- A shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`) is run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews`.
+- Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).

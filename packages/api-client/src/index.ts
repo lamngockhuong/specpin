@@ -9,6 +9,7 @@ export {
   type SidecarClientOptions,
   type SpecsResponse,
   type SpecWithFile,
+  type ViewsConfig,
 } from "./client.js";
 
 export { SidecarError } from "./errors.js";

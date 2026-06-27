@@ -85,9 +85,15 @@ The same controls are also available as a **side panel** that stays open while y
 
 ## 8. Switch language
 
-Spec content (title, description, business rules) is localized. The popup's **Language** dropdown sets the active locale and re-renders all display modes; the sidebar header mirrors it. The choice persists across sessions. A spec with no text for the chosen locale falls back to the project's `defaultLocale`, then to any present locale. The dropdown offers the union of `settings.locales` across the connected projects.
+Spec content (title, description, business rules) is localized. The popup's **Language** dropdown sets the active locale and re-renders all display modes; the side panel header mirrors it. The choice persists across sessions. A spec with no text for the chosen locale falls back to the project's `defaultLocale`, then to any present locale. The dropdown offers the union of `settings.locales` across the connected projects.
 
-## 9. Capture a new spec (with translations)
+## 9. Filter specs by tag, file, or page URL
+
+The popup and side panel offer facet-based filters: Tags, Files, and This page (URL pattern). Unchecking a facet hides all matching specs immediately. A personal override (force-show or force-hide) syncs across machines via `chrome.storage.sync`. The side panel also offers a per-spec eye toggle for finer control. **Reset** clears all personal overrides.
+
+Team admins can set project-wide defaults in the Options page (**Team visibility** per connection): add facet keys (one per line, e.g. `tag:draft`, `file:login.spec.json`, `url:/admin/**`) to hide them for everyone. Team defaults are written to `.specs/views.json` (Git-committed) via the sidecar. Personal overrides win over team defaults: a personal force-show of `spec:<id>` is a hard rescue (reveals that spec even if its tag or file is team-hidden). The `url:` page gate wins over everything (hides specs on pages that do not match the glob). Empty state = all visible.
+
+## 10. Capture a new spec (with translations)
 
 Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, then fill the form. Pick a **Language**, enter the title/description/rules for it, then choose another language (or **+ Add language**) to add a translation - switching languages keeps what you already entered. The default language requires a title and description. If more than one project serves the page, pick the **Target project**. On save the spec is validated, written to the chosen `.spec.json` (pretty-printed), and shows up in `git diff`. Captured specs carry `meta.source: "manual"`.
 

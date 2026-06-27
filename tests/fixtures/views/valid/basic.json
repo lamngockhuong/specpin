@@ -1,0 +1,4 @@
+{
+  "version": "1.0",
+  "hidden": ["tag:auth", "file:login.spec.json", "spec:login-submit", "url:/admin/**"]
+}

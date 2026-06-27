@@ -1,6 +1,7 @@
 import type { SpecsResponse } from "@specpin/api-client";
 import { browser } from "#imports";
 import type { Connection } from "./connection-types.js";
+import type { PersonalVisibility } from "./visibility.js";
 
 export type { Connection } from "./connection-types.js";
 
@@ -25,6 +26,9 @@ const ENABLED_KEY = "specpin:enabled";
 export const LOCAL_SPECS_KEY = "specpin:localSpecs";
 const LOCALE_KEY = "specpin:locale";
 export const SURFACE_KEY = "specpin:defaultSurface";
+/** Personal visibility override. In `storage.sync` (not local) so a user's
+ *  show/hide choices follow them across machines on the same browser profile. */
+export const VISIBILITY_KEY = "specpin:visibility";
 
 /** Which surface a toolbar-icon click opens. Honored on Chrome only (the
  *  background applies it via chrome.action.setPopup + sidePanel behavior);
@@ -86,6 +90,25 @@ export async function getDefaultSurface(): Promise<DefaultSurface> {
 
 export async function setDefaultSurface(surface: DefaultSurface): Promise<void> {
   await browser.storage.local.set({ [SURFACE_KEY]: surface });
+}
+
+/** The personal visibility override from `storage.sync`, defaulting to empty
+ *  (which the predicate treats as "all visible"). */
+export async function getPersonalVisibility(): Promise<PersonalVisibility> {
+  const stored = await browser.storage.sync.get(VISIBILITY_KEY);
+  const value = stored[VISIBILITY_KEY] as PersonalVisibility | undefined;
+  return { forceHide: value?.forceHide ?? [], forceShow: value?.forceShow ?? [] };
+}
+
+/** Persist the personal visibility override to `storage.sync`. An empty override
+ *  removes the key entirely so the stored payload stays small (sync caps item
+ *  size at ~8KB) and a default profile carries nothing. */
+export async function setPersonalVisibility(visibility: PersonalVisibility): Promise<void> {
+  if (visibility.forceHide.length === 0 && visibility.forceShow.length === 0) {
+    await browser.storage.sync.remove(VISIBILITY_KEY);
+    return;
+  }
+  await browser.storage.sync.set({ [VISIBILITY_KEY]: visibility });
 }
 
 export async function getLocalSpecs(): Promise<LocalSpecsState | null> {

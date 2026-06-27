@@ -239,9 +239,9 @@ All Go projects use Makefile for build orchestration (not go:generate).
 
 **One schema, two validators**:
 
-1. **Canonical source**: `packages/spec-schema/schema/v1.json` (118 lines, hand-edited).
-2. **TS validator**: ajv standalone in `packages/spec-schema/src/*.gen.*` (generated via `pnpm gen`).
-3. **Go validator**: `santhosh-tekuri/jsonschema/v6` over embedded copy at `apps/cli/internal/schema/v1.json` (synced via `make sync-schema`).
+1. **Canonical source**: `packages/spec-schema/schema/v1.json` (130+ lines, hand-edited). Defines `Spec`, `SpecManifest`, `SpecFile`, `ViewsConfig`.
+2. **TS validator**: ajv standalone in `packages/spec-schema/src/*.gen.*` (generated via `pnpm gen`). Exposes `validateSpec`, `validateManifest`, `validateSpecFile`, `validateViews`.
+3. **Go validator**: `santhosh-tekuri/jsonschema/v6` over embedded copy at `apps/cli/internal/schema/v1.json` (synced via `make sync-schema`). Exposes `ValidateSpec`, `ValidateManifest`, `ValidateSpecFile`, `ValidateViews`.
 
 **Workflow for schema changes:**
 ```bash
@@ -258,7 +258,10 @@ make sync-schema
 # 4. Verify no drift
 make check-schema
 
-# 5. Run full test suite
+# 5. Update fixtures (specs + views) so both validators agree
+# Add/edit files in tests/fixtures/specs/{valid,invalid} and tests/fixtures/views/{valid,invalid}
+
+# 6. Run full test suite
 cd ../..
 pnpm test
 cd apps/cli
@@ -266,7 +269,7 @@ go test ./...
 ```
 
 **CI enforcement:**
-- JS job: `turbo run schema-validate` (cross-validate fixtures through ajv).
+- JS job: `turbo run schema-validate` (cross-validate fixtures for specs + views through ajv).
 - Go job: `make check-schema` (fail if embedded copy drifted).
 
 **Never hand-edit:**
@@ -328,10 +331,10 @@ chore(deps): bump wxt to 0.20
 
 **For schema changes:**
 - [ ] Canonical schema edited (`packages/spec-schema/schema/v1.json`).
-- [ ] TS types regenerated (`pnpm gen`).
-- [ ] Go schema synced (`make sync-schema`).
-- [ ] Fixtures updated to cover new fields.
-- [ ] Both validators pass fixtures.
+- [ ] TS types regenerated (`pnpm --filter @specpin/spec-schema gen`).
+- [ ] Go schema synced (`cd apps/cli && make sync-schema`).
+- [ ] Fixtures updated to cover new fields (specs in `tests/fixtures/specs/`, views in `tests/fixtures/views/`).
+- [ ] Both validators pass fixtures (`pnpm schema-validate` and `go test ./...`).
 
 **For extension changes:**
 - [ ] Shadow DOM isolation maintained (no host page style leaks).

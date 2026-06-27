@@ -11,6 +11,7 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 ```
 .specs/
 ├── manifest.json          # index + project config
+├── views.json             # cài đặt hiển thị mặc định theo nhóm (tùy chọn, commit vào Git)
 └── <area>.spec.json       # a group of specs (SpecFile)
 ```
 
@@ -77,8 +78,21 @@ Optional: `testId`, `ariaLabel`, `id` (đều nullable), `textContent` (nullable
 
 `"overlay" | "tooltip" | "sidebar" | "modal" | "inline-badge"`. `tooltip`, `sidebar`, và `modal` đã được hiện thực; `overlay` và `inline-badge` được dành riêng (forward-compatible) và fall back về `tooltip` lúc render.
 
+## ViewsConfig (`.specs/views.json`)
+
+Cài đặt hiển thị mặc định theo nhóm (team-level), không bắt buộc. Khi có, nó làm baseline cho việc những spec nào bị ẩn trước khi áp dụng override cá nhân (xem visibility cascade trong `docs/system-architecture.md`).
+
+| Field | Type | Required | Ghi chú |
+|-------|------|----------|-------|
+| `version` | string | yes | ví dụ `"1.0"` |
+| `hidden` | string[] | yes | danh sách phẳng các facet key (có thể là mảng rỗng) |
+
+Facet key là các string dạng `tag:<name>`, `file:<filename>`, `spec:<id>`, hoặc `url:<glob>`. Một spec khớp với facet nếu nó có tag đó, nằm trong file đó, có id đó, hoặc xuất hiện trên trang có path khớp glob (`*` = một segment, `**` = qua nhiều segment). Facet `url:` là cổng chặn ở cấp trang (wins over everything).
+
+Khi `.specs/views.json` không có, sidecar trả về default rỗng `{ "version": "1.0", "hidden": [] }` trên `GET /views`. Tất cả spec đều hiển thị trừ khi user đặt override cá nhân. Team default được chỉnh sửa qua trang Options của extension (per connection) và ghi vào `.specs/views.json` qua `PUT /views` (schema-validated, atomic, pretty-printed). Sidecar watch `.specs/` nên thay đổi trigger SSE (watch đang có cover luôn `views.json`).
+
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile`.
-- Một fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews`.
+- Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).

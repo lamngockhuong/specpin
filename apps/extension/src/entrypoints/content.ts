@@ -15,6 +15,7 @@ import {
   type SpecsForOrigin,
   sendToBackground,
 } from "../shared/messaging.js";
+import { EMPTY_VISIBILITY, type VisibilityState } from "../shared/visibility.js";
 
 function defaultFileName(): string {
   const seg = location.pathname.split("/").filter(Boolean)[0] ?? location.hostname.split(".")[0];
@@ -38,6 +39,14 @@ export default defineContentScript({
     let forcedMode: DisplayMode | null = null;
     let locale = "en";
     let availableLocales: string[] = [];
+    let visibility: VisibilityState = EMPTY_VISIBILITY;
+
+    // Tooltip pin "open in side panel": ask the background to open the panel
+    // (best-effort) and highlight the spec card. Defined once and threaded into
+    // every render session so renderers stay DOM-pure.
+    const openInPanel = (specId: string): void => {
+      void sendToBackground({ type: "OPEN_SPEC_IN_PANEL", specId });
+    };
     // RT-FM6: a re-render must not run while the user is mid-capture; queue it
     // and apply on capture exit instead.
     let captureActive = false;
@@ -61,7 +70,17 @@ export default defineContentScript({
       session?.destroy();
       session =
         enabled && specs.length
-          ? renderSession(specs, manifest, document, forcedMode, locale, availableLocales)
+          ? renderSession(
+              specs,
+              manifest,
+              document,
+              forcedMode,
+              locale,
+              availableLocales,
+              visibility,
+              location.href,
+              openInPanel,
+            )
           : null;
     };
 
@@ -91,6 +110,7 @@ export default defineContentScript({
       enabled = res.enabled;
       manifest = res.manifest;
       specs = res.specs;
+      visibility = res.visibility ?? EMPTY_VISIBILITY;
       // Prefer the background's cross-project locale union for this origin; fall
       // back to deriving from the single manifest.
       availableLocales = res.locales?.length ? res.locales : localesFor(manifest);

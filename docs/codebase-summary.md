@@ -25,15 +25,15 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 **Purpose**: JSON Schema v1 SSOT + generated TS types + ajv validators.
 
 **Key files:**
-- `schema/v1.json` - canonical schema (118 lines), defines `Spec`, `SpecManifest`, `Fingerprint`, `MatchResult`.
-- `src/schema.gen.ts` - generated ajv standalone validator (7,694 lines, never edit).
-- `src/types.gen.ts` - generated TS types (3,057 lines, never edit).
-- `src/validators.gen.cjs` - CJS ajv validator for Node consumers (49,843 lines, never edit).
-- `src/validate.ts` - thin wrapper exposing `validateSpec()`, `validateManifest()` (27 lines).
+- `schema/v1.json` - canonical schema (130+ lines), defines `Spec`, `SpecManifest`, `SpecFile`, `ViewsConfig`, `Fingerprint`, `MatchResult`.
+- `src/schema.gen.ts` - generated ajv standalone validator (7,700+ lines, never edit).
+- `src/types.gen.ts` - generated TS types (3,100+ lines, never edit).
+- `src/validators.gen.cjs` - CJS ajv validator for Node consumers (49,900+ lines, never edit).
+- `src/validate.ts` - thin wrapper exposing `validateSpec()`, `validateManifest()`, `validateViews()` (30+ lines).
 - `src/resolve-localized.ts` - prototype-safe `resolveLocalized()` / `resolveLocalizedList()` for `LocalizedString` content (locale -> defaultLocale -> first present fallback).
 - `scripts/gen-types.ts` - codegen runner (json-schema-to-typescript + ajv standalone).
 - `scripts/copy-gen-assets.ts` - copies `.gen.cjs` + `.gen.d.cts` to dist post-build.
-- `scripts/validate-fixtures.ts` - cross-validates fixtures (valid + invalid) against schema.
+- `scripts/validate-fixtures.ts` - cross-validates fixtures (valid + invalid, specs + views) against schema.
 
 **Scripts:**
 - `pnpm gen` - regenerate types + validators from `v1.json`.
@@ -70,10 +70,10 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 **Purpose**: Typed HTTP client over sidecar REST contract + SSE helper.
 
 **Key files:**
-- `src/client.ts` - `SidecarClient` class (187 lines). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`. Handles Bearer token, JSON serialization, error mapping.
+- `src/client.ts` - `SidecarClient` class (200+ lines). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`. Handles Bearer token, JSON serialization, error mapping.
 - `src/events.ts` - `SidecarEventSource` class (74 lines). SSE wrapper with exponential backoff (min 1s, max 30s, reset after 5s stable). Emits `specsChanged`, `manifestChanged`, `error`.
 - `src/errors.ts` - `SidecarError` hierarchy (42 lines). `NotFoundError`, `ValidationError`, `UnauthorizedError`, `NetworkError`.
-- `src/types.ts` - HTTP contract types (39 lines). Re-exports from spec-schema + `SidecarConfig`, `ConnectionStatus`.
+- `src/types.ts` - HTTP contract types (40+ lines). Re-exports from spec-schema (`ViewsConfig`) + `SidecarConfig`, `ConnectionStatus`.
 
 **Scripts:**
 - `pnpm build` - tsc only (no codegen).
@@ -98,14 +98,14 @@ cmd/
   generate.go   - stub for 1.1 AI feature (19 lines)
 internal/
   schema/
-    schema.go   - embeds v1.json, exposes validator (41 lines)
+    schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
-    server.go   - HTTP handlers: CRUD + SSE hub (312 lines)
+    server.go   - HTTP handlers: CRUD + SSE hub + GET/PUT /views (340+ lines)
     middleware.go - token auth + CORS (89 lines)
     hub.go      - SSE broadcast hub (102 lines)
   store/
-    store.go    - file-based spec store (241 lines, atomic writes, pretty JSON)
+    store.go    - file-based spec store + views.json read/write (260+ lines, atomic, pretty JSON)
   watch/
     watch.go    - fsnotify watcher, triggers SSE (87 lines)
 ```
@@ -114,7 +114,7 @@ internal/
 - `serve`: auto-pick free port (or --port), print URL+token, bind 127.0.0.1, start HTTP+SSE, watch `.specs/`.
 - `init`: create `.specs/manifest.json` with default values.
 - Middleware: every request needs `Authorization: Bearer <token>`. CORS accepts only `chrome-extension://`, `moz-extension://`, `safari-web-extension://` origins. Rejects web origins.
-- Store: writes confined to `.specs/`, path-traversal guard (H1 review fix). File ops atomic (temp + rename). Pretty-printed JSON (2-space indent) for clean Git diffs.
+- Store: writes confined to `.specs/`, path-traversal guard (H1 review fix). File ops atomic (temp + rename). Pretty-printed JSON (2-space indent) for clean Git diffs. `GET /views` returns `.specs/views.json` or the empty default `{version:"1.0",hidden:[]}` when absent; `PUT /views` validates then writes.
 
 **Makefile:**
 - `make sync-schema` - cp schema from packages/spec-schema.
@@ -141,38 +141,41 @@ src/
   entrypoints/
     background.ts     - SW; owns the SidecarRegistry, routes messages, SW-wake re-establish
     content.ts        - match+render loop, locale state, capture flow
-    popup/            - per-tab view: status, specs, project list, language picker
-    options/          - connection manager (add/remove/reconnect) + manual import
+    popup/            - per-tab view: status, specs, project list, language picker, filter UI
+    sidepanel/        - docked surface (Chrome side_panel / Firefox sidebar_action)
+    options/          - connection manager (add/remove/reconnect) + manual import + team views authoring
   background/
-    sidecar-registry.ts   - map of connections + manual source; origin-gated aggregation
-    sidecar-connection.ts - one project's client + cache + SSE watch (isolated)
+    sidecar-registry.ts   - map of connections + manual source; origin-gated aggregation + views threading
+    sidecar-connection.ts - one project's client + cache + SSE watch + team views cache (isolated)
   content/
-    orchestrator.ts   - match loop; threads locale + project labels into renderers
+    orchestrator.ts   - match loop; threads locale + project labels + visibility filtering into renderers
     localize-spec.ts  - resolve a spec's localized text for the viewer locale
     capture-mode.ts   - element picker (Esc cancels via callback)
     capture-form.ts   - per-locale spec authoring + target-project picker
     keyboard.ts       - shortcut handler
   renderers/
     registry.ts       - `SpecRenderer` interface + registry
-    tooltip.ts / sidebar.ts / modal.ts - the three implemented display modes
+    tooltip.ts / sidebar.ts / modal.ts - the three implemented display modes (tooltip: pin + open-in-panel)
   sources/
     registry.ts       - `SpecSource` interface + selection
     sidecar.ts        - SidecarSource adapter
     manual.ts / local-bundle.ts - read-only manual-import source + bundle parser
   shared/
     shadow.ts / html.ts        - Shadow DOM isolation + safe HTML escaping
-    messaging.ts               - typed message protocol
+    messaging.ts               - typed message protocol (includes OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS)
     connection-types.ts        - browser-free Connection / ConnectionStatus / TaggedSpec
     origin-match.ts            - pure origin/domain matching (shared by SW + popup)
-    config.ts                  - storage helpers (connections, locale, enabled, manual)
+    visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
+    config.ts                  - storage helpers (connections, locale, enabled, manual, personal visibility)
 ```
 
 **Key flows:**
-- Background SW: a `SidecarRegistry` holds N connections (each its own client + cache + SSE watch) plus the manual source. `reestablish()` rebuilds them from storage on each SW wake. `GET_SPECS_FOR_ORIGIN` returns the origin-matched aggregate, tagged by project.
-- Content script: on load, ask BG for the origin's specs. For each, `matchElement(fingerprint)`; render via the active mode (tooltip | sidebar | modal), resolving localized text for the viewer locale. Listens for capture toggle, locale change, and `SPECS_CHANGED`.
+- Background SW: a `SidecarRegistry` holds N connections (each its own client + cache + team views cache + SSE watch) plus the manual source. `reestablish()` rebuilds them from storage on each SW wake. `GET_SPECS_FOR_ORIGIN` returns the origin-matched aggregate, tagged by project, filtered by visibility (see `shared/visibility.ts`).
+- Content script: on load, ask BG for the origin's specs (already visibility-filtered). For each, `matchElement(fingerprint)`; render via the active mode (tooltip | sidebar | modal), resolving localized text for the viewer locale. Listens for capture toggle, locale change, `SPECS_CHANGED`, and visibility state changes.
 - Capture: picker highlights elements; on click the form authors title/description/rules per locale (and picks a target project when several serve the page). On save, validate, POST to the chosen connection, reload.
-- Renderers: implement `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); read localized text via `localizeSpec`, and caption the project when more than one contributes to the page.
+- Renderers: implement `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); read localized text via `localizeSpec`, and caption the project when more than one contributes to the page. Tooltip renderer: click badge to pin tip open (one at a time), close button, "Open in side panel" action that highlights the matching side-panel card (best-effort auto-open on Chrome, Firefox cannot programmatically open sidebar).
 - Sources: pluggable. Shipped: `SidecarSource` + read-only Manual import. FileSystem Access deferred.
+- Visibility: `isVisible(spec, url, state)` merges team defaults from `.specs/views.json` (via `GET /views`) and personal overrides from `chrome.storage.sync`. `url:` page gate wins over everything; `spec:<id>` force-show is a hard rescue. Filter UI (popup + side panel) offers facet checklists (Tags / Files / This page) + per-spec eye toggle; Reset clears personal overrides. Options page authors team defaults (writes via `PUT /views`).
 
 **Build:**
 - `pnpm build` - WXT build for chrome-mv3 -> `.output/chrome-mv3/`.
@@ -306,7 +309,7 @@ Two jobs (JS, Go):
 
 **Fingerprint logic**: `packages/fingerprint-core/src/capture.ts` (capture signals), `match.ts` (matching order), `selector.ts` (CSS optimization).
 
-**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
 
 **Extension rendering**: `apps/extension/src/renderers/` (tooltip.ts, sidebar.ts, modal.ts), `content/orchestrator.ts` (match loop).
 

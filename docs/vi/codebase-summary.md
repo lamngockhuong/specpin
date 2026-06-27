@@ -27,15 +27,15 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 **Purpose**: JSON Schema v1 SSOT + generated TS types + ajv validators.
 
 **Key files:**
-- `schema/v1.json` - schema chuẩn (118 dòng), định nghĩa `Spec`, `SpecManifest`, `Fingerprint`, `MatchResult`.
-- `src/schema.gen.ts` - generated ajv standalone validator (7,694 dòng, không bao giờ sửa).
-- `src/types.gen.ts` - generated TS types (3,057 dòng, không bao giờ sửa).
-- `src/validators.gen.cjs` - CJS ajv validator cho các consumer Node (49,843 dòng, không bao giờ sửa).
-- `src/validate.ts` - wrapper mỏng expose `validateSpec()`, `validateManifest()` (27 dòng).
+- `schema/v1.json` - schema chuẩn (130+ dòng), định nghĩa `Spec`, `SpecManifest`, `SpecFile`, `ViewsConfig`, `Fingerprint`, `MatchResult`.
+- `src/schema.gen.ts` - generated ajv standalone validator (7,700+ dòng, không bao giờ sửa).
+- `src/types.gen.ts` - generated TS types (3,100+ dòng, không bao giờ sửa).
+- `src/validators.gen.cjs` - CJS ajv validator cho các consumer Node (49,900+ dòng, không bao giờ sửa).
+- `src/validate.ts` - wrapper mỏng expose `validateSpec()`, `validateManifest()`, `validateViews()` (30+ dòng).
 - `src/resolve-localized.ts` - prototype-safe `resolveLocalized()` / `resolveLocalizedList()` cho nội dung `LocalizedString` (locale -> defaultLocale -> fallback first present).
 - `scripts/gen-types.ts` - codegen runner (json-schema-to-typescript + ajv standalone).
 - `scripts/copy-gen-assets.ts` - copy `.gen.cjs` + `.gen.d.cts` sang dist sau build.
-- `scripts/validate-fixtures.ts` - cross-validate fixtures (valid + invalid) với schema.
+- `scripts/validate-fixtures.ts` - cross-validate fixtures (valid + invalid, specs + views) với schema.
 
 **Scripts:**
 - `pnpm gen` - regenerate types + validators từ `v1.json`.
@@ -72,10 +72,10 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 **Purpose**: Typed HTTP client trên REST contract của sidecar + SSE helper.
 
 **Key files:**
-- `src/client.ts` - class `SidecarClient` (187 dòng). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`. Xử lý Bearer token, JSON serialization, error mapping.
+- `src/client.ts` - class `SidecarClient` (200+ dòng). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`. Xử lý Bearer token, JSON serialization, error mapping.
 - `src/events.ts` - class `SidecarEventSource` (74 dòng). SSE wrapper với exponential backoff (min 1s, max 30s, reset sau 5s ổn định). Phát `specsChanged`, `manifestChanged`, `error`.
 - `src/errors.ts` - cây kế thừa `SidecarError` (42 dòng). `NotFoundError`, `ValidationError`, `UnauthorizedError`, `NetworkError`.
-- `src/types.ts` - HTTP contract types (39 dòng). Re-export từ spec-schema + `SidecarConfig`, `ConnectionStatus`.
+- `src/types.ts` - HTTP contract types (40+ dòng). Re-export từ spec-schema (`ViewsConfig`) + `SidecarConfig`, `ConnectionStatus`.
 
 **Scripts:**
 - `pnpm build` - chỉ tsc (không codegen).
@@ -100,14 +100,14 @@ cmd/
   generate.go   - stub for 1.1 AI feature (19 lines)
 internal/
   schema/
-    schema.go   - embeds v1.json, exposes validator (41 lines)
+    schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
-    server.go   - HTTP handlers: CRUD + SSE hub (312 lines)
+    server.go   - HTTP handlers: CRUD + SSE hub + GET/PUT /views (340+ lines)
     middleware.go - token auth + CORS (89 lines)
     hub.go      - SSE broadcast hub (102 lines)
   store/
-    store.go    - file-based spec store (241 lines, atomic writes, pretty JSON)
+    store.go    - file-based spec store + views.json read/write (260+ lines, atomic, pretty JSON)
   watch/
     watch.go    - fsnotify watcher, triggers SSE (87 lines)
 ```
@@ -116,7 +116,7 @@ internal/
 - `serve`: tự chọn port rảnh (hoặc --port), in URL+token, bind 127.0.0.1, khởi động HTTP+SSE, watch `.specs/`.
 - `init`: tạo `.specs/manifest.json` với giá trị mặc định.
 - Middleware: mọi request cần `Authorization: Bearer <token>`. CORS chỉ chấp nhận origin `chrome-extension://`, `moz-extension://`, `safari-web-extension://`. Từ chối web origin.
-- Store: ghi giới hạn trong `.specs/`, path-traversal guard (fix review H1). File ops atomic (temp + rename). JSON pretty-printed (indent 2 space) cho Git diff sạch.
+- Store: ghi giới hạn trong `.specs/`, path-traversal guard (fix review H1). File ops atomic (temp + rename). JSON pretty-printed (indent 2 space) cho Git diff sạch. `GET /views` trả về `.specs/views.json` hoặc default rỗng `{version:"1.0",hidden:[]}` khi không có; `PUT /views` validate rồi ghi.
 
 **Makefile:**
 - `make sync-schema` - cp schema từ packages/spec-schema.
@@ -143,38 +143,41 @@ src/
   entrypoints/
     background.ts     - SW; sở hữu SidecarRegistry, định tuyến message, SW-wake re-establish
     content.ts        - vòng lặp match+render, locale state, capture flow
-    popup/            - view per-tab: status, specs, project list, language picker
-    options/          - connection manager (add/remove/reconnect) + manual import
+    popup/            - view per-tab: status, specs, project list, language picker, filter UI
+    sidepanel/        - docked surface (Chrome side_panel / Firefox sidebar_action)
+    options/          - connection manager (add/remove/reconnect) + manual import + team views authoring
   background/
-    sidecar-registry.ts   - map của các connection + manual source; tổng hợp được gate theo origin
-    sidecar-connection.ts - client + cache + SSE watch của một project (được cô lập)
+    sidecar-registry.ts   - map của các connection + manual source; tổng hợp được gate theo origin + views threading
+    sidecar-connection.ts - client + cache + SSE watch + team views cache của một project (được cô lập)
   content/
-    orchestrator.ts   - vòng lặp match; thread locale + project label vào renderer
+    orchestrator.ts   - vòng lặp match; thread locale + project label + visibility filtering vào renderer
     localize-spec.ts  - giải quyết text được localize của spec cho viewer locale
     capture-mode.ts   - element picker (Esc hủy qua callback)
     capture-form.ts   - soạn spec per-locale + target-project picker
     keyboard.ts       - shortcut handler
   renderers/
     registry.ts       - interface `SpecRenderer` + registry
-    tooltip.ts / sidebar.ts / modal.ts - ba display mode đã hiện thực
+    tooltip.ts / sidebar.ts / modal.ts - ba display mode đã hiện thực (tooltip: pin + open-in-panel)
   sources/
     registry.ts       - interface `SpecSource` + selection
     sidecar.ts        - SidecarSource adapter
     manual.ts / local-bundle.ts - read-only manual-import source + bundle parser
   shared/
     shadow.ts / html.ts        - cô lập Shadow DOM + safe HTML escaping
-    messaging.ts               - protocol message được type
+    messaging.ts               - protocol message được type (bao gồm OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS)
     connection-types.ts        - Connection / ConnectionStatus / TaggedSpec không phụ thuộc browser
     origin-match.ts            - matching origin/domain thuần (dùng chung bởi SW + popup)
-    config.ts                  - storage helper (connections, locale, enabled, manual)
+    visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
+    config.ts                  - storage helper (connections, locale, enabled, manual, personal visibility)
 ```
 
 **Key flows:**
-- Background SW: một `SidecarRegistry` giữ N connection (mỗi cái có client + cache + SSE watch riêng) cộng manual source. `reestablish()` xây dựng lại chúng từ storage khi mỗi lần SW wake. `GET_SPECS_FOR_ORIGIN` trả về tổng hợp đã khớp origin, được tag theo project.
-- Content script: khi load, hỏi BG lấy spec của origin. Với mỗi cái, `matchElement(fingerprint)`; render qua mode đang active (tooltip | sidebar | modal), giải quyết localized text cho viewer locale. Lắng nghe capture toggle, locale change, và `SPECS_CHANGED`.
+- Background SW: một `SidecarRegistry` giữ N connection (mỗi cái có client + cache + team views cache + SSE watch riêng) cộng manual source. `reestablish()` xây dựng lại chúng từ storage khi mỗi lần SW wake. `GET_SPECS_FOR_ORIGIN` trả về tổng hợp đã khớp origin, được tag theo project, đã filter theo visibility (xem `shared/visibility.ts`).
+- Content script: khi load, hỏi BG lấy spec của origin (đã được visibility-filter). Với mỗi cái, `matchElement(fingerprint)`; render qua mode đang active (tooltip | sidebar | modal), giải quyết localized text cho viewer locale. Lắng nghe capture toggle, locale change, `SPECS_CHANGED`, và các thay đổi visibility state.
 - Capture: picker highlight các element; khi click, form soạn title/description/rules per locale (và chọn một target project khi nhiều cái phục vụ page). Khi save, validate, POST tới connection đã chọn, reload.
-- Renderers: hiện thực `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); đọc localized text qua `localizeSpec`, và caption project khi nhiều hơn một đóng góp cho page.
+- Renderers: hiện thực `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); đọc localized text qua `localizeSpec`, và caption project khi nhiều hơn một đóng góp cho page. Tooltip renderer: click badge để pin tip mở (một lúc một cái), nút đóng, action "Open in side panel" highlight card side-panel tương ứng (best-effort auto-open trên Chrome, Firefox không thể mở sidebar lập trình).
 - Sources: pluggable. Đã ship: `SidecarSource` + read-only Manual import. FileSystem Access hoãn lại.
+- Visibility: `isVisible(spec, url, state)` gộp team defaults từ `.specs/views.json` (qua `GET /views`) và personal overrides từ `chrome.storage.sync`. `url:` page gate thắng tất cả; `spec:<id>` force-show là hard rescue. Filter UI (popup + side panel) cung cấp facet checklists (Tags / Files / This page) + per-spec eye toggle; Reset xóa personal overrides. Options page soạn team defaults (ghi qua `PUT /views`).
 
 **Build:**
 - `pnpm build` - WXT build cho chrome-mv3 -> `.output/chrome-mv3/`.
@@ -246,7 +249,7 @@ Hai job (JS, Go):
 
 ## File Naming Conventions
 
-- File TS: kebab-case (`capture-mode.ts`, `sidecar-controller.ts`).
+- File TS: kebab-case (`capture-mode.ts`, `sidecar-registry.ts`).
 - File Go: snake_case theo quy ước Go stdlib (`server.go`, `middleware.go`).
 - Generated file: pattern `*.gen.*` (`schema.gen.ts`, `validators.gen.cjs`), không bao giờ sửa.
 - File test: `*.test.ts` (TS), `*_test.go` (Go).
@@ -308,9 +311,9 @@ Hai job (JS, Go):
 
 **Logic fingerprint**: `packages/fingerprint-core/src/capture.ts` (capture signals), `match.ts` (thứ tự matching), `selector.ts` (tối ưu CSS).
 
-**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
 
-**Extension rendering**: `apps/extension/src/renderers/` (tooltip.ts, sidebar.ts), `content/orchestrator.ts` (match loop).
+**Extension rendering**: `apps/extension/src/renderers/` (tooltip.ts, sidebar.ts, modal.ts), `content/orchestrator.ts` (match loop).
 
 **Extension capture**: `apps/extension/src/content/capture-mode.ts` (picker), `capture-form.ts` (authoring form).
 

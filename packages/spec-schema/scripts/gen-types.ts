@@ -28,11 +28,14 @@ const genRoot = {
   $id: "https://specpin.dev/schema/v1.types.json",
   title: "SpecpinSchemaRoots",
   type: "object",
-  required: ["specFile", "manifest"],
+  required: ["specFile", "manifest", "views"],
   additionalProperties: false,
   properties: {
     specFile: { $ref: "#/$defs/SpecFile" },
     manifest: { $ref: "#/$defs/Manifest" },
+    // ViewsConfig is not referenced by SpecFile/Manifest; reference it here so the
+    // type emitter declares its interface (like Manifest above).
+    views: { $ref: "#/$defs/ViewsConfig" },
   },
   $defs: schema.$defs,
 };
@@ -86,6 +89,7 @@ const validatorsCode = standaloneCode(standaloneAjv, {
   validateSpecFile: schemaId,
   validateSpec: `${schemaId}#/$defs/Spec`,
   validateManifest: `${schemaId}#/$defs/Manifest`,
+  validateViews: `${schemaId}#/$defs/ViewsConfig`,
 });
 
 const validatorsBanner = [
@@ -105,6 +109,7 @@ const validatorsDts = [
   "export const validateSpecFile: ValidateFunction;",
   "export const validateSpec: ValidateFunction;",
   "export const validateManifest: ValidateFunction;",
+  "export const validateViews: ValidateFunction;",
   "",
 ].join("\n");
 

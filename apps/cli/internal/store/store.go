@@ -4,6 +4,7 @@
 package store
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,10 @@ import (
 	"sort"
 	"strings"
 )
+
+// defaultViewsJSON is returned by LoadViews when .specs/views.json is absent: an
+// empty team default (everything visible), so clients need no 404 special-case.
+const defaultViewsJSON = "{\n  \"version\": \"1.0\",\n  \"hidden\": []\n}\n"
 
 // ErrNotFound is returned when a spec id cannot be located across spec files.
 var ErrNotFound = errors.New("spec not found")
@@ -101,6 +106,40 @@ func (s *Store) ReadRaw(name string) ([]byte, error) {
 }
 
 func (s *Store) manifestPath() string { return filepath.Join(s.dir, "manifest.json") }
+
+// LoadViews reads the raw .specs/views.json (the team-default visibility config),
+// or returns the empty default when the file does not exist. The traversal +
+// symlink guard applies via resolve, like every other .specs/ read.
+func (s *Store) LoadViews() ([]byte, error) {
+	full, err := s.resolve("views.json")
+	if err != nil {
+		return nil, err
+	}
+	raw, err := os.ReadFile(full)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []byte(defaultViewsJSON), nil
+		}
+		return nil, err
+	}
+	return raw, nil
+}
+
+// SaveViews writes views.json atomically and pretty-printed (2-space) for clean
+// Git diffs, confined to .specs/. The caller validates the body against the
+// schema first; json.Indent preserves the client's key order.
+func (s *Store) SaveViews(raw json.RawMessage) error {
+	full, err := s.resolve("views.json")
+	if err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	if err := json.Indent(&buf, raw, "", "  "); err != nil {
+		return err
+	}
+	out := append(buf.Bytes(), '\n')
+	return atomicWrite(full, out)
+}
 
 // LoadManifest reads and parses manifest.json.
 func (s *Store) LoadManifest() (Manifest, error) {

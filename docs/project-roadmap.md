@@ -95,6 +95,16 @@ Goal: robustness, flexibility, polish. No timeline committed.
 **Side panel surface shipped (2026-06-27)** on branch `feat/extension-sidepanel-surface` (plan: `plans/260627-1119-extension-sidepanel-surface/`):
 - Side panel (`entrypoints/sidepanel/`) as a persistent docked alternative to the popup: wider full-height layout, spec description + business rules shown inline, auto-refresh on tab activation / URL change / `SPECS_CHANGED`. Popup and side panel share one `fetchSurfaceState()` helper. WXT maps the single entrypoint to Chrome `side_panel` + Firefox `sidebar_action`. A stored `defaultSurface` preference (Options) chooses the toolbar-click surface on Chrome; Firefox keeps the popup on the toolbar button and opens the sidebar from its native toggle.
 
+**Spec visibility toggle + tooltip UX shipped (2026-06-27)** (plan: `plans/260627-1348-spec-visibility-toggle-tooltip-ux/`):
+- Tooltip renderer enhancements: full-width fix (`min(360px, 90vw)`); click badge to pin tip open (one at a time, close button); "Open in side panel" action highlights matching side-panel card (best-effort auto-open on Chrome, Firefox degrades to highlight-only). New messages `OPEN_SPEC_IN_PANEL` (content to background) and `HIGHLIGHT_SPEC` (background to side panel).
+- Unified facet model for spec visibility: each spec gets facet keys `tag:<t>`, `file:<file>`, `spec:<id>`; `url:<glob>` is a page-level gate. One predicate `isVisible(spec, url, state)` in `apps/extension/src/shared/visibility.ts` decides rendering. Path glob matcher: `*` = one segment, `**` = across segments.
+- Two-layer sync cascade: `effectiveDisabled = (teamHidden union personalForceHide) minus personalForceShow`. Team default from `.specs/views.json` (Git-committed, shared, authored via Options page, written via sidecar `PUT /views`). Personal override in `chrome.storage.sync` (cross-machine, personal wins). `spec:<id>` force-show is a hard per-spec rescue (wins over tag/file hide); `url:` page gate wins over everything. Empty state = all visible (backward compatible).
+- Filter UI: facet checklists (Tags / Files / This page) in popup + side panel; per-spec eye toggle in side panel; Reset clears personal overrides. Team authoring on Options page (per connection, line-based facet-key editor).
+- Schema: new `ViewsConfig` entity in `packages/spec-schema/schema/v1.json` = `{ version: string, hidden: string[] }`. Generated TS type + `validateViews` validator; Go `ValidateViews`; cross-validated fixtures at `tests/fixtures/views/{valid,invalid}` on both ajv and Go sides.
+- Sidecar: new `GET /views` (returns `.specs/views.json` or empty default `{version:"1.0",hidden:[]}` when absent) and `PUT /views` (schema-validated, atomic, pretty-printed, .specs/-confined). Existing `.specs/` watcher already fires SSE on `views.json` write.
+- api-client: `SidecarClient.getViews()` / `putViews()`, exported `ViewsConfig` type.
+- New privileged messages: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (added to `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` is non-privileged (read-only, from content script).
+
 Deferred from these slices pending a real corpus / usage feedback: the hybrid weighted scorer (needs a before/after DOM corpus to tune), the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
 
 ### Planned Features
