@@ -40,8 +40,9 @@ export type Message =
   | { type: "SET_LOCALE"; locale: string };
 
 // Message types that mutate stored state and must originate from an extension
-// page (popup/options), never from a web-page content script. The background
-// listener rejects these when sender.tab is set. Add new privileged types here.
+// page (popup/options/side panel), never from a web-page content script. The
+// background listener rejects these unless the sender URL is the extension's own
+// origin. Add new privileged types here.
 export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   "SAVE_CONFIG",
   "SET_LOCAL_SPECS",
