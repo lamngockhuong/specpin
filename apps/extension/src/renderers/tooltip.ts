@@ -40,7 +40,10 @@ ${SHADOW_PREAMBLE}
   background: var(--sp-warning-border); color: var(--sp-accent-on);
 }
 .tip {
-  position: absolute; box-sizing: border-box; width: min(360px, 90vw);
+  /* Match .layer's z-index (not auto, which the layer's explicit z-index would
+     always outrank) so the tip sits above the badges; tip is appended after the
+     layer, so equal z-index makes it win on paint order. */
+  position: absolute; z-index: 2147483647; box-sizing: border-box; width: min(360px, 90vw);
   background: var(--sp-elevated); color: var(--sp-text);
   font: 13px/1.45 var(--sp-font-ui);
   padding: 11px 13px;
