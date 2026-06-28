@@ -27,6 +27,8 @@ const en = {
   "common.edit": "Edit",
   "common.cancel": "Cancel",
   "common.close": "Close",
+  "common.hidePanel": "Hide panel",
+  "common.reopenPanel": "Show Specpin specs",
   "common.and": "and",
   "common.clickToHighlight": "Click to highlight on the page",
   "common.specsOnThisPage": "Specs on this page",

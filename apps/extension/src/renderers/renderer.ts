@@ -1,4 +1,5 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
+import type { LauncherPosition } from "../shared/config.js";
 import { escapeHtml } from "../shared/html.js";
 import type { Theme } from "../shared/theme.js";
 
@@ -34,6 +35,19 @@ export interface RenderMeta {
   /** False for read-only specs (Manual import); renderers hide the Edit
    *  affordance when false. Defaults to editable when omitted. */
   editable?: boolean;
+  /** True when this display mode is currently dismissed. Aggregate renderers
+   *  (sidebar, modal) show the floating relaunch pill instead of their panel. */
+  dismissed?: boolean;
+  /** Persist a dismiss (true) or reopen (false) for a whole display mode. Threaded
+   *  from the content script so renderers stay DOM-pure; the content script owns
+   *  the dismissed-modes state and re-renders. Omitted in tests/stubs. */
+  onSetDismissed?: (mode: DisplayMode, dismissed: boolean) => void;
+  /** Stored position for the relaunch pill (viewport px), or null/omitted for the
+   *  default bottom-right corner. */
+  launcherPosition?: LauncherPosition | null;
+  /** Persist a user-dragged relaunch-pill position. Threaded like onSetDismissed so
+   *  the renderer stays DOM-pure; the content script owns the storage write. */
+  onLauncherMove?: (pos: LauncherPosition) => void;
   /** Forced UI theme for the renderer's shadow host. Threaded from the content
    *  script so the host carries `data-theme` and the `:host([data-theme])` token
    *  block activates. Omitted in tests/stubs leaves the host on the system default. */

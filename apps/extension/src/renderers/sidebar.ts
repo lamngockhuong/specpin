@@ -5,6 +5,7 @@ import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
+import { LauncherSlot } from "./launcher.js";
 import {
   projectCaptionHtml,
   type RenderMeta,
@@ -33,6 +34,14 @@ ${SHADOW_PREAMBLE}
   box-shadow: -8px 0 28px rgba(0, 0, 0, 0.18);
   overflow-y: auto; padding: 20px; box-sizing: border-box;
 }
+.dismiss {
+  position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; cursor: pointer;
+  background: var(--sp-control); color: var(--sp-text);
+  border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
+  font: 16px/1 var(--sp-font-ui);
+}
+.dismiss:hover { background: var(--sp-elevated); }
+.dismiss:focus-visible { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
 .eyebrow {
   display: flex; align-items: center; gap: 7px;
   font: 600 10px/1 var(--sp-font-mono); letter-spacing: 0.14em;
@@ -115,10 +124,13 @@ export class SidebarRenderer implements SpecRenderer {
   private localeSelectorBuilt = false;
   private rows: Row[] = [];
   private reviewCount = 0;
+  private readonly launcherSlot: LauncherSlot;
+  private onSetDismissed: RenderMeta["onSetDismissed"];
   private readonly doc: Document;
 
   constructor(doc: Document = document) {
     this.doc = doc;
+    this.launcherSlot = new LauncherSlot(doc, this.mode);
   }
 
   private ensureRoot(theme?: Theme): HTMLElement {
@@ -127,6 +139,7 @@ export class SidebarRenderer implements SpecRenderer {
     const panel = this.doc.createElement("div");
     panel.className = "panel";
     panel.innerHTML =
+      `<button class="dismiss" type="button" aria-label="${escapeHtml(t("common.hidePanel"))}" title="${escapeHtml(t("common.hidePanel"))}">&times;</button>` +
       `<div class="eyebrow">${escapeHtml(t("common.specpin"))}</div>` +
       `<h3 class="title">${escapeHtml(t("common.specsOnThisPage"))}</h3>` +
       `<div class="locale" hidden></div>` +
@@ -142,6 +155,9 @@ export class SidebarRenderer implements SpecRenderer {
     this.summaryCount = panel.querySelector(".count");
     this.reviewPill = panel.querySelector(".review-pill");
     this.localeBox = panel.querySelector(".locale");
+    panel
+      .querySelector<HTMLButtonElement>(".dismiss")
+      ?.addEventListener("click", () => this.onSetDismissed?.(this.mode, true));
     return list;
   }
 
@@ -171,6 +187,12 @@ export class SidebarRenderer implements SpecRenderer {
   }
 
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
+    this.onSetDismissed = meta?.onSetDismissed;
+    if (meta?.dismissed) {
+      // Dismissed: skip the panel, show only the floating relaunch pill.
+      this.launcherSlot.show(meta, () => this.onSetDismissed?.(this.mode, false));
+      return;
+    }
     const list = this.ensureRoot(meta?.theme);
     this.ensureLocaleSelector(meta);
     const card = this.doc.createElement("div");
@@ -216,6 +238,7 @@ export class SidebarRenderer implements SpecRenderer {
 
   destroy(): void {
     this.host?.remove();
+    this.launcherSlot.destroy();
     this.host = null;
     this.list = null;
     this.summaryCount = null;

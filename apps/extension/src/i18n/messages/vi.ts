@@ -25,6 +25,8 @@ const vi: Record<keyof Messages, string> = {
   "common.edit": "Sửa",
   "common.cancel": "Hủy",
   "common.close": "Đóng",
+  "common.hidePanel": "Ẩn bảng",
+  "common.reopenPanel": "Hiện spec Specpin",
   "common.and": "và",
   "common.clickToHighlight": "Nhấp để làm nổi bật trên trang",
   "common.specsOnThisPage": "Spec trên trang này",
