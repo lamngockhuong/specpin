@@ -156,6 +156,7 @@ src/
   renderers/
     registry.ts       - `SpecRenderer` interface + registry
     tooltip.ts / sidebar.ts / modal.ts - the three implemented display modes (tooltip: pin + open-in-panel)
+    launcher.ts       - floating relaunch pill shown when a dismissed sidebar/modal mode collapses (per-mode host, reopen via `onSetDismissed`)
   sources/
     registry.ts       - `SpecSource` interface + selection
     sidecar.ts        - SidecarSource adapter
