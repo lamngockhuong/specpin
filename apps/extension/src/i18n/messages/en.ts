@@ -22,7 +22,7 @@ const en = {
   "common.modeTooltip": "Tooltip",
   "common.modeSidebar": "Sidebar",
   "common.modeModal": "Modal",
-  "common.connectionSettings": "Connection settings →",
+  "common.connectionSettings": "Connection settings",
   "common.captureSpec": "+ Capture spec",
   "common.edit": "Edit",
   "common.cancel": "Cancel",

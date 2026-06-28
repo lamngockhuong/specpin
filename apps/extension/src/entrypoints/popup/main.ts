@@ -14,6 +14,8 @@ import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
 import "../../shared/switch.css";
+import "../../shared/icon-btn.css";
+import "../../shared/link.css";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
 import {
   buildFilterModel,
@@ -27,6 +29,7 @@ import {
   renderLocalePicker,
   renderProjects,
   renderStatus,
+  setListControlsHidden,
   sourceBadge,
 } from "../../shared/surface-renderers.js";
 
@@ -84,9 +87,12 @@ async function refresh(): Promise<void> {
   lastSpecs = specs;
   renderStatus(status, origin, specs.specs.length);
   renderProjects(status.connections ?? [], origin);
-  renderLocalePicker(status.locales ?? [], activeLocale);
+  renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The popup stays compact: group-level filters only (per-spec lives in the panel).
   renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh);
+  // When off, the list collapses to the "off" message: hide controls that only
+  // act on the (now-hidden) spec list.
+  setListControlsHidden(!specs.enabled);
   renderSpecs(specs);
 }
 

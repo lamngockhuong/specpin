@@ -1,0 +1,35 @@
+/* Square icon button (e.g. the header settings gear). Shared by the popup and
+   side panel headers, so the one definition lives in a single place (like
+   switch.css / scrollbar.css). Apply class="icon-btn" to a <button> wrapping an
+   <svg>. `margin-left: auto` pins it to the right end of a flex header;
+   `flex: none` plus an explicit size keeps it a fixed square (never grow or
+   shrink with the header row). */
+.icon-btn {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--sp-text-2);
+  background: var(--sp-control);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+}
+/* `filter: none` overrides the generic `button:hover { filter: brightness() }`. */
+.icon-btn:hover {
+  color: var(--sp-accent);
+  border-color: var(--sp-accent);
+  filter: none;
+}
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}

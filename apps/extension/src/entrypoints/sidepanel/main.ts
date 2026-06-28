@@ -13,6 +13,8 @@ import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
 import "../../shared/switch.css";
+import "../../shared/icon-btn.css";
+import "../../shared/link.css";
 import { MANUAL_CONNECTION_ID } from "../../shared/connection-types.js";
 import {
   type Message,
@@ -33,6 +35,7 @@ import {
   renderLocalePicker,
   renderProjects,
   renderStatus,
+  setListControlsHidden,
   sourceBadge,
 } from "../../shared/surface-renderers.js";
 import { isVisible, setSpecVisibility, type VisibilityState } from "../../shared/visibility.js";
@@ -173,9 +176,12 @@ async function refresh(): Promise<void> {
   currentState = visibilityOf(specs);
   renderStatus(status, origin, specs.specs.length);
   renderProjects(status.connections ?? [], origin);
-  renderLocalePicker(status.locales ?? [], activeLocale);
+  renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The side panel has the room for per-spec rows in addition to group filters.
   renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh, true);
+  // When off, the list collapses to the "off" message: hide controls that only
+  // act on the (now-hidden) spec list.
+  setListControlsHidden(!specs.enabled);
   renderSpecs(specs);
 }
 
