@@ -16,6 +16,7 @@ import "../../shared/switch.css";
 import "../../shared/icon-btn.css";
 import "../../shared/link.css";
 import "../../shared/add-project.css";
+import "../../shared/project-menu.css";
 import {
   type Message,
   type SpecsForOrigin,
@@ -24,6 +25,7 @@ import {
 } from "../../shared/messaging.js";
 import { wireProjectActions } from "../../shared/project-actions.js";
 import {
+  buildExportTargets,
   buildFilterModel,
   fetchSurfaceState,
   specMatchesQuery,
@@ -47,7 +49,6 @@ import { isVisible, setSpecVisibility, type VisibilityState } from "../../shared
 // (description + business rules) inline, since it has the vertical room.
 let activeLocale = "en";
 let lastSpecs: SpecsForOrigin | null = null;
-let lastOrigin = "";
 let searchQuery = "";
 let currentPath = "/";
 let currentState: VisibilityState = { teamHidden: [], personal: { forceHide: [], forceShow: [] } };
@@ -174,7 +175,6 @@ async function refresh(): Promise<void> {
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
-  lastOrigin = origin;
   currentPath = path;
   currentState = visibilityOf(specs);
   renderStatus(status, origin, specs.specs.length);
@@ -185,7 +185,9 @@ async function refresh(): Promise<void> {
   // When off, the list collapses to the "off" message: hide controls that only
   // act on the (now-hidden) spec list, plus the create affordance + its panel.
   setListControlsHidden(!specs.enabled);
-  projectActions.update(specs.enabled, (status.manualBatches?.length ?? 0) > 0);
+  // Export is per project serving THIS page (one click exports one project); the
+  // shared builder lists the local + sidecar export targets.
+  projectActions.update(specs.enabled, buildExportTargets(status, origin));
   renderSpecs(specs);
 }
 
@@ -193,7 +195,7 @@ async function refresh(): Promise<void> {
 // on a successful create. Toggled from the header button.
 // Shared header controls: "+ New project" (inline form) + "Export" (zip the local
 // project(s) serving the page). refresh() re-renders the list after a create.
-const projectActions = wireProjectActions(() => lastOrigin, refresh);
+const projectActions = wireProjectActions(refresh);
 
 // Coalesce bursts of tab/SSE events into a single refresh per frame so rapid
 // navigation or SPECS_CHANGED storms do not trigger redundant fetches.

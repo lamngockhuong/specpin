@@ -48,9 +48,8 @@ describe("sanitizeSpecFileName (zip-slip guard)", () => {
 
 describe("bundleToFiles", () => {
   it("rebuilds manifest.json + per-group files, strips _file, sets $schema + group", () => {
-    const files = bundleToFiles(
-      batch([specWithFile("a", "login.spec.json")], { "login.spec.json": "Login" }),
-    );
+    const b = batch([specWithFile("a", "login.spec.json")], { "login.spec.json": "Login" });
+    const files = bundleToFiles(b.specs, b.fileGroups);
     expect(Object.keys(files).sort()).toEqual(["login.spec.json", "manifest.json"]);
     const manifest = files["manifest.json"] as { $schema?: string; specFiles: string[] };
     expect(manifest.$schema).toBe(SCHEMA_V1_ID);
@@ -62,7 +61,8 @@ describe("bundleToFiles", () => {
   });
 
   it("falls back to a file-base group when fileGroups has none (pre-plan batch)", () => {
-    const files = bundleToFiles(batch([specWithFile("a", "dashboard.spec.json")]));
+    const b = batch([specWithFile("a", "dashboard.spec.json")]);
+    const files = bundleToFiles(b.specs, b.fileGroups);
     expect((files["dashboard.spec.json"] as { group: string }).group).toBe("Dashboard");
   });
 
@@ -71,7 +71,7 @@ describe("bundleToFiles", () => {
       [specWithFile("login-btn", "login.spec.json"), specWithFile("nav", "nav.spec.json")],
       { "login.spec.json": "Login", "nav.spec.json": "Navigation" },
     );
-    const files = bundleToFiles(original);
+    const files = bundleToFiles(original.specs, original.fileGroups);
     // Split into the { manifest, files } envelope the picker/parse expects.
     const { "manifest.json": manifest, ...specFiles } = files;
     const parsed = parseLocalBundle(JSON.stringify({ manifest, files: specFiles }));

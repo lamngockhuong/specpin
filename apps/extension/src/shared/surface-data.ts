@@ -1,9 +1,13 @@
 import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import { pickLocale } from "../content/localize-spec.js";
+import { t } from "../i18n/index.js";
 import { getLocale } from "./config.js";
 import type { TaggedSpec } from "./connection-types.js";
+import { localConnId } from "./local-id.js";
 import { type SpecsForOrigin, type StatusResult, sendToBackground } from "./messaging.js";
+import { connectionServesOrigin, originMatchesDomains } from "./origin-match.js";
+import type { ExportTarget } from "./project-actions.js";
 import {
   EMPTY_VISIBILITY,
   type FacetInventory,
@@ -77,6 +81,28 @@ export function specMatchesQuery(
     ...(includeBody ? [resolveLocalized(spec.description, locale, defaultLocale)] : []),
   ];
   return haystack.some((s) => s?.toLowerCase().includes(q));
+}
+
+/** The projects serving `origin` that can be exported, one entry per project: the
+ *  local batches (their stored bundle) plus the connected sidecars (their live
+ *  cache). Ids use the connection-id form so the background routes each to the
+ *  right source; the display name carries a `(manual)`/`(sidecar)` provenance
+ *  suffix to disambiguate the picker. Pure data, so both surfaces build the same
+ *  list one way. */
+export function buildExportTargets(status: StatusResult, origin: string): ExportTarget[] {
+  const local = (status.manualBatches ?? [])
+    .filter((b) => originMatchesDomains(origin, b.domains))
+    .map((b) => ({
+      id: localConnId(b.id),
+      project: `${b.project || b.label} (${t("common.sourceManual")})`,
+    }));
+  const sidecar = (status.connections ?? [])
+    .filter((c) => c.connected && connectionServesOrigin(c, origin))
+    .map((c) => ({
+      id: c.id,
+      project: `${c.label || c.project || c.baseUrl} (${t("common.sourceSidecar")})`,
+    }));
+  return [...local, ...sidecar];
 }
 
 /** The visibility cascade state carried by a specs response, or the empty

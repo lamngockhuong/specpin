@@ -12,6 +12,7 @@ import {
   type Theme,
 } from "../../shared/config.js";
 import { downloadExportBundles } from "../../shared/export-download.js";
+import { localConnId } from "../../shared/local-id.js";
 import { normalizeLocalUrl } from "../../shared/local-url.js";
 import {
   type AddLocalBatchResult,
@@ -353,7 +354,7 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
   exportBtn.addEventListener("click", async () => {
     const bundles = await sendToBackground<ExportBundle[]>({
       type: "GET_EXPORT_BUNDLES",
-      id: b.id,
+      id: localConnId(b.id),
     });
     downloadExportBundles(bundles);
   });
