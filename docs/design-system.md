@@ -58,9 +58,13 @@ node sync-tokens.mjs   # rewrite each .pen's variables (theme colors -> per-them
 
 `design-tokens.json` is also the SSOT for the live extension UI.
 `sync-css-tokens.mjs` generates `src/shared/tokens.gen.css` (do not hand-edit;
-the `.gen.css` name keeps it out of Biome). The file is a `:root` block (shared
-tokens + light theme) plus a `@media (prefers-color-scheme: dark)` override, so
-the UI follows the OS/browser theme automatically with no JS and no toggle.
+the `.gen.css` name keeps it out of Biome). The file contains FOUR selector blocks:
+`:root` (shared tokens + light baseline), `:root[data-theme="dark"]` (forced dark),
+`:root[data-theme="light"]` (forced light), and `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }`
+(system default, applies only when no explicit override). The user can force a theme
+(System / Light / Dark) via the Options page; the choice persists in `specpin:theme`
+and `data-theme` is set on the document root (pages) or shadow host (renderers).
+"System" means the `data-theme` attribute is absent and the media query controls theming.
 
 ```bash
 pnpm --filter @specpin/extension sync-css-tokens   # regenerate tokens.gen.css
@@ -73,7 +77,9 @@ Two consumers, one generated file:
 - **Shadow DOM renderers** (sidebar, tooltip, capture form) cannot inherit the
   page's `:root` vars: `:host { all: initial }` isolates them, and `:root` does
   not match inside a shadow tree. So `src/shared/tokens.ts` imports
-  `tokens.gen.css?inline` and rewrites `:root` -> `:host`; each renderer prepends
+  `tokens.gen.css?inline` and rewrites all four `:root...` selector forms (including
+  the attribute selector `:root[data-theme="..."]` and the `:not()` forms inside
+  the media query) to their `:host(...)` equivalents; each renderer prepends
   that string to its `STYLES`. Custom properties are not reset by `all`, so the
   vars survive the isolation reset.
 

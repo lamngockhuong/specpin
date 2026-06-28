@@ -95,7 +95,7 @@ Goal: robustness, flexibility, polish. No timeline committed.
 **Side panel surface shipped (2026-06-27)** on branch `feat/extension-sidepanel-surface` (plan: `plans/260627-1119-extension-sidepanel-surface/`):
 - Side panel (`entrypoints/sidepanel/`) as a persistent docked alternative to the popup: wider full-height layout, spec description + business rules shown inline, auto-refresh on tab activation / URL change / `SPECS_CHANGED`. Popup and side panel share one `fetchSurfaceState()` helper. WXT maps the single entrypoint to Chrome `side_panel` + Firefox `sidebar_action`. A stored `defaultSurface` preference (Options) chooses the toolbar-click surface on Chrome; Firefox keeps the popup on the toolbar button and opens the sidebar from its native toggle.
 
-**Spec visibility toggle + tooltip UX shipped (2026-06-27)** (plan: `plans/260627-1348-spec-visibility-toggle-tooltip-ux/`):
+**Spec visibility toggle + tooltip UX shipped (2026-06-27)** on branch `feat/spec-visibility-toggle` (plan: `plans/260627-1348-spec-visibility-toggle-tooltip-ux/`):
 - Tooltip renderer enhancements: full-width fix (`min(360px, 90vw)`); click badge to pin tip open (one at a time, close button); "Open in side panel" action highlights matching side-panel card (best-effort auto-open on Chrome, Firefox degrades to highlight-only). New messages `OPEN_SPEC_IN_PANEL` (content to background) and `HIGHLIGHT_SPEC` (background to side panel).
 - Unified facet model for spec visibility: each spec gets facet keys `tag:<t>`, `file:<file>`, `spec:<id>`; `url:<glob>` is a page-level gate. One predicate `isVisible(spec, url, state)` in `apps/extension/src/shared/visibility.ts` decides rendering. Path glob matcher: `*` = one segment, `**` = across segments.
 - Two-layer sync cascade: `effectiveDisabled = (teamHidden union personalForceHide) minus personalForceShow`. Team default from `.specs/views.json` (Git-committed, shared, authored via Options page, written via sidecar `PUT /views`). Personal override in `chrome.storage.sync` (cross-machine, personal wins). `spec:<id>` force-show is a hard per-spec rescue (wins over tag/file hide); `url:` page gate wins over everything. Empty state = all visible (backward compatible).
@@ -106,6 +106,12 @@ Goal: robustness, flexibility, polish. No timeline committed.
 - New privileged messages: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (added to `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` is non-privileged (read-only, from content script).
 
 Deferred from these slices pending a real corpus / usage feedback: the hybrid weighted scorer (needs a before/after DOM corpus to tune), the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
+
+**User-selectable theme shipped (2026-06-28)** on branch `feat/extension-theme-and-i18n` (plan: `plans/260628-0028-extension-theme-and-i18n/`):
+- Theme preference (System / Light / Dark) via Options page. Previously dark existed only behind `@media (prefers-color-scheme: dark)` (auto, no toggle). Now the user can force a theme. Generator emits four selector blocks in `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), and `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, applies only when no override). `tokens.ts` `scopeTokensToShadow()` rewrites all four forms to `:host(...)` for Shadow DOM renderers. `src/shared/theme.ts` exports `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` gained `getTheme`/`setTheme` (storage.local key `specpin:theme`, default `system`). Live propagation: `SET_THEME` message + `broadcastToTabs()` helper; Options broadcasts to all tabs, pages react via `storage.onChanged`. `theme` is threaded into `renderSession` and each renderer applies it to its shadow host. Forced themes may flash the System default for one frame on load (async storage read, accepted).
+
+**UI-chrome i18n (EN + VI) shipped (2026-06-28)** on same branch `feat/extension-theme-and-i18n`:
+- Custom runtime `t(key, params)` in `apps/extension/src/i18n/` (`index.ts` exports `t`, `initI18n`, `plural`, `hydrateI18n`, `watchUiLocaleChanges`; `locales.ts` defines `SUPPORTED=["en","vi"]`, `UiLocale`, `resolveUiLocale`; `messages/en.ts` is source of truth, ~115 keys; `messages/vi.ts` is typed against `keyof Messages` for compile-time parity). This is a NEW, INDEPENDENT axis from the existing spec-content locale (`getLocale`/`setLocale`, `localize-spec.ts pickLocale`), which is unchanged. UI-chrome language = the extension's own buttons/labels/banners; spec-content locale = the language of the spec text from `.specs/`. Resolution precedence: stored `specpin:uiLocale` -> browser UI language -> "en". `config.ts` gained `getUiLocale`/`setUiLocale`. Static HTML is localized via `data-i18n` / `data-i18n-placeholder` / `data-i18n-aria` / `data-i18n-title` / `data-i18n-html` attributes hydrated by `hydrateI18n`. Options page has a Language control (System default / English / Tiếng Việt). Change broadcasts `SET_UI_LOCALE` to tabs and re-renders in place via `renderAll()`; open popup/side panel re-render via `watchUiLocaleChanges` (storage.onChanged). Out of scope: localizing manifest name/description, RTL, locale-aware number/date formatting, languages beyond EN+VI. Background SW error strings remain English (not an i18n surface).
 
 ### Planned Features
 
@@ -141,9 +147,8 @@ Deferred from these slices pending a real corpus / usage feedback: the hybrid we
 **UX Polish:**
 - Bundle web fonts (Inter, JetBrains Mono) as `@font-face` assets; the shipped UI design system currently references them via fallback stacks (`system-ui` / `ui-monospace`) so the branded typography is not guaranteed off-system
 - Capture mode visual improvements (highlight quality, form styling)
-- Sidebar search/filter specs
 - Keyboard shortcut customization UI
-- Extension options page (advanced settings, theme toggle)
+- Extension options page advanced settings
 
 **Developer Experience:**
 - VSCode extension for `.spec.json` authoring (schema autocomplete, validation, preview)

@@ -97,7 +97,7 @@ Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa ca
 **Đã ship bề mặt side panel (2026-06-27)** trên nhánh `feat/extension-sidepanel-surface` (plan: `plans/260627-1119-extension-sidepanel-surface/`):
 - Side panel (`entrypoints/sidepanel/`) là lựa chọn gắn cố định thay cho popup: layout rộng full-height, hiển thị description + business rules của spec ngay inline, tự refresh khi activate tab / đổi URL / `SPECS_CHANGED`. Popup và side panel dùng chung một helper `fetchSurfaceState()`. WXT map một entrypoint duy nhất sang Chrome `side_panel` + Firefox `sidebar_action`. Một tùy chọn `defaultSurface` được lưu (Options) chọn bề mặt mở khi click icon trên Chrome; Firefox giữ popup trên nút thanh công cụ và mở sidebar từ nút gốc của nó.
 
-**Đã ship spec visibility toggle + tooltip UX (2026-06-27)** (plan: `plans/260627-1348-spec-visibility-toggle-tooltip-ux/`):
+**Đã ship spec visibility toggle + tooltip UX (2026-06-27)** trên nhánh `feat/spec-visibility-toggle` (plan: `plans/260627-1348-spec-visibility-toggle-tooltip-ux/`):
 - Cải tiến tooltip renderer: sửa full-width (`min(360px, 90vw)`); click badge để ghim tip mở (mỗi lần một cái, nút đóng); hành động "Open in side panel" highlight card side-panel tương ứng (best-effort auto-open trên Chrome, Firefox giảm xuống chỉ highlight). Các message mới `OPEN_SPEC_IN_PANEL` (content sang background) và `HIGHLIGHT_SPEC` (background sang side panel).
 - Mô hình facet thống nhất cho spec visibility: mỗi spec được các facet key `tag:<t>`, `file:<file>`, `spec:<id>`; `url:<glob>` là cổng cấp page. Một predicate `isVisible(spec, url, state)` trong `apps/extension/src/shared/visibility.ts` quyết định render. Path glob matcher: `*` = một segment, `**` = qua nhiều segment.
 - Chuỗi đồng bộ hai lớp: `effectiveDisabled = (teamHidden union personalForceHide) minus personalForceShow`. Mặc định team từ `.specs/views.json` (commit vào Git, chia sẻ, soạn qua trang Options, ghi qua sidecar `PUT /views`). Ghi đè cá nhân trong `chrome.storage.sync` (cross-machine, personal thắng). `spec:<id>` force-show là một rescue cứng theo per-spec (thắng trên tag/file hide); `url:` page gate thắng trên tất cả. Trạng thái rỗng = tất cả hiển thị (tương thích ngược).
@@ -108,6 +108,12 @@ Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa ca
 - Message privileged mới: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (thêm vào `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` là non-privileged (read-only, từ content script).
 
 Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi sử dụng: hybrid weighted scorer (cần corpus DOM trước/sau để tinh chỉnh), nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
+
+**Đã ship theme có thể chọn bởi người dùng (2026-06-28)** trên nhánh `feat/extension-theme-and-i18n` (plan: `plans/260628-0028-extension-theme-and-i18n/`):
+- Tùy chọn theme (System / Light / Dark) qua trang Options. Trước đây dark chỉ tồn tại đằng sau `@media (prefers-color-scheme: dark)` (tự động, không có toggle). Giờ người dùng có thể force một theme. Generator phát ra bốn block selector trong `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), và `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, chỉ áp dụng khi không có override). `tokens.ts` `scopeTokensToShadow()` đổi tất cả bốn dạng sang `:host(...)` cho Shadow DOM renderer. `src/shared/theme.ts` export `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` có thêm `getTheme`/`setTheme` (key storage.local `specpin:theme`, mặc định `system`). Lan truyền trực tiếp: message `SET_THEME` + helper `broadcastToTabs()`; Options broadcast sang tất cả tab, các page phản ứng qua `storage.onChanged`. `theme` được thread vào `renderSession` và mỗi renderer áp dụng nó lên shadow host của nó. Forced theme có thể nhấp nháy System default trong một frame khi load (đọc storage bất đồng bộ, được chấp nhận).
+
+**Đã ship i18n cho UI-chrome (EN + VI) (2026-06-28)** trên cùng nhánh `feat/extension-theme-and-i18n`:
+- Runtime `t(key, params)` tùy chỉnh trong `apps/extension/src/i18n/` (`index.ts` export `t`, `initI18n`, `plural`, `hydrateI18n`, `watchUiLocaleChanges`; `locales.ts` định nghĩa `SUPPORTED=["en","vi"]`, `UiLocale`, `resolveUiLocale`; `messages/en.ts` là source of truth, ~115 key; `messages/vi.ts` được type theo `keyof Messages` để đảm bảo parity compile-time). Đây là một trục MỚI, ĐỘC LẬP với locale spec-content hiện có (`getLocale`/`setLocale`, `localize-spec.ts pickLocale`), cái đó không thay đổi. Ngôn ngữ UI-chrome = các nút/nhãn/banner của chính extension; locale spec-content = ngôn ngữ của text spec từ `.specs/`. Thứ tự resolution: stored `specpin:uiLocale` -> browser UI language -> "en". `config.ts` có thêm `getUiLocale`/`setUiLocale`. HTML tĩnh được địa phương hóa qua các attribute `data-i18n` / `data-i18n-placeholder` / `data-i18n-aria` / `data-i18n-title` / `data-i18n-html` được hydrate bởi `hydrateI18n`. Trang Options có một điều khiển Language (System default / English / Tiếng Việt). Thay đổi broadcast `SET_UI_LOCALE` sang các tab và render lại tại chỗ qua `renderAll()`; popup/side panel đang mở render lại qua `watchUiLocaleChanges` (storage.onChanged). Ngoài phạm vi: localizing tên/mô tả manifest, RTL, định dạng số/ngày nhận biết locale, ngôn ngữ ngoài EN+VI. Chuỗi lỗi SW background vẫn là tiếng Anh (không phải bề mặt i18n).
 
 ### Tính năng đã lên kế hoạch
 
@@ -143,9 +149,8 @@ Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi s
 **Đánh bóng UX:**
 - Đóng gói web font (Inter, JetBrains Mono) dưới dạng asset `@font-face`; design system của UI được ship hiện tham chiếu chúng qua các fallback stack (`system-ui` / `ui-monospace`) nên không đảm bảo có typography theo branding khi máy thiếu font
 - Cải thiện trực quan cho chế độ capture (chất lượng highlight, style form)
-- Tìm kiếm/lọc spec trong sidebar
 - UI tùy chỉnh phím tắt
-- Trang options của extension (cài đặt nâng cao, toggle theme)
+- Cài đặt nâng cao cho trang options của extension
 
 **Trải nghiệm Lập trình viên (Developer Experience):**
 - Extension VSCode để soạn `.spec.json` (autocomplete schema, validation, preview)

@@ -24,6 +24,10 @@ The extension exposes two equivalent control surfaces backed by the same backgro
 
 Data flows one schema, two validators: the published JSON Schema (`packages/spec-schema/schema/v1.json`) is the single source of truth. The TS side validates with ajv; the Go sidecar embeds the same file and validates with `santhosh-tekuri/jsonschema/v6`. CI cross-validates a shared fixture corpus through both and fails on drift. This applies to all schema entities: `Spec`, `SpecManifest`, `SpecFile`, and `ViewsConfig`.
 
+User-selectable theme: the extension UI supports System / Light / Dark modes. Previously dark existed only behind `@media (prefers-color-scheme: dark)`. Now the user can force a theme via the Options page. The generator emits four `:root...` selector blocks in `tokens.gen.css` (shared + light, forced dark, forced light, system default media query), and `tokens.ts` rewrites all forms to `:host(...)` for Shadow DOM renderers. The choice persists in `specpin:theme`; "System" means `data-theme` is absent. Forced themes may flash the system default for one frame on load (accepted).
+
+UI-chrome i18n: a custom runtime `t(key, params)` in `apps/extension/src/i18n/` localizes the extension's own buttons, labels, and banners (NOT the spec-content language, which is a separate toggle). English and Vietnamese are supported (`SUPPORTED=["en","vi"]`). Resolution: stored `specpin:uiLocale` -> browser UI language -> "en". The Options page has a Language control (System default / English / Tiếng Việt). Change broadcasts `SET_UI_LOCALE` to tabs; open popup/side panel re-render via `watchUiLocaleChanges` (storage.onChanged). Static HTML is hydrated via `data-i18n*` attributes. This is independent from the existing spec-content locale (`getLocale`/`setLocale`, `localize-spec.ts pickLocale`). Manifest name/description, RTL, locale-aware number/date formatting, and languages beyond EN+VI are out of scope.
+
 ## Packages
 
 | Path | Role |

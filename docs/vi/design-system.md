@@ -60,9 +60,14 @@ node sync-tokens.mjs   # ghi lại variables của từng .pen (theme color -> m
 
 `design-tokens.json` cũng là SSOT cho UI extension đang chạy. `sync-css-tokens.mjs`
 sinh ra `src/shared/tokens.gen.css` (không sửa tay; tên `.gen.css` giúp file này nằm
-ngoài phạm vi Biome). File này là một block `:root` (token dùng chung + light theme)
-cộng với override `@media (prefers-color-scheme: dark)`, nên UI tự động đi theo theme
-của OS/browser, không cần JS và không cần toggle.
+ngoài phạm vi Biome). File này chứa BỐN block selector: `:root` (token dùng chung +
+light baseline), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]`
+(forced light), và `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }`
+(system default, chỉ áp dụng khi không có override rõ ràng). Người dùng có thể
+force một theme (System / Light / Dark) qua trang Options; lựa chọn được lưu lại trong
+`specpin:theme` và `data-theme` được đặt trên document root (pages) hoặc shadow host
+(renderers). "System" nghĩa là attribute `data-theme` không có và media query điều
+khiển theming.
 
 ```bash
 pnpm --filter @specpin/extension sync-css-tokens   # tái sinh tokens.gen.css
@@ -75,7 +80,9 @@ Hai consumer, một file được sinh ra:
 - **Shadow DOM renderers** (sidebar, tooltip, capture form) không thể kế thừa biến
   `:root` của trang: `:host { all: initial }` cô lập chúng, và `:root` không khớp bên
   trong shadow tree. Vì vậy `src/shared/tokens.ts` import `tokens.gen.css?inline` và
-  đổi `:root` -> `:host`; mỗi renderer prepend chuỗi đó vào `STYLES` của nó. Custom
+  đổi tất cả bốn dạng selector `:root...` (bao gồm attribute selector
+  `:root[data-theme="..."]` và các dạng `:not()` bên trong media query) sang các dạng
+  `:host(...)` tương đương; mỗi renderer prepend chuỗi đó vào `STYLES` của nó. Custom
   property không bị reset bởi `all`, nên các biến vẫn sống sót qua bước isolation reset.
 
 Cả năm surface chỉ tham chiếu các biến `--sp-*` (không có literal palette hardcode).
