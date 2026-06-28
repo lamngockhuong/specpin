@@ -128,6 +128,11 @@ export interface FilterOptions {
   onReset: () => void;
 }
 
+// Remembered collapse state of the filter `<details>` groups, surviving both
+// rebuilds and the container being emptied while Specpin is off. One instance
+// per surface (the module loads once per popup / side panel page context).
+const filterGroupOpenState = new Map<string, boolean>();
+
 /** Render the facet filter checklist shared by the popup and the side panel. One
  *  implementation so both surfaces drive the same predicate. Built entirely with
  *  DOM nodes (never innerHTML) so spec-derived labels are not an injection sink. */
@@ -136,6 +141,14 @@ export function renderFilters(
   inventory: FacetInventory,
   opts: FilterOptions,
 ): void {
+  // Record each group's collapsed/expanded state before the rebuild below wipes
+  // the DOM, so a refresh (toggle, SSE, tab switch) does not re-open groups the
+  // user had collapsed. Kept in a module-level map (keyed by the stable
+  // `data-group` attribute) so the state also survives the container being
+  // emptied while Specpin is off, then restored on re-enable.
+  for (const d of container.querySelectorAll<HTMLDetailsElement>("details.filter-group")) {
+    if (d.dataset.group) filterGroupOpenState.set(d.dataset.group, d.open);
+  }
   container.replaceChildren();
   const hasFacets =
     inventory.tags.length > 0 || inventory.files.length > 0 || inventory.specs.length > 0;
@@ -168,13 +181,19 @@ export function renderFilters(
   container.appendChild(head);
 
   if (inventory.tags.length) {
-    container.appendChild(facetGroup(t("common.filterTags"), inventory.tags, opts.onToggle));
+    container.appendChild(
+      facetGroup("tags", t("common.filterTags"), inventory.tags, opts.onToggle),
+    );
   }
   if (inventory.files.length) {
-    container.appendChild(facetGroup(t("common.filterFiles"), inventory.files, opts.onToggle));
+    container.appendChild(
+      facetGroup("files", t("common.filterFiles"), inventory.files, opts.onToggle),
+    );
   }
   if (opts.perSpec && inventory.specs.length) {
-    container.appendChild(facetGroup(t("common.filterSpecs"), inventory.specs, opts.onToggle));
+    container.appendChild(
+      facetGroup("specs", t("common.filterSpecs"), inventory.specs, opts.onToggle),
+    );
   }
   if (showPageGroup && opts.path !== undefined) {
     container.appendChild(pageGroup(opts.path, opts.pageHidden ?? false, opts.onToggle));
@@ -208,13 +227,16 @@ export function renderFilterSection(
 }
 
 function facetGroup(
+  groupKey: string,
   title: string,
   items: FacetItem[],
   onToggle: (key: FacetKey, visible: boolean) => void,
 ): HTMLElement {
   const group = document.createElement("details");
   group.className = "filter-group";
-  group.open = true;
+  group.dataset.group = groupKey;
+  // Default to open on first render; otherwise honor the user's prior choice.
+  group.open = filterGroupOpenState.get(groupKey) ?? true;
   const summary = document.createElement("summary");
   summary.textContent = `${title} (${items.length})`;
   group.appendChild(summary);
@@ -266,7 +288,9 @@ function pageGroup(
 ): HTMLElement {
   const group = document.createElement("details");
   group.className = "filter-group";
-  group.open = true;
+  group.dataset.group = "page";
+  // Default to open on first render; otherwise honor the user's prior choice.
+  group.open = filterGroupOpenState.get("page") ?? true;
   const summary = document.createElement("summary");
   summary.textContent = t("common.filterThisPage");
   group.appendChild(summary);
@@ -285,11 +309,12 @@ function pageGroup(
   return group;
 }
 
-export function renderLocalePicker(locales: string[], activeLocale: string): void {
+export function renderLocalePicker(locales: string[], activeLocale: string, enabled = true): void {
   const row = byId("locale-row");
   const select = byId("locale") as HTMLSelectElement;
-  // Hide the picker when there is nothing to choose between.
-  if (locales.length < 2) {
+  // Hide the picker when Specpin is off (nothing rendered to relocalize) or when
+  // there is nothing to choose between.
+  if (!enabled || locales.length < 2) {
     row.hidden = true;
     return;
   }
@@ -304,4 +329,12 @@ export function renderLocalePicker(locales: string[], activeLocale: string): voi
     if (l === activeLocale) opt.selected = true;
     select.appendChild(opt);
   }
+}
+
+/** Toggle the spec-list controls (search box + capture/mode actions) that are
+ *  meaningless when Specpin is off and the list collapses to the "off" message.
+ *  Shared by the popup and side panel, which use the same element ids. */
+export function setListControlsHidden(hidden: boolean): void {
+  byId("search").hidden = hidden;
+  byId("actions").hidden = hidden;
 }

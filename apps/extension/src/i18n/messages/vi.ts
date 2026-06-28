@@ -20,7 +20,7 @@ const vi: Record<keyof Messages, string> = {
   "common.modeTooltip": "Tooltip",
   "common.modeSidebar": "Thanh bên",
   "common.modeModal": "Hộp thoại",
-  "common.connectionSettings": "Cài đặt kết nối →",
+  "common.connectionSettings": "Cài đặt kết nối",
   "common.captureSpec": "+ Ghi spec",
   "common.edit": "Sửa",
   "common.cancel": "Hủy",
