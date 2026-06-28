@@ -238,6 +238,70 @@ describe("CaptureForm edit mode", () => {
   });
 });
 
+describe("CaptureForm capture targets (Phase 2)", () => {
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+
+  function shadowOf(): ShadowRoot {
+    return must(must(document.getElementById("specpin-capture-host")).shadowRoot);
+  }
+
+  const submitMock = () =>
+    vi.fn(async (_file: string, _spec: Spec, _connectionId?: string) => ({ ok: true }));
+
+  /** Open capture mode (no `initial`) with the given targets. */
+  function openCapture(
+    targets: { id: string; project: string; kind: "sidecar" | "local" }[],
+    onSubmit = submitMock(),
+  ): { shadow: ShadowRoot; onSubmit: ReturnType<typeof submitMock> } {
+    new CaptureForm(document).open(fingerprint, {
+      defaultFile: "page.spec.json",
+      locales: ["en"],
+      defaultLocale: "en",
+      targets,
+      onSubmit,
+    });
+    const shadow = shadowOf();
+    (must(shadow.querySelector("#sp-title")) as HTMLInputElement).value = "Title";
+    (must(shadow.querySelector("#sp-desc")) as HTMLTextAreaElement).value = "Desc";
+    return { shadow, onSubmit };
+  }
+
+  const click = (shadow: ShadowRoot, sel: string) =>
+    must(shadow.querySelector(sel)).dispatchEvent(new Event("click", { bubbles: true }));
+
+  afterEach(() => {
+    document.getElementById("specpin-capture-host")?.remove();
+    document.body.innerHTML = "";
+  });
+
+  it("a lone local target is submitted by id even with no picker shown", async () => {
+    const { shadow, onSubmit } = openCapture([{ id: "manual:b1", project: "CRM", kind: "local" }]);
+    // No picker for a single target.
+    expect(shadow.querySelector("#sp-target")).toBeNull();
+    click(shadow, "#sp-save");
+    await flush();
+    const [, , connectionId] = onSubmit.mock.calls[0];
+    expect(connectionId).toBe("manual:b1");
+  });
+
+  it("shows a picker labelled by kind when several targets serve the page", () => {
+    const { shadow } = openCapture([
+      { id: "uuid-1", project: "My Sidecar", kind: "sidecar" },
+      { id: "manual:b1", project: "CRM", kind: "local" },
+    ]);
+    const sel = must(shadow.querySelector("#sp-target")) as HTMLSelectElement;
+    const labels = Array.from(sel.options).map((o) => o.textContent);
+    expect(labels).toEqual(["My Sidecar (sidecar)", "CRM (local)"]);
+  });
+
+  it("disables capture (explains, no submit) when no project serves the page", async () => {
+    const { shadow, onSubmit } = openCapture([]);
+    click(shadow, "#sp-save");
+    await flush();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+});
+
 describe("mergeLocalized", () => {
   it("adds a locale without dropping existing ones", () => {
     expect(mergeLocalized({ en: "Login" }, "vi", "Đăng nhập")).toEqual({

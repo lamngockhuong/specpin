@@ -3,7 +3,7 @@ import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { createRenderer, resolveMode } from "../renderers/registry.js";
 import type { SpecRenderer } from "../renderers/renderer.js";
 import type { LauncherPosition } from "../shared/config.js";
-import { MANUAL_CONNECTION_ID, type TaggedSpec } from "../shared/connection-types.js";
+import type { TaggedSpec } from "../shared/connection-types.js";
 import type { Theme } from "../shared/theme.js";
 import {
   EMPTY_VISIBILITY,
@@ -108,8 +108,11 @@ export function renderSession(
       onOpenInPanel,
       onHighlight,
       onEdit,
-      // Manual-import specs are read-only; everything else can be edited.
-      editable: (spec as Partial<TaggedSpec>).connectionId !== MANUAL_CONNECTION_ID,
+      // Editable only when this origin can write the spec back to its source
+      // (sidecar serving the page, or a local batch serving it under the
+      // applyToAllSites gate). The background sets `writable`; gating on it avoids
+      // offering an Edit whose save the origin guard would reject.
+      editable: Boolean((spec as Partial<TaggedSpec>).writable),
       theme,
       dismissed: dismiss?.modes.has(mode) ?? false,
       onSetDismissed: dismiss?.onToggle,

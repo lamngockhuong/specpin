@@ -66,6 +66,26 @@ const vi: Record<keyof Messages, string> = {
 
   // Popup-only.
   "popup.openSidepanel": "Mở dạng thanh bên ⇥",
+  "popup.newProject": "Dự án mới",
+  "popup.exportLocal": "Xuất specs cục bộ",
+
+  // Shared "+ New project" inline form (popup + side panel).
+  "addProject.modeLocal": "Dự án cục bộ",
+  "addProject.modeSidecar": "Sidecar",
+  "addProject.projectPlaceholder": "Tên dự án",
+  "addProject.domainsPlaceholder": "Tên miền (tùy chọn, phân tách bằng dấu phẩy)",
+  "addProject.applyAllSites": "Áp dụng cho mọi trang",
+  "addProject.applyAllHint": "Không có tên miền hoặc mục này thì dự án không phục vụ trang nào.",
+  "addProject.urlPlaceholder": "http://127.0.0.1:PORT",
+  "addProject.labelPlaceholder": "Nhãn (tùy chọn)",
+  "addProject.tokenPlaceholder": "Token",
+  "addProject.create": "Tạo",
+  "addProject.cancel": "Hủy",
+  "addProject.projectRequired": "Cần nhập tên dự án.",
+  "addProject.couldNotCreate": "Không thể tạo dự án.",
+  "addProject.urlTokenRequired": "Cần nhập URL và token.",
+  "addProject.urlError": "URL phải là http://localhost hoặc http://127.0.0.1 (có thể kèm cổng).",
+  "addProject.couldNotConnect": "Không thể kết nối tới sidecar.",
 
   // Side panel per-spec controls.
   "sidepanel.hide": "Ẩn",
@@ -99,6 +119,10 @@ const vi: Record<keyof Messages, string> = {
   "capture.modeDefault": "Dùng mặc định của dự án",
   "capture.targetProject": "Dự án đích",
   "capture.targetFile": "Tệp đích",
+  "capture.targetKindLocal": "cục bộ",
+  "capture.targetKindSidecar": "sidecar",
+  "capture.noWritableProject":
+    "Không có dự án ghi được phục vụ trang này. Hãy tạo một dự án cục bộ hoặc kết nối sidecar trước.",
   "capture.relink": "Liên kết lại phần tử",
   "capture.relinkNote": "Đã liên kết lại phần tử mới. Lưu để áp dụng.",
   "capture.couldNotSave": "Không thể lưu:",
@@ -182,6 +206,12 @@ const vi: Record<keyof Messages, string> = {
   "options.untitled": "không có tiêu đề",
   "options.sourcePasted": "đã dán",
   "options.sourceFiles": "tệp",
+  "options.sourceLocal": "Cục bộ",
+  "options.export": "Xuất",
+  "options.rename": "Đổi tên",
+  "options.projectNameLabel": "Tên dự án",
+  "options.domainsLabel": "Trang (phân tách bằng dấu phẩy, tùy chọn)",
+  "options.renamed": 'Đã đổi tên thành "{project}".',
   "options.batchRemoved": "Đã xóa batch.",
   "options.sharedSpecs": "{count} spec chung",
   "options.sitesPrefix": "Trang: {sites}",
@@ -192,6 +222,8 @@ const vi: Record<keyof Messages, string> = {
   "options.couldNotAddBatch": "Không thể thêm batch.",
   "options.loadedDuplicates":
     "Đã tải (tổng {total} spec). Lưu ý: trùng với {names} bạn đã nhập trước đó.",
+  "options.loadedIdCollisions":
+    "Đã tải (tổng {total} spec). Lưu ý: spec id {ids} cũng có ở một project khác trên cùng site; chỉ cái đầu tiên được hiển thị.",
   "options.loadedTotal": "Đã tải. Tổng {count} spec trên tất cả batch.",
   "options.pasteBundleFirst": "Hãy dán một bundle trước.",
   "options.invalidBundle": "Bundle không hợp lệ:\n- {errors}",

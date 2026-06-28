@@ -12,6 +12,22 @@ describe("manual-batch message gating", () => {
     expect(PRIVILEGED_MESSAGE_TYPES.has("REMOVE_LOCAL_BATCH")).toBe(true);
     expect(PRIVILEGED_MESSAGE_TYPES.has("CLEAR_LOCAL_SPECS")).toBe(true);
   });
+
+  it("gates local-project create/rename, but NOT the read-only write-target query", () => {
+    // Create/rename mutate (rename can re-scope a batch's domains), so a content
+    // script must never invoke them.
+    expect(PRIVILEGED_MESSAGE_TYPES.has("CREATE_LOCAL_PROJECT")).toBe(true);
+    expect(PRIVILEGED_MESSAGE_TYPES.has("RENAME_LOCAL_PROJECT")).toBe(true);
+    // Export returns full spec payloads across batches: extension pages only.
+    expect(PRIVILEGED_MESSAGE_TYPES.has("GET_EXPORT_BUNDLES")).toBe(true);
+    // The capture picker runs in the content script and needs this; it exposes no
+    // more than GET_SPECS_FOR_ORIGIN for the same origin.
+    expect(PRIVILEGED_MESSAGE_TYPES.has("GET_WRITE_TARGETS")).toBe(false);
+    // SAVE/UPDATE stay unprivileged (capture legitimately originates in-page; the
+    // local-write origin guard is the boundary).
+    expect(PRIVILEGED_MESSAGE_TYPES.has("SAVE_SPEC")).toBe(false);
+    expect(PRIVILEGED_MESSAGE_TYPES.has("UPDATE_SPEC")).toBe(false);
+  });
 });
 
 describe("manual-batch cap", () => {

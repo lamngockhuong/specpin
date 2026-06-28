@@ -1,5 +1,6 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import { hydrateI18n, initI18n, resolveUiLocale, t, type UiLocale } from "../../i18n/index.js";
+import { parseDomains } from "../../shared/add-project.js";
 import {
   type DefaultSurface,
   getDefaultSurface,
@@ -10,10 +11,13 @@ import {
   setUiLocale,
   type Theme,
 } from "../../shared/config.js";
+import { downloadExportBundles } from "../../shared/export-download.js";
+import { normalizeLocalUrl } from "../../shared/local-url.js";
 import {
   type AddLocalBatchResult,
   broadcastToTabs,
   type ConnectionStatus,
+  type ExportBundle,
   type ManualBatchSummary,
   type StatusResult,
   sendToBackground,
@@ -42,19 +46,6 @@ const localBatches = byId("localBatches");
 const surface = byId("surface") as HTMLSelectElement;
 const theme = byId("theme") as HTMLSelectElement;
 const uiLocale = byId("uiLocale") as HTMLSelectElement;
-
-// The sidecar binds localhost only; reject anything else before sending.
-const LOCAL_URL = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/;
-
-/** Normalize a sidecar URL (trim + drop trailing slashes) and validate the
- *  localhost-only rule. Returns the normalized URL plus an error message when a
- *  non-empty URL fails that rule. The empty-input case is left to each caller's
- *  required-field check (add needs a token too; edit keeps the stored token). */
-function normalizeLocalUrl(raw: string): { url: string; error: string | null } {
-  const url = raw.trim().replace(/\/+$/, "");
-  const error = url && !LOCAL_URL.test(url) ? t("options.urlError") : null;
-  return { url, error };
-}
 
 function showResult(target: HTMLElement, ok: boolean, text: string): void {
   target.className = ok ? "ok" : "err";
@@ -225,13 +216,13 @@ function editSection(c: ConnectionStatus): HTMLElement {
   });
 
   save.addEventListener("click", async () => {
-    const { url: nextUrl, error } = normalizeLocalUrl(url.value);
+    const { url: nextUrl, valid } = normalizeLocalUrl(url.value);
     if (!nextUrl) {
       showResult(result, false, t("options.urlRequired"));
       return;
     }
-    if (error) {
-      showResult(result, false, error);
+    if (!valid) {
+      showResult(result, false, t("options.urlError"));
       return;
     }
     const tok = tokenInput.value.trim();
@@ -349,8 +340,31 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
   name.textContent = b.label;
   title.append(name);
 
+  // Inline rename form, toggled by the Rename button (hidden until first opened).
+  const renameForm = renameSection(b);
+
   const actions = document.createElement("div");
   actions.className = "conn-actions";
+
+  // Export this batch as a <project>.specs.zip (reuses the Phase 4 utils).
+  const exportBtn = document.createElement("button");
+  exportBtn.className = "secondary";
+  exportBtn.textContent = t("options.export");
+  exportBtn.addEventListener("click", async () => {
+    const bundles = await sendToBackground<ExportBundle[]>({
+      type: "GET_EXPORT_BUNDLES",
+      id: b.id,
+    });
+    downloadExportBundles(bundles);
+  });
+
+  const rename = document.createElement("button");
+  rename.className = "secondary";
+  rename.textContent = t("options.rename");
+  rename.addEventListener("click", () => {
+    renameForm.hidden = !renameForm.hidden;
+  });
+
   const remove = document.createElement("button");
   remove.className = "secondary";
   remove.textContent = t("options.remove");
@@ -359,15 +373,19 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
     showResult(localResult, true, t("options.batchRemoved"));
     await refresh();
   });
-  actions.append(remove);
+  actions.append(exportBtn, rename, remove);
   head.append(title, actions);
 
   const meta = document.createElement("div");
   meta.className = "conn-meta";
+  // Provenance: created-in-extension ("manual") reads "Local"; imports keep their
+  // paste/files description.
   const how =
-    b.source === "files"
-      ? (b.fileNames?.join(", ") ?? t("options.sourceFiles"))
-      : t("options.sourcePasted");
+    b.source === "manual"
+      ? t("options.sourceLocal")
+      : b.source === "files"
+        ? (b.fileNames?.join(", ") ?? t("options.sourceFiles"))
+        : t("options.sourcePasted");
   // importedAt is 0 for legacy-migrated batches (unknown time); omit it then.
   const when = b.importedAt ? ` · ${new Date(b.importedAt).toLocaleString()}` : "";
   meta.textContent = `${b.project || t("options.untitled")} · ${t("options.specCount", {
@@ -381,8 +399,65 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
     ? t("options.sitesPrefix", { sites: b.domains.join(", ") })
     : t("options.sitesAll");
 
-  row.append(head, meta, sites);
+  row.append(head, meta, sites, renameForm);
   return row;
+}
+
+/** Inline rename form for a local batch: change the project name and (optionally)
+ *  its pinned sites. Saving routes through RENAME_LOCAL_PROJECT (privileged) and
+ *  refreshes the list (which collapses the form). */
+function renameSection(b: ManualBatchSummary): HTMLElement {
+  const form = document.createElement("div");
+  form.className = "conn-edit";
+  form.hidden = true;
+
+  const nameLabel = document.createElement("label");
+  nameLabel.textContent = t("options.projectNameLabel");
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.value = b.project || b.label;
+
+  const domainsLabel = document.createElement("label");
+  domainsLabel.textContent = t("options.domainsLabel");
+  const domainsInput = document.createElement("input");
+  domainsInput.type = "text";
+  domainsInput.value = b.domains.join(", ");
+
+  const actions = document.createElement("div");
+  actions.className = "conn-actions";
+  const save = document.createElement("button");
+  save.className = "secondary";
+  save.textContent = t("options.saveChanges");
+  const cancel = document.createElement("button");
+  cancel.className = "secondary";
+  cancel.textContent = t("common.cancel");
+  actions.append(save, cancel);
+
+  cancel.addEventListener("click", () => {
+    form.hidden = true;
+  });
+  save.addEventListener("click", async () => {
+    const project = nameInput.value.trim();
+    if (!project) {
+      showResult(localResult, false, t("addProject.projectRequired"));
+      return;
+    }
+    const res = await sendToBackground<{ ok: boolean; error?: string }>({
+      type: "RENAME_LOCAL_PROJECT",
+      id: b.id,
+      project,
+      domains: parseDomains(domainsInput.value),
+    });
+    if (res.ok) {
+      showResult(localResult, true, t("options.renamed", { project }));
+      await refresh();
+    } else {
+      showResult(localResult, false, res.error ?? t("options.couldNotAddBatch"));
+    }
+  });
+
+  form.append(nameLabel, nameInput, domainsLabel, domainsInput, actions);
+  return form;
 }
 
 /** Render the loaded batches, one card per import (in import order). Each card
@@ -441,14 +516,14 @@ uiLocale.addEventListener("change", async () => {
 });
 
 byId("add").addEventListener("click", async () => {
-  const { url, error } = normalizeLocalUrl(baseUrl.value);
+  const { url, valid } = normalizeLocalUrl(baseUrl.value);
   const tok = token.value.trim();
   if (!url || !tok) {
     showResult(addResult, false, t("options.urlTokenRequired"));
     return;
   }
-  if (error) {
-    showResult(addResult, false, error);
+  if (!valid) {
+    showResult(addResult, false, t("options.urlError"));
     return;
   }
   const res = await sendToBackground<{ ok: boolean; project?: string | null; error?: string }>({
@@ -483,12 +558,14 @@ async function addBatch(
   bundle: SpecsResponse,
   source: "paste" | "files",
   fileNames?: string[],
+  fileGroups?: Record<string, string>,
 ): Promise<boolean> {
   const res = await sendToBackground<AddLocalBatchResult>({
     type: "ADD_LOCAL_BATCH",
     bundle,
     source,
     fileNames,
+    fileGroups,
   });
   if (!res.ok) {
     showResult(localResult, false, res.error ?? t("options.couldNotAddBatch"));
@@ -504,6 +581,17 @@ async function addBatch(
       )
       .join(", ");
     showResult(localResult, true, t("options.loadedDuplicates", { total: res.specCount, names }));
+  } else if (res.idCollisions.length) {
+    // Cross-batch spec-id overlap: only the first matching batch renders/edits
+    // each id (specsForOrigin dedups first-wins). Non-blocking warning.
+    showResult(
+      localResult,
+      true,
+      t("options.loadedIdCollisions", {
+        total: res.specCount,
+        ids: res.idCollisions.join(", "),
+      }),
+    );
   } else {
     showResult(localResult, true, t("options.loadedTotal", { count: res.specCount }));
   }
@@ -519,12 +607,12 @@ byId("loadLocal").addEventListener("click", async () => {
   }
   // Validate client-side BEFORE pushing to the background (never cache unvalidated
   // input). The spec-schema validators are precompiled and CSP-safe.
-  const { specs, errors } = parseLocalBundle(text);
+  const { specs, fileGroups, errors } = parseLocalBundle(text);
   if (!specs) {
     showResult(localResult, false, t("options.invalidBundle", { errors: errors.join("\n- ") }));
     return;
   }
-  if (await addBatch(specs, "paste")) localSpecs.value = "";
+  if (await addBatch(specs, "paste", undefined, fileGroups)) localSpecs.value = "";
 });
 
 byId("loadFiles").addEventListener("click", async () => {
@@ -537,13 +625,13 @@ byId("loadFiles").addEventListener("click", async () => {
   const files = await Promise.all(
     picked.map(async (f) => ({ name: f.name, text: await f.text() })),
   );
-  const { specs, errors } = parseLocalFiles(files);
+  const { specs, fileGroups, errors } = parseLocalFiles(files);
   if (!specs) {
     showResult(localResult, false, t("options.invalidSelection", { errors: errors.join("\n- ") }));
     return;
   }
   const fileNames = picked.map((f) => f.name.split(/[/\\]/).pop() ?? f.name);
-  if (await addBatch(specs, "files", fileNames)) localFiles.value = "";
+  if (await addBatch(specs, "files", fileNames, fileGroups)) localFiles.value = "";
 });
 
 byId("clearLocal").addEventListener("click", async () => {

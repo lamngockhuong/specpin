@@ -15,13 +15,14 @@ import "../../shared/scrollbar.css";
 import "../../shared/switch.css";
 import "../../shared/icon-btn.css";
 import "../../shared/link.css";
-import { MANUAL_CONNECTION_ID } from "../../shared/connection-types.js";
+import "../../shared/add-project.css";
 import {
   type Message,
   type SpecsForOrigin,
   sendToActiveTab,
   sendToBackground,
 } from "../../shared/messaging.js";
+import { wireProjectActions } from "../../shared/project-actions.js";
 import {
   buildFilterModel,
   fetchSurfaceState,
@@ -46,6 +47,7 @@ import { isVisible, setSpecVisibility, type VisibilityState } from "../../shared
 // (description + business rules) inline, since it has the vertical room.
 let activeLocale = "en";
 let lastSpecs: SpecsForOrigin | null = null;
+let lastOrigin = "";
 let searchQuery = "";
 let currentPath = "/";
 let currentState: VisibilityState = { teamHidden: [], personal: { forceHide: [], forceShow: [] } };
@@ -109,10 +111,10 @@ function renderSpecs(res: SpecsForOrigin): void {
     });
     li.appendChild(eye);
 
-    // Edit button (sidecar specs only; Manual import is read-only). Delegates to
-    // the active tab's content script, which opens the in-page edit form (the
-    // form + capture picker must run in the page context).
-    if (spec.connectionId !== MANUAL_CONNECTION_ID) {
+    // Edit button when this origin can write the spec back (sidecar + local that
+    // serves the page). Delegates to the active tab's content script, which opens
+    // the in-page edit form (the form + capture picker must run in the page context).
+    if (spec.writable) {
       const edit = document.createElement("button");
       edit.type = "button";
       edit.className = "spec-edit";
@@ -172,6 +174,7 @@ async function refresh(): Promise<void> {
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
+  lastOrigin = origin;
   currentPath = path;
   currentState = visibilityOf(specs);
   renderStatus(status, origin, specs.specs.length);
@@ -180,10 +183,17 @@ async function refresh(): Promise<void> {
   // The side panel has the room for per-spec rows in addition to group filters.
   renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh, true);
   // When off, the list collapses to the "off" message: hide controls that only
-  // act on the (now-hidden) spec list.
+  // act on the (now-hidden) spec list, plus the create affordance + its panel.
   setListControlsHidden(!specs.enabled);
+  projectActions.update(specs.enabled, (status.manualBatches?.length ?? 0) > 0);
   renderSpecs(specs);
 }
+
+// The shared "+ New project" inline form; refresh() re-renders the project list
+// on a successful create. Toggled from the header button.
+// Shared header controls: "+ New project" (inline form) + "Export" (zip the local
+// project(s) serving the page). refresh() re-renders the list after a create.
+const projectActions = wireProjectActions(() => lastOrigin, refresh);
 
 // Coalesce bursts of tab/SSE events into a single refresh per frame so rapid
 // navigation or SPECS_CHANGED storms do not trigger redundant fetches.

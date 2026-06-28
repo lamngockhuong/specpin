@@ -20,22 +20,21 @@ import {
   setLauncherPosition,
   setLocale,
 } from "../shared/config.js";
-import { MANUAL_CONNECTION_ID, type TaggedSpec } from "../shared/connection-types.js";
+import type { TaggedSpec } from "../shared/connection-types.js";
 import {
   type Message,
   type SaveSpecResult,
   type SpecsForOrigin,
   sendToBackground,
+  type WriteTarget,
 } from "../shared/messaging.js";
+import { slugify } from "../shared/slug.js";
 import type { Theme } from "../shared/theme.js";
 import { EMPTY_VISIBILITY, type VisibilityState } from "../shared/visibility.js";
 
 function defaultFileName(): string {
   const seg = location.pathname.split("/").filter(Boolean)[0] ?? location.hostname.split(".")[0];
-  const slug = (seg ?? "captured")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const slug = slugify(seg ?? "captured");
   return `${slug || "captured"}.spec.json`;
 }
 
@@ -215,22 +214,21 @@ export default defineContentScript({
       flushPendingRerender();
     }
 
-    function startCapture(): void {
+    async function startCapture(): Promise<void> {
       if (picker.isActive) {
         picker.stop();
         endCapture();
         return;
       }
       captureActive = true;
-      // Distinct sidecar projects serving this page, for the target picker when
-      // more than one matches (Manual specs are read-only, excluded).
-      const targets = [
-        ...new Map(
-          specs
-            .filter((s) => s.connectionId !== MANUAL_CONNECTION_ID)
-            .map((s) => [s.connectionId, { id: s.connectionId, project: s.project }]),
-        ).values(),
-      ];
+      // The writable projects (sidecar + local) serving this page, resolved by the
+      // background so EMPTY local projects (which specsForOrigin omits) are
+      // included and each target is labelled by kind. The form asks which to save
+      // into when more than one matches.
+      const targets = await sendToBackground<WriteTarget[]>({
+        type: "GET_WRITE_TARGETS",
+        origin: window.location.origin,
+      });
       picker.start(
         (el) => {
           const fingerprint = captureFingerprint(el);
@@ -272,14 +270,16 @@ export default defineContentScript({
 
     // Open the in-place edit form for a spec id. Both the tooltip Edit button
     // (via the render session) and the side panel (via EDIT_SPEC) route here, so
-    // the form + picker always run in the page context. Manual specs are
-    // read-only and never editable.
+    // the form + picker always run in the page context. Sidecar AND local specs
+    // are editable; the write routes by the spec's connectionId.
     function openEditForm(specId: string): void {
       // One authoring flow at a time: if a capture or another edit is already
       // open, ignore (re-opening form.open() would close the first and discard
       // its unsaved edits). Both surfaces' Edit buttons route here.
       if (captureActive) return;
-      const spec = specs.find((s) => s.id === specId && s.connectionId !== MANUAL_CONNECTION_ID);
+      // Both sidecar and local specs are editable; the UPDATE_SPEC carries the
+      // spec's connectionId (manual:<batchId> for local), which routes the write.
+      const spec = specs.find((s) => s.id === specId);
       if (!spec) return;
       // Freeze re-renders while editing so the spec's element is not re-rendered
       // out from under the form (RT-FM6, shared with capture).
@@ -313,7 +313,7 @@ export default defineContentScript({
     registerKeyboard(window, {
       onToggleEnabled: () => void toggleEnabled(),
       onCycleMode: cycleMode,
-      onToggleCapture: startCapture,
+      onToggleCapture: () => void startCapture(),
     });
 
     // Detect client-side navigation: popstate (back/forward) + hashchange cover
@@ -343,7 +343,7 @@ export default defineContentScript({
           void refresh();
           break;
         case "START_CAPTURE":
-          startCapture();
+          void startCapture();
           break;
         case "EDIT_SPEC":
           openEditForm(message.specId);

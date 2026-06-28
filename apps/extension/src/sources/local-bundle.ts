@@ -19,6 +19,10 @@ const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
 export interface BundleResult {
   specs?: SpecsResponse;
+  /** Map of `<name>.spec.json` -> its file-level `group`, captured here because
+   *  the flatten into `specs[]` keeps only `_file` and drops the group. Carried
+   *  onto the stored batch so a later export reconstructs per-file groups. */
+  fileGroups?: Record<string, string>;
   errors: string[];
 }
 
@@ -82,6 +86,7 @@ export function parseLocalBundle(text: string): BundleResult {
   }
 
   const specs: SpecWithFile[] = [];
+  const fileGroups: Record<string, string> = {};
   for (const name of names) {
     if (!name.endsWith(".spec.json")) {
       errors.push(`${name}: file name must end with .spec.json`);
@@ -93,7 +98,8 @@ export function parseLocalBundle(text: string): BundleResult {
       errors.push(`${name}: ${formatErrors(fileResult.errors)}`);
       continue;
     }
-    const file = content as { specs?: unknown[] };
+    const file = content as { group?: unknown; specs?: unknown[] };
+    if (typeof file.group === "string") fileGroups[name] = file.group;
     for (const spec of file.specs ?? []) {
       specs.push({ ...(spec as Record<string, unknown>), _file: name } as SpecWithFile);
     }
@@ -105,7 +111,7 @@ export function parseLocalBundle(text: string): BundleResult {
 
   if (errors.length > 0) return { errors };
 
-  return { specs: { manifest: bundle.manifest as Manifest, specs }, errors: [] };
+  return { specs: { manifest: bundle.manifest as Manifest, specs }, fileGroups, errors: [] };
 }
 
 /** One picked file: its name and already-read text content. */

@@ -143,15 +143,15 @@ src/
     content.ts        - match+render loop, locale state, capture flow
     popup/            - per-tab view: status, specs, project list, language picker, filter UI
     sidepanel/        - docked surface (Chrome side_panel / Firefox sidebar_action)
-    options/          - connection manager (add/remove/reconnect) + manual import + team views authoring
+    options/          - connection manager (add/remove/reconnect) + manual import + per-batch rename/export + team views authoring
   background/
-    sidecar-registry.ts   - map of connections + manual-import batch list; origin-gated aggregation (per-batch domains, cross-batch id dedup) + views threading
+    sidecar-registry.ts   - map of connections + local (Manual) batch list; origin-gated aggregation (per-batch domains, cross-batch id dedup, per-batch `manual:<batchId>` tag) + views threading; `localTargetsForOrigin` (writable-target gate) + `manualBatchesForExport`
     sidecar-connection.ts - one project's client + cache + SSE watch + team views cache (isolated)
   content/
     orchestrator.ts   - match loop; threads locale + project labels + visibility filtering into renderers
     localize-spec.ts  - resolve a spec's localized text for the viewer locale
     capture-mode.ts   - element picker (Esc cancels via callback)
-    capture-form.ts   - per-locale spec authoring + target-project picker
+    capture-form.ts   - per-locale spec authoring + kind-labelled "Save to" picker (sidecar + local; lone-target routing; disabled when no project serves the page)
     keyboard.ts       - shortcut handler
   renderers/
     registry.ts       - `SpecRenderer` interface + registry
@@ -160,30 +160,37 @@ src/
   sources/
     registry.ts       - `SpecSource` interface + selection
     sidecar.ts        - SidecarSource adapter
-    manual.ts / local-bundle.ts - read-only manual-import source + bundle parser
+    manual.ts / local-bundle.ts - local (Manual) source + bundle parser (now also captures each file's `group` into `fileGroups` for export round-trip)
   shared/
     shadow.ts / html.ts        - Shadow DOM isolation + safe HTML escaping
     theme.ts                   - Theme = "system"|"light"|"dark", applyTheme(el, theme), applyStoredTheme(), watchThemeChanges()
-    messaging.ts               - typed message protocol (includes OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs)
-    connection-types.ts        - browser-free Connection / ConnectionStatus / TaggedSpec
-    origin-match.ts            - pure origin/domain matching (shared by SW + popup)
+    messaging.ts               - typed message protocol (includes OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs; local-authoring: CREATE_LOCAL_PROJECT/RENAME_LOCAL_PROJECT (privileged), GET_WRITE_TARGETS, GET_EXPORT_BUNDLES (privileged))
+    connection-types.ts        - browser-free Connection / ConnectionStatus / TaggedSpec; MANUAL_CONNECTION_ID is now the legacy/reserved bare id
+    local-id.ts                - `manual:<batchId>` prefix + isLocalConnectionId / localBatchId / localConnId predicates (replaces the bare-tag equality checks)
+    local-url.ts               - extracted localhost-only sidecar URL guard (shared by Options + add-project; SSRF/phishing guard)
+    add-project.ts (+ .css)    - shared "+ New project" inline form (Local via CREATE_LOCAL_PROJECT, Sidecar via ADD_CONNECTION); mounted by popup + side panel
+    export-bundle.ts           - bundleToFiles(batch): reconstruct manifest.json + per-group *.spec.json (fileGroups, $schema, _file stripped, zip-slip-sanitized names)
+    zip-store.ts               - dependency-free STORE (uncompressed) zip writer + crc32
+    download.ts / export-download.ts - Blob object-URL download + zip-and-download glue (popup/panel/Options)
+    origin-match.ts            - pure origin/domain matching (shared by SW + popup; statusServesOrigin is the write/capture gate)
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
-    config.ts                  - storage helpers (connections, locale, enabled, manual-import batch list + legacy migration, personal visibility, theme, uiLocale)
+    config.ts                  - storage helpers (connections, locale, enabled, local batch list + legacy migration, personal visibility, theme, uiLocale) + pure local mutators (createLocalBatch / upsertLocalSpec / removeLocalSpecById / renameLocalBatch)
     surface-renderers.ts       - shared helpers for popup/side panel: sourceBadge() (sidecar vs manual pill), setListControlsHidden() + enabled-gated locale/filter rendering (hide list controls when Specpin is off), filter-group collapse state preserved across rebuilds
     surface-data.ts            - shared spec filtering: specMatchesQuery() (title/file/tags/description predicate)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
     locales.ts                 - SUPPORTED=["en","vi"], UiLocale, resolveUiLocale (stored -> browser UI -> "en")
-    messages/en.ts             - source of truth, ~115 keys
+    messages/en.ts             - source of truth, ~195 keys
     messages/vi.ts             - typed against keyof Messages for compile-time parity
 ```
 
 **Key flows:**
 - Background SW: a `SidecarRegistry` holds N connections (each its own client + cache + team views cache + SSE watch; each has an optional `enabled` field, undefined = enabled, gated centrally at `SidecarConnection.matchesOrigin`) plus a Manual-import batch list (append on import, remove per batch, clear all; all mutations serialized through the same `mutate()` writer as connections). `reestablish()` rebuilds them from storage on each SW wake. `GET_SPECS_FOR_ORIGIN` returns the origin-matched aggregate, tagged by project, filtered by visibility (see `shared/visibility.ts`).
 - Content script: on load, ask BG for the origin's specs (already visibility-filtered). For each, `matchElement(fingerprint)`; render via the active mode (tooltip | sidebar | modal), resolving localized text for the viewer locale. Listens for capture toggle, locale change, `SPECS_CHANGED`, and visibility state changes.
-- Capture: picker highlights elements; on click the form authors title/description/rules per locale (and picks a target project when several serve the page). On save, validate, POST to the chosen connection, reload.
+- Capture: picker highlights elements; on click the form authors title/description/rules per locale and picks a target project via `GET_WRITE_TARGETS` (sidecar + local, kind-labelled; lone target auto-selected; disabled when none serve the page). On save, validate, then route by connectionId: a `manual:<batchId>` target writes to `storage.local` (origin-bounded + re-validated in the background), everything else POSTs to the sidecar and reloads.
+- Local authoring: manual specs are editable in place (tooltip + side-panel card, reusing `CaptureForm`); `+ New project` (popup/panel) creates a local project or sidecar connection; per-batch group-zip Export (popup/panel + Options) reconstructs the on-disk `.specs/` shape so it round-trips through re-import / `specpin serve`.
 - Renderers: implement `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); read localized text via `localizeSpec`, and caption the project when more than one contributes to the page. Tooltip renderer: click badge to pin tip open (one at a time), close button, "Open in side panel" action that highlights the matching side-panel card (best-effort auto-open on Chrome, Firefox cannot programmatically open sidebar).
-- Sources: pluggable. Shipped: `SidecarSource` + read-only Manual import. FileSystem Access deferred.
+- Sources: pluggable. Shipped: `SidecarSource` + a writable local (Manual) source (import, in-extension create, capture, edit, group-zip export). FileSystem Access deferred.
 - Visibility: `isVisible(spec, url, state)` merges team defaults from `.specs/views.json` (via `GET /views`) and personal overrides from `chrome.storage.sync`. `url:` page gate wins over everything; `spec:<id>` force-show is a hard rescue. Filter UI (popup + side panel) offers facet checklists (Tags / Files / This page) + per-spec eye toggle; Reset clears personal overrides. Options page authors team defaults (writes via `PUT /views`).
 
 **Build:**

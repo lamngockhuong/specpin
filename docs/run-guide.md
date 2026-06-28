@@ -77,7 +77,7 @@ A project whose manifest pins no `domains` is inactive by default (its specs wou
 
 Visit the demo app (`http://localhost:3000`). Matched specs appear as tooltips on their elements (the badge turns amber when a match needs review). Edit a `.spec.json` on disk and the page live-updates via SSE.
 
-The popup lists the specs for the current page and toggles Specpin on/off. A settings gear in the top-right corner opens the Options page. The primary controls (**+ Capture spec** and the display-mode select) sit directly above the list so they stay visible without scrolling, with the spec **Language** picker just above them. Each spec row shows a small source badge (`sidecar` or `manual`) marking which source it came from. A search box above the list filters specs live by title, file, and tags. When more than one project serves the page, the popup lists each matching project and renderers caption each spec with its project. Turning Specpin off for the page collapses the list to an off notice and hides the controls that only act on it (search, language, capture, mode, filters); the status, project list, and settings gear stay.
+The popup lists the specs for the current page and toggles Specpin on/off. The top-right header holds a settings gear (opens the Options page), a **+ New project** button (create a local project or connect a sidecar inline), and, when any local project exists, an **Export** button (download the local project(s) serving the page as `.specs.zip`). The primary controls (**+ Capture spec** and the display-mode select) sit directly above the list so they stay visible without scrolling, with the spec **Language** picker just above them. Each spec row shows a small source badge (`sidecar` or `manual`) marking which source it came from. A search box above the list filters specs live by title, file, and tags. When more than one project serves the page, the popup lists each matching project and renderers caption each spec with its project. Turning Specpin off for the page collapses the list to an off notice and hides the controls that only act on it (search, language, capture, mode, filters); the status, project list, and settings gear stay.
 
 ### Side panel (docked)
 
@@ -95,13 +95,13 @@ Team admins can set project-wide defaults in the Options page (**Team visibility
 
 ## 10. Capture a new spec (with translations)
 
-Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, then fill the form. Pick a **Language**, enter the title/description/rules for it, then choose another language (or **+ Add language**) to add a translation - switching languages keeps what you already entered. The default language requires a title and description. If more than one project serves the page, pick the **Target project**. On save the spec is validated, written to the chosen `.spec.json` (pretty-printed), and shows up in `git diff`. Captured specs carry `meta.source: "manual"`.
+Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, then fill the form. Pick a **Language**, enter the title/description/rules for it, then choose another language (or **+ Add language**) to add a translation - switching languages keeps what you already entered. The default language requires a title and description. The **Save to** picker lists every writable project serving the page, labelled by kind (`sidecar` or `local`); pick one (a lone target is selected automatically, and capture is disabled with an explanation when no project serves the page). On save the spec is validated and written: a sidecar target writes the chosen `.spec.json` (pretty-printed) so it shows up in `git diff`; a local target writes it into `browser.storage.local` (origin-bounded, never a sidecar). Captured specs carry `meta.source: "manual"`.
 
 ## 11. Edit an existing spec
 
 Open a spec for editing from either surface: click a tooltip badge to pin it and hit **Edit spec**, or click **Edit** on a spec card in the side panel. The same form opens pre-filled with the spec's content for every authored language; change the title, description, business rules, tags, or display mode and click **Save changes**. The spec keeps its `id` and provenance (`createdBy`/`createdAt`/`source`); only `updatedAt` is bumped. The change writes back through the owning sidecar and live-updates the page via SSE, the same as editing the `.spec.json` on disk.
 
-To point a spec at a different element, click **Re-link element** in the edit form, then click the new element on the page; the form reopens with your edits intact and the new fingerprint applied on save. Manual-import specs are read-only and show no Edit affordance. (Side panel Edit drives the in-page form, so keep the panel docked next to the page it describes.)
+To point a spec at a different element, click **Re-link element** in the edit form, then click the new element on the page; the form reopens with your edits intact and the new fingerprint applied on save. Local (Manual) specs are now editable the same way; the edit writes back to `browser.storage.local` instead of a sidecar. (Side panel Edit drives the in-page form, so keep the panel docked next to the page it describes.)
 
 ## Connect several projects at once
 
@@ -132,7 +132,7 @@ You can dismiss the sidebar (its **x** button) or the modal (its **x** button on
 
 ## Use without a sidecar (Manual import)
 
-To view specs without running `specpin serve`, open the extension Options page and load them under **Manual specs**. There are two ways, both read-only (capture still needs a sidecar):
+To view specs without running `specpin serve`, open the extension Options page and load them under **Manual specs**. There are two ways to import:
 
 **From files (no JSON assembly).** Click the file picker, select `manifest.json` plus one or more `*.spec.json` files from your `.specs/` directory, then **Load from files**. The extension assembles and validates them in-page.
 
@@ -151,7 +151,17 @@ specpin bundle --dir .specs --out bundle.json   # write it to a file instead
 
 `bundle` only reads and assembles; it does not validate (run `specpin validate` for schema checks, or rely on the in-page validation on import). Either path validates against the schema before anything is stored.
 
-**Each import appends a batch.** Loading a bundle (paste or files) adds it as a new batch rather than replacing the previous one, so several imports coexist. If a new import duplicates an earlier one (same project name) it is still loaded, with a non-blocking note naming the prior batch. The loaded batches are listed below the buttons, one card per import, with the batch's pinned sites (its manifest `domains`, or "all sites" when it pins none) shown inline. Each batch has its own **Remove**; **Clear all manual specs** empties the whole list. Manual specs persist across browser restarts and merge into a page's specs alongside any connected projects whose `domains` match the page (manual specs use their own manifest `domains`; repeated spec ids across batches render once).
+**Each import appends a batch.** Loading a bundle (paste or files) adds it as a new batch rather than replacing the previous one, so several imports coexist. If a new import duplicates an earlier one (same project name) it is still loaded, with a non-blocking note naming the prior batch; a cross-batch spec-id overlap on the same site is flagged too (only the first matching batch renders/edits each id). The loaded batches are listed below the buttons, one card per import, with the batch's pinned sites (its manifest `domains`, or "all sites" when it pins none) shown inline. Each batch has **Export** (download its `.specs.zip`), **Rename** (change the project name and pinned sites), and **Remove**; **Clear all manual specs** empties the whole list. Manual specs persist across browser restarts and merge into a page's specs alongside any connected projects whose `domains` match the page (manual specs use their own manifest `domains`; repeated spec ids across batches render once).
+
+### Local authoring loop (no sidecar)
+
+The Manual source is a full local authoring path, not just a read-only viewer:
+
+1. **Create** a local project from the popup or side panel: **+ New project** -> *Local project*, give it a name and (optionally) the sites it applies to. With no sites and no **Apply to all sites**, the project serves no page (so it has no writable target yet) - set one or the other to capture into it.
+2. **Capture / edit** specs into it exactly like a sidecar project (capture picks it in the **Save to** picker; edit works in place). Writes go to `browser.storage.local`, origin-bounded to the project's sites, and are schema-validated before they are stored.
+3. **Export** the project (popup/panel **Export**, or per-batch **Export** in Options) to a `<project>.specs.zip` containing `manifest.json` + one `*.spec.json` per group. Unzip it into a repo's `.specs/`, or re-import the files through the multi-file picker - the round-trip preserves group names and spec content, and `specpin serve` reads the result.
+
+Created-in-extension projects count against the same 50-batch cap as imports and show a **Local** provenance label in Options.
 
 ## Validate specs offline
 

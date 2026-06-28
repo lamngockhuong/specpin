@@ -2,7 +2,9 @@ import type { DisplayMode, ElementFingerprint, LocalizedString, Spec } from "@sp
 import { formatErrors, validateSpec } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import { escapeAttr, escapeHtml } from "../shared/html.js";
+import type { WriteTarget } from "../shared/messaging.js";
 import { createShadowHost } from "../shared/shadow.js";
+import { slugify } from "../shared/slug.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 
@@ -52,20 +54,24 @@ export interface CaptureFormOptions {
    *  action appears. The form hides itself while the picker runs, then restores
    *  with field edits intact. */
   onRelink?: () => Promise<ElementFingerprint | null>;
-  /** Projects that serve this page. When more than one, the form asks which to
-   *  save into (avoids nondeterministic first-match routing for overlapping
-   *  domains). */
-  targets?: { id: string; project: string }[];
+  /** Writable projects (sidecar + local) that serve this page. With more than
+   *  one, the form asks which to save into (avoids nondeterministic first-match
+   *  routing for overlapping domains); with exactly one, that target's id is used
+   *  even though no picker shows (so a lone LOCAL project is not misrouted to a
+   *  sidecar); with none, capture is disabled with an explanation. */
+  targets?: WriteTarget[];
   /** Forced UI theme for the form's shadow host (threaded from the content
    *  script). Omitted leaves the host on the system default. */
   theme?: Theme;
 }
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+/** A capture-target option label: project name plus its kind, so "CRM (local)"
+ *  reads clearly against "My Sidecar (sidecar)" when both serve the page. */
+function targetLabel(target: WriteTarget): string {
+  const name = target.project || target.id;
+  const kind =
+    target.kind === "local" ? t("capture.targetKindLocal") : t("capture.targetKindSidecar");
+  return `${name} (${kind})`;
 }
 
 /** Merge a single locale's value into an existing locale map without dropping
@@ -337,6 +343,13 @@ export class CaptureForm {
     });
 
     q<HTMLButtonElement>("#sp-save").addEventListener("click", async () => {
+      // A capture with no writable project serving the page cannot be routed:
+      // explain rather than misroute to a non-existent sidecar. (Edit always has
+      // its owning project, so this never blocks an edit.)
+      if (!editing && (options.targets?.length ?? 0) === 0) {
+        this.showErrors(errorsBox, [t("capture.noWritableProject")]);
+        return;
+      }
       stashCurrent();
       const fields: CaptureFields = {
         byLocale,
@@ -381,8 +394,13 @@ export class CaptureForm {
       const file = editing
         ? ""
         : q<HTMLInputElement>("#sp-file").value.trim() || options.defaultFile;
+      // With a picker, use the chosen option; with exactly one target (no picker),
+      // fall back to that lone target's id so a single LOCAL project still carries
+      // its `manual:<id>` and is not misrouted to "first sidecar" (undefined).
       const targetSel = shadow.querySelector<HTMLSelectElement>("#sp-target");
-      const connectionId = editing ? undefined : targetSel?.value || undefined;
+      const connectionId = editing
+        ? undefined
+        : targetSel?.value || options.targets?.[0]?.id || undefined;
       const result = await options.onSubmit(file, spec, connectionId);
       if (result.ok) this.close();
       else this.showErrors(errorsBox, result.errors ?? [t("capture.saveFailed")]);
@@ -393,7 +411,7 @@ export class CaptureForm {
     defaultFile: string,
     locales: string[],
     current: string,
-    targets: { id: string; project: string }[],
+    targets: WriteTarget[],
     opts: { editing: boolean; relinkable: boolean },
   ): string {
     const localeOptions = locales
@@ -402,17 +420,23 @@ export class CaptureForm {
           `<option value="${escapeAttr(l)}"${l === current ? " selected" : ""}>${escapeHtml(l)}</option>`,
       )
       .join("");
-    // Ask which project to save into only when more than one serves this page.
-    // Edit is id-addressed, so the target project + file are not selectable.
-    const targetField =
-      !opts.editing && targets.length > 1
-        ? `<label>${escapeHtml(t("capture.targetProject"))}</label><select id="sp-target">${targets
-            .map(
-              (target) =>
-                `<option value="${escapeAttr(target.id)}">${escapeHtml(target.project || target.id)}</option>`,
-            )
-            .join("")}</select>`
-        : "";
+    // Ask which project to save into only when more than one serves this page
+    // (each option labelled by kind so sidecar vs local is clear). With exactly
+    // one, the lone target's id is resolved at submit (no picker). With none,
+    // explain that capture is disabled. Edit is id-addressed: never shown.
+    let targetField = "";
+    if (!opts.editing) {
+      if (targets.length > 1) {
+        targetField = `<label>${escapeHtml(t("capture.targetProject"))}</label><select id="sp-target">${targets
+          .map(
+            (target) =>
+              `<option value="${escapeAttr(target.id)}">${escapeHtml(targetLabel(target))}</option>`,
+          )
+          .join("")}</select>`;
+      } else if (targets.length === 0) {
+        targetField = `<div class="relink-note">${escapeHtml(t("capture.noWritableProject"))}</div>`;
+      }
+    }
     const fileField = opts.editing
       ? ""
       : `<label>${escapeHtml(t("capture.targetFile"))}</label><input id="sp-file" value="${escapeAttr(defaultFile)}" />`;
