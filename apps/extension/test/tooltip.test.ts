@@ -6,6 +6,7 @@ import { must } from "./test-utils.js";
 afterEach(() => {
   document.body.innerHTML = "";
   document.getElementById("specpin-tooltip-host")?.remove();
+  document.getElementById("specpin-reveal-host")?.remove();
 });
 
 function shadowOf(): ShadowRoot {
@@ -208,6 +209,67 @@ describe("TooltipRenderer", () => {
     fire(must(shadowOf().querySelector(".badge")), "click");
     fire(must(shadowOf().querySelector(".pin-open")), "click");
     expect(onOpenInPanel).toHaveBeenCalledWith("login");
+    renderer.destroy();
+  });
+
+  it("revealSpec pins the matching spec's tip and returns true", () => {
+    document.body.innerHTML = `<button>Login</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+    });
+    const tip = must(shadowOf().querySelector(".tip")) as HTMLElement;
+    expect(tip.classList.contains("show")).toBe(false);
+
+    expect(renderer.revealSpec("login")).toBe(true);
+    expect(tip.classList.contains("show")).toBe(true);
+    expect(tip.classList.contains("pinned")).toBe(true);
+    expect(must(tip.querySelector("h4")).textContent).toBe("Login button");
+    renderer.destroy();
+  });
+
+  it("revealSpec returns false for an unknown spec id", () => {
+    document.body.innerHTML = `<button>Login</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+    });
+    expect(renderer.revealSpec("nope")).toBe(false);
+    renderer.destroy();
+  });
+
+  it("uses a custom host id so an on-demand instance does not clash", () => {
+    document.body.innerHTML = `<button>Login</button>`;
+    const renderer = new TooltipRenderer(document, "specpin-reveal-host");
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+    });
+    expect(document.getElementById("specpin-reveal-host")).not.toBeNull();
+    expect(document.getElementById("specpin-tooltip-host")).toBeNull();
+    renderer.destroy();
+    expect(document.getElementById("specpin-reveal-host")).toBeNull();
+  });
+
+  it("with showBadges=false renders no badge but revealSpec still shows the tip", () => {
+    document.body.innerHTML = `<button>Login</button>`;
+    const renderer = new TooltipRenderer(document, "specpin-reveal-host", false);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+    });
+    const shadow = must(must(document.getElementById("specpin-reveal-host")).shadowRoot);
+    // No "S" badge stamped on the page.
+    expect(shadow.querySelector(".badge")).toBeNull();
+    const tip = must(shadow.querySelector(".tip")) as HTMLElement;
+    expect(tip.classList.contains("show")).toBe(false);
+
+    expect(renderer.revealSpec("login")).toBe(true);
+    expect(tip.classList.contains("show")).toBe(true);
+    expect(tip.classList.contains("pinned")).toBe(true);
+    expect(must(tip.querySelector("h4")).textContent).toBe("Login button");
     renderer.destroy();
   });
 });

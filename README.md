@@ -1,12 +1,55 @@
+🇬🇧 **English** • 🇻🇳 [Tiếng Việt](README.vi.md)
+
 <p align="center">
-  <img src="apps/extension/designs/specpin-icon.png" alt="Specpin" width="96" height="96" />
+  <img src="apps/extension/designs/specpin-icon.png" alt="Specpin" width="112" height="112" />
 </p>
 
-# Specpin
+<h1 align="center">Specpin</h1>
 
-**Specpin pins business specifications (rules, descriptions, acceptance criteria) directly onto the elements of a running web UI. It is NOT a spec-driven code generator** (unrelated to GitHub Spec Kit / OpenSpec): it does not generate application code from specs. It is a knowledge layer that attaches living, Git-versioned documentation onto interfaces you already have. The interface already knows where everything is; Specpin gives it a memory.
+<p align="center">
+  Pin living business specs onto the elements of your running web UI.<br>
+  Git-native, local-first, framework-agnostic. <strong>No code generation.</strong>
+</p>
 
-Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to elements through resilient fingerprints, and render in-browser through pluggable display modes (tooltip, sidebar, modal). Spec content is multi-language (locale-keyed), and one extension can connect to several projects at once, routing specs to each page by origin. Everything is local-first and Git-native: versioned, reviewable via PR, and diffable.
+<p align="center">
+  <a href="https://github.com/lamngockhuong/specpin/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/lamngockhuong/specpin/ci.yml?style=flat-square&label=CI&color=2DD4BF&logo=githubactions&logoColor=white" alt="CI">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/lamngockhuong/specpin?style=flat-square&color=2DD4BF" alt="Apache-2.0 License">
+  </a>
+  <a href="https://github.com/lamngockhuong/specpin/stargazers">
+    <img src="https://img.shields.io/github/stars/lamngockhuong/specpin?style=flat-square&color=f59e0b" alt="GitHub Stars">
+  </a>
+  <img src="https://img.shields.io/badge/Node-%E2%89%A520-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node >= 20">
+  <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go 1.26">
+  <img src="https://img.shields.io/badge/MV3-Chrome%20%2B%20Firefox-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome + Firefox">
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick start</a> •
+  <a href="#features">Features</a> •
+  <a href="#how-it-fits-together">How it works</a> •
+  <a href="#documentation">Docs</a> •
+  <a href="./docs/vi/">Tiếng Việt</a>
+</p>
+
+<p align="center">
+  <img src="apps/extension/designs/overview.png" alt="Specpin extension UI in light and dark themes" width="760" />
+</p>
+
+---
+
+## What is Specpin?
+
+Specpin attaches **business specifications** (rules, descriptions, acceptance criteria) directly onto the elements of a *running* web UI, then renders them in-browser as you hover or browse.
+
+It is **not** a spec-driven code generator (unrelated to GitHub Spec Kit / OpenSpec): it generates no application code. It is a knowledge layer that pins living, Git-versioned documentation onto the interface you already have. The interface already knows where everything is; Specpin gives it a memory.
+
+- **Git-native.** Specs live as JSON in your repo's `.specs/` directory: versioned, reviewable via PR, and diffable.
+- **Local-first.** A small Go sidecar serves your specs over token-authenticated localhost only. Nothing leaves your machine.
+- **Resilient links.** Elements are matched by multi-signal fingerprints (test-id, aria, selector, xpath, text, position), so specs survive refactors.
+- **Framework-agnostic.** Pure DOM matching works on any site or framework.
 
 ## How it fits together
 
@@ -16,11 +59,53 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 
 1. `specpin init` scaffolds `.specs/manifest.json` in your repo.
 2. `specpin serve` exposes `.specs/` over a token-authenticated localhost HTTP API with live-reload (SSE).
-3. The browser extension connects to the sidecar, matches each spec's fingerprint against the live DOM, and renders the spec on its element.
+3. The browser extension connects to the sidecar, matches each spec's fingerprint against the live DOM, and renders it on its element.
+
+## Quick start
+
+```bash
+# 1. Install workspace deps and build everything
+pnpm install
+pnpm build
+
+# 2. Build the Go sidecar (from apps/cli)
+cd apps/cli && make build      # -> bin/specpin
+
+# 3. In your project repo: scaffold and serve specs
+specpin init                   # creates .specs/manifest.json
+specpin serve                  # prints a localhost URL + bearer token
+
+# 4. Load the extension (unpacked) and connect
+#    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
+#    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
+```
+
+Paste the printed URL + token into the extension's connection settings, open your app, and specs render on their elements. See **[`docs/run-guide.md`](./docs/run-guide.md)** for the full init -> serve -> load -> connect -> render -> capture loop, or try it against the bundled **[demo app](./examples/demo-react-app)**:
+
+```bash
+pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, ships seeded .specs/
+```
+
+## Features
+
+- **Pin specs onto live elements** - resilient fingerprint matching (test-id, aria, selector, xpath, text, position)
+- **Three display modes** - tooltip, sidebar, and draggable modal renderers
+- **Manual capture** - click an element and author a spec in place, no leaving the page
+- **Writable local projects** - edit, capture, create, and group-zip export specs without a running sidecar
+- **Multi-project connections** - one extension serves many projects at once, routed to each page by origin
+- **Per-project enable/disable** - toggle individual connections independently of the global on/off
+- **Side panel surface** - open Specpin in Chrome's side panel / Firefox's sidebar, with inline spec detail
+- **Spec search** - live client-side filter by title, file, tags, and description
+- **Source badges** - see at a glance whether a spec comes from the sidecar or a local batch
+- **Multi-language spec content** - locale-keyed strings with an in-browser language toggle and per-locale authoring
+- **User-selectable theme** - System / Light / Dark, dual-theme design tokens
+- **UI-chrome i18n** - English + Vietnamese interface, independent from spec content language
+- **Offline validation** - `specpin validate` + CI spec-lint to keep `.specs/` honest
+- **Secure by default** - sidecar binds `127.0.0.1` only, bearer-token auth, extension-origin CORS, path-traversal guarded writes
 
 ## Monorepo layout
 
-```
+```text
 specpin/
 ├── apps/
 │   ├── extension/            # WXT MV3 cross-browser extension (Chrome + Firefox)
@@ -38,39 +123,74 @@ specpin/
 
 - Node >= 20, pnpm 10, Turborepo
 - Go 1.26 (sidecar CLI)
-- Vitest (all TS packages)
+- Vitest (all TS packages), Biome (lint + format)
 
 ## Workspace scripts
 
 ```bash
-pnpm install        # install workspace deps
-pnpm build          # turbo run build across packages
-pnpm test           # turbo run test (vitest per package)
-pnpm lint           # biome check . (lint + format + import organize)
-pnpm typecheck      # tsc --noEmit per package
+pnpm install          # install workspace deps
+pnpm build            # turbo run build across packages
+pnpm test             # turbo run test (vitest per package)
+pnpm lint             # biome check . (lint + format + import organize)
+pnpm typecheck        # tsc --noEmit per package
+pnpm schema-validate  # cross-validate the fixture corpus
+```
+
+Single package or single test:
+
+```bash
+pnpm --filter @specpin/fingerprint-core test
+pnpm --filter @specpin/fingerprint-core exec vitest run -t "match"
+```
+
+Go sidecar (from `apps/cli`):
+
+```bash
+make build          # sync-schema then go build -> bin/specpin
+make check-schema   # CI gate: fails if the embedded schema drifted
+go test ./...
 ```
 
 ## Documentation
 
 > Tiếng Việt: bản dịch các tài liệu nằm trong [`docs/vi/`](./docs/vi/). English is the source of truth.
 
-- `docs/project-overview-pdr.md` - product overview, problem statement, goals, PDR
-- `docs/codebase-summary.md` - per-package summary, key files, responsibilities
-- `docs/code-standards.md` - TS/Go conventions, tooling config, schema management
-- `docs/project-roadmap.md` - Phase 1 MVP completion + 1.1 planned features
-- `docs/system-architecture.md` - components, packages, fingerprinting, security model
-- `docs/run-guide.md` - the full end-to-end loop (init → serve → load extension → connect → render → capture)
-- `docs/schema-reference.md` - the v1 spec format
-- `docs/design-system.md` - extension UI mockups + shared color/font token workflow
+- [`docs/project-overview-pdr.md`](./docs/project-overview-pdr.md) - product overview, problem statement, goals, PDR
+- [`docs/system-architecture.md`](./docs/system-architecture.md) - components, packages, fingerprinting, security model
+- [`docs/codebase-summary.md`](./docs/codebase-summary.md) - per-package summary, key files, responsibilities
+- [`docs/run-guide.md`](./docs/run-guide.md) - the full end-to-end loop (init -> serve -> load -> connect -> render -> capture)
+- [`docs/schema-reference.md`](./docs/schema-reference.md) - the v1 spec format
+- [`docs/code-standards.md`](./docs/code-standards.md) - TS/Go conventions, tooling config, schema management
+- [`docs/design-system.md`](./docs/design-system.md) - extension UI mockups + shared color/font token workflow
+- [`docs/project-roadmap.md`](./docs/project-roadmap.md) - Phase 1 MVP completion + 1.1 planned features
 
 ## Contributing
 
-See `.github/CONTRIBUTING.md`. Run `pnpm lint && pnpm typecheck && pnpm test && pnpm schema-validate`, plus `make check-schema && go test ./...` in `apps/cli`, before opening a PR.
+See [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md). Before opening a PR, run the full gate:
+
+```bash
+pnpm lint && pnpm typecheck && pnpm test && pnpm schema-validate
+cd apps/cli && make check-schema && go test ./...
+```
+
+## Status
+
+Phase 1 MVP shipped, plus 1.1 slices: the Go sidecar serves `.specs/`, and the WXT extension matches fingerprints and renders specs (tooltip + sidebar + modal) with manual capture. Specs are multi-language with an in-browser language toggle and per-locale authoring; the extension connects to multiple projects at once, routed by origin. Also delivered: offline `specpin validate` + CI spec-lint, writable local projects (edit, capture, create, group-zip export), client-side spec search, source badges, per-project enable/disable, a side panel surface, user-selectable theme (System / Light / Dark), and UI-chrome i18n (EN + VI). Still deferred: the FileSystem Access source, hybrid fingerprint scoring, the overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI).
+
+## Sponsor
+
+If you find Specpin useful, consider supporting its development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub_Sponsors-Support-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/lamngockhuong)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-Support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/lamngockhuong)
+[![MoMo](https://img.shields.io/badge/MoMo-Support-ae2070)](https://me.momo.vn/khuong)
+
+## Other Projects
+
+- [TabRest](https://github.com/lamngockhuong/tabrest) - Chrome extension that automatically unloads inactive tabs to free memory
+- [GitHub Flex](https://github.com/lamngockhuong/github-flex) - Cross-browser extension that enhances GitHub's interface with productivity features
+- [Termote](https://github.com/lamngockhuong/termote) - Remote control CLI tools (Claude Code, GitHub Copilot, any terminal) from mobile/desktop via PWA
 
 ## License
 
 [Apache-2.0](./LICENSE).
-
-## Status
-
-Phase 1 MVP shipped, plus 1.1 slices: a Go sidecar serves `.specs/`, and the WXT extension matches fingerprints and renders specs (tooltip + sidebar + modal) with manual capture. Specs are multi-language with an in-browser language toggle and per-locale authoring; the extension connects to multiple projects at once, routed by origin. Also delivered: offline `specpin validate`, CI spec-lint, a read-only Manual import source, user-selectable theme (System / Light / Dark), and UI-chrome i18n (EN + VI, independent from spec-content language). Still deferred: the FileSystem Access source, hybrid fingerprint scoring, the overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI).

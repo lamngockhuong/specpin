@@ -133,6 +133,14 @@ const vi: Record<keyof Messages, string> = {
   "capture.saveChanges": "Lưu thay đổi",
   "capture.saveFailed": "Lưu thất bại; hãy kiểm tra sidecar.",
 
+  // Page right-click context menu (background-set titles; shown only when on).
+  "contextMenu.parent": "Specpin",
+  "contextMenu.pin": "Ghim spec vào phần tử này",
+  "contextMenu.show": "Xem spec ở đây",
+  "contextMenu.capture": "Ghi spec (chọn phần tử)",
+  "contextMenu.toggleOff": "Tắt Specpin",
+  "contextMenu.noSpecHere": "Không có spec trên phần tử này.",
+
   // Options page (static HTML + dynamic rows).
   "options.pageTitle": "Cài đặt Specpin",
   "options.connectedProjects": "Dự án đã kết nối",

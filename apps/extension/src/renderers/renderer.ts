@@ -59,6 +59,10 @@ export interface RenderMeta {
 export interface SpecRenderer {
   readonly mode: DisplayMode;
   render(spec: Spec, target: Element, meta?: RenderMeta): void;
+  /** Bring a spec to the foreground in this surface, if it can (the context-menu
+   *  "Show spec here" action: the tooltip pins its tip). Returns true when this
+   *  renderer handled the spec. Optional: only tooltip implements it for now. */
+  revealSpec?(specId: string): boolean;
   /** Remove all rendered UI and listeners. */
   destroy(): void;
 }

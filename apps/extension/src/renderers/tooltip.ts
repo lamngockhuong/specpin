@@ -97,11 +97,16 @@ export class TooltipRenderer implements SpecRenderer {
   private layer: HTMLElement | null = null;
   private tip: HTMLElement | null = null;
   private pins: Pin[] = [];
-  private pinnedBadge: HTMLElement | null = null;
+  // The element the pinned tip is positioned against (also the "is something
+  // pinned" flag): a badge in normal mode, or the spec's target element when
+  // badges are hidden (the reveal tooltip). Null when no tip is pinned.
+  private pinnedAnchor: Element | null = null;
   private onOpenInPanel?: (specId: string) => void;
   private onEdit?: (specId: string) => void;
   private readonly doc: Document;
   private reposition = () => this.positionAll();
+  private readonly hostId: string;
+  private readonly showBadges: boolean;
   // Drag state for the pinned tip. `dragged` is reset on every (re)open so the
   // tip starts anchored to its badge; once dragged it stays put through scroll.
   // `x`/`y` are the grab offset; `w`/`h` are the tip size measured once at grab
@@ -109,13 +114,20 @@ export class TooltipRenderer implements SpecRenderer {
   private dragOffset: { x: number; y: number; w: number; h: number } | null = null;
   private dragged = false;
 
-  constructor(doc: Document = document) {
+  // `hostId` lets a second, on-demand instance (the context-menu "Show spec here"
+  // reveal tooltip) coexist with the session's tooltip renderer without clashing
+  // on the same shadow-host element id. `showBadges: false` hides the "S" badges
+  // and anchors the tip to the element directly: the reveal tooltip only pins a
+  // single tip and must not stamp a badge on the page.
+  constructor(doc: Document = document, hostId: string = HOST_ID, showBadges = true) {
     this.doc = doc;
+    this.hostId = hostId;
+    this.showBadges = showBadges;
   }
 
   private ensureRoot(theme?: Theme): HTMLElement {
     if (this.layer) return this.layer;
-    const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES, theme);
+    const { host, shadow } = createShadowHost(this.doc, this.hostId, STYLES, theme);
     host.style.position = "absolute";
     host.style.top = "0";
     host.style.left = "0";
@@ -163,39 +175,55 @@ export class TooltipRenderer implements SpecRenderer {
       project,
       editable: meta?.editable ?? true,
     };
-    badge.addEventListener("mouseenter", () => {
-      if (!this.pinnedBadge) this.showTip(pin, false);
-    });
-    badge.addEventListener("mouseleave", () => {
-      if (!this.pinnedBadge) this.hideTip();
-    });
-    badge.addEventListener("click", () => this.togglePin(pin));
-    layer.appendChild(badge);
-
     this.pins.push(pin);
-    this.positionBadge(pin);
+    // The reveal tooltip (showBadges=false) skips the badge entirely: no hover
+    // affordance, no on-page marker. Its single tip is pinned via revealSpec().
+    if (this.showBadges) {
+      badge.addEventListener("mouseenter", () => {
+        if (!this.pinnedAnchor) this.showTip(pin, false);
+      });
+      badge.addEventListener("mouseleave", () => {
+        if (!this.pinnedAnchor) this.hideTip();
+      });
+      badge.addEventListener("click", () => this.togglePin(pin));
+      layer.appendChild(badge);
+      this.positionBadge(pin);
+    }
+  }
+
+  /** Pin the tip for a given spec id so its content shows without a hover (the
+   *  context-menu "Show spec here" action). Returns false when no badge for that
+   *  spec exists in this renderer (e.g. it rendered in another mode). */
+  revealSpec(specId: string): boolean {
+    const pin = this.pins.find((p) => p.specId === specId);
+    if (!pin) return false;
+    // showTip(pinned) sets pinnedAnchor (to the target, since reveal hides badges).
+    this.showTip(pin, true);
+    return true;
   }
 
   private togglePin(pin: Pin): void {
-    if (this.pinnedBadge === pin.badge) {
+    if (this.pinnedAnchor === pin.badge) {
       this.unpin();
       return;
     }
-    this.pinnedBadge = pin.badge;
     this.showTip(pin, true);
   }
 
   private unpin(): void {
-    this.pinnedBadge = null;
+    this.pinnedAnchor = null;
     this.hideTip();
   }
 
   private showTip(pin: Pin, pinned: boolean): void {
     const tip = this.tip;
     if (!tip) return;
-    // Fresh open: drop any prior drag so the tip re-anchors to its badge.
+    // Fresh open: drop any prior drag so the tip re-anchors to its anchor.
     this.dragged = false;
     tip.classList.remove("dragging");
+    // Anchor to the badge in normal mode, or to the element itself when badges are
+    // hidden (reveal tooltip).
+    const anchor = this.showBadges ? pin.badge : pin.target;
     const tags = pin.tags.length
       ? `<div class="tags">${escapeHtml(pin.tags.join(", "))}</div>`
       : "";
@@ -217,6 +245,7 @@ export class TooltipRenderer implements SpecRenderer {
         : "");
     tip.classList.toggle("pinned", pinned);
     if (pinned) {
+      this.pinnedAnchor = anchor;
       tip.querySelector(".pin-close")?.addEventListener("click", () => this.unpin());
       tip.querySelector(".pin-edit")?.addEventListener("click", () => {
         this.onEdit?.(pin.specId);
@@ -225,7 +254,7 @@ export class TooltipRenderer implements SpecRenderer {
         this.onOpenInPanel?.(pin.specId);
       });
     }
-    this.positionTip(pin.badge);
+    this.positionTip(anchor);
     tip.classList.add("show");
   }
 
@@ -233,11 +262,11 @@ export class TooltipRenderer implements SpecRenderer {
     this.tip?.classList.remove("show", "pinned");
   }
 
-  private positionTip(badge: HTMLElement): void {
+  private positionTip(anchor: Element): void {
     const tip = this.tip;
     const win = this.doc.defaultView;
     if (!tip || !win) return;
-    const rect = badge.getBoundingClientRect();
+    const rect = anchor.getBoundingClientRect();
     const tipW = tip.offsetWidth || 360;
     const maxLeft = win.scrollX + win.innerWidth - tipW - 8;
     let left = rect.left + win.scrollX;
@@ -256,10 +285,10 @@ export class TooltipRenderer implements SpecRenderer {
   }
 
   private positionAll(): void {
-    for (const pin of this.pins) this.positionBadge(pin);
-    // Keep the pinned tip anchored to its badge through scroll/resize, unless the
-    // user has dragged it somewhere deliberately.
-    if (this.pinnedBadge && !this.dragged) this.positionTip(this.pinnedBadge);
+    if (this.showBadges) for (const pin of this.pins) this.positionBadge(pin);
+    // Keep the pinned tip anchored through scroll/resize, unless the user has
+    // dragged it somewhere deliberately.
+    if (this.pinnedAnchor && !this.dragged) this.positionTip(this.pinnedAnchor);
   }
 
   // Drag the pinned tip by its title area. Document-absolute coordinates keep
@@ -320,6 +349,6 @@ export class TooltipRenderer implements SpecRenderer {
     this.host = this.shadow = null;
     this.layer = this.tip = null;
     this.pins = [];
-    this.pinnedBadge = null;
+    this.pinnedAnchor = null;
   }
 }
