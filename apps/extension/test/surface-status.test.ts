@@ -1,18 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import type { ManualBatchSummary } from "../src/shared/connection-types.js";
 import type { ConnectionStatus, StatusResult } from "../src/shared/messaging.js";
-import { renderStatus } from "../src/shared/surface-renderers.js";
+import { renderProjects, renderStatus } from "../src/shared/surface-renderers.js";
 
-// Header (project name + spec count) must be scoped to the active tab's origin,
-// not the global first-connected project / cross-project total. Regression for a
-// project being named on a page it does not serve.
+// The header carries only the informational states (Not configured / No project
+// for this page) and the page-total spec count; per-project connection health
+// and naming live in the project list (renderProjects), origin-scoped so a
+// project bound to another domain never appears on a page it does not serve.
 
 function setupDom(): void {
   document.body.innerHTML = `
-    <span id="status-dot"></span>
-    <span id="status-text"></span>
+    <div class="row status"><span><span id="status-text"></span></span></div>
     <input id="enabled" type="checkbox" />
-    <span id="project"></span>
     <span id="count"></span>
+    <ul id="projects"></ul>
   `;
 }
 
@@ -30,23 +31,83 @@ function conn(partial: Partial<ConnectionStatus>): ConnectionStatus {
   };
 }
 
-function status(connections: ConnectionStatus[]): StatusResult {
+function batch(partial: Partial<ManualBatchSummary>): ManualBatchSummary {
+  return {
+    id: partial.id ?? "manual:b1",
+    label: partial.label ?? "Local",
+    source: partial.source ?? "manual",
+    project: partial.project ?? "Local Project",
+    domains: partial.domains ?? [],
+    specCount: partial.specCount ?? 1,
+    importedAt: partial.importedAt ?? 0,
+  };
+}
+
+function status(
+  connections: ConnectionStatus[],
+  manualBatches?: ManualBatchSummary[],
+): StatusResult {
   return {
     configured: true,
     enabled: true,
     connections,
+    manualBatches,
   };
 }
 
-const project = () => document.getElementById("project")?.textContent;
 const count = () => document.getElementById("count")?.textContent;
 const statusText = () => document.getElementById("status-text")?.textContent;
-const dotClass = () => document.getElementById("status-dot")?.className;
 
-describe("renderStatus origin scoping", () => {
+const pnames = () => [...document.querySelectorAll("#projects .pname")].map((el) => el.textContent);
+const pdots = () =>
+  [...document.querySelectorAll("#projects .pdot")].map((el) => (el as HTMLElement).className);
+const ptitles = () =>
+  [...document.querySelectorAll("#projects .pdot")].map((el) => (el as HTMLElement).title);
+const pcounts = () =>
+  [...document.querySelectorAll("#projects .pcount")].map((el) => el.textContent);
+
+describe("renderStatus header", () => {
   beforeEach(setupDom);
 
-  it("names the project serving the active origin, not the global first-connected one", () => {
+  it("shows the page-total spec count pill (scoped to the active origin)", () => {
+    const a = conn({ id: "a", matchesAllSites: true, specCount: 4 });
+    renderStatus(status([a]), "https://x.test", 5);
+    expect(count()).toBe("5 specs");
+  });
+
+  // The text is blank in the serving cases; CSS (`.status:has(#status-text:empty)`)
+  // collapses the row, so the renderer's job here is just to clear the text.
+  it("blanks the status text when a project serves the page (the dots carry state)", () => {
+    const a = conn({ id: "a", matchesAllSites: true, specCount: 1 });
+    renderStatus(status([a]), "https://x.test", 1);
+    expect(statusText()).toBe("");
+  });
+
+  it("blanks the status text on a Manual-only page", () => {
+    const elsewhere = conn({ id: "elsewhere", domains: ["other.test"], connected: true });
+    renderStatus(status([elsewhere]), "https://x.test", 3);
+    expect(statusText()).toBe("");
+  });
+
+  it("shows 'No project for this page' when nothing serves the origin", () => {
+    // The spec list owns the "No specs for this page" empty state; the header
+    // names only the source gap, and the count clears.
+    const elsewhere = conn({ id: "elsewhere", domains: ["other.test"], connected: true });
+    renderStatus(status([elsewhere]), "https://x.test", 0);
+    expect(statusText()).toBe("No project for this page");
+    expect(count()).toBe("");
+  });
+
+  it("shows 'Not configured' when nothing is set up", () => {
+    renderStatus({ configured: false, enabled: false }, "https://x.test", 0);
+    expect(statusText()).toBe("Not configured");
+  });
+});
+
+describe("renderProjects origin scoping", () => {
+  beforeEach(setupDom);
+
+  it("lists the project serving the active origin, not a project bound elsewhere", () => {
     const acme = conn({
       id: "acme",
       project: "Acme CRM Demo",
@@ -63,69 +124,37 @@ describe("renderStatus origin scoping", () => {
       specCount: 1,
     });
     // Active tab is wsm.sun-asterisk.vn: Acme (localhost domains) does not serve it.
-    renderStatus(status([acme, wsm]), "https://wsm.sun-asterisk.vn", 1);
-    expect(project()).toBe("WSM");
-    expect(count()).toBe("1 specs");
+    renderProjects(status([acme, wsm]), "https://wsm.sun-asterisk.vn");
+    expect(pnames()).toEqual(["WSM"]);
   });
 
-  it("leaves the header blank when no connection serves the origin", () => {
-    const acme = conn({
-      id: "acme",
-      project: "Acme CRM Demo",
-      label: "Acme CRM Demo",
-      domains: ["localhost:3000"],
-      specCount: 4,
+  it("stays empty when no project serves the origin", () => {
+    const acme = conn({ id: "acme", domains: ["localhost:3000"], specCount: 4 });
+    renderProjects(status([acme]), "https://other.example");
+    expect(pnames()).toEqual([]);
+  });
+
+  it("lists a single serving project (it carries its own dot now)", () => {
+    const a = conn({
+      id: "a",
+      project: "Solo",
+      label: "Solo",
+      matchesAllSites: true,
+      specCount: 2,
     });
-    renderStatus(status([acme]), "https://other.example", 0);
-    expect(project()).toBe("");
-    expect(count()).toBe("");
+    renderProjects(status([a]), "https://x.test");
+    expect(pnames()).toEqual(["Solo"]);
+    expect(pcounts()).toEqual(["2"]);
   });
 
-  it("blanks the header project when 2+ projects serve the origin (the list names them)", () => {
+  it("lists every serving project when several match", () => {
     const a = conn({ id: "a", project: "A", label: "A", matchesAllSites: true, specCount: 2 });
     const b = conn({ id: "b", project: "B", label: "B", matchesAllSites: true, specCount: 3 });
-    renderStatus(status([a, b]), "https://anything.test", 5);
-    expect(project()).toBe("");
-    expect(count()).toBe("5 specs");
-  });
-});
-
-describe("renderStatus connection health (origin-scoped)", () => {
-  beforeEach(setupDom);
-
-  const allSites = (id: string, connected: boolean) =>
-    conn({ id, project: id, label: id, matchesAllSites: true, connected, specCount: 1 });
-
-  it("shows Connected when every serving sidecar is up", () => {
-    renderStatus(status([allSites("a", true), allSites("b", true)]), "https://x.test", 2);
-    expect(statusText()).toBe("Connected (sidecar)");
-    expect(dotClass()).toBe("dot ok");
+    renderProjects(status([a, b]), "https://anything.test");
+    expect(pnames()).toEqual(["A", "B"]);
   });
 
-  it("shows a degraded Partially connected (n/m) when some serving sidecars are down", () => {
-    renderStatus(status([allSites("a", true), allSites("b", false)]), "https://x.test", 1);
-    expect(statusText()).toBe("Partially connected (1/2)");
-    expect(dotClass()).toBe("dot warn");
-  });
-
-  it("names the source as Disconnected (sidecar) when all serving sidecars are down", () => {
-    renderStatus(status([allSites("a", false), allSites("b", false)]), "https://x.test", 0);
-    expect(statusText()).toBe("Disconnected (sidecar)");
-    expect(dotClass()).toBe("dot off");
-  });
-
-  it("ignores connections that do not serve the active origin", () => {
-    // A down sidecar pinned to another domain must not degrade this page.
-    const here = conn({ id: "here", matchesAllSites: true, connected: true, specCount: 1 });
-    const elsewhere = conn({ id: "elsewhere", domains: ["other.test"], connected: false });
-    renderStatus(status([here, elsewhere]), "https://x.test", 1);
-    expect(statusText()).toBe("Connected (sidecar)");
-    expect(dotClass()).toBe("dot ok");
-  });
-
-  it("excludes a disabled connection from the serving set", () => {
-    // A disabled project serves no page even though it matches the origin: the
-    // header must not name it and health must not count it.
+  it("excludes a disabled connection from the list", () => {
     const off = conn({
       id: "off",
       project: "Off",
@@ -135,29 +164,56 @@ describe("renderStatus connection health (origin-scoped)", () => {
       specCount: 2,
       enabled: false,
     });
-    renderStatus(status([off]), "https://x.test", 0);
-    expect(statusText()).toBe("No project for this page");
-    expect(project()).toBe("");
+    renderProjects(status([off]), "https://x.test");
+    expect(pnames()).toEqual([]);
+  });
+});
+
+describe("renderProjects per-project status dot", () => {
+  beforeEach(setupDom);
+
+  it("marks a connected sidecar with the ok dot and a Connected title", () => {
+    const a = conn({ id: "a", label: "Up", matchesAllSites: true, connected: true });
+    renderProjects(status([a]), "https://x.test");
+    expect(pdots()).toEqual(["pdot ok"]);
+    expect(ptitles()).toEqual(["Connected (sidecar)"]);
   });
 
-  it("reports Connected (manual) when no sidecar serves the page but specs render", () => {
-    const elsewhere = conn({ id: "elsewhere", domains: ["other.test"], connected: true });
-    renderStatus(status([elsewhere]), "https://x.test", 3);
-    expect(statusText()).toBe("Connected (manual)");
-    expect(dotClass()).toBe("dot ok");
+  it("marks a disconnected sidecar with the err dot and a Disconnected title", () => {
+    const a = conn({ id: "a", label: "Down", matchesAllSites: true, connected: false });
+    renderProjects(status([a]), "https://x.test");
+    expect(pdots()).toEqual(["pdot err"]);
+    expect(ptitles()).toEqual(["Disconnected (sidecar)"]);
+  });
+});
+
+describe("renderProjects lists Manual projects", () => {
+  beforeEach(setupDom);
+
+  it("lists a serving sidecar and a serving Manual project together", () => {
+    const sidecar = conn({ id: "s", project: "Sidecar", label: "Sidecar", matchesAllSites: true });
+    const local = batch({ project: "Local", specCount: 2, domains: [] });
+    renderProjects(status([sidecar], [local]), "https://x.test");
+    expect(pnames()).toEqual(["Sidecar", "Local"]);
   });
 
-  it("reports no project (not 'no specs') for a configured page that nothing serves", () => {
-    // The spec list owns the "No specs for this page" empty state; the header
-    // must not duplicate it.
-    const elsewhere = conn({ id: "elsewhere", domains: ["other.test"], connected: true });
-    renderStatus(status([elsewhere]), "https://x.test", 0);
-    expect(statusText()).toBe("No project for this page");
-    expect(dotClass()).toBe("dot");
+  it("marks a Manual project as available (ok dot, Manual title)", () => {
+    const local = batch({ project: "Local", specCount: 2, domains: [] });
+    renderProjects(status([], [local]), "https://x.test");
+    expect(pnames()).toEqual(["Local"]);
+    expect(pdots()).toEqual(["pdot ok"]);
+    expect(ptitles()).toEqual(["Connected (manual)"]);
   });
 
-  it("reports Not configured when nothing is set up", () => {
-    renderStatus({ configured: false, enabled: false }, "https://x.test", 0);
-    expect(statusText()).toBe("Not configured");
+  it("ignores an empty Manual project (a write target with no specs yet)", () => {
+    const local = batch({ project: "Empty Local", specCount: 0, domains: [] });
+    renderProjects(status([], [local]), "https://x.test");
+    expect(pnames()).toEqual([]);
+  });
+
+  it("ignores a Manual project whose domains do not match the page", () => {
+    const local = batch({ project: "Other", specCount: 2, domains: ["other.test"] });
+    renderProjects(status([], [local]), "https://x.test");
+    expect(pnames()).toEqual([]);
   });
 });

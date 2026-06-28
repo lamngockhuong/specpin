@@ -90,7 +90,7 @@ async function refresh(): Promise<void> {
   activeLocale = locale;
   lastSpecs = specs;
   renderStatus(status, origin, specs.specs.length);
-  renderProjects(status.connections ?? [], origin);
+  renderProjects(status, origin);
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The popup stays compact: group-level filters only (per-spec lives in the panel).
   renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh);

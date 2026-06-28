@@ -1,8 +1,8 @@
 import { t } from "../i18n/index.js";
-import type { TaggedSpec } from "./connection-types.js";
+import type { ManualBatchSummary, TaggedSpec } from "./connection-types.js";
 import { isLocalConnectionId } from "./local-id.js";
-import type { ConnectionStatus, StatusResult } from "./messaging.js";
-import { connectionServesOrigin } from "./origin-match.js";
+import type { StatusResult } from "./messaging.js";
+import { connectionServesOrigin, originMatchesDomains } from "./origin-match.js";
 import { applyFacetToggle, type FilterModel, resetPersonalVisibility } from "./surface-data.js";
 import type { FacetInventory, FacetItem, FacetKey } from "./visibility.js";
 
@@ -40,74 +40,98 @@ export function sourceBadge(spec: Pick<TaggedSpec, "connectionId">): HTMLElement
   return tag;
 }
 
-export function renderStatus(status: StatusResult, origin: string, originSpecCount: number): void {
-  // Health is scoped to the connections that actually serve the active tab: a
-  // sidecar bound to another domain must not color this page's status. The global
-  // status.connected (any-connection some()) stayed green even when a serving
-  // sidecar was down, masking partial failures -- this derives state per origin.
-  const serving = (status.connections ?? []).filter((c) => connectionServesOrigin(c, origin));
-  const up = serving.filter((c) => c.connected).length;
+/** The Manual (local) batches that render on this page: they carry specs and
+ *  their domains match the origin (empty domains = match-all, mirroring
+ *  `specsForOrigin`). These are page-owned projects, so they always count as
+ *  "serving" alongside the connected sidecars in the project chrome. Empty
+ *  batches (write targets with no specs yet) are excluded so they never name a
+ *  header or pad the project list. */
+function servingManualBatches(status: StatusResult, origin: string): ManualBatchSummary[] {
+  return (status.manualBatches ?? []).filter(
+    (b) => b.specCount > 0 && originMatchesDomains(origin, b.domains),
+  );
+}
 
-  let dotClass = "dot";
-  let text: string;
+export function renderStatus(status: StatusResult, origin: string, originSpecCount: number): void {
+  (byId("enabled") as HTMLInputElement).checked = status.enabled;
+
+  // Connection health now lives on each project row's dot in the list below
+  // (renderProjects), so the header has no status dot of its own. It keeps only
+  // the informational states the per-project dots cannot express: nothing
+  // configured, or nothing serving this page. When a project does serve, this
+  // row is empty and hidden -- the dots below carry the state. Origin scoping is
+  // preserved in renderProjects' serving filter (a project bound to another
+  // domain must not appear here).
+  const serving = (status.connections ?? []).filter((c) => connectionServesOrigin(c, origin));
+  let text = "";
   if (!status.configured) {
     text = t("common.statusNotConfigured");
-  } else if (serving.length > 0) {
-    // Tri-state over the serving sidecars: all up, some up (degraded), none up.
-    if (up === serving.length) {
-      dotClass = "dot ok";
-      text = t("common.statusConnectedSidecar");
-    } else if (up > 0) {
-      dotClass = "dot warn";
-      text = t("common.statusPartiallyConnected", { up, total: serving.length });
-    } else {
-      // Name the source so the user knows the sidecar is what dropped; it
-      // reconnects automatically (the project name sits right below this).
-      dotClass = "dot off";
-      text = t("common.statusDisconnectedSidecar");
-    }
-  } else if (originSpecCount > 0) {
-    // No sidecar serves this page yet specs render here: they come from Manual import.
-    dotClass = "dot ok";
-    text = t("common.statusConnectedManual");
-  } else {
-    // Header describes the connection/source situation (no project or manual
-    // batch is pinned here); the spec list owns the "No specs for this page"
-    // empty state, so the two never repeat the same sentence.
+  } else if (serving.length === 0 && originSpecCount === 0) {
+    // No sidecar and no Manual specs render here. The spec list owns the
+    // "No specs for this page" empty state, so this only names the source gap.
     text = t("common.statusNoProject");
   }
-  byId("status-dot").className = dotClass;
+  // When there is nothing to say (the common serving case) the text is blank and
+  // the whole row collapses via CSS (`.status:has(#status-text:empty)`), matching
+  // the `#count:empty` / `#projects:empty` convention -- no JS visibility toggle.
   byId("status-text").textContent = text;
 
-  (byId("enabled") as HTMLInputElement).checked = status.enabled;
-  // Project name + spec count are scoped to the ACTIVE TAB's origin, never the
-  // global first-connected project or the cross-project total: a project that
-  // does not serve this page must not be named here. A single serving project
-  // names the header; 0 or 2+ leave it blank (renderProjects lists the 2+ case).
-  byId("project").textContent =
-    serving.length === 1 ? serving[0].label || serving[0].project || "" : "";
+  // The project list owns project naming + per-project counts; the header keeps
+  // only the page-total spec count pill.
   byId("count").textContent = originSpecCount
     ? t("common.specsCountPill", { count: originSpecCount })
     : "";
 }
 
-/** List the connected projects that serve the active tab. */
-export function renderProjects(list: ConnectionStatus[], origin: string): void {
+/** One row in the project list: a unified view over both sources. A sidecar
+ *  carries its connection health in `dot`; a page-owned Manual project is always
+ *  available, so it renders as connected. `title` describes that state on hover
+ *  (the dot color is the at-a-glance indicator). */
+interface ProjectRow {
+  name: string;
+  dot: "ok" | "err";
+  title: string;
+  count: number;
+}
+
+/** List the projects that serve the active tab, across BOTH sources: connected
+ *  sidecars and page-owned Manual projects. */
+export function renderProjects(status: StatusResult, origin: string): void {
   const ul = byId("projects");
   ul.replaceChildren();
-  const matching = list.filter((c) => connectionServesOrigin(c, origin));
-  // With a single project the meta row already names it; avoid duplicate noise.
-  if (matching.length < 2) return;
-  for (const c of matching) {
+  const rows: ProjectRow[] = [
+    ...(status.connections ?? [])
+      .filter((c) => connectionServesOrigin(c, origin))
+      .map<ProjectRow>((c) => ({
+        name: c.label || c.project || c.baseUrl,
+        // A serving sidecar is either up (green) or down (red); the title spells
+        // the state out on hover.
+        dot: c.connected ? "ok" : "err",
+        title: c.connected
+          ? t("common.statusConnectedSidecar")
+          : t("common.statusDisconnectedSidecar"),
+        count: c.specCount,
+      })),
+    ...servingManualBatches(status, origin).map<ProjectRow>((b) => ({
+      name: b.project || b.label,
+      dot: "ok",
+      title: t("common.statusConnectedManual"),
+      count: b.specCount,
+    })),
+  ];
+  // Always list every serving project (1 or many) so each carries its own status
+  // dot -- this list is now the sole connection-health indicator.
+  for (const row of rows) {
     const li = document.createElement("li");
     const dot = document.createElement("span");
-    dot.className = `pdot ${c.connected ? "ok" : c.error ? "err" : ""}`;
+    dot.className = `pdot ${row.dot}`;
+    dot.title = row.title;
     const name = document.createElement("span");
     name.className = "pname";
-    name.textContent = c.label || c.project || c.baseUrl;
+    name.textContent = row.name;
     const count = document.createElement("span");
     count.className = "pcount";
-    count.textContent = `${c.specCount}`;
+    count.textContent = `${row.count}`;
     li.append(dot, name, count);
     ul.appendChild(li);
   }

@@ -178,7 +178,7 @@ async function refresh(): Promise<void> {
   currentPath = path;
   currentState = visibilityOf(specs);
   renderStatus(status, origin, specs.specs.length);
-  renderProjects(status.connections ?? [], origin);
+  renderProjects(status, origin);
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The side panel has the room for per-spec rows in addition to group filters.
   renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh, true);
