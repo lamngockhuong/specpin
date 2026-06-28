@@ -111,6 +111,33 @@ export default defineContentScript({
       }
     };
 
+    // SPA route changes (React Router pushState) don't reload the page or fire
+    // popstate, so without this the renderers stay pinned to the previous route's
+    // (now unmounted) elements and never match the new route. A content script
+    // runs in an isolated world, so we can't intercept the page's history.pushState;
+    // instead we watch location.href across three signals and re-render on change.
+    let lastRenderedUrl = location.href;
+    let navTimer: ReturnType<typeof setTimeout> | null = null;
+    const onNavigate = () => {
+      if (location.href === lastRenderedUrl) return;
+      lastRenderedUrl = location.href;
+      // Tear down the previous route's renderers immediately so stale tooltips
+      // don't linger over the new page during the debounce window (otherwise the
+      // new view paints first, then old tooltips vanish, then new ones appear).
+      // Skip while capturing/editing to keep the render-freeze invariant intact.
+      if (!captureActive) {
+        session?.destroy();
+        session = null;
+      }
+      // Debounce only the re-render: the new view paints over several frames, so
+      // render once the DOM settles and the new route's elements are mounted.
+      if (navTimer) clearTimeout(navTimer);
+      navTimer = setTimeout(() => {
+        navTimer = null;
+        rerender();
+      }, 100);
+    };
+
     async function applyLocale(next: string, persist: boolean): Promise<void> {
       locale = next;
       if (persist) await setLocale(next);
@@ -254,6 +281,19 @@ export default defineContentScript({
       onToggleCapture: startCapture,
     });
 
+    // Detect client-side navigation: popstate (back/forward) + hashchange cover
+    // history/hash routing instantly; the MutationObserver catches pushState,
+    // whose following DOM swap fires mutations after location.href has updated.
+    // The observer also fires on our own renderer host mounts (they append to
+    // body), but onNavigate's URL-equality short-circuit absorbs those as a cheap
+    // string compare, so the only re-render trigger is an actual URL change.
+    window.addEventListener("popstate", onNavigate);
+    window.addEventListener("hashchange", onNavigate);
+    new MutationObserver(onNavigate).observe(document.body ?? document.documentElement, {
+      childList: true,
+      subtree: true,
+    });
+
     // The sidebar's in-panel language selector dispatches this DOM event; apply
     // it like a popup-driven change and persist so the popup picker mirrors it.
     document.addEventListener(LOCALE_CHANGE_EVENT, (e) => {
@@ -315,5 +355,8 @@ export default defineContentScript({
     theme = storedTheme;
     initI18n(resolveUiLocale(storedUiLocale));
     await refresh();
+    // Seed after the first render so a stray early mutation doesn't trigger a
+    // redundant re-render for the URL we just rendered.
+    lastRenderedUrl = location.href;
   },
 });
