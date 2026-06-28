@@ -133,8 +133,9 @@ export class SidecarRegistry {
   /** Set the whole Manual-import batch list from storage truth (the single
    *  writer). Returns whether the live list actually changed, so the caller
    *  broadcasts only on a real change (echo-suppression without a seq guard,
-   *  mirroring how the connection list reconciles). Compared by id + spec count,
-   *  not deep-equal, to stay cheap (a batch is immutable once stored). */
+   *  mirroring how the connection list reconciles). Change is detected by content
+   *  (see sameBatchList): a batch is NOT immutable (rename / edit-in-place mutate
+   *  it without changing id or spec count). */
   setLocalBatches(batches: ManualBatch[]): boolean {
     if (sameBatchList(this.manual, batches)) return false;
     this.manual = batches;
@@ -247,6 +248,33 @@ export class SidecarRegistry {
       if (serving.length) return serving;
     }
     return [...this.manual];
+  }
+
+  /** Sidecar connections to export: the one named by `id`, else those serving
+   *  `origin`. Only connections with a live cache are returned (a down/never-loaded
+   *  sidecar has nothing to bundle). Returns the cached specs payload + a display
+   *  project name. Privileged (carries the full specs), like the manual path. */
+  sidecarBatchesForExport(opts: {
+    id?: string;
+    origin?: string;
+  }): Array<{ project: string; specs: SpecsResponse }> {
+    const bundle = (conn: SidecarConnection): { project: string; specs: SpecsResponse } | null => {
+      const specs = conn.getCache();
+      if (!specs) return null;
+      return { project: specs.manifest?.project || conn.label || conn.baseUrl, specs };
+    };
+    if (opts.id) {
+      const conn = this.connections.get(opts.id);
+      const out = conn ? bundle(conn) : null;
+      return out ? [out] : [];
+    }
+    const out: Array<{ project: string; specs: SpecsResponse }> = [];
+    for (const conn of this.connections.values()) {
+      if (opts.origin && !conn.matchesOrigin(opts.origin)) continue;
+      const got = bundle(conn);
+      if (got) out.push(got);
+    }
+    return out;
   }
 
   /** The cached team-default views for one connection (for the Options editor),
@@ -378,16 +406,19 @@ export class SidecarRegistry {
   }
 }
 
-/** Same length and, per index, same `id` and spec count. A batch is immutable
- *  once stored, so id + count is a sufficient change signal (cheaper than a deep
- *  compare) for echo-suppression in setLocalBatches. */
+/** Whether two batch lists are content-identical, for echo-suppression in
+ *  setLocalBatches. A batch is NOT immutable once stored: rename changes its
+ *  project/domains/label and edit-in-place changes a spec's content, both with the
+ *  same id and spec count. So id + count is not a sufficient change signal (it
+ *  would drop a rename/edit on the floor); a structural compare is. Cheap enough:
+ *  this runs only on a local mutation or a storage-change reconcile, not per read,
+ *  and the batch list is capped. */
 function sameBatchList(a: ManualBatch[], b: ManualBatch[]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
     if (a[i]?.id !== b[i]?.id) return false;
-    if (a[i]?.specs.specs.length !== b[i]?.specs.specs.length) return false;
   }
-  return true;
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 /** Prior batches a candidate bundle duplicates, by normalized project name (trim

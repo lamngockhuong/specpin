@@ -1,5 +1,5 @@
+import type { SpecsResponse } from "@specpin/api-client";
 import { type Manifest, SCHEMA_V1_ID, type Spec, type SpecFile } from "@specpin/spec-schema";
-import type { ManualBatch } from "./config.js";
 import { slugify } from "./slug.js";
 
 // Reconstruct a manual batch's on-disk .specs/ layout (manifest.json + one
@@ -35,17 +35,22 @@ function groupFromBase(file: string): string {
 /** manifest.json plus the per-group *.spec.json files, keyed by file name. */
 export type BundleFiles = Record<string, Manifest | SpecFile>;
 
-/** Reconstruct the file set for a batch. `group` per file comes from
- *  `batch.fileGroups` (Phase 1) or a file-base fallback; the `_file` shadow field
- *  is stripped from each spec; every file gets `$schema = SCHEMA_V1_ID`. Output
- *  file names are sanitized and de-collided so two source files never both map to
- *  one name (and never to `manifest.json`). */
-export function bundleToFiles(batch: ManualBatch): BundleFiles {
+/** Reconstruct the file set for a specs payload (a local batch's `specs`, or a
+ *  sidecar connection's cache). `group` per file comes from `fileGroups` when the
+ *  caller has it (local batches) or a file-base fallback otherwise (sidecar caches
+ *  flatten away the per-file group); the `_file` shadow field is stripped from each
+ *  spec; every file gets `$schema = SCHEMA_V1_ID`. Output file names are sanitized
+ *  and de-collided so two source files never both map to one name (and never to
+ *  `manifest.json`). */
+export function bundleToFiles(
+  payload: SpecsResponse,
+  fileGroups?: Record<string, string>,
+): BundleFiles {
   const byFile = new Map<string, { group: string; specs: Spec[] }>();
   const used = new Set<string>(["manifest.json"]); // reserved: never collide
   const resolved = new Map<string, string>(); // original _file -> output name
 
-  for (const specWithFile of batch.specs.specs) {
+  for (const specWithFile of payload.specs) {
     const origFile = specWithFile._file || "specs.spec.json";
     let outName = resolved.get(origFile);
     if (!outName) {
@@ -60,7 +65,7 @@ export function bundleToFiles(batch: ManualBatch): BundleFiles {
     }
     let bucket = byFile.get(outName);
     if (!bucket) {
-      bucket = { group: batch.fileGroups?.[origFile] ?? groupFromFileName(outName), specs: [] };
+      bucket = { group: fileGroups?.[origFile] ?? groupFromFileName(outName), specs: [] };
       byFile.set(outName, bucket);
     }
     // Strip the _file shadow field; the rest is a plain Spec.
@@ -70,7 +75,7 @@ export function bundleToFiles(batch: ManualBatch): BundleFiles {
 
   const files: BundleFiles = {};
   const manifest: Manifest = {
-    ...batch.specs.manifest,
+    ...payload.manifest,
     $schema: SCHEMA_V1_ID,
     specFiles: [...byFile.keys()],
   };

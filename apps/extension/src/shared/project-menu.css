@@ -1,0 +1,46 @@
+/* Export project-picker dropdown, shared by the popup and the side panel. Shown
+   only when more than one local project serves the current page; a single one
+   exports immediately without a menu. Appended to <body> and positioned with
+   position: fixed against the Export button's bounding rect, so it does not
+   depend on either surface's layout. All values reference --sp-* tokens. */
+.export-menu {
+  position: fixed;
+  z-index: 2147483000;
+  min-width: 180px;
+  max-width: 280px;
+  padding: 6px;
+  background: var(--sp-elevated);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+.export-menu[hidden] {
+  display: none;
+}
+.export-menu-title {
+  padding: 4px 8px 6px;
+  font: 600 11px / 1 var(--sp-font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sp-text-3);
+}
+.export-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  font: 500 12px / 1.3 var(--sp-font-ui);
+  color: var(--sp-text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--sp-radius-control);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.export-menu-item:hover,
+.export-menu-item:focus {
+  background: var(--sp-control);
+  outline: none;
+}

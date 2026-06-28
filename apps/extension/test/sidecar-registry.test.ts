@@ -218,6 +218,18 @@ describe("SidecarRegistry manual batches", () => {
     expect(r.setLocalBatches([batch("2", resp("A", [], "a"))])).toBe(true);
   });
 
+  it("setLocalBatches detects a rename (same id + spec count, changed project/domains)", () => {
+    const r = registryWith({});
+    expect(r.setLocalBatches([batch("1", resp("A", ["a.test"], "a"))])).toBe(true);
+    // Same id + spec count, but the project and domains changed -> a real change.
+    expect(r.setLocalBatches([batch("1", resp("A renamed", ["b.test"], "a"))])).toBe(true);
+    // The live list now reflects the rename.
+    expect(r.manualBatchSummaries()[0]).toMatchObject({
+      project: "A renamed",
+      domains: ["b.test"],
+    });
+  });
+
   it("clearLocalSpecs empties the list and is a no-op when already empty", () => {
     const r = registryWith({});
     expect(r.clearLocalSpecs()).toBe(false);
@@ -238,6 +250,39 @@ describe("SidecarRegistry manual batches", () => {
       specCount: 1,
     });
     expect(summaries[0]).not.toHaveProperty("specs");
+  });
+});
+
+describe("SidecarRegistry sidecarBatchesForExport", () => {
+  it("exports the connection named by id from its live cache", async () => {
+    const r = registryWith({
+      a: fakeSource(resp("Project A", ["a.test"], "a-spec"), { n: 0 }),
+      b: fakeSource(resp("Project B", ["b.test"], "b-spec"), { n: 0 }),
+    });
+    await r.reestablish([conn("a"), conn("b")], false);
+    const out = r.sidecarBatchesForExport({ id: "a" });
+    expect(out).toHaveLength(1);
+    expect(out[0]?.project).toBe("Project A");
+    expect(out[0]?.specs.specs.map((s) => s.id)).toEqual(["a-spec"]);
+  });
+
+  it("exports only the connections serving an origin", async () => {
+    const r = registryWith({
+      a: fakeSource(resp("Project A", ["a.test"], "a-spec"), { n: 0 }),
+      b: fakeSource(resp("Project B", ["b.test"], "b-spec"), { n: 0 }),
+    });
+    await r.reestablish([conn("a"), conn("b")], false);
+    const out = r.sidecarBatchesForExport({ origin: "https://a.test" });
+    expect(out.map((o) => o.project)).toEqual(["Project A"]);
+  });
+
+  it("omits a connection with no cache (down / never loaded)", async () => {
+    const r = registryWith({
+      bad: fakeSource(new Error("sidecar down"), { n: 0 }),
+    });
+    await r.reestablish([conn("bad")], false);
+    expect(r.sidecarBatchesForExport({ id: "bad" })).toEqual([]);
+    expect(r.sidecarBatchesForExport({ origin: "https://bad.test" })).toEqual([]);
   });
 });
 

@@ -1,11 +1,21 @@
+/* Right-pinned group wrapping the header icon buttons. `margin-left: auto` pins
+   the whole group to the right end of the flex header and keeps the buttons
+   tight together (8px), instead of each button carrying its own auto margin
+   (which would spread several buttons evenly across the row). Robust when some
+   buttons are hidden: the group still hugs the right edge. */
+.header-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Square icon button (e.g. the header settings gear). Shared by the popup and
    side panel headers, so the one definition lives in a single place (like
    switch.css / scrollbar.css). Apply class="icon-btn" to a <button> wrapping an
-   <svg>. `margin-left: auto` pins it to the right end of a flex header;
-   `flex: none` plus an explicit size keeps it a fixed square (never grow or
-   shrink with the header row). */
+   <svg>. `flex: none` plus an explicit size keeps it a fixed square (never grow
+   or shrink with the header row). */
 .icon-btn {
-  margin-left: auto;
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -21,6 +31,12 @@
   transition:
     color 0.12s,
     border-color 0.12s;
+}
+/* The `display: inline-flex` above (author rule) beats the UA `[hidden]` rule, so
+   an explicit author rule is needed for the `hidden` attribute to take effect
+   (e.g. Export hidden when no local project serves the page). */
+.icon-btn[hidden] {
+  display: none;
 }
 /* `filter: none` overrides the generic `button:hover { filter: brightness() }`. */
 .icon-btn:hover {

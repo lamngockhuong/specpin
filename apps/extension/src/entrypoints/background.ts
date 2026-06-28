@@ -643,13 +643,31 @@ export default defineBackground(() => {
     return [...sidecar, ...local];
   }
 
-  // Reconstruct export bundles (privileged) for local projects: one by id, or
-  // those serving the origin (else all). The surface zips + downloads them.
+  // Reconstruct export bundles (privileged) for a project. The `id` form is a
+  // connection id: a local batch carries the `manual:<batchId>` prefix (export its
+  // stored bundle), anything else is a sidecar connection id (export its live
+  // cache). With no id, return the union of local + sidecar projects serving the
+  // origin (legacy/all path; current surfaces always pass an id). The surface zips
+  // + downloads the result.
   function handleGetExportBundles(message: { id?: string; origin?: string }): ExportBundle[] {
-    return registry.manualBatchesForExport(message).map((batch) => ({
+    const localBundle = (batch: ManualBatch): ExportBundle => ({
       project: batch.specs.manifest?.project || batch.label,
-      files: bundleToFiles(batch),
-    }));
+      files: bundleToFiles(batch.specs, batch.fileGroups),
+    });
+    const sidecarBundle = (b: { project: string; specs: SpecsResponse }): ExportBundle => ({
+      project: b.project,
+      files: bundleToFiles(b.specs),
+    });
+    if (message.id) {
+      if (isLocalConnectionId(message.id)) {
+        const batchId = localBatchId(message.id);
+        return batchId ? registry.manualBatchesForExport({ id: batchId }).map(localBundle) : [];
+      }
+      return registry.sidecarBatchesForExport({ id: message.id }).map(sidecarBundle);
+    }
+    const local = registry.manualBatchesForExport({ origin: message.origin }).map(localBundle);
+    const sidecar = registry.sidecarBatchesForExport({ origin: message.origin }).map(sidecarBundle);
+    return [...local, ...sidecar];
   }
 
   // Create an empty local project (privileged). RMW under mutate(): re-read

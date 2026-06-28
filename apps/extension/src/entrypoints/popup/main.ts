@@ -17,9 +17,11 @@ import "../../shared/switch.css";
 import "../../shared/icon-btn.css";
 import "../../shared/link.css";
 import "../../shared/add-project.css";
+import "../../shared/project-menu.css";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
 import { wireProjectActions } from "../../shared/project-actions.js";
 import {
+  buildExportTargets,
   buildFilterModel,
   fetchSurfaceState,
   specMatchesQuery,
@@ -40,7 +42,6 @@ import {
 // spec list rendering and the picker options.
 let activeLocale = "en";
 let lastSpecs: SpecsForOrigin | null = null;
-let lastOrigin = "";
 let searchQuery = "";
 
 function renderSpecs(res: SpecsForOrigin): void {
@@ -88,7 +89,6 @@ async function refresh(): Promise<void> {
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
-  lastOrigin = origin;
   renderStatus(status, origin, specs.specs.length);
   renderProjects(status.connections ?? [], origin);
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
@@ -97,13 +97,15 @@ async function refresh(): Promise<void> {
   // When off, the list collapses to the "off" message: hide controls that only
   // act on the (now-hidden) spec list, plus the create affordance + its panel.
   setListControlsHidden(!specs.enabled);
-  projectActions.update(specs.enabled, (status.manualBatches?.length ?? 0) > 0);
+  // Export is per project serving THIS page (one click exports one project); the
+  // shared builder lists the local + sidecar export targets.
+  projectActions.update(specs.enabled, buildExportTargets(status, origin));
   renderSpecs(specs);
 }
 
 // Shared header controls: "+ New project" (inline form) + "Export" (zip the local
 // project(s) serving the page). refresh() re-renders the list after a create.
-const projectActions = wireProjectActions(() => lastOrigin, refresh);
+const projectActions = wireProjectActions(refresh);
 
 byId("enabled").addEventListener("change", async (e) => {
   await sendToBackground({ type: "SET_ENABLED", enabled: (e.target as HTMLInputElement).checked });
