@@ -89,6 +89,14 @@ export type Message =
   | { type: "GET_EXPORT_BUNDLES"; id?: string; origin?: string }
   | { type: "SPECS_CHANGED" }
   | { type: "START_CAPTURE" }
+  // Right-click "Pin spec to this element": background -> active tab's content
+  // script. The content script captures the element it recorded on the last
+  // `contextmenu` event and opens the capture form on it (no hover-pick needed).
+  | { type: "PIN_ELEMENT" }
+  // Right-click "Show spec here": background -> active tab's content script. The
+  // content script highlights the rendered spec matched to the last right-clicked
+  // element (or its nearest matched ancestor); no-op if none matches.
+  | { type: "SHOW_SPEC_HERE" }
   | { type: "SET_DISPLAY_MODE"; mode: DisplayMode | null }
   // Viewer locale change, dispatched popup -> active tab's content script. The
   // popup persists the choice to storage; the content script re-renders with it.

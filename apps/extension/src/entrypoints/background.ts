@@ -2,10 +2,16 @@ import type { SpecsResponse, SpecWithFile, ViewsConfig } from "@specpin/api-clie
 import { formatErrors, type Spec, validateSpec } from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
 import {
+  retitleContextMenu,
+  setupContextMenu,
+  updateContextMenuVisibility,
+} from "../background/context-menu.js";
+import {
   findDuplicateBatches,
   findSpecIdCollisions,
   SidecarRegistry,
 } from "../background/sidecar-registry.js";
+import { initI18n, resolveUiLocale, type UiLocale } from "../i18n/index.js";
 import { chromeApi } from "../shared/chrome-api.js";
 import {
   batchServesOrigin,
@@ -15,6 +21,7 @@ import {
   getEnabled,
   getLocalSpecs,
   getPersonalVisibility,
+  getUiLocale,
   LOCAL_SPECS_KEY,
   MAX_MANUAL_BATCHES,
   type ManualBatch,
@@ -26,6 +33,7 @@ import {
   setEnabled,
   setLocalSpecs,
   setPersonalVisibility,
+  UI_LOCALE_KEY,
   upsertLocalSpec,
   VISIBILITY_KEY,
 } from "../shared/config.js";
@@ -187,11 +195,25 @@ export default defineBackground(() => {
     }
   }
 
-  // Both run at module eval and on every service-worker wake (onStartup /
-  // onInstalled): re-establish watches and re-apply the toolbar-click surface.
+  // Resolve the stored UI language and (re)build the right-click "Specpin"
+  // submenu. Runs on each SW wake; setupContextMenu is idempotent and registers
+  // its click listener only once. The toggle-off item routes through
+  // handleSetEnabled so the registry watch lifecycle is identical to the popup.
+  async function initContextMenu(): Promise<void> {
+    initI18n(resolveUiLocale(await getUiLocale()));
+    await setupContextMenu({
+      isEnabled: getEnabled,
+      onToggleOff: () => void handleSetEnabled(false),
+    });
+  }
+
+  // All run at module eval and on every service-worker wake (onStartup /
+  // onInstalled): re-establish watches, re-apply the toolbar-click surface, and
+  // rebuild the context menu.
   function initWorker(): void {
     void reestablish();
     void applySurfaceBehavior();
+    void initContextMenu();
   }
 
   initWorker();
@@ -218,6 +240,12 @@ export default defineBackground(() => {
     }
     if (area !== "local") return;
     if (SURFACE_KEY in changes) void applySurfaceBehavior();
+    // UI language changed (Options): re-init i18n and re-localize the menu titles
+    // so the right-click submenu switches language without a reload.
+    if (UI_LOCALE_KEY in changes) {
+      initI18n(resolveUiLocale((changes[UI_LOCALE_KEY]?.newValue as UiLocale | undefined) ?? null));
+      void getEnabled().then((enabled) => retitleContextMenu(enabled));
+    }
     // Mirror an out-of-band manual-batch change (e.g. a DevTools storage clear,
     // which the in-process write path never routes through a message) into the
     // live registry at once, rather than waiting for the keepalive alarm. Our own
@@ -518,6 +546,8 @@ export default defineBackground(() => {
     await setEnabled(enabled);
     if (!enabled) registry.stopWatchAll();
     else registry.startWatchAll();
+    // The right-click submenu only exists while Specpin is on.
+    void updateContextMenuVisibility(enabled);
     await broadcastSpecsChanged();
     return { ok: true };
   }

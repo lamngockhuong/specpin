@@ -3,12 +3,15 @@ import type { DisplayMode, ElementFingerprint, Manifest } from "@specpin/spec-sc
 import { browser, defineContentScript } from "#imports";
 import { CaptureForm } from "../content/capture-form.js";
 import { CapturePicker } from "../content/capture-mode.js";
+import { findMatchedSpec, isSpecpinOwned } from "../content/context-target.js";
 import { highlightElement } from "../content/highlight.js";
 import { registerKeyboard } from "../content/keyboard.js";
 import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
 import { type RenderSession, renderSession } from "../content/orchestrator.js";
-import { initI18n, resolveUiLocale } from "../i18n/index.js";
+import { showToast } from "../content/toast.js";
+import { initI18n, resolveUiLocale, t } from "../i18n/index.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
+import { TooltipRenderer } from "../renderers/tooltip.js";
 import {
   getDisplayMode,
   getLauncherPosition,
@@ -78,6 +81,18 @@ export default defineContentScript({
     // and apply on capture exit instead.
     let captureActive = false;
     let pendingRerender = false;
+    // The element under the last right-click, for the context-menu "Pin spec to
+    // this element" / "Show spec here" actions (the background's onClicked never
+    // carries the DOM element). Null when the click landed on Specpin's own UI.
+    let lastRightClicked: Element | null = null;
+    // On-demand tooltip for "Show spec here" when the spec renders in a non-tooltip
+    // mode (sidebar/modal), so it has no badge to reveal. Its own host id keeps it
+    // from clashing with the session's tooltip renderer.
+    let revealTooltip: TooltipRenderer | null = null;
+    const clearReveal = (): void => {
+      revealTooltip?.destroy();
+      revealTooltip = null;
+    };
 
     const picker = new CapturePicker(document);
     const form = new CaptureForm(document);
@@ -94,6 +109,7 @@ export default defineContentScript({
         pendingRerender = true;
         return;
       }
+      clearReveal();
       session?.destroy();
       session =
         enabled && specs.length
@@ -157,6 +173,7 @@ export default defineContentScript({
       // new view paints first, then old tooltips vanish, then new ones appear).
       // Skip while capturing/editing to keep the render-freeze invariant intact.
       if (!captureActive) {
+        clearReveal();
         session?.destroy();
         session = null;
       }
@@ -214,6 +231,42 @@ export default defineContentScript({
       flushPendingRerender();
     }
 
+    // Resolve the writable projects (sidecar + local) serving this page. The
+    // background resolves them so EMPTY local projects (which specsForOrigin omits)
+    // are included and each target is labelled by kind. The form asks which to
+    // save into when more than one matches.
+    function fetchWriteTargets(): Promise<WriteTarget[]> {
+      return sendToBackground<WriteTarget[]>({
+        type: "GET_WRITE_TARGETS",
+        origin: window.location.origin,
+      });
+    }
+
+    // Open the capture form on a specific element (fingerprint + form wiring).
+    // Shared by the hover-pick flow (startCapture) and the right-click "Pin spec
+    // to this element" path (pinElement). The caller owns the captureActive flag.
+    function openCaptureFormForElement(el: Element, targets: WriteTarget[]): void {
+      const fingerprint = captureFingerprint(el);
+      form.open(fingerprint, {
+        defaultFile: defaultFileName(),
+        locales: availableLocales,
+        defaultLocale: manifest?.settings?.defaultLocale ?? locale,
+        targets,
+        theme,
+        onSubmit: async (file, spec, connectionId) => {
+          const result = await sendToBackground<SaveSpecResult>({
+            type: "SAVE_SPEC",
+            file,
+            spec,
+            connectionId,
+          });
+          if (result.ok) endCapture();
+          return result;
+        },
+        onCancel: endCapture,
+      });
+    }
+
     async function startCapture(): Promise<void> {
       if (picker.isActive) {
         picker.stop();
@@ -221,40 +274,68 @@ export default defineContentScript({
         return;
       }
       captureActive = true;
-      // The writable projects (sidecar + local) serving this page, resolved by the
-      // background so EMPTY local projects (which specsForOrigin omits) are
-      // included and each target is labelled by kind. The form asks which to save
-      // into when more than one matches.
-      const targets = await sendToBackground<WriteTarget[]>({
-        type: "GET_WRITE_TARGETS",
-        origin: window.location.origin,
-      });
+      const targets = await fetchWriteTargets();
       picker.start(
-        (el) => {
-          const fingerprint = captureFingerprint(el);
-          form.open(fingerprint, {
-            defaultFile: defaultFileName(),
-            locales: availableLocales,
-            defaultLocale: manifest?.settings?.defaultLocale ?? locale,
-            targets,
-            theme,
-            onSubmit: async (file, spec, connectionId) => {
-              const result = await sendToBackground<SaveSpecResult>({
-                type: "SAVE_SPEC",
-                file,
-                spec,
-                connectionId,
-              });
-              if (result.ok) endCapture();
-              return result;
-            },
-            onCancel: endCapture,
-          });
-        },
+        (el) => openCaptureFormForElement(el, targets),
         // Picker dismissed (Escape) before any element was picked: release the
         // capture flag so re-rendering is not frozen (RT-FM6 exit path).
         endCapture,
       );
+    }
+
+    // Right-click "Pin spec to this element": capture the element recorded on the
+    // last contextmenu event directly, skipping hover-pick. Honors the single-
+    // authoring-flow guard; no-op when nothing valid was recorded.
+    async function pinElement(): Promise<void> {
+      if (captureActive || !lastRightClicked) return;
+      captureActive = true;
+      const targets = await fetchWriteTargets();
+      openCaptureFormForElement(lastRightClicked, targets);
+    }
+
+    // Right-click "Show spec here": frame the rendered spec matched to the last
+    // right-clicked element (or its nearest matched ancestor). No-op if none.
+    function showSpecHere(): void {
+      if (!lastRightClicked) return;
+      const hit = session ? findMatchedSpec(lastRightClicked, session.matches) : null;
+      // Tell the user when nothing here has a spec, so a no-op never reads as a
+      // broken action.
+      if (!hit) {
+        showToast(t("contextMenu.noSpecHere"), document, theme);
+        return;
+      }
+      clearReveal();
+      // Frame + scroll to the element, then show the spec's content.
+      highlight(hit.el);
+      // If the spec already renders as a tooltip, pin its existing tip. Otherwise
+      // (sidebar/modal mode -> no badge) show it in an on-demand tooltip so the
+      // action reveals the spec regardless of its configured display mode.
+      for (const renderer of session?.renderers ?? []) {
+        if (renderer.revealSpec?.(hit.specId)) return;
+      }
+      revealSpecAsTooltip(hit.specId, hit.el);
+    }
+
+    // Render one spec into a dedicated tooltip (own host id) and pin it open. Used
+    // by "Show spec here" for specs whose configured mode is not tooltip.
+    function revealSpecAsTooltip(specId: string, el: Element): void {
+      const spec = specs.find((s) => s.id === specId);
+      if (!spec) return;
+      const multiProject = new Set(specs.map((s) => s.project).filter(Boolean)).size > 1;
+      revealTooltip = new TooltipRenderer(document, "specpin-reveal-host", false);
+      revealTooltip.render(spec, el, {
+        confidence: 1,
+        needsReview: false,
+        locale,
+        defaultLocale: manifest?.settings?.defaultLocale,
+        project: spec.project,
+        showProject: multiProject,
+        onOpenInPanel: openInPanel,
+        onEdit: openEditForm,
+        editable: Boolean(spec.writable),
+        theme,
+      });
+      revealTooltip.revealSpec(specId);
     }
 
     // Run the capture picker and resolve a new fingerprint for a re-link (or null
@@ -316,6 +397,19 @@ export default defineContentScript({
       onToggleCapture: () => void startCapture(),
     });
 
+    // Record the right-clicked element for the context-menu actions. Capture phase
+    // so it runs before the menu opens. Specpin's own UI lives in `specpin-*`
+    // shadow hosts (events retarget to the host at document level); skip those so
+    // pin/show never act on our tooltip/sidebar/form.
+    document.addEventListener(
+      "contextmenu",
+      (e) => {
+        const target = e.target as Element | null;
+        lastRightClicked = target && !isSpecpinOwned(target) ? target : null;
+      },
+      true,
+    );
+
     // Detect client-side navigation: popstate (back/forward) + hashchange cover
     // history/hash routing instantly; the MutationObserver catches pushState,
     // whose following DOM swap fires mutations after location.href has updated.
@@ -344,6 +438,12 @@ export default defineContentScript({
           break;
         case "START_CAPTURE":
           void startCapture();
+          break;
+        case "PIN_ELEMENT":
+          void pinElement();
+          break;
+        case "SHOW_SPEC_HERE":
+          showSpecHere();
           break;
         case "EDIT_SPEC":
           openEditForm(message.specId);

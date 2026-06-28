@@ -149,11 +149,14 @@ src/
   background/
     sidecar-registry.ts   - map của các connection + danh sách batch cục bộ (Manual); tổng hợp được gate theo origin (domains theo từng batch, dedupe id giữa các batch, tag `manual:<batchId>` theo từng batch) + views threading; `localTargetsForOrigin` (gate mục tiêu ghi được) + `manualBatchesForExport`
     sidecar-connection.ts - client + cache + SSE watch + team views cache của một project (được cô lập)
+    context-menu.ts       - submenu "Specpin" của menu chuột phải: build/gate hiển thị/đổi tiêu đề + router onClicked (gửi PIN_ELEMENT / SHOW_SPEC_HERE / START_CAPTURE tới tab, tắt tại chỗ)
   content/
     orchestrator.ts   - vòng lặp match; thread locale + project label + visibility filtering vào renderer
     localize-spec.ts  - giải quyết text được localize của spec cho viewer locale
     capture-mode.ts   - element picker (Esc hủy qua callback)
     capture-form.ts   - soạn spec per-locale + bộ chọn "Save to" gắn nhãn theo loại (sidecar + local; định tuyến mục tiêu duy nhất; vô hiệu khi không dự án nào phục vụ trang)
+    context-target.ts - helper thuần cho hành động chuột phải (guard element thuộc Specpin + duyệt ancestor đã match)
+    toast.ts          - pill thông báo tạm thời trong shadow-DOM (vd "Show spec here" khi không có spec dưới con trỏ)
     keyboard.ts       - shortcut handler
   renderers/
     registry.ts       - interface `SpecRenderer` + registry

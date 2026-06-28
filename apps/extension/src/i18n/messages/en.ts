@@ -135,6 +135,14 @@ const en = {
   "capture.saveChanges": "Save changes",
   "capture.saveFailed": "Save failed; check the sidecar.",
 
+  // Page right-click context menu (background-set titles; shown only when on).
+  "contextMenu.parent": "Specpin",
+  "contextMenu.pin": "Pin spec to this element",
+  "contextMenu.show": "Show spec here",
+  "contextMenu.capture": "Capture spec (pick element)",
+  "contextMenu.toggleOff": "Turn off Specpin",
+  "contextMenu.noSpecHere": "No spec on this element.",
+
   // Options page (static HTML + dynamic rows).
   "options.pageTitle": "Specpin Settings",
   "options.connectedProjects": "Connected projects",

@@ -26,6 +26,9 @@ export default defineConfig({
       "activeTab",
       "tabs",
       "alarms",
+      // Page right-click "Specpin" submenu. Valid in both MV3 (Chrome) and MV2
+      // (Firefox, which also exposes it as `menus`); no scary install warning.
+      "contextMenus",
       ...(manifestVersion === 3 ? ["sidePanel"] : []),
     ],
     host_permissions: ["http://127.0.0.1/*", "http://localhost/*"],

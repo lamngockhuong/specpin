@@ -147,11 +147,14 @@ src/
   background/
     sidecar-registry.ts   - map of connections + local (Manual) batch list; origin-gated aggregation (per-batch domains, cross-batch id dedup, per-batch `manual:<batchId>` tag) + views threading; `localTargetsForOrigin` (writable-target gate) + `manualBatchesForExport`
     sidecar-connection.ts - one project's client + cache + SSE watch + team views cache (isolated)
+    context-menu.ts       - page right-click "Specpin" submenu: build/visibility-gate/retitle + onClicked router (dispatches PIN_ELEMENT / SHOW_SPEC_HERE / START_CAPTURE to the tab, toggle-off in place)
   content/
     orchestrator.ts   - match loop; threads locale + project labels + visibility filtering into renderers
     localize-spec.ts  - resolve a spec's localized text for the viewer locale
     capture-mode.ts   - element picker (Esc cancels via callback)
     capture-form.ts   - per-locale spec authoring + kind-labelled "Save to" picker (sidecar + local; lone-target routing; disabled when no project serves the page)
+    context-target.ts - pure helpers for the right-click actions (Specpin-owned-element guard + matched-ancestor walk)
+    toast.ts          - transient shadow-DOM message pill (e.g. "Show spec here" with no spec under the cursor)
     keyboard.ts       - shortcut handler
   renderers/
     registry.ts       - `SpecRenderer` interface + registry
