@@ -177,37 +177,37 @@
   <body>
     <div class="header">
       <img class="logo" src="/icon/128.png" alt="" />
-      <h1>Specpin</h1>
+      <h1 data-i18n="common.specpin">Specpin</h1>
       <span class="pill">v0.1.0</span>
     </div>
     <div class="row status">
-      <span><span id="status-dot" class="dot"></span><span id="status-text">Loading&hellip;</span></span>
+      <span><span id="status-dot" class="dot"></span><span id="status-text" data-i18n="common.loading">Loading&hellip;</span></span>
     </div>
     <div class="row toggle-row">
-      <label for="enabled">Show specs on this page</label>
-      <input type="checkbox" id="enabled" class="switch" aria-label="Show all Specpin specs on this page" />
+      <label for="enabled" data-i18n="common.showSpecsLabel">Show specs on this page</label>
+      <input type="checkbox" id="enabled" class="switch" data-i18n-aria="common.showSpecsAria" aria-label="Show all Specpin specs on this page" />
     </div>
     <div class="row meta"><span id="project"></span><span id="count" class="pill"></span></div>
     <ul id="projects"></ul>
     <div class="row locale-row" id="locale-row" hidden>
-      <label for="locale">Language</label>
-      <select id="locale" title="Spec language"></select>
+      <label for="locale" data-i18n="common.languageLabel">Language</label>
+      <select id="locale" data-i18n-title="common.specLanguageTitle" title="Spec language"></select>
     </div>
     <div id="filters" class="filters" hidden></div>
-    <input type="search" id="search" placeholder="Search specs&hellip;" aria-label="Search specs" />
+    <input type="search" id="search" data-i18n-placeholder="common.searchPlaceholder" data-i18n-aria="common.searchAria" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
     <div class="actions">
-      <button id="capture" type="button">+ Capture spec</button>
-      <select id="mode" title="Display mode">
-        <option value="">Per-spec mode</option>
-        <option value="tooltip">Tooltip</option>
-        <option value="sidebar">Sidebar</option>
-        <option value="modal">Modal</option>
+      <button id="capture" type="button" data-i18n="common.captureSpec">+ Capture spec</button>
+      <select id="mode" data-i18n-title="common.displayModeTitle" title="Display mode">
+        <option value="" data-i18n="common.modePerSpec">Per-spec mode</option>
+        <option value="tooltip" data-i18n="common.modeTooltip">Tooltip</option>
+        <option value="sidebar" data-i18n="common.modeSidebar">Sidebar</option>
+        <option value="modal" data-i18n="common.modeModal">Modal</option>
       </select>
     </div>
     <div class="footer">
-      <button type="button" id="open-sidepanel" class="link" hidden>Open as side panel &#x21e5;</button>
-      <button type="button" id="open-options" class="link">Connection settings &rarr;</button>
+      <button type="button" id="open-sidepanel" class="link" hidden data-i18n="popup.openSidepanel">Open as side panel &#x21e5;</button>
+      <button type="button" id="open-options" class="link" data-i18n="common.connectionSettings">Connection settings &rarr;</button>
     </div>
     <script type="module" src="./main.ts"></script>
   </body>

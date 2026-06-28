@@ -1,7 +1,9 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { localizeSpec } from "../content/localize-spec.js";
+import { plural, t } from "../i18n/index.js";
 import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
+import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 import {
   projectCaptionHtml,
@@ -97,18 +99,18 @@ export class ModalRenderer implements SpecRenderer {
     this.doc = doc;
   }
 
-  private ensureRoot(): HTMLElement {
+  private ensureRoot(theme?: Theme): HTMLElement {
     if (this.list) return this.list;
-    const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES);
+    const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES, theme);
     const root = this.doc.createElement("div");
     root.className = "root";
     root.innerHTML =
       `<div class="backdrop">` +
       `<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="${TITLE_ID}">` +
       `<div class="head"><div>` +
-      `<div class="eyebrow">Specpin</div>` +
-      `<h2 class="title" id="${TITLE_ID}">Specs on this page</h2>` +
-      `</div><button class="close" type="button" aria-label="Close">&times;</button></div>` +
+      `<div class="eyebrow">${escapeHtml(t("common.specpin"))}</div>` +
+      `<h2 class="title" id="${TITLE_ID}">${escapeHtml(t("common.specsOnThisPage"))}</h2>` +
+      `</div><button class="close" type="button" aria-label="${escapeHtml(t("common.close"))}">&times;</button></div>` +
       `<div class="summary"></div><div class="list"></div>` +
       `</div></div>`;
     shadow.appendChild(root);
@@ -138,13 +140,15 @@ export class ModalRenderer implements SpecRenderer {
   }
 
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
-    const list = this.ensureRoot();
+    const list = this.ensureRoot(meta?.theme);
     const card = this.doc.createElement("div");
     card.className = "card";
     // Plain clickable card (mouse jump-to), like the sidebar. Not keyboard-
     // focusable, so the focus trap below can keep Tab on the close button.
     if (meta?.needsReview) card.dataset.review = "true";
-    const tag = meta?.needsReview ? `<span class="tag">Needs review</span>` : "";
+    const tag = meta?.needsReview
+      ? `<span class="tag">${escapeHtml(t("common.needsReview"))}</span>`
+      : "";
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     card.innerHTML =
       tag +
@@ -172,8 +176,8 @@ export class ModalRenderer implements SpecRenderer {
     if (!this.summary || !this.list) return;
     const count = this.list.childElementCount;
     const reviewCount = this.list.querySelectorAll('.card[data-review="true"]').length;
-    const review = reviewCount > 0 ? `, ${reviewCount} need review` : "";
-    this.summary.textContent = `${count} spec${count === 1 ? "" : "s"} found${review}`;
+    const review = reviewCount > 0 ? `, ${t("common.needReview", { count: reviewCount })}` : "";
+    this.summary.textContent = `${plural(count, "common.specsFoundOne", "common.specsFoundOther")}${review}`;
   }
 
   private onKeydown(e: KeyboardEvent): void {

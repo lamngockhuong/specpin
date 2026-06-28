@@ -1,7 +1,15 @@
 import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
-import { setLocale } from "../../shared/config.js";
+import {
+  hydrateI18n,
+  initI18n,
+  resolveUiLocale,
+  t,
+  watchUiLocaleChanges,
+} from "../../i18n/index.js";
+import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
+import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
 import "../../shared/switch.css";
@@ -57,7 +65,7 @@ function renderSpecs(res: SpecsForOrigin): void {
   const list = byId("specs");
   list.replaceChildren();
   if (res.specs.length === 0) {
-    list.appendChild(mutedRow(res.enabled ? "No specs for this page." : "Specpin is off."));
+    list.appendChild(mutedRow(res.enabled ? t("common.noSpecsForPage") : t("common.specpinOff")));
     return;
   }
   const defaultLocale = res.manifest?.settings?.defaultLocale;
@@ -67,7 +75,7 @@ function renderSpecs(res: SpecsForOrigin): void {
     specMatchesQuery(spec, searchQuery, activeLocale, defaultLocale, true),
   );
   if (matches.length === 0) {
-    list.appendChild(mutedRow("No specs match your search."));
+    list.appendChild(mutedRow(t("common.noSearchMatch")));
     return;
   }
   for (const spec of matches) {
@@ -76,7 +84,7 @@ function renderSpecs(res: SpecsForOrigin): void {
     // Stable anchor so a tooltip "open in side panel" can scroll to this card.
     li.dataset.specId = spec.id;
     // Clicking the card scrolls to and highlights the matched element on the page.
-    li.title = "Click to highlight on the page";
+    li.title = t("common.clickToHighlight");
     li.addEventListener("click", () => {
       void sendToActiveTab({ type: "HIGHLIGHT_ELEMENT", specId: spec.id });
     });
@@ -89,8 +97,8 @@ function renderSpecs(res: SpecsForOrigin): void {
     const eye = document.createElement("button");
     eye.type = "button";
     eye.className = "spec-vis";
-    eye.textContent = visible ? "Hide" : "Show";
-    eye.title = visible ? "Hide this spec" : "Show this spec";
+    eye.textContent = visible ? t("sidepanel.hide") : t("sidepanel.show");
+    eye.title = visible ? t("sidepanel.hideThisSpec") : t("sidepanel.showThisSpec");
     // Don't let the eye's click bubble to the card's highlight handler.
     eye.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -105,8 +113,8 @@ function renderSpecs(res: SpecsForOrigin): void {
       const edit = document.createElement("button");
       edit.type = "button";
       edit.className = "spec-edit";
-      edit.textContent = "Edit";
-      edit.title = "Edit this spec";
+      edit.textContent = t("common.edit");
+      edit.title = t("sidepanel.editThisSpec");
       edit.addEventListener("click", (e) => {
         e.stopPropagation();
         void sendToActiveTab({ type: "EDIT_SPEC", specId: spec.id });
@@ -232,4 +240,19 @@ browser.runtime.onMessage.addListener((raw) => {
   if (message?.type === "HIGHLIGHT_SPEC") highlightSpec(message.specId);
 });
 
-void refresh();
+// Apply the forced theme at startup and keep it live if changed in Options.
+void applyStoredTheme();
+watchThemeChanges();
+
+// Resolve the UI-chrome language, hydrate the static HTML, then render.
+async function init(): Promise<void> {
+  initI18n(resolveUiLocale(await getUiLocale()));
+  hydrateI18n(document);
+  await refresh();
+}
+// The side panel can stay open while Options changes the language in another tab.
+watchUiLocaleChanges(() => {
+  hydrateI18n(document);
+  void refresh();
+});
+void init();

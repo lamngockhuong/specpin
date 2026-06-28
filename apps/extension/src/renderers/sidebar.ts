@@ -1,7 +1,9 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { LOCALE_CHANGE_EVENT, localizeSpec } from "../content/localize-spec.js";
+import { plural, t } from "../i18n/index.js";
 import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
+import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 import {
   projectCaptionHtml,
@@ -119,16 +121,18 @@ export class SidebarRenderer implements SpecRenderer {
     this.doc = doc;
   }
 
-  private ensureRoot(): HTMLElement {
+  private ensureRoot(theme?: Theme): HTMLElement {
     if (this.list) return this.list;
-    const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES);
+    const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES, theme);
     const panel = this.doc.createElement("div");
     panel.className = "panel";
     panel.innerHTML =
-      `<div class="eyebrow">Specpin</div>` +
-      `<h3 class="title">Specs on this page</h3>` +
+      `<div class="eyebrow">${escapeHtml(t("common.specpin"))}</div>` +
+      `<h3 class="title">${escapeHtml(t("common.specsOnThisPage"))}</h3>` +
       `<div class="locale" hidden></div>` +
-      `<div class="summary"><span class="count">0 specs found</span>` +
+      `<div class="summary"><span class="count">${escapeHtml(
+        plural(0, "common.specsFoundOne", "common.specsFoundOther"),
+      )}</span>` +
       `<span class="review-pill"></span></div>`;
     const list = this.doc.createElement("div");
     panel.appendChild(list);
@@ -156,7 +160,7 @@ export class SidebarRenderer implements SpecRenderer {
           `<option value="${escapeHtml(l)}"${l === current ? " selected" : ""}>${escapeHtml(l)}</option>`,
       )
       .join("");
-    this.localeBox.innerHTML = `<select aria-label="Language">${options}</select>`;
+    this.localeBox.innerHTML = `<select aria-label="${escapeHtml(t("common.languageLabel"))}">${options}</select>`;
     this.localeBox.hidden = false;
     const select = this.localeBox.querySelector("select");
     select?.addEventListener("change", () => {
@@ -167,7 +171,7 @@ export class SidebarRenderer implements SpecRenderer {
   }
 
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
-    const list = this.ensureRoot();
+    const list = this.ensureRoot(meta?.theme);
     this.ensureLocaleSelector(meta);
     const card = this.doc.createElement("div");
     card.className = "card";
@@ -175,7 +179,9 @@ export class SidebarRenderer implements SpecRenderer {
       card.dataset.review = "true";
       this.reviewCount++;
     }
-    const tag = meta?.needsReview ? `<span class="tag">Needs review</span>` : "";
+    const tag = meta?.needsReview
+      ? `<span class="tag">${escapeHtml(t("common.needsReview"))}</span>`
+      : "";
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     card.innerHTML =
       tag +
@@ -192,10 +198,11 @@ export class SidebarRenderer implements SpecRenderer {
 
   private updateSummary(): void {
     const n = this.rows.length;
-    if (this.summaryCount) this.summaryCount.textContent = `${n} spec${n === 1 ? "" : "s"} found`;
+    if (this.summaryCount)
+      this.summaryCount.textContent = plural(n, "common.specsFoundOne", "common.specsFoundOther");
     if (this.reviewPill) {
       if (this.reviewCount > 0) {
-        this.reviewPill.textContent = `${this.reviewCount} need review`;
+        this.reviewPill.textContent = t("common.needReview", { count: this.reviewCount });
         this.reviewPill.classList.add("show");
       } else {
         this.reviewPill.classList.remove("show");

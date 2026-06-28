@@ -1,8 +1,16 @@
 import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
+import {
+  hydrateI18n,
+  initI18n,
+  resolveUiLocale,
+  t,
+  watchUiLocaleChanges,
+} from "../../i18n/index.js";
 import { chromeApi } from "../../shared/chrome-api.js";
-import { setLocale } from "../../shared/config.js";
+import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
+import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
 import "../../shared/switch.css";
@@ -33,7 +41,7 @@ function renderSpecs(res: SpecsForOrigin): void {
   const list = byId("specs");
   list.innerHTML = "";
   if (res.specs.length === 0) {
-    list.appendChild(mutedRow(res.enabled ? "No specs for this page." : "Specpin is off."));
+    list.appendChild(mutedRow(res.enabled ? t("common.noSpecsForPage") : t("common.specpinOff")));
     return;
   }
   const defaultLocale = res.manifest?.settings?.defaultLocale;
@@ -41,7 +49,7 @@ function renderSpecs(res: SpecsForOrigin): void {
     specMatchesQuery(spec, searchQuery, activeLocale, defaultLocale),
   );
   if (matches.length === 0) {
-    list.appendChild(mutedRow("No specs match your search."));
+    list.appendChild(mutedRow(t("common.noSearchMatch")));
     return;
   }
   for (const spec of matches) {
@@ -49,7 +57,7 @@ function renderSpecs(res: SpecsForOrigin): void {
     li.className = "spec";
     // Clicking a spec scrolls to and highlights its element on the page, then
     // closes the popup so the page (and the highlight) is unobstructed.
-    li.title = "Click to highlight on the page";
+    li.title = t("common.clickToHighlight");
     li.addEventListener("click", async () => {
       await sendToActiveTab({ type: "HIGHLIGHT_ELEMENT", specId: spec.id });
       window.close();
@@ -120,4 +128,21 @@ if (sidePanel?.open) {
   });
 }
 
-void refresh();
+// Apply the forced theme as early as possible (before the first paint settles)
+// and keep it live if the user changes it in Options while the popup is open.
+void applyStoredTheme();
+watchThemeChanges();
+
+// Resolve the UI-chrome language, hydrate the static HTML, then render. initI18n
+// runs before the first refresh so every t() call uses the chosen language.
+async function init(): Promise<void> {
+  initI18n(resolveUiLocale(await getUiLocale()));
+  hydrateI18n(document);
+  await refresh();
+}
+// Re-hydrate + re-render if the UI language changes in Options while open.
+watchUiLocaleChanges(() => {
+  hydrateI18n(document);
+  void refresh();
+});
+void init();

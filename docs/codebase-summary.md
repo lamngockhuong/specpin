@@ -162,13 +162,19 @@ src/
     manual.ts / local-bundle.ts - read-only manual-import source + bundle parser
   shared/
     shadow.ts / html.ts        - Shadow DOM isolation + safe HTML escaping
-    messaging.ts               - typed message protocol (includes OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS)
+    theme.ts                   - Theme = "system"|"light"|"dark", applyTheme(el, theme), applyStoredTheme(), watchThemeChanges()
+    messaging.ts               - typed message protocol (includes OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs)
     connection-types.ts        - browser-free Connection / ConnectionStatus / TaggedSpec
     origin-match.ts            - pure origin/domain matching (shared by SW + popup)
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
-    config.ts                  - storage helpers (connections, locale, enabled, manual-import batch list + legacy migration, personal visibility)
+    config.ts                  - storage helpers (connections, locale, enabled, manual-import batch list + legacy migration, personal visibility, theme, uiLocale)
     surface-renderers.ts       - shared helpers for popup/side panel: sourceBadge() (sidecar vs manual pill)
     surface-data.ts            - shared spec filtering: specMatchesQuery() (title/file/tags/description predicate)
+  i18n/
+    index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
+    locales.ts                 - SUPPORTED=["en","vi"], UiLocale, resolveUiLocale (stored -> browser UI -> "en")
+    messages/en.ts             - source of truth, ~115 keys
+    messages/vi.ts             - typed against keyof Messages for compile-time parity
 ```
 
 **Key flows:**
