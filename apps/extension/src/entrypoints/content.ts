@@ -7,8 +7,16 @@ import { highlightElement } from "../content/highlight.js";
 import { registerKeyboard } from "../content/keyboard.js";
 import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
 import { type RenderSession, renderSession } from "../content/orchestrator.js";
+import { initI18n, resolveUiLocale } from "../i18n/index.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
-import { getDisplayMode, getLocale, setDisplayMode, setLocale } from "../shared/config.js";
+import {
+  getDisplayMode,
+  getLocale,
+  getTheme,
+  getUiLocale,
+  setDisplayMode,
+  setLocale,
+} from "../shared/config.js";
 import { MANUAL_CONNECTION_ID, type TaggedSpec } from "../shared/connection-types.js";
 import {
   type Message,
@@ -16,6 +24,7 @@ import {
   type SpecsForOrigin,
   sendToBackground,
 } from "../shared/messaging.js";
+import type { Theme } from "../shared/theme.js";
 import { EMPTY_VISIBILITY, type VisibilityState } from "../shared/visibility.js";
 
 function defaultFileName(): string {
@@ -41,6 +50,9 @@ export default defineContentScript({
     let locale = "en";
     let availableLocales: string[] = [];
     let visibility: VisibilityState = EMPTY_VISIBILITY;
+    // Forced UI theme for the renderers' shadow hosts; read at startup and updated
+    // by SET_THEME broadcasts from the Options page. "system" leaves hosts on the OS default.
+    let theme: Theme = "system";
 
     // Tooltip pin "open in side panel": ask the background to open the panel
     // (best-effort) and highlight the spec card. Defined once and threaded into
@@ -87,6 +99,7 @@ export default defineContentScript({
               openInPanel,
               highlight,
               openEditForm,
+              theme,
             )
           : null;
     };
@@ -164,6 +177,7 @@ export default defineContentScript({
             locales: availableLocales,
             defaultLocale: manifest?.settings?.defaultLocale ?? locale,
             targets,
+            theme,
             onSubmit: async (file, spec, connectionId) => {
               const result = await sendToBackground<SaveSpecResult>({
                 type: "SAVE_SPEC",
@@ -213,6 +227,7 @@ export default defineContentScript({
         locales: availableLocales,
         defaultLocale: manifest?.settings?.defaultLocale ?? locale,
         initial: spec,
+        theme,
         onRelink: relinkElement,
         onSubmit: async (_file, updated) => {
           const result = await sendToBackground<SaveSpecResult>({
@@ -266,6 +281,18 @@ export default defineContentScript({
           // The popup already persisted the choice; just re-render with it.
           void applyLocale(message.locale, false);
           break;
+        case "SET_THEME":
+          // Options already persisted the choice; re-render so each renderer's
+          // shadow host picks up the forced theme via data-theme.
+          theme = message.theme;
+          rerender();
+          break;
+        case "SET_UI_LOCALE":
+          // UI-chrome language changed in Options; re-init i18n and re-render so
+          // renderers' chrome (badges, buttons, summaries) switches language.
+          initI18n(resolveUiLocale(message.locale));
+          rerender();
+          break;
         case "HIGHLIGHT_ELEMENT": {
           // Resolve the spec id against the current render's matches and frame it.
           const el = session?.matches.get(message.specId);
@@ -275,9 +302,18 @@ export default defineContentScript({
       }
     });
 
-    // Restore the persisted display-mode override before the first render so a
-    // reloaded page honors the chosen mode instead of resetting to per-spec.
-    forcedMode = await getDisplayMode();
+    // Restore the persisted display-mode override and forced theme, and select
+    // the UI-chrome language, before the first render so renderers translate and
+    // a reloaded page honors both instead of resetting. These three reads are
+    // independent, so fetch them concurrently (content init runs on every page).
+    const [storedMode, storedTheme, storedUiLocale] = await Promise.all([
+      getDisplayMode(),
+      getTheme(),
+      getUiLocale(),
+    ]);
+    forcedMode = storedMode;
+    theme = storedTheme;
+    initI18n(resolveUiLocale(storedUiLocale));
     await refresh();
   },
 });

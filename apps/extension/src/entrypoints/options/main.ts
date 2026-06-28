@@ -1,12 +1,24 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
-import { type DefaultSurface, getDefaultSurface, setDefaultSurface } from "../../shared/config.js";
+import { hydrateI18n, initI18n, resolveUiLocale, t, type UiLocale } from "../../i18n/index.js";
+import {
+  type DefaultSurface,
+  getDefaultSurface,
+  getTheme,
+  getUiLocale,
+  setDefaultSurface,
+  setTheme,
+  setUiLocale,
+  type Theme,
+} from "../../shared/config.js";
 import {
   type AddLocalBatchResult,
+  broadcastToTabs,
   type ConnectionStatus,
   type ManualBatchSummary,
   type StatusResult,
   sendToBackground,
 } from "../../shared/messaging.js";
+import { applyTheme, watchThemeChanges } from "../../shared/theme.js";
 import { parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/switch.css";
@@ -28,6 +40,8 @@ const localFiles = byId("localFiles") as HTMLInputElement;
 const localResult = byId("localResult");
 const localBatches = byId("localBatches");
 const surface = byId("surface") as HTMLSelectElement;
+const theme = byId("theme") as HTMLSelectElement;
+const uiLocale = byId("uiLocale") as HTMLSelectElement;
 
 // The sidecar binds localhost only; reject anything else before sending.
 const LOCAL_URL = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/;
@@ -38,10 +52,7 @@ const LOCAL_URL = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/;
  *  required-field check (add needs a token too; edit keeps the stored token). */
 function normalizeLocalUrl(raw: string): { url: string; error: string | null } {
   const url = raw.trim().replace(/\/+$/, "");
-  const error =
-    url && !LOCAL_URL.test(url)
-      ? "URL must be http://127.0.0.1:PORT or http://localhost:PORT."
-      : null;
+  const error = url && !LOCAL_URL.test(url) ? t("options.urlError") : null;
   return { url, error };
 }
 
@@ -73,7 +84,7 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
   // specs from every page; the row stays so it can be re-enabled.
   const toggle = document.createElement("label");
   toggle.className = "conn-toggle";
-  toggle.title = c.enabled ? "Disable this project" : "Enable this project";
+  toggle.title = c.enabled ? t("options.disableProject") : t("options.enableProject");
   const toggleBox = document.createElement("input");
   toggleBox.type = "checkbox";
   // Styled as a track+knob switch, matching the popup's on/off control.
@@ -84,21 +95,24 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
     await refresh();
   });
   // Label tracks the switch state so it never contradicts the knob position.
-  toggle.append(document.createTextNode(c.enabled ? "Enabled" : "Disabled"), toggleBox);
+  toggle.append(
+    document.createTextNode(c.enabled ? t("options.enabled") : t("options.disabled")),
+    toggleBox,
+  );
   actions.append(toggle);
   const edit = document.createElement("button");
   edit.className = "secondary";
-  edit.textContent = "Edit";
+  edit.textContent = t("common.edit");
   const reconnect = document.createElement("button");
   reconnect.className = "secondary";
-  reconnect.textContent = "Reconnect";
+  reconnect.textContent = t("options.reconnect");
   reconnect.addEventListener("click", async () => {
     await sendToBackground({ type: "RECONNECT", id: c.id });
     await refresh();
   });
   const remove = document.createElement("button");
   remove.className = "secondary";
-  remove.textContent = "Remove";
+  remove.textContent = t("options.remove");
   remove.addEventListener("click", async () => {
     await sendToBackground({ type: "REMOVE_CONNECTION", id: c.id });
     await refresh();
@@ -108,12 +122,20 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
 
   const meta = document.createElement("div");
   meta.className = "conn-meta";
-  const errorText = `error: ${c.error}${c.errorDetail ? ` (${c.errorDetail})` : ""}`;
-  const liveState = c.connected ? "connected" : c.error ? errorText : "disconnected";
+  const errorText = `${t("options.error", { error: c.error ?? "" })}${
+    c.errorDetail ? ` (${c.errorDetail})` : ""
+  }`;
+  const liveState = c.connected
+    ? t("options.connected")
+    : c.error
+      ? errorText
+      : t("options.disconnected");
   // A disabled project serves no page regardless of reachability, so say so first.
-  const state = c.enabled ? liveState : `disabled · ${liveState}`;
-  const domains = c.domains.length ? c.domains.join(", ") : "no domains pinned";
-  meta.textContent = `${c.baseUrl} · ${state} · ${c.specCount} spec(s) · ${domains}`;
+  const state = c.enabled ? liveState : t("options.disabledState", { state: liveState });
+  const domains = c.domains.length ? c.domains.join(", ") : t("options.noDomains");
+  meta.textContent = `${c.baseUrl} · ${state} · ${t("options.specCount", {
+    count: c.specCount,
+  })} · ${domains}`;
 
   // Inline edit form, toggled by the Edit button. Hidden until first opened.
   const editForm = editSection(c);
@@ -132,9 +154,7 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
     const warn = document.createElement("div");
     warn.className = "warn";
     const text = document.createElement("div");
-    text.textContent = c.matchesAllSites
-      ? "This project pins no domains; its specs show on every site you visit."
-      : "This project pins no domains, so it is inactive. Enabling the option below shows its specs on every site you visit.";
+    text.textContent = c.matchesAllSites ? t("options.warnAllSites") : t("options.warnInactive");
     const optLabel = document.createElement("label");
     optLabel.className = "inline";
     const opt = document.createElement("input");
@@ -148,7 +168,7 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
       });
       await refresh();
     });
-    optLabel.append(opt, document.createTextNode(" Apply to all sites"));
+    optLabel.append(opt, document.createTextNode(` ${t("options.applyToAllSites")}`));
     warn.append(text, optLabel);
     row.append(warn);
   }
@@ -167,32 +187,32 @@ function editSection(c: ConnectionStatus): HTMLElement {
   form.hidden = true;
 
   const urlLabel = document.createElement("label");
-  urlLabel.textContent = "Sidecar URL";
+  urlLabel.textContent = t("options.sidecarUrl");
   const url = document.createElement("input");
   url.type = "text";
   url.value = c.baseUrl;
 
   const labelLabel = document.createElement("label");
-  labelLabel.textContent = "Label (optional)";
+  labelLabel.textContent = t("options.labelOptional");
   const labelInput = document.createElement("input");
   labelInput.type = "text";
   labelInput.value = c.label ?? "";
 
   const tokenLabel = document.createElement("label");
-  tokenLabel.textContent = "Token";
+  tokenLabel.textContent = t("options.token");
   const tokenInput = document.createElement("input");
   tokenInput.type = "password";
   tokenInput.autocomplete = "off";
-  tokenInput.placeholder = "leave blank to keep current token";
+  tokenInput.placeholder = t("options.tokenKeepPlaceholder");
 
   const actions = document.createElement("div");
   actions.className = "conn-actions";
   const save = document.createElement("button");
   save.className = "secondary";
-  save.textContent = "Save changes";
+  save.textContent = t("options.saveChanges");
   const cancel = document.createElement("button");
   cancel.className = "secondary";
-  cancel.textContent = "Cancel";
+  cancel.textContent = t("common.cancel");
   actions.append(save, cancel);
 
   const result = document.createElement("div");
@@ -207,7 +227,7 @@ function editSection(c: ConnectionStatus): HTMLElement {
   save.addEventListener("click", async () => {
     const { url: nextUrl, error } = normalizeLocalUrl(url.value);
     if (!nextUrl) {
-      showResult(result, false, "URL is required.");
+      showResult(result, false, t("options.urlRequired"));
       return;
     }
     if (error) {
@@ -228,7 +248,11 @@ function editSection(c: ConnectionStatus): HTMLElement {
     if (res.ok) {
       await refresh();
     } else {
-      showResult(result, false, `Could not connect: ${res.error ?? "unknown error"}`);
+      showResult(
+        result,
+        false,
+        t("options.couldNotConnect", { error: res.error ?? "unknown error" }),
+      );
     }
   });
 
@@ -243,13 +267,12 @@ function teamViewsSection(c: ConnectionStatus): HTMLElement {
   const wrap = document.createElement("details");
   wrap.className = "team-views";
   const summary = document.createElement("summary");
-  summary.textContent = "Team default visibility (shared via Git)";
+  summary.textContent = t("options.teamViewsSummary");
   wrap.appendChild(summary);
 
   const note = document.createElement("p");
   note.className = "muted";
-  note.textContent =
-    "One facet key per line: tag:<t>, file:<name.spec.json>, spec:<id>, or url:<glob>. Saved to .specs/views.json and applied for everyone on this project.";
+  note.textContent = t("options.teamViewsNote");
   const area = document.createElement("textarea");
   area.className = "views-editor";
   area.rows = 4;
@@ -258,7 +281,7 @@ function teamViewsSection(c: ConnectionStatus): HTMLElement {
   actions.className = "conn-actions";
   const save = document.createElement("button");
   save.className = "secondary";
-  save.textContent = "Save team default";
+  save.textContent = t("options.saveTeamDefault");
   actions.appendChild(save);
   const result = document.createElement("div");
 
@@ -288,7 +311,9 @@ function teamViewsSection(c: ConnectionStatus): HTMLElement {
     showResult(
       result,
       res.ok,
-      res.ok ? "Saved to .specs/views.json." : `Failed: ${res.errors?.join("; ") ?? "error"}`,
+      res.ok
+        ? t("options.savedTeamViews")
+        : t("options.teamViewsFailed", { errors: res.errors?.join("; ") ?? "error" }),
     );
   });
 
@@ -301,7 +326,7 @@ function renderConnections(list: ConnectionStatus[]): void {
   if (list.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty";
-    empty.textContent = "No projects yet. Add one below.";
+    empty.textContent = t("options.noProjects");
     connections.appendChild(empty);
     return;
   }
@@ -328,10 +353,10 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
   actions.className = "conn-actions";
   const remove = document.createElement("button");
   remove.className = "secondary";
-  remove.textContent = "Remove";
+  remove.textContent = t("options.remove");
   remove.addEventListener("click", async () => {
     await sendToBackground({ type: "REMOVE_LOCAL_BATCH", id: b.id });
-    showResult(localResult, true, "Batch removed.");
+    showResult(localResult, true, t("options.batchRemoved"));
     await refresh();
   });
   actions.append(remove);
@@ -339,17 +364,22 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
 
   const meta = document.createElement("div");
   meta.className = "conn-meta";
-  const how = b.source === "files" ? (b.fileNames?.join(", ") ?? "files") : "pasted";
+  const how =
+    b.source === "files"
+      ? (b.fileNames?.join(", ") ?? t("options.sourceFiles"))
+      : t("options.sourcePasted");
   // importedAt is 0 for legacy-migrated batches (unknown time); omit it then.
   const when = b.importedAt ? ` · ${new Date(b.importedAt).toLocaleString()}` : "";
-  meta.textContent = `${b.project || "untitled"} · ${b.specCount} spec(s) · ${how}${when}`;
+  meta.textContent = `${b.project || t("options.untitled")} · ${t("options.specCount", {
+    count: b.specCount,
+  })} · ${how}${when}`;
 
   // Pinned sites shown inline. An empty-domain batch matches every site.
   const sites = document.createElement("div");
   sites.className = "conn-meta";
   sites.textContent = b.domains.length
-    ? `Sites: ${b.domains.join(", ")}`
-    : "Sites: all sites (no domains pinned)";
+    ? t("options.sitesPrefix", { sites: b.domains.join(", ") })
+    : t("options.sitesAll");
 
   row.append(head, meta, sites);
   return row;
@@ -363,7 +393,7 @@ function renderManualBatches(batches: ManualBatchSummary[]): void {
   if (!batches.length) {
     const empty = document.createElement("p");
     empty.className = "empty";
-    empty.textContent = "No manual specs loaded.";
+    empty.textContent = t("options.noManualSpecs");
     localBatches.appendChild(empty);
     return;
   }
@@ -385,11 +415,36 @@ surface.addEventListener("change", () => {
   void setDefaultSurface(surface.value as DefaultSurface);
 });
 
+// Theme preference. Reflect the stored value, apply this page's own theme at
+// startup, and on change persist + apply locally for instant feedback + broadcast
+// to every tab's content script (Options has no single active content tab).
+void getTheme().then((value) => {
+  theme.value = value;
+  applyTheme(document.documentElement, value);
+});
+watchThemeChanges();
+theme.addEventListener("change", async () => {
+  const next = theme.value as Theme;
+  await setTheme(next);
+  applyTheme(document.documentElement, next);
+  await broadcastToTabs({ type: "SET_THEME", theme: next });
+});
+
+// UI-chrome language. "system" maps to stored null (follow the browser). On change
+// persist, re-init i18n, re-render this page in place, and broadcast to all tabs.
+uiLocale.addEventListener("change", async () => {
+  const choice: UiLocale | null = uiLocale.value === "system" ? null : (uiLocale.value as UiLocale);
+  await setUiLocale(choice);
+  initI18n(resolveUiLocale(choice));
+  await renderAll();
+  await broadcastToTabs({ type: "SET_UI_LOCALE", locale: choice });
+});
+
 byId("add").addEventListener("click", async () => {
   const { url, error } = normalizeLocalUrl(baseUrl.value);
   const tok = token.value.trim();
   if (!url || !tok) {
-    showResult(addResult, false, "Both URL and token are required.");
+    showResult(addResult, false, t("options.urlTokenRequired"));
     return;
   }
   if (error) {
@@ -406,12 +461,16 @@ byId("add").addEventListener("click", async () => {
   // Never keep the secret in the field once submitted.
   token.value = "";
   if (res.ok) {
-    showResult(addResult, true, `Added "${res.project ?? "project"}".`);
+    showResult(addResult, true, t("options.added", { project: res.project ?? "project" }));
     baseUrl.value = "";
     label.value = "";
     applyAll.checked = false;
   } else {
-    showResult(addResult, false, `Could not connect: ${res.error ?? "unknown error"}`);
+    showResult(
+      addResult,
+      false,
+      t("options.couldNotConnect", { error: res.error ?? "unknown error" }),
+    );
   }
   await refresh();
 });
@@ -432,23 +491,21 @@ async function addBatch(
     fileNames,
   });
   if (!res.ok) {
-    showResult(localResult, false, res.error ?? "Could not add batch.");
+    showResult(localResult, false, res.error ?? t("options.couldNotAddBatch"));
     return false;
   }
   if (res.duplicateOf.length) {
     // Name each prior batch and, when known, how many spec ids overlap with it.
     const names = res.duplicateOf
       .map((d) =>
-        d.overlapSpecIds ? `"${d.label}" (${d.overlapSpecIds} shared spec(s))` : `"${d.label}"`,
+        d.overlapSpecIds
+          ? `"${d.label}" (${t("options.sharedSpecs", { count: d.overlapSpecIds })})`
+          : `"${d.label}"`,
       )
       .join(", ");
-    showResult(
-      localResult,
-      true,
-      `Loaded (total ${res.specCount} spec(s)). Note: duplicates ${names} you imported earlier.`,
-    );
+    showResult(localResult, true, t("options.loadedDuplicates", { total: res.specCount, names }));
   } else {
-    showResult(localResult, true, `Loaded. Total ${res.specCount} spec(s) across all batches.`);
+    showResult(localResult, true, t("options.loadedTotal", { count: res.specCount }));
   }
   await refresh();
   return true;
@@ -457,14 +514,14 @@ async function addBatch(
 byId("loadLocal").addEventListener("click", async () => {
   const text = localSpecs.value.trim();
   if (!text) {
-    showResult(localResult, false, "Paste a bundle first.");
+    showResult(localResult, false, t("options.pasteBundleFirst"));
     return;
   }
   // Validate client-side BEFORE pushing to the background (never cache unvalidated
   // input). The spec-schema validators are precompiled and CSP-safe.
   const { specs, errors } = parseLocalBundle(text);
   if (!specs) {
-    showResult(localResult, false, `Invalid bundle:\n- ${errors.join("\n- ")}`);
+    showResult(localResult, false, t("options.invalidBundle", { errors: errors.join("\n- ") }));
     return;
   }
   if (await addBatch(specs, "paste")) localSpecs.value = "";
@@ -473,7 +530,7 @@ byId("loadLocal").addEventListener("click", async () => {
 byId("loadFiles").addEventListener("click", async () => {
   const picked = Array.from(localFiles.files ?? []);
   if (picked.length === 0) {
-    showResult(localResult, false, "Pick manifest.json and at least one .spec.json file.");
+    showResult(localResult, false, t("options.pickFiles"));
     return;
   }
   // Read all picked files, then assemble + validate via the shared parseLocalBundle path.
@@ -482,7 +539,7 @@ byId("loadFiles").addEventListener("click", async () => {
   );
   const { specs, errors } = parseLocalFiles(files);
   if (!specs) {
-    showResult(localResult, false, `Invalid selection:\n- ${errors.join("\n- ")}`);
+    showResult(localResult, false, t("options.invalidSelection", { errors: errors.join("\n- ") }));
     return;
   }
   const fileNames = picked.map((f) => f.name.split(/[/\\]/).pop() ?? f.name);
@@ -492,8 +549,24 @@ byId("loadFiles").addEventListener("click", async () => {
 byId("clearLocal").addEventListener("click", async () => {
   await sendToBackground({ type: "CLEAR_LOCAL_SPECS" });
   localSpecs.value = "";
-  showResult(localResult, true, "All manual specs cleared.");
+  showResult(localResult, true, t("options.allCleared"));
   await refresh();
 });
 
-void refresh();
+// Re-render everything that carries translated text: hydrate the static HTML, then
+// re-run the imperative connection/batch rows. Called at startup and after a UI
+// language change (Phase 5) so the page updates in place without a reload.
+async function renderAll(): Promise<void> {
+  hydrateI18n(document);
+  await refresh();
+}
+
+// Resolve the UI-chrome language, reflect the control, then render. initI18n runs
+// before the first render so every t() call uses the chosen language.
+async function init(): Promise<void> {
+  const stored = await getUiLocale();
+  uiLocale.value = stored ?? "system";
+  initI18n(resolveUiLocale(stored));
+  await renderAll();
+}
+void init();

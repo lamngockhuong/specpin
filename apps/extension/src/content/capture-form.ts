@@ -1,7 +1,9 @@
 import type { DisplayMode, ElementFingerprint, LocalizedString, Spec } from "@specpin/spec-schema";
 import { formatErrors, validateSpec } from "@specpin/spec-schema";
+import { t } from "../i18n/index.js";
 import { escapeAttr, escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
+import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 
 const HOST_ID = "specpin-capture-host";
@@ -54,6 +56,9 @@ export interface CaptureFormOptions {
    *  save into (avoids nondeterministic first-match routing for overlapping
    *  domains). */
   targets?: { id: string; project: string }[];
+  /** Forced UI theme for the form's shadow host (threaded from the content
+   *  script). Omitted leaves the host on the system default. */
+  theme?: Theme;
 }
 
 function slugify(text: string): string {
@@ -217,7 +222,7 @@ export class CaptureForm {
     // is mutable so a re-link can repoint the spec without losing field edits.
     const editing = !!options.initial;
     let activeFingerprint = fingerprint;
-    const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES);
+    const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES, options.theme);
     const wrap = this.doc.createElement("div");
     wrap.className = "backdrop";
 
@@ -275,12 +280,10 @@ export class CaptureForm {
       const value = localeSel.value;
       if (value === ADD_LOCALE_VALUE) {
         localeSel.value = current; // revert until the prompt resolves
-        const code = this.doc.defaultView
-          ?.prompt("Add a language (BCP-47, e.g. vi, ja, en-US):")
-          ?.trim();
+        const code = this.doc.defaultView?.prompt(t("capture.addLanguagePrompt"))?.trim();
         if (!code) return;
         if (!LOCALE_PATTERN.test(code)) {
-          this.showErrors(errorsBox, [`"${code}" is not a valid BCP-47 locale code.`]);
+          this.showErrors(errorsBox, [t("capture.invalidLocale", { code })]);
           return;
         }
         if (![...localeSel.options].some((o) => o.value === code)) {
@@ -347,11 +350,14 @@ export class CaptureForm {
       // user gets a clear message instead of a raw schema error.
       const def = fields.byLocale[fields.defaultLocale];
       const missing: string[] = [];
-      if (!def?.title.trim()) missing.push("title");
-      if (!def?.description.trim()) missing.push("description");
+      if (!def?.title.trim()) missing.push(t("capture.fieldTitle"));
+      if (!def?.description.trim()) missing.push(t("capture.fieldDescription"));
       if (missing.length) {
         this.showErrors(errorsBox, [
-          `Enter a ${missing.join(" and ")} for the default language (${fields.defaultLocale}).`,
+          t("capture.enterFieldsForDefault", {
+            fields: missing.join(` ${t("common.and")} `),
+            locale: fields.defaultLocale,
+          }),
         ]);
         return;
       }
@@ -379,7 +385,7 @@ export class CaptureForm {
       const connectionId = editing ? undefined : targetSel?.value || undefined;
       const result = await options.onSubmit(file, spec, connectionId);
       if (result.ok) this.close();
-      else this.showErrors(errorsBox, result.errors ?? ["Save failed; check the sidecar."]);
+      else this.showErrors(errorsBox, result.errors ?? [t("capture.saveFailed")]);
     });
   }
 
@@ -400,42 +406,42 @@ export class CaptureForm {
     // Edit is id-addressed, so the target project + file are not selectable.
     const targetField =
       !opts.editing && targets.length > 1
-        ? `<label>Target project</label><select id="sp-target">${targets
+        ? `<label>${escapeHtml(t("capture.targetProject"))}</label><select id="sp-target">${targets
             .map(
-              (t) =>
-                `<option value="${escapeAttr(t.id)}">${escapeHtml(t.project || t.id)}</option>`,
+              (target) =>
+                `<option value="${escapeAttr(target.id)}">${escapeHtml(target.project || target.id)}</option>`,
             )
             .join("")}</select>`
         : "";
     const fileField = opts.editing
       ? ""
-      : `<label>Target file</label><input id="sp-file" value="${escapeAttr(defaultFile)}" />`;
+      : `<label>${escapeHtml(t("capture.targetFile"))}</label><input id="sp-file" value="${escapeAttr(defaultFile)}" />`;
     const relinkField = opts.relinkable
-      ? `<button type="button" id="sp-relink">Re-link element</button>
-        <div class="relink-note">Re-linked to a new element. Save to apply.</div>`
+      ? `<button type="button" id="sp-relink">${escapeHtml(t("capture.relink"))}</button>
+        <div class="relink-note">${escapeHtml(t("capture.relinkNote"))}</div>`
       : "";
     return `
       <div class="card">
-        <h3>${opts.editing ? "Edit spec" : "Capture spec"}</h3>
+        <h3>${escapeHtml(opts.editing ? t("capture.titleEdit") : t("capture.titleCapture"))}</h3>
         ${targetField}
-        <label>Language <span class="hint">(title &amp; description per language)</span></label>
-        <select id="sp-locale">${localeOptions}<option value="${ADD_LOCALE_VALUE}">+ Add language&hellip;</option></select>
-        <label>Title</label><input id="sp-title" placeholder="Login button" />
-        <label>Description</label><textarea id="sp-desc" placeholder="What this element does"></textarea>
-        <label>Business rules <span class="hint">(one per line)</span></label><textarea id="sp-rules"></textarea>
-        <label>Tags <span class="hint">(comma-separated)</span></label><input id="sp-tags" placeholder="auth, critical" />
-        <label>Display mode</label>
+        <label>${escapeHtml(t("capture.languageLabel"))} <span class="hint">${escapeHtml(t("capture.languageHint"))}</span></label>
+        <select id="sp-locale">${localeOptions}<option value="${ADD_LOCALE_VALUE}">${escapeHtml(t("capture.addLanguageOption"))}</option></select>
+        <label>${escapeHtml(t("capture.titleField"))}</label><input id="sp-title" placeholder="${escapeAttr(t("capture.titlePlaceholder"))}" />
+        <label>${escapeHtml(t("capture.descField"))}</label><textarea id="sp-desc" placeholder="${escapeAttr(t("capture.descPlaceholder"))}"></textarea>
+        <label>${escapeHtml(t("capture.rulesField"))} <span class="hint">${escapeHtml(t("capture.rulesHint"))}</span></label><textarea id="sp-rules"></textarea>
+        <label>${escapeHtml(t("capture.tagsField"))} <span class="hint">${escapeHtml(t("capture.tagsHint"))}</span></label><input id="sp-tags" placeholder="${escapeAttr(t("capture.tagsPlaceholder"))}" />
+        <label>${escapeHtml(t("capture.displayModeLabel"))}</label>
         <select id="sp-mode">
-          <option value="">Use project default</option>
+          <option value="">${escapeHtml(t("capture.modeDefault"))}</option>
           <option value="tooltip">tooltip</option>
           <option value="sidebar">sidebar</option>
         </select>
         ${fileField}
         ${relinkField}
-        <div class="errors"><strong>Could not save:</strong><ul></ul></div>
+        <div class="errors"><strong>${escapeHtml(t("capture.couldNotSave"))}</strong><ul></ul></div>
         <div class="actions">
-          <button id="sp-cancel">Cancel</button>
-          <button id="sp-save" class="primary">${opts.editing ? "Save changes" : "Save spec"}</button>
+          <button id="sp-cancel">${escapeHtml(t("common.cancel"))}</button>
+          <button id="sp-save" class="primary">${escapeHtml(opts.editing ? t("capture.saveChanges") : t("capture.saveSpec"))}</button>
         </div>
       </div>`;
   }

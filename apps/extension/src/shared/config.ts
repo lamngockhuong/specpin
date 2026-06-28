@@ -1,10 +1,13 @@
 import type { SpecsResponse } from "@specpin/api-client";
 import type { DisplayMode } from "@specpin/spec-schema";
 import { browser } from "#imports";
+import type { UiLocale } from "../i18n/locales.js";
 import type { Connection } from "./connection-types.js";
+import type { Theme } from "./theme.js";
 import type { PersonalVisibility } from "./visibility.js";
 
 export type { Connection } from "./connection-types.js";
+export type { Theme } from "./theme.js";
 
 // Connection config + on/off flag, persisted in extension storage. The token
 // and URL are pasted once into the Options page from the sidecar's stdout.
@@ -52,6 +55,12 @@ export const LOCAL_SPECS_KEY = "specpin:localSpecs";
 const LOCALE_KEY = "specpin:locale";
 const DISPLAY_MODE_KEY = "specpin:displayMode";
 export const SURFACE_KEY = "specpin:defaultSurface";
+/** The user's forced UI theme. Distinct from the spec-content locale: this is
+ *  the extension's own chrome appearance. Default "system" follows the OS. */
+export const THEME_KEY = "specpin:theme";
+/** The user's chosen UI-chrome language (`"en" | "vi"`), or null to follow the
+ *  browser/system UI language. Independent from the spec-content LOCALE_KEY. */
+export const UI_LOCALE_KEY = "specpin:uiLocale";
 /** Personal visibility override. In `storage.sync` (not local) so a user's
  *  show/hide choices follow them across machines on the same browser profile. */
 export const VISIBILITY_KEY = "specpin:visibility";
@@ -133,6 +142,37 @@ export async function getDefaultSurface(): Promise<DefaultSurface> {
 
 export async function setDefaultSurface(surface: DefaultSurface): Promise<void> {
   await browser.storage.local.set({ [SURFACE_KEY]: surface });
+}
+
+/** The forced UI theme, defaulting to "system" (follow the OS) on a fresh install. */
+export async function getTheme(): Promise<Theme> {
+  const stored = await browser.storage.local.get(THEME_KEY);
+  return (stored[THEME_KEY] as Theme | undefined) ?? "system";
+}
+
+export async function setTheme(theme: Theme): Promise<void> {
+  // "system" is the default: drop the key so a default profile carries nothing.
+  if (theme === "system") {
+    await browser.storage.local.remove(THEME_KEY);
+    return;
+  }
+  await browser.storage.local.set({ [THEME_KEY]: theme });
+}
+
+/** The user's chosen UI-chrome language, or null to follow the browser/system UI
+ *  language. Resolution to a concrete locale is done by `resolveUiLocale`. */
+export async function getUiLocale(): Promise<UiLocale | null> {
+  const stored = await browser.storage.local.get(UI_LOCALE_KEY);
+  return (stored[UI_LOCALE_KEY] as UiLocale | undefined) ?? null;
+}
+
+export async function setUiLocale(locale: UiLocale | null): Promise<void> {
+  // null = follow the system: drop the key so a default profile carries nothing.
+  if (locale === null) {
+    await browser.storage.local.remove(UI_LOCALE_KEY);
+    return;
+  }
+  await browser.storage.local.set({ [UI_LOCALE_KEY]: locale });
 }
 
 /** The personal visibility override from `storage.sync`, defaulting to empty

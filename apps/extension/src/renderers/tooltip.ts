@@ -1,7 +1,9 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { type LocalizedSpecText, localizeSpec } from "../content/localize-spec.js";
+import { t } from "../i18n/index.js";
 import { escapeHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
+import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 import type { RenderMeta, SpecRenderer } from "./renderer.js";
 import { rulesListHtml } from "./renderer.js";
@@ -108,9 +110,9 @@ export class TooltipRenderer implements SpecRenderer {
     this.doc = doc;
   }
 
-  private ensureRoot(): HTMLElement {
+  private ensureRoot(theme?: Theme): HTMLElement {
     if (this.layer) return this.layer;
-    const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES);
+    const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES, theme);
     host.style.position = "absolute";
     host.style.top = "0";
     host.style.left = "0";
@@ -139,7 +141,7 @@ export class TooltipRenderer implements SpecRenderer {
   }
 
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
-    const layer = this.ensureRoot();
+    const layer = this.ensureRoot(meta?.theme);
     if (meta?.onOpenInPanel) this.onOpenInPanel = meta.onOpenInPanel;
     if (meta?.onEdit) this.onEdit = meta.onEdit;
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
@@ -196,14 +198,20 @@ export class TooltipRenderer implements SpecRenderer {
       : "";
     const canEdit = pin.editable && !!this.onEdit;
     tip.innerHTML =
-      (pinned ? `<button type="button" class="pin-close" aria-label="Close">×</button>` : "") +
+      (pinned
+        ? `<button type="button" class="pin-close" aria-label="${escapeHtml(t("common.close"))}">×</button>`
+        : "") +
       (pin.project ? `<span class="project">${escapeHtml(pin.project)}</span>` : "") +
       `<h4>${escapeHtml(pin.text.title)}</h4>` +
       `<p>${escapeHtml(pin.text.description)}</p>` +
       rulesListHtml(pin.text.businessRules) +
       tags +
-      (pinned && canEdit ? `<button type="button" class="pin-edit">Edit spec</button>` : "") +
-      (pinned ? `<button type="button" class="pin-open">Open in side panel</button>` : "");
+      (pinned && canEdit
+        ? `<button type="button" class="pin-edit">${escapeHtml(t("tooltip.editSpec"))}</button>`
+        : "") +
+      (pinned
+        ? `<button type="button" class="pin-open">${escapeHtml(t("tooltip.openInPanel"))}</button>`
+        : "");
     tip.classList.toggle("pinned", pinned);
     if (pinned) {
       tip.querySelector(".pin-close")?.addEventListener("click", () => this.unpin());

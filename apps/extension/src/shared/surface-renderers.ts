@@ -1,3 +1,4 @@
+import { t } from "../i18n/index.js";
 import { MANUAL_CONNECTION_ID, type TaggedSpec } from "./connection-types.js";
 import type { ConnectionStatus, StatusResult } from "./messaging.js";
 import { connectionServesOrigin } from "./origin-match.js";
@@ -33,8 +34,8 @@ export function sourceBadge(spec: Pick<TaggedSpec, "connectionId">): HTMLElement
   const manual = spec.connectionId === MANUAL_CONNECTION_ID;
   const tag = document.createElement("span");
   tag.className = `src src-${manual ? "manual" : "sidecar"}`;
-  tag.textContent = manual ? "manual" : "sidecar";
-  tag.title = manual ? "From a Manual import (read-only)" : "From a sidecar connection";
+  tag.textContent = manual ? t("common.sourceManual") : t("common.sourceSidecar");
+  tag.title = manual ? t("common.sourceManualTitle") : t("common.sourceSidecarTitle");
   return tag;
 }
 
@@ -49,30 +50,30 @@ export function renderStatus(status: StatusResult, origin: string, originSpecCou
   let dotClass = "dot";
   let text: string;
   if (!status.configured) {
-    text = "Not configured";
+    text = t("common.statusNotConfigured");
   } else if (serving.length > 0) {
     // Tri-state over the serving sidecars: all up, some up (degraded), none up.
     if (up === serving.length) {
       dotClass = "dot ok";
-      text = "Connected (sidecar)";
+      text = t("common.statusConnectedSidecar");
     } else if (up > 0) {
       dotClass = "dot warn";
-      text = `Partially connected (${up}/${serving.length})`;
+      text = t("common.statusPartiallyConnected", { up, total: serving.length });
     } else {
       // Name the source so the user knows the sidecar is what dropped; it
       // reconnects automatically (the project name sits right below this).
       dotClass = "dot off";
-      text = "Disconnected (sidecar)";
+      text = t("common.statusDisconnectedSidecar");
     }
   } else if (originSpecCount > 0) {
     // No sidecar serves this page yet specs render here: they come from Manual import.
     dotClass = "dot ok";
-    text = "Connected (manual)";
+    text = t("common.statusConnectedManual");
   } else {
     // Header describes the connection/source situation (no project or manual
     // batch is pinned here); the spec list owns the "No specs for this page"
     // empty state, so the two never repeat the same sentence.
-    text = "No project for this page";
+    text = t("common.statusNoProject");
   }
   byId("status-dot").className = dotClass;
   byId("status-text").textContent = text;
@@ -84,7 +85,9 @@ export function renderStatus(status: StatusResult, origin: string, originSpecCou
   // names the header; 0 or 2+ leave it blank (renderProjects lists the 2+ case).
   byId("project").textContent =
     serving.length === 1 ? serving[0].label || serving[0].project || "" : "";
-  byId("count").textContent = originSpecCount ? `${originSpecCount} specs` : "";
+  byId("count").textContent = originSpecCount
+    ? t("common.specsCountPill", { count: originSpecCount })
+    : "";
 }
 
 /** List the connected projects that serve the active tab. */
@@ -152,26 +155,26 @@ export function renderFilters(
   head.className = "filter-head";
   const heading = document.createElement("span");
   heading.className = "filter-title";
-  heading.textContent = "Filter";
+  heading.textContent = t("common.filterTitle");
   head.appendChild(heading);
   if (opts.hasOverrides) {
     const reset = document.createElement("button");
     reset.type = "button";
     reset.className = "filter-reset link";
-    reset.textContent = "Reset";
+    reset.textContent = t("common.filterReset");
     reset.addEventListener("click", () => opts.onReset());
     head.appendChild(reset);
   }
   container.appendChild(head);
 
   if (inventory.tags.length) {
-    container.appendChild(facetGroup("Tags", inventory.tags, opts.onToggle));
+    container.appendChild(facetGroup(t("common.filterTags"), inventory.tags, opts.onToggle));
   }
   if (inventory.files.length) {
-    container.appendChild(facetGroup("Files", inventory.files, opts.onToggle));
+    container.appendChild(facetGroup(t("common.filterFiles"), inventory.files, opts.onToggle));
   }
   if (opts.perSpec && inventory.specs.length) {
-    container.appendChild(facetGroup("Specs", inventory.specs, opts.onToggle));
+    container.appendChild(facetGroup(t("common.filterSpecs"), inventory.specs, opts.onToggle));
   }
   if (showPageGroup && opts.path !== undefined) {
     container.appendChild(pageGroup(opts.path, opts.pageHidden ?? false, opts.onToggle));
@@ -238,16 +241,20 @@ function facetRow(
   count.className = "filter-count";
   count.textContent = `${item.count}`;
   row.append(box, name);
-  if (item.teamHidden) row.appendChild(marker("team", "Hidden by the team default"));
-  if (item.overridden) row.appendChild(marker("you", "Your personal override"));
+  if (item.teamHidden)
+    row.appendChild(marker("team", t("common.markerTeam"), t("common.markerTeamTitle")));
+  if (item.overridden)
+    row.appendChild(marker("you", t("common.markerYou"), t("common.markerYouTitle")));
   row.appendChild(count);
   return row;
 }
 
-function marker(text: string, title: string): HTMLElement {
+/** A small inline marker pill. `key` drives the CSS modifier class (stable,
+ *  not translated); `label`/`title` are the translated display text. */
+function marker(key: string, label: string, title: string): HTMLElement {
   const tag = document.createElement("span");
-  tag.className = `filter-marker filter-marker-${text}`;
-  tag.textContent = text;
+  tag.className = `filter-marker filter-marker-${key}`;
+  tag.textContent = label;
   tag.title = title;
   return tag;
 }
@@ -261,7 +268,7 @@ function pageGroup(
   group.className = "filter-group";
   group.open = true;
   const summary = document.createElement("summary");
-  summary.textContent = "This page";
+  summary.textContent = t("common.filterThisPage");
   group.appendChild(summary);
   const row = document.createElement("label");
   row.className = "filter-row";
@@ -272,7 +279,7 @@ function pageGroup(
   box.addEventListener("change", () => onToggle(`url:${path}`, !box.checked));
   const name = document.createElement("span");
   name.className = "filter-name";
-  name.textContent = "Hide specs on this page";
+  name.textContent = t("common.filterHidePage");
   row.append(box, name);
   group.appendChild(row);
   return group;

@@ -1,5 +1,6 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { escapeHtml } from "../shared/html.js";
+import type { Theme } from "../shared/theme.js";
 
 // Extra signal passed from the matcher so renderers can distinguish a confident
 // hit from a lower-confidence one that needs review, plus the viewer locale used
@@ -33,6 +34,10 @@ export interface RenderMeta {
   /** False for read-only specs (Manual import); renderers hide the Edit
    *  affordance when false. Defaults to editable when omitted. */
   editable?: boolean;
+  /** Forced UI theme for the renderer's shadow host. Threaded from the content
+   *  script so the host carries `data-theme` and the `:host([data-theme])` token
+   *  block activates. Omitted in tests/stubs leaves the host on the system default. */
+  theme?: Theme;
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already

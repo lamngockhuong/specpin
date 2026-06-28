@@ -3,17 +3,22 @@
 //
 // design-tokens.json is the single source of truth for both the .pen mockups
 // (see sync-tokens.mjs) AND the shipped extension UI. This script emits
-// ../src/shared/tokens.gen.css: a `:root` block (shared tokens + light theme) plus a
-// `@media (prefers-color-scheme: dark)` override (dark theme), so the UI flips
-// theme with zero JS.
+// ../src/shared/tokens.gen.css with four selector blocks so the UI can follow the
+// OS theme by default AND honor an explicit user override:
+//   - `:root`                      shared tokens + light theme (baseline).
+//   - `:root[data-theme="dark"]`   forced dark, wins over the OS default.
+//   - `:root[data-theme="light"]`  forced light, re-asserts light even when OS is dark.
+//   - `@media (prefers-color-scheme: dark)` guarded by
+//     `:not([data-theme="light"]):not([data-theme="dark"])` so the OS default only
+//     applies when there is NO explicit override ("System" mode = attribute absent).
 //
 // The same file serves two consumers:
 //   - popup + options HTML pages: imported normally (Vite injects it).
 //   - Shadow DOM renderers (sidebar/tooltip/capture-form): imported with Vite's
 //     `?inline` query and prepended to each renderer's STYLES, because
 //     `:host { all: initial }` blocks inherited custom properties from the host
-//     page. `:root` inside an injected <style> matches the shadow root, and
-//     @media works inside shadow DOM, so this file applies verbatim there too.
+//     page. `shared/tokens.ts` rewrites each `:root...` selector to its `:host...`
+//     equivalent, and @media works inside shadow DOM, so this file applies there too.
 //
 // Run after editing design-tokens.json:  node sync-css-tokens.mjs
 // Do NOT hand-edit src/shared/tokens.gen.css; it is overwritten by this script.
@@ -59,6 +64,10 @@ const header = [
   "/* Regenerate: pnpm --filter @specpin/extension sync-css-tokens */",
 ].join("\n");
 
+// Indent a block of declaration lines by one extra level (for nesting under a
+// guarded selector or @media block).
+const indent = (lines) => lines.map((line) => `  ${line}`).join("\n");
+
 const css = `${header}
 
 :root {
@@ -67,14 +76,25 @@ ${sharedDecls.join("\n")}
 ${light.join("\n")}
 }
 
+/* Forced dark: an explicit choice wins over the OS default. */
+:root[data-theme="dark"] {
+${dark.join("\n")}
+}
+
+/* Forced light: re-assert light even when the OS prefers dark. */
+:root[data-theme="light"] {
+${light.join("\n")}
+}
+
+/* System default: follow the OS only when there is NO explicit override. */
 @media (prefers-color-scheme: dark) {
-  :root {
-${dark.map((line) => `  ${line}`).join("\n")}
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+${indent(dark)}
   }
 }
 `;
 
 writeFileSync(OUT, css);
 console.log(
-  `Wrote src/shared/tokens.gen.css (${sharedDecls.length + light.length} vars in :root, ${dark.length} dark overrides).`,
+  `Wrote src/shared/tokens.gen.css (${sharedDecls.length + light.length} vars in :root, ${dark.length} dark overrides x2 forced+media).`,
 );

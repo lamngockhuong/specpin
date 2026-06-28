@@ -6,7 +6,7 @@
     <!-- Open settings as a standalone full tab instead of embedded inside
          chrome://extensions. WXT maps this to options_ui.open_in_tab. -->
     <meta name="manifest.open_in_tab" content="true" />
-    <title>Specpin Settings</title>
+    <title data-i18n="options.pageTitle">Specpin Settings</title>
     <style>
       /* Tokens imported in main.ts (src/shared/tokens.gen.css). */
       * { box-sizing: border-box; }
@@ -186,60 +186,87 @@
     <div class="card">
       <div class="header">
         <img class="logo" src="/icon/128.png" alt="" />
-        <h1>Connected projects</h1>
+        <h1 data-i18n="options.connectedProjects">Connected projects</h1>
       </div>
-      <p class="lead">
+      <p class="lead" data-i18n-html="options.connectedLead">
         Run <code>specpin serve</code> in each project, then add its URL and token below.
         Specs show on a page only if the project's manifest <code>domains</code> include that page.
       </p>
 
       <div id="connections"></div>
 
-      <h2>Add a project</h2>
-      <label for="baseUrl">Sidecar URL</label>
+      <h2 data-i18n="options.addProject">Add a project</h2>
+      <label for="baseUrl" data-i18n="options.sidecarUrl">Sidecar URL</label>
       <input id="baseUrl" type="text" placeholder="http://127.0.0.1:PORT" />
-      <label for="label">Label <span style="font-weight: 400; color: var(--sp-text-3)">(optional)</span></label>
-      <input id="label" type="text" placeholder="e.g. Acme CRM" />
-      <label for="token">Token</label>
-      <input id="token" type="password" placeholder="paste bearer token" autocomplete="off" />
-      <label class="inline"><input id="applyAll" type="checkbox" /> Apply to all sites if this project pins no domains</label>
-      <button id="add" type="button">Test &amp; add project</button>
+      <label for="label"><span data-i18n="options.labelField">Label</span> <span style="font-weight: 400; color: var(--sp-text-3)" data-i18n="options.optional">(optional)</span></label>
+      <input id="label" type="text" data-i18n-placeholder="options.labelPlaceholder" placeholder="e.g. Acme CRM" />
+      <label for="token" data-i18n="options.token">Token</label>
+      <input id="token" type="password" data-i18n-placeholder="options.tokenPlaceholder" placeholder="paste bearer token" autocomplete="off" />
+      <label class="inline"><input id="applyAll" type="checkbox" /> <span data-i18n="options.applyAllLabel">Apply to all sites if this project pins no domains</span></label>
+      <button id="add" type="button" data-i18n="options.testAddProject">Test &amp; add project</button>
       <div id="addResult"></div>
     </div>
 
     <div class="card">
       <div class="header">
-        <h1>Toolbar icon</h1>
+        <h1 data-i18n="options.appearance">Appearance</h1>
       </div>
-      <p class="lead">
-        What clicking the Specpin toolbar icon opens. <strong>Chrome only</strong>:
-        on Firefox the icon always opens the popup, and the side panel is opened
-        from Firefox's own sidebar toggle (View &rarr; Sidebar).
+      <p class="lead" data-i18n="options.appearanceLead">
+        How Specpin's own interface looks. These apply to every Specpin surface
+        (popup, side panel, options, and the in-page tooltip/sidebar/modal).
       </p>
-      <label for="surface">When I click the toolbar icon</label>
-      <select id="surface">
-        <option value="popup">Open the popup</option>
-        <option value="sidepanel">Open the side panel</option>
+      <label for="theme" data-i18n="options.theme">Theme</label>
+      <select id="theme">
+        <option value="system" data-i18n="options.themeSystem">System default</option>
+        <option value="light" data-i18n="options.themeLight">Light</option>
+        <option value="dark" data-i18n="options.themeDark">Dark</option>
+      </select>
+
+      <label for="uiLocale" data-i18n="options.languageSetting">Language</label>
+      <p class="lead" data-i18n="options.languageSettingLead" style="margin-top: 6px">
+        The language of Specpin's own interface. Independent from a project's spec content language.
+      </p>
+      <select id="uiLocale">
+        <option value="system" data-i18n="options.uiLanguageSystem">System default</option>
+        <!-- Language names display in their own script and are never translated. -->
+        <option value="en">English</option>
+        <option value="vi">Tiếng Việt</option>
       </select>
     </div>
 
     <div class="card">
       <div class="header">
-        <h1>Manual specs (no sidecar)</h1>
+        <h1 data-i18n="options.toolbarIcon">Toolbar icon</h1>
       </div>
-      <p class="lead">
+      <p class="lead" data-i18n-html="options.toolbarLead">
+        What clicking the Specpin toolbar icon opens. <strong>Chrome only</strong>:
+        on Firefox the icon always opens the popup, and the side panel is opened
+        from Firefox's own sidebar toggle (View &rarr; Sidebar).
+      </p>
+      <label for="surface" data-i18n="options.toolbarLabel">When I click the toolbar icon</label>
+      <select id="surface">
+        <option value="popup" data-i18n="options.toolbarPopup">Open the popup</option>
+        <option value="sidepanel" data-i18n="options.toolbarSidepanel">Open the side panel</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <div class="header">
+        <h1 data-i18n="options.manualSpecs">Manual specs (no sidecar)</h1>
+      </div>
+      <p class="lead" data-i18n-html="options.manualLead">
         Paste a bundle to view specs without running <code>specpin serve</code>. Read-only:
         capture still needs a sidecar. Shape:
         <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>
       </p>
-      <label for="localFiles">From files <span style="font-weight: 400; color: var(--sp-text-3)">(pick manifest.json + one or more *.spec.json)</span></label>
+      <label for="localFiles"><span data-i18n="options.fromFiles">From files</span> <span style="font-weight: 400; color: var(--sp-text-3)" data-i18n="options.fromFilesHint">(pick manifest.json + one or more *.spec.json)</span></label>
       <input id="localFiles" type="file" accept=".json,application/json" multiple />
-      <button id="loadFiles" type="button">Load from files</button>
+      <button id="loadFiles" type="button" data-i18n="options.loadFromFiles">Load from files</button>
 
-      <label for="localSpecs" style="margin-top: 24px">Or paste bundle JSON</label>
+      <label for="localSpecs" style="margin-top: 24px" data-i18n="options.orPaste">Or paste bundle JSON</label>
       <textarea id="localSpecs" placeholder='{ "manifest": { … }, "files": { "login.spec.json": { … } } }'></textarea>
-      <button id="loadLocal" type="button">Load pasted bundle</button>
-      <button id="clearLocal" type="button" class="secondary" style="width: 100%; margin-top: 10px">Clear all manual specs</button>
+      <button id="loadLocal" type="button" data-i18n="options.loadPasted">Load pasted bundle</button>
+      <button id="clearLocal" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.clearAll">Clear all manual specs</button>
       <div id="localResult"></div>
       <div id="localBatches"></div>
     </div>

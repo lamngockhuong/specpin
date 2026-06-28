@@ -36,8 +36,59 @@
   --sp-accent-glow: #2DD4BF33;
 }
 
+/* Forced dark: an explicit choice wins over the OS default. */
+:root[data-theme="dark"] {
+  --sp-bg: #04130F;
+  --sp-surface: #0E2C28;
+  --sp-elevated: #103330;
+  --sp-control: #123832;
+  --sp-border: #2DD4BF26;
+  --sp-text: #E6FFFA;
+  --sp-text-2: #8FB5AE;
+  --sp-text-3: #5E837C;
+  --sp-success-dot: #4ADE80;
+  --sp-success-text: #4ADE80;
+  --sp-success-bg: #06251C;
+  --sp-success-border: #1C5C3F;
+  --sp-error-text: #FCA5A5;
+  --sp-error-bg: #2A1313;
+  --sp-error-border: #5C2626;
+  --sp-warning: #FBBF24;
+  --sp-warning-border: #B5851A;
+  --sp-warning-bg: #2A220E;
+  --sp-grad-top: #10463E;
+  --sp-grad-bottom: #04130F;
+  --sp-accent-glow: #2DD4BF66;
+}
+
+/* Forced light: re-assert light even when the OS prefers dark. */
+:root[data-theme="light"] {
+  --sp-bg: #F2FBF9;
+  --sp-surface: #FFFFFF;
+  --sp-elevated: #FFFFFF;
+  --sp-control: #E4F5F1;
+  --sp-border: #D4EBE6;
+  --sp-text: #06302A;
+  --sp-text-2: #4A6B65;
+  --sp-text-3: #8AA8A2;
+  --sp-success-dot: #16A34A;
+  --sp-success-text: #15803D;
+  --sp-success-bg: #ECFDF5;
+  --sp-success-border: #A7F3D0;
+  --sp-error-text: #B91C1C;
+  --sp-error-bg: #FEF2F2;
+  --sp-error-border: #FECACA;
+  --sp-warning: #B45309;
+  --sp-warning-border: #F59E0B;
+  --sp-warning-bg: #FEF3C7;
+  --sp-grad-top: #E6F9F4;
+  --sp-grad-bottom: #F2FBF9;
+  --sp-accent-glow: #2DD4BF33;
+}
+
+/* System default: follow the OS only when there is NO explicit override. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
     --sp-bg: #04130F;
     --sp-surface: #0E2C28;
     --sp-elevated: #103330;

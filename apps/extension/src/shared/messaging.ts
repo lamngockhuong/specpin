@@ -1,7 +1,9 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { browser } from "#imports";
+import type { UiLocale } from "../i18n/locales.js";
 import type { ConnectionStatus, ManualBatchSummary, TaggedSpec } from "./connection-types.js";
+import type { Theme } from "./theme.js";
 import type { PersonalVisibility, VisibilityState } from "./visibility.js";
 
 export type { ConnectionStatus, ManualBatchSummary, TaggedSpec } from "./connection-types.js";
@@ -65,6 +67,15 @@ export type Message =
   // Viewer locale change, dispatched popup -> active tab's content script. The
   // popup persists the choice to storage; the content script re-renders with it.
   | { type: "SET_LOCALE"; locale: string }
+  // UI-chrome theme change, broadcast Options -> all tabs' content scripts. The
+  // Options page persists the choice; the content script re-renders renderers with
+  // it so their shadow hosts pick up the forced theme. Distinct from SET_LOCALE
+  // (spec content) and SET_UI_LOCALE (chrome language).
+  | { type: "SET_THEME"; theme: Theme }
+  // UI-chrome language change, broadcast Options -> all tabs' content scripts (and
+  // sent popup/sidepanel -> active tab). Receivers re-init i18n and re-render.
+  // `locale` is null when "System default" is chosen (resolve via resolveUiLocale).
+  | { type: "SET_UI_LOCALE"; locale: UiLocale | null }
   // Tooltip pin "open in side panel": content -> background. Best-effort opens
   // the side panel (Chrome only; may no-op if the user gesture is lost) and
   // broadcasts HIGHLIGHT_SPEC so an already-open panel scrolls to the card.
@@ -175,4 +186,19 @@ export async function sendToActiveTab(message: Message): Promise<void> {
   if (tab?.id !== undefined) {
     await browser.tabs.sendMessage(tab.id, message).catch(() => {});
   }
+}
+
+/** Broadcast a message to every tab's content script. Used by the Options page,
+ *  which (unlike the popup/side panel) has no single active content tab, to push
+ *  appearance changes (SET_THEME, SET_UI_LOCALE) to all open pages live. Tabs
+ *  with no content script (chrome:// pages, the store) simply ignore it. */
+export async function broadcastToTabs(message: Message): Promise<void> {
+  const tabs = await browser.tabs.query({});
+  await Promise.all(
+    tabs.map((tab) =>
+      tab.id !== undefined
+        ? browser.tabs.sendMessage(tab.id, message).catch(() => {})
+        : Promise.resolve(),
+    ),
+  );
 }
