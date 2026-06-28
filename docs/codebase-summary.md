@@ -168,7 +168,7 @@ src/
     origin-match.ts            - pure origin/domain matching (shared by SW + popup)
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
     config.ts                  - storage helpers (connections, locale, enabled, manual-import batch list + legacy migration, personal visibility, theme, uiLocale)
-    surface-renderers.ts       - shared helpers for popup/side panel: sourceBadge() (sidecar vs manual pill)
+    surface-renderers.ts       - shared helpers for popup/side panel: sourceBadge() (sidecar vs manual pill), setListControlsHidden() + enabled-gated locale/filter rendering (hide list controls when Specpin is off), filter-group collapse state preserved across rebuilds
     surface-data.ts            - shared spec filtering: specMatchesQuery() (title/file/tags/description predicate)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
