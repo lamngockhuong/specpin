@@ -16,7 +16,9 @@ import "../../shared/scrollbar.css";
 import "../../shared/switch.css";
 import "../../shared/icon-btn.css";
 import "../../shared/link.css";
+import "../../shared/add-project.css";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
+import { wireProjectActions } from "../../shared/project-actions.js";
 import {
   buildFilterModel,
   fetchSurfaceState,
@@ -38,6 +40,7 @@ import {
 // spec list rendering and the picker options.
 let activeLocale = "en";
 let lastSpecs: SpecsForOrigin | null = null;
+let lastOrigin = "";
 let searchQuery = "";
 
 function renderSpecs(res: SpecsForOrigin): void {
@@ -85,16 +88,22 @@ async function refresh(): Promise<void> {
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
+  lastOrigin = origin;
   renderStatus(status, origin, specs.specs.length);
   renderProjects(status.connections ?? [], origin);
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The popup stays compact: group-level filters only (per-spec lives in the panel).
   renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh);
   // When off, the list collapses to the "off" message: hide controls that only
-  // act on the (now-hidden) spec list.
+  // act on the (now-hidden) spec list, plus the create affordance + its panel.
   setListControlsHidden(!specs.enabled);
+  projectActions.update(specs.enabled, (status.manualBatches?.length ?? 0) > 0);
   renderSpecs(specs);
 }
+
+// Shared header controls: "+ New project" (inline form) + "Export" (zip the local
+// project(s) serving the page). refresh() re-renders the list after a create.
+const projectActions = wireProjectActions(() => lastOrigin, refresh);
 
 byId("enabled").addEventListener("change", async (e) => {
   await sendToBackground({ type: "SET_ENABLED", enabled: (e.target as HTMLInputElement).checked });

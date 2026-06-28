@@ -1,9 +1,15 @@
-import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
-import type { Spec } from "@specpin/spec-schema";
+import type { SpecsResponse, SpecWithFile, ViewsConfig } from "@specpin/api-client";
+import { formatErrors, type Spec, validateSpec } from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
-import { findDuplicateBatches, SidecarRegistry } from "../background/sidecar-registry.js";
+import {
+  findDuplicateBatches,
+  findSpecIdCollisions,
+  SidecarRegistry,
+} from "../background/sidecar-registry.js";
 import { chromeApi } from "../shared/chrome-api.js";
 import {
+  batchServesOrigin,
+  createLocalBatch,
   getConnections,
   getDefaultSurface,
   getEnabled,
@@ -13,17 +19,23 @@ import {
   MAX_MANUAL_BATCHES,
   type ManualBatch,
   normalizeLocalSpecsState,
+  renameLocalBatch,
   SURFACE_KEY,
   setConfig,
   setConnections,
   setEnabled,
   setLocalSpecs,
   setPersonalVisibility,
+  upsertLocalSpec,
   VISIBILITY_KEY,
 } from "../shared/config.js";
 import type { Connection } from "../shared/connection-types.js";
+import { bundleToFiles, groupFromFileName } from "../shared/export-bundle.js";
+import { isLocalConnectionId, localBatchId } from "../shared/local-id.js";
 import {
   type AddLocalBatchResult,
+  type CreateLocalProjectResult,
+  type ExportBundle,
   type ManualMutationResult,
   type Message,
   PRIVILEGED_MESSAGE_TYPES,
@@ -31,7 +43,10 @@ import {
   type SpecsForOrigin,
   type StatusResult,
   type TestConnectionResult,
+  type WriteTarget,
 } from "../shared/messaging.js";
+import { connectionServesOrigin } from "../shared/origin-match.js";
+import { slugify } from "../shared/slug.js";
 import { buildVisibilityState, type PersonalVisibility } from "../shared/visibility.js";
 
 const KEEPALIVE_ALARM = "specpin-keepalive";
@@ -115,12 +130,15 @@ export default defineBackground(() => {
           | undefined;
         const isLegacy = !!raw && typeof raw === "object" && !("batches" in raw) && "specs" in raw;
         const local = normalizeLocalSpecsState(raw);
+        // Bake the migrated uuid into storage BEFORE wiring the registry, so the
+        // per-batch `manual:<id>` tags are stable across service-worker restarts:
+        // were it persisted after setLocalBatches, a wake between the two would
+        // mint a different uuid on the next read and any in-flight write would
+        // miss (RT finding #11). Done once: the rewritten value is the new shape.
+        if (isLegacy && local) await setLocalSpecs(local);
         const applied = local
           ? registry.setLocalBatches(local.batches)
           : registry.clearLocalSpecs();
-        // Bake the migrated uuid into storage so remove-by-id works and no fixed
-        // legacy id can collide. Done once: the rewritten value is the new shape.
-        if (isLegacy && local) await setLocalSpecs(local);
         if (applied && broadcast) await broadcastSpecsChanged();
       } catch {
         // Best-effort; the keepalive alarm reconciles on its next tick.
@@ -253,6 +271,14 @@ export default defineBackground(() => {
         return handleRemoveLocalBatch(message.id);
       case "CLEAR_LOCAL_SPECS":
         return handleClearLocalSpecs();
+      case "CREATE_LOCAL_PROJECT":
+        return handleCreateLocalProject(message);
+      case "RENAME_LOCAL_PROJECT":
+        return handleRenameLocalProject(message);
+      case "GET_WRITE_TARGETS":
+        return Promise.resolve(handleGetWriteTargets(message.origin));
+      case "GET_EXPORT_BUNDLES":
+        return Promise.resolve(handleGetExportBundles(message));
       case "SET_PERSONAL_VISIBILITY":
         return handleSetPersonalVisibility(message.visibility);
       case "GET_TEAM_VIEWS":
@@ -508,7 +534,12 @@ export default defineBackground(() => {
     origin: string,
     connectionId?: string,
   ): Promise<SaveSpecResult> {
-    const result = await registry.saveSpec(origin, file, spec, connectionId);
+    // A local (`manual:<batchId>`) target writes to storage.local, never a
+    // sidecar; everything else routes to the sidecar registry as before.
+    const result =
+      connectionId && isLocalConnectionId(connectionId)
+        ? await writeLocalSpec(origin, connectionId, spec, file)
+        : await registry.saveSpec(origin, file, spec, connectionId);
     if (result.ok) await broadcastSpecsChanged();
     return result;
   }
@@ -519,9 +550,122 @@ export default defineBackground(() => {
     origin: string,
     connectionId?: string,
   ): Promise<SaveSpecResult> {
-    const result = await registry.updateSpec(origin, id, spec, connectionId);
+    const result =
+      connectionId && isLocalConnectionId(connectionId)
+        ? await writeLocalSpec(origin, connectionId, spec, undefined)
+        : await registry.updateSpec(origin, id, spec, connectionId);
     if (result.ok) await broadcastSpecsChanged();
     return result;
+  }
+
+  // Write a spec (capture or edit) into a local batch. Origin-bounded exactly like
+  // a sidecar write (RT-SA7): the batch must serve the page origin under the same
+  // applyToAllSites opt-in gate used by the capture picker. The spec is
+  // re-validated here because CaptureForm validation is client-side only and a
+  // direct runtime.sendMessage bypasses it (local specs never reach the sidecar's
+  // Go validator). Runs under the serialized mutate() chain, reading storage truth
+  // and persisting the mutator's RETURNED state.
+  function writeLocalSpec(
+    origin: string,
+    connectionId: string,
+    spec: Spec,
+    file: string | undefined,
+  ): Promise<SaveSpecResult> {
+    return mutate(async () => {
+      const batchId = localBatchId(connectionId);
+      if (!batchId) return { ok: false, errors: ["invalid local project"] };
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const batch = state.batches.find((b) => b.id === batchId);
+      if (!batch) return { ok: false, errors: ["unknown local project"] };
+      if (!batchServesOrigin(batch, origin)) {
+        return { ok: false, errors: ["no local project serves this page"] };
+      }
+      const validation = validateSpec(spec);
+      if (!validation.valid) return { ok: false, errors: [formatErrors(validation.errors)] };
+      // Target file: explicit for a capture, else the edited spec's existing file,
+      // else a default so a brand-new spec still lands in a real *.spec.json.
+      const existing = batch.specs.specs.find((s) => s.id === spec.id) as SpecWithFile | undefined;
+      const targetFile = file ?? existing?._file ?? defaultLocalFile(batch);
+      const group = batch.fileGroups?.[targetFile] ?? groupFromFileName(targetFile);
+      const result = upsertLocalSpec(state, batchId, targetFile, group, spec);
+      if (!result.ok || !result.state) {
+        return { ok: false, errors: [result.error ?? "local write failed"] };
+      }
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      return { ok: true };
+    });
+  }
+
+  // The writable destinations (sidecar + local) serving an origin, for the capture
+  // "Save to" picker. Sidecar targets must be connected AND serving (a down or
+  // disabled connection cannot accept a write); local targets use the registry's
+  // applyToAllSites opt-in gate (the single source of truth shared with the
+  // writeLocalSpec origin guard). Includes EMPTY local projects.
+  function handleGetWriteTargets(origin: string): WriteTarget[] {
+    const sidecar: WriteTarget[] = registry
+      .statuses()
+      .filter((s) => s.connected && connectionServesOrigin(s, origin))
+      .map((s) => ({ id: s.id, project: s.project ?? "", kind: "sidecar" }));
+    const local: WriteTarget[] = registry
+      .localTargetsForOrigin(origin)
+      .map((t) => ({ id: t.id, project: t.project, kind: "local" }));
+    return [...sidecar, ...local];
+  }
+
+  // Reconstruct export bundles (privileged) for local projects: one by id, or
+  // those serving the origin (else all). The surface zips + downloads them.
+  function handleGetExportBundles(message: { id?: string; origin?: string }): ExportBundle[] {
+    return registry.manualBatchesForExport(message).map((batch) => ({
+      project: batch.specs.manifest?.project || batch.label,
+      files: bundleToFiles(batch),
+    }));
+  }
+
+  // Create an empty local project (privileged). RMW under mutate(): re-read
+  // storage, append the batch, persist FIRST (storage is truth) then sync the
+  // registry from it. Returns the new batch id.
+  function handleCreateLocalProject(message: {
+    project: string;
+    domains: string[];
+    applyToAllSites?: boolean;
+  }): Promise<CreateLocalProjectResult> {
+    return mutate(async () => {
+      const project = message.project.trim();
+      if (!project) return { ok: false, error: "project name required" };
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const id = crypto.randomUUID();
+      const result = createLocalBatch(state, {
+        id,
+        project,
+        domains: message.domains ?? [],
+        applyToAllSites: message.applyToAllSites,
+      });
+      if (!result.ok || !result.state) return { ok: false, error: result.error };
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      await broadcastSpecsChanged();
+      return { ok: true, id };
+    });
+  }
+
+  // Rename a local project, optionally re-scoping its domains (privileged).
+  function handleRenameLocalProject(message: {
+    id: string;
+    project: string;
+    domains?: string[];
+  }): Promise<{ ok: boolean; error?: string }> {
+    return mutate(async () => {
+      const project = message.project.trim();
+      if (!project) return { ok: false, error: "project name required" };
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const result = renameLocalBatch(state, message.id, project, message.domains);
+      if (!result.ok || !result.state) return { ok: false, error: result.error };
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      await broadcastSpecsChanged();
+      return { ok: true };
+    });
   }
 
   // Append one Manual-import batch. RMW under mutate() (single writer): re-read
@@ -532,6 +676,7 @@ export default defineBackground(() => {
     bundle: SpecsResponse;
     source: "paste" | "files";
     fileNames?: string[];
+    fileGroups?: Record<string, string>;
   }): Promise<AddLocalBatchResult> {
     return mutate(async () => {
       const state = (await getLocalSpecs()) ?? { batches: [] };
@@ -541,22 +686,25 @@ export default defineBackground(() => {
           error: `Limit reached (${MAX_MANUAL_BATCHES} batches). Remove some first.`,
           specCount: countAll(),
           duplicateOf: [],
+          idCollisions: [],
         };
       }
       const duplicateOf = findDuplicateBatches(message.bundle, state.batches);
+      const idCollisions = findSpecIdCollisions(message.bundle, state.batches);
       const batch: ManualBatch = {
         id: crypto.randomUUID(),
         label: message.bundle.manifest?.project || message.fileNames?.[0] || "Pasted bundle",
         source: message.source,
         fileNames: message.fileNames,
         importedAt: Date.now(),
+        fileGroups: message.fileGroups,
         specs: message.bundle,
       };
       const next = { batches: [...state.batches, batch] };
       await setLocalSpecs(next);
       registry.setLocalBatches(next.batches);
       await broadcastSpecsChanged();
-      return { ok: true, batchId: batch.id, specCount: countAll(), duplicateOf };
+      return { ok: true, batchId: batch.id, specCount: countAll(), duplicateOf, idCollisions };
     });
   }
 
@@ -585,3 +733,12 @@ export default defineBackground(() => {
     return registry.statuses().reduce((n, c) => n + c.specCount, 0) + registry.manualSpecCount();
   }
 });
+
+// The *.spec.json a new local spec lands in when none is given: an existing file
+// in the batch (keeps groups consolidated), else a slug from the project name,
+// else a generic fallback. Module-scope (pure) so it is testable.
+function defaultLocalFile(batch: ManualBatch): string {
+  const firstFile = batch.specs.specs.find((s) => s._file)?._file;
+  if (firstFile) return firstFile;
+  return `${slugify(batch.specs.manifest?.project || "specs") || "specs"}.spec.json`;
+}

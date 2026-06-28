@@ -58,9 +58,35 @@ export type Message =
       bundle: SpecsResponse;
       source: "paste" | "files";
       fileNames?: string[];
+      /** Per-file `group` map from the parse, stored on the batch so export
+       *  reconstructs per-file groups (the flatten drops the field). */
+      fileGroups?: Record<string, string>;
     }
   | { type: "REMOVE_LOCAL_BATCH"; id: string }
   | { type: "CLEAR_LOCAL_SPECS" }
+  // Create an empty local (Manual) project from popup/side panel/Options. Stored
+  // in storage.local, never a sidecar. Privileged: a content script must never
+  // seed a batch. `applyToAllSites` opts an empty-domains project in as a writable
+  // target (RT-SA1 parity).
+  | {
+      type: "CREATE_LOCAL_PROJECT";
+      project: string;
+      domains: string[];
+      applyToAllSites?: boolean;
+    }
+  // Rename a local project (and optionally re-scope its domains, i.e. its
+  // write-routing surface). Privileged: extension-page only.
+  | { type: "RENAME_LOCAL_PROJECT"; id: string; project: string; domains?: string[] }
+  // The writable projects (sidecar + local) serving an origin, for the capture
+  // "Save to" picker. Unprivileged: the content script needs it, and it exposes no
+  // more than GET_SPECS_FOR_ORIGIN for the same origin. Includes EMPTY local
+  // projects, which specsForOrigin omits (they have no specs yet).
+  | { type: "GET_WRITE_TARGETS"; origin: string }
+  // Reconstructed export bundles for local projects: one named by `id` (Options
+  // per-batch export), else those serving `origin` (popup/panel; falls back to all
+  // when none serve). Privileged: it returns full spec payloads across batches, so
+  // a content script must not be able to read every local project's specs.
+  | { type: "GET_EXPORT_BUNDLES"; id?: string; origin?: string }
   | { type: "SPECS_CHANGED" }
   | { type: "START_CAPTURE" }
   | { type: "SET_DISPLAY_MODE"; mode: DisplayMode | null }
@@ -104,6 +130,16 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   "ADD_LOCAL_BATCH",
   "REMOVE_LOCAL_BATCH",
   "CLEAR_LOCAL_SPECS",
+  // Local-project authoring: create/rename must come from an extension page. A
+  // rename can change a batch's domains (its write-routing surface), so it is as
+  // privileged as create. (SAVE_SPEC/UPDATE_SPEC stay UNprivileged: capture
+  // legitimately originates from a content script; the local-write origin guard
+  // in the background is that boundary.)
+  "CREATE_LOCAL_PROJECT",
+  "RENAME_LOCAL_PROJECT",
+  // Returns full spec payloads for many batches; restrict to extension pages so a
+  // content script cannot harvest every local project's specs.
+  "GET_EXPORT_BUNDLES",
   // RT-SA2: connection mutations must come from an extension page, not a web
   // page's content script. RECONNECT is included because it can re-issue a
   // connection's bearer token to the sidecar.
@@ -132,6 +168,33 @@ export interface AddLocalBatchResult {
   /** Prior batches the new one duplicates (same normalized project); empty when
    *  none. Surfaced as a non-blocking warning in the Options page. */
   duplicateOf: { id: string; label: string; project: string; overlapSpecIds: number }[];
+  /** Spec ids this batch shares with another batch that could serve the same page
+   *  (render/edit then route first-batch-wins). Non-blocking warning; empty when
+   *  none. */
+  idCollisions: string[];
+}
+
+/** Result of creating a local project. */
+export interface CreateLocalProjectResult {
+  ok: boolean;
+  id?: string;
+  error?: string;
+}
+
+/** One local project's reconstructed export, ready for the surface to zip. */
+export interface ExportBundle {
+  /** Project name, for the zip file name. */
+  project: string;
+  /** manifest.json + per-group *.spec.json, keyed by file name. */
+  files: Record<string, unknown>;
+}
+
+/** One writable destination for a captured/edited spec, for the capture picker. */
+export interface WriteTarget {
+  /** Connection id: a sidecar uuid, or the `manual:<batchId>` local form. */
+  id: string;
+  project: string;
+  kind: "sidecar" | "local";
 }
 
 /** Result of a remove/clear: ok plus the new total spec count across batches. */

@@ -1,0 +1,96 @@
+/* Inline "+ New project" panel, shared by the popup and the side panel. Mounted
+   into a layout-agnostic #add-project container so it does not depend on either
+   surface's grid/card layout. All values reference --sp-* tokens. */
+#add-project {
+  margin-top: 12px;
+}
+#add-project[hidden] {
+  display: none;
+}
+.ap-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--sp-control);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+}
+.ap-modes {
+  display: flex;
+  gap: 14px;
+}
+.ap-modes label,
+.ap-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: var(--sp-text-2);
+  cursor: pointer;
+}
+.ap-modes input,
+.ap-check input {
+  flex: none;
+  margin: 0;
+  cursor: pointer;
+}
+.ap-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ap-fields[hidden] {
+  display: none;
+}
+.ap-panel input[type="text"],
+.ap-panel input[type="password"] {
+  width: 100%;
+  padding: 8px 10px;
+  font: 500 12px / 1.3 var(--sp-font-ui);
+  color: var(--sp-text);
+  background: var(--sp-elevated);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+}
+.ap-panel input:focus {
+  outline: none;
+  border-color: var(--sp-accent);
+  box-shadow: 0 0 0 3px var(--sp-accent-glow);
+}
+.ap-hint {
+  color: var(--sp-text-3);
+  font-size: 11px;
+}
+.ap-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.ap-actions button {
+  flex: 1;
+  padding: 8px 10px;
+  font: 600 12px / 1 var(--sp-font-ui);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  background: var(--sp-control);
+  color: var(--sp-text);
+  cursor: pointer;
+}
+.ap-actions #ap-create {
+  background: var(--sp-accent);
+  border-color: var(--sp-accent);
+  color: var(--sp-accent-on);
+}
+#ap-result:empty {
+  display: none;
+}
+#ap-result {
+  font-size: 12px;
+}
+#ap-result.ok {
+  color: var(--sp-success-text);
+}
+#ap-result.err {
+  color: var(--sp-error-text);
+}

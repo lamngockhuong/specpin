@@ -145,15 +145,15 @@ src/
     content.ts        - vòng lặp match+render, locale state, capture flow
     popup/            - view per-tab: status, specs, project list, language picker, filter UI
     sidepanel/        - docked surface (Chrome side_panel / Firefox sidebar_action)
-    options/          - connection manager (add/remove/reconnect) + manual import + team views authoring
+    options/          - connection manager (add/remove/reconnect) + manual import + rename/export per-batch + team views authoring
   background/
-    sidecar-registry.ts   - map của các connection + danh sách manual-import batch; tổng hợp được gate theo origin (domains theo từng batch, dedupe id giữa các batch) + views threading
+    sidecar-registry.ts   - map của các connection + danh sách batch cục bộ (Manual); tổng hợp được gate theo origin (domains theo từng batch, dedupe id giữa các batch, tag `manual:<batchId>` theo từng batch) + views threading; `localTargetsForOrigin` (gate mục tiêu ghi được) + `manualBatchesForExport`
     sidecar-connection.ts - client + cache + SSE watch + team views cache của một project (được cô lập)
   content/
     orchestrator.ts   - vòng lặp match; thread locale + project label + visibility filtering vào renderer
     localize-spec.ts  - giải quyết text được localize của spec cho viewer locale
     capture-mode.ts   - element picker (Esc hủy qua callback)
-    capture-form.ts   - soạn spec per-locale + target-project picker
+    capture-form.ts   - soạn spec per-locale + bộ chọn "Save to" gắn nhãn theo loại (sidecar + local; định tuyến mục tiêu duy nhất; vô hiệu khi không dự án nào phục vụ trang)
     keyboard.ts       - shortcut handler
   renderers/
     registry.ts       - interface `SpecRenderer` + registry
@@ -162,30 +162,37 @@ src/
   sources/
     registry.ts       - interface `SpecSource` + selection
     sidecar.ts        - SidecarSource adapter
-    manual.ts / local-bundle.ts - read-only manual-import source + bundle parser
+    manual.ts / local-bundle.ts - nguồn cục bộ (Manual) + bundle parser (giờ còn ghi `group` mỗi file vào `fileGroups` cho export round-trip)
   shared/
     shadow.ts / html.ts        - cô lập Shadow DOM + safe HTML escaping
     theme.ts                   - Theme = "system"|"light"|"dark", applyTheme(el, theme), applyStoredTheme(), watchThemeChanges()
-    messaging.ts               - protocol message được type (bao gồm OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs)
-    connection-types.ts        - Connection / ConnectionStatus / TaggedSpec không phụ thuộc browser
-    origin-match.ts            - matching origin/domain thuần (dùng chung bởi SW + popup)
+    messaging.ts               - protocol message được type (bao gồm OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs; tạo nội dung cục bộ: CREATE_LOCAL_PROJECT/RENAME_LOCAL_PROJECT (privileged), GET_WRITE_TARGETS, GET_EXPORT_BUNDLES (privileged))
+    connection-types.ts        - Connection / ConnectionStatus / TaggedSpec không phụ thuộc browser; MANUAL_CONNECTION_ID giờ là id bare legacy/dành riêng
+    local-id.ts                - prefix `manual:<batchId>` + predicate isLocalConnectionId / localBatchId / localConnId (thay cho các phép so sánh bằng tag bare)
+    local-url.ts               - guard URL sidecar chỉ-localhost được tách ra (dùng chung bởi Options + add-project; guard SSRF/phishing)
+    add-project.ts (+ .css)    - form inline "+ New project" dùng chung (Local qua CREATE_LOCAL_PROJECT, Sidecar qua ADD_CONNECTION); mount bởi popup + side panel
+    export-bundle.ts           - bundleToFiles(batch): dựng lại manifest.json + *.spec.json mỗi group (fileGroups, $schema, bỏ _file, tên file chống zip-slip)
+    zip-store.ts               - bộ ghi zip STORE (không nén) không phụ thuộc + crc32
+    download.ts / export-download.ts - tải về qua Blob object-URL + glue zip-và-tải (popup/panel/Options)
+    origin-match.ts            - matching origin/domain thuần (dùng chung bởi SW + popup; statusServesOrigin là gate ghi/capture)
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
-    config.ts                  - storage helper (connections, locale, enabled, danh sách manual-import batch + migration legacy, personal visibility, theme, uiLocale)
+    config.ts                  - storage helper (connections, locale, enabled, danh sách batch cục bộ + migration legacy, personal visibility, theme, uiLocale) + các mutator cục bộ thuần (createLocalBatch / upsertLocalSpec / removeLocalSpecById / renameLocalBatch)
     surface-renderers.ts       - helper dùng chung cho popup/side panel: sourceBadge() (pill sidecar vs manual), setListControlsHidden() + render locale/filter có gate theo enabled (ẩn list controls khi Specpin off), giữ trạng thái đóng/mở của filter-group qua các lần rebuild
     surface-data.ts            - lọc spec dùng chung: specMatchesQuery() (predicate title/file/tags/description)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
     locales.ts                 - SUPPORTED=["en","vi"], UiLocale, resolveUiLocale (stored -> browser UI -> "en")
-    messages/en.ts             - source of truth, ~115 keys
+    messages/en.ts             - source of truth, ~195 keys
     messages/vi.ts             - typed against keyof Messages để đảm bảo compile-time parity
 ```
 
 **Key flows:**
 - Background SW: một `SidecarRegistry` giữ N connection (mỗi cái có client + cache + team views cache + SSE watch riêng; mỗi cái có trường `enabled` tùy chọn, undefined = enabled, được gate tập trung tại `SidecarConnection.matchesOrigin`) cộng một danh sách manual-import batch (thêm khi import, xóa theo từng batch, clear tất cả; mọi mutation được serialize qua cùng writer `mutate()` như connection). `reestablish()` xây dựng lại chúng từ storage khi mỗi lần SW wake. `GET_SPECS_FOR_ORIGIN` trả về tổng hợp đã khớp origin, được tag theo project, đã filter theo visibility (xem `shared/visibility.ts`).
 - Content script: khi load, hỏi BG lấy spec của origin (đã được visibility-filter). Với mỗi cái, `matchElement(fingerprint)`; render qua mode đang active (tooltip | sidebar | modal), giải quyết localized text cho viewer locale. Lắng nghe capture toggle, locale change, `SPECS_CHANGED`, và các thay đổi visibility state.
-- Capture: picker highlight các element; khi click, form soạn title/description/rules per locale (và chọn một target project khi nhiều cái phục vụ page). Khi save, validate, POST tới connection đã chọn, reload.
+- Capture: picker highlight các element; khi click, form soạn title/description/rules per locale và chọn target project qua `GET_WRITE_TARGETS` (sidecar + local, gắn nhãn theo loại; mục tiêu duy nhất tự chọn; vô hiệu khi không cái nào phục vụ page). Khi save, validate rồi định tuyến theo connectionId: mục tiêu `manual:<batchId>` ghi vào `storage.local` (giới hạn origin + re-validate ở background), còn lại POST tới sidecar và reload.
+- Tạo nội dung cục bộ: manual spec sửa được tại chỗ (tooltip + side-panel card, tái dùng `CaptureForm`); `+ New project` (popup/panel) tạo một dự án cục bộ hoặc kết nối sidecar; Export zip theo group per-batch (popup/panel + Options) dựng lại shape `.specs/` trên đĩa để round-trip qua re-import / `specpin serve`.
 - Renderers: hiện thực `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); đọc localized text qua `localizeSpec`, và caption project khi nhiều hơn một đóng góp cho page. Tooltip renderer: click badge để pin tip mở (một lúc một cái), nút đóng, action "Open in side panel" highlight card side-panel tương ứng (best-effort auto-open trên Chrome, Firefox không thể mở sidebar lập trình).
-- Sources: pluggable. Đã ship: `SidecarSource` + read-only Manual import. FileSystem Access hoãn lại.
+- Sources: pluggable. Đã ship: `SidecarSource` + một nguồn cục bộ (Manual) ghi được (import, tạo trong extension, capture, sửa, export zip theo group). FileSystem Access hoãn lại.
 - Visibility: `isVisible(spec, url, state)` gộp team defaults từ `.specs/views.json` (qua `GET /views`) và personal overrides từ `chrome.storage.sync`. `url:` page gate thắng tất cả; `spec:<id>` force-show là hard rescue. Filter UI (popup + side panel) cung cấp facet checklists (Tags / Files / This page) + per-spec eye toggle; Reset xóa personal overrides. Options page soạn team defaults (ghi qua `PUT /views`).
 
 **Build:**

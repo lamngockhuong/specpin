@@ -1,5 +1,6 @@
 import { t } from "../i18n/index.js";
-import { MANUAL_CONNECTION_ID, type TaggedSpec } from "./connection-types.js";
+import type { TaggedSpec } from "./connection-types.js";
+import { isLocalConnectionId } from "./local-id.js";
 import type { ConnectionStatus, StatusResult } from "./messaging.js";
 import { connectionServesOrigin } from "./origin-match.js";
 import { applyFacetToggle, type FilterModel, resetPersonalVisibility } from "./surface-data.js";
@@ -31,7 +32,7 @@ export function mutedRow(text: string): HTMLElement {
  *  sidecar connection. DOM-built (no innerHTML) so it is never an injection sink,
  *  matching the other renderers. Shared by the popup and the side panel. */
 export function sourceBadge(spec: Pick<TaggedSpec, "connectionId">): HTMLElement {
-  const manual = spec.connectionId === MANUAL_CONNECTION_ID;
+  const manual = isLocalConnectionId(spec.connectionId);
   const tag = document.createElement("span");
   tag.className = `src src-${manual ? "manual" : "sidecar"}`;
   tag.textContent = manual ? t("common.sourceManual") : t("common.sourceSidecar");

@@ -1,13 +1,13 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { Manifest, Spec } from "@specpin/spec-schema";
-import type { ManualBatch } from "../shared/config.js";
-import {
-  type Connection,
-  type ConnectionStatus,
-  MANUAL_CONNECTION_ID,
-  type ManualBatchSummary,
-  type TaggedSpec,
+import { batchServesOrigin, type ManualBatch } from "../shared/config.js";
+import type {
+  Connection,
+  ConnectionStatus,
+  ManualBatchSummary,
+  TaggedSpec,
 } from "../shared/connection-types.js";
+import { localConnId } from "../shared/local-id.js";
 import { originMatchesDomains } from "../shared/origin-match.js";
 import { type ConnectionDeps, SidecarConnection } from "./sidecar-connection.js";
 
@@ -161,25 +161,36 @@ export class SidecarRegistry {
       const cache = conn.getCache();
       if (!cache || !conn.matchesOrigin(origin)) continue;
       const project = cache.manifest?.project ?? "";
-      for (const spec of cache.specs) specs.push({ ...spec, connectionId: conn.id, project });
+      // A serving sidecar spec is always writable (capture/edit POST back to it).
+      for (const spec of cache.specs)
+        specs.push({ ...spec, connectionId: conn.id, project, writable: true });
       manifest ??= cache.manifest;
       collectLocales(localeSet, cache.manifest);
     }
 
     // Manual import is page-owned (the user explicitly loaded it); each batch's
-    // empty `domains` keeps the historical match-all behavior. Spec ids are
-    // deduped ACROSS batches (a `Spec.id` is unique only within a project, so a
-    // re-imported project must not render two pins on the same element): first
-    // matching batch wins.
+    // empty `domains` keeps the historical match-all behavior for RENDERING (the
+    // stricter applyToAllSites opt-in only gates the WRITE path; see
+    // localTargetsForOrigin). Each spec is tagged with its batch's per-batch
+    // connection id (`manual:<batchId>`) so an edit routes back to that exact
+    // batch. Spec ids are deduped ACROSS batches (a `Spec.id` is unique only
+    // within a project, so a re-imported project must not render two pins on the
+    // same element): first matching batch wins.
     const seenManualIds = new Set<string>();
     for (const batch of this.manual) {
       const domains = batch.specs.manifest?.domains ?? [];
       if (!originMatchesDomains(origin, domains)) continue;
       const project = batch.specs.manifest?.project ?? "";
+      const connectionId = localConnId(batch.id);
+      // A local spec is editable only when this origin could also write to its
+      // batch (the same applyToAllSites gate the write guard uses): an
+      // empty-domains imported batch renders match-all but is not a write target,
+      // so its specs must not offer an Edit that would always fail.
+      const writable = batchServesOrigin(batch, origin);
       for (const spec of batch.specs.specs) {
         if (seenManualIds.has(spec.id)) continue;
         seenManualIds.add(spec.id);
-        specs.push({ ...spec, connectionId: MANUAL_CONNECTION_ID, project });
+        specs.push({ ...spec, connectionId, project, writable });
       }
       manifest ??= batch.specs.manifest ?? null;
       collectLocales(localeSet, batch.specs.manifest ?? null);
@@ -199,6 +210,43 @@ export class SidecarRegistry {
       sets.push(conn.hiddenFacets());
     }
     return sets;
+  }
+
+  /** Local (Manual) batches that are WRITABLE targets for this origin. Mirrors
+   *  the sidecar RT-SA1 rule (`statusServesOrigin`): a batch that pins domains
+   *  matches by host; one that pins none matches only when `applyToAllSites` is
+   *  set. The single source of truth shared by GET_WRITE_TARGETS (the capture
+   *  picker) and the SAVE/UPDATE local-write origin guard, so a page can never
+   *  write to a local project that does not serve it. `id` is `manual:<batchId>`. */
+  localTargetsForOrigin(origin: string): Array<{ id: string; project: string }> {
+    const out: Array<{ id: string; project: string }> = [];
+    for (const batch of this.manual) {
+      if (!batchServesOrigin(batch, origin)) continue;
+      out.push({
+        id: localConnId(batch.id),
+        project: batch.specs.manifest?.project || batch.label,
+      });
+    }
+    return out;
+  }
+
+  /** Local batches to export: the one named by `id`, else those that render on
+   *  `origin` (originMatchesDomains), else (none match, or no selector) all of
+   *  them. Carries the full specs payload, so callers must be trusted (the
+   *  GET_EXPORT_BUNDLES handler is privileged). */
+  manualBatchesForExport(opts: { id?: string; origin?: string }): ManualBatch[] {
+    if (opts.id) {
+      const b = this.manual.find((x) => x.id === opts.id);
+      return b ? [b] : [];
+    }
+    if (opts.origin) {
+      const origin = opts.origin;
+      const serving = this.manual.filter((b) =>
+        originMatchesDomains(origin, b.specs.manifest?.domains ?? []),
+      );
+      if (serving.length) return serving;
+    }
+    return [...this.manual];
   }
 
   /** The cached team-default views for one connection (for the Options editor),
@@ -362,6 +410,31 @@ export function findDuplicateBatches(
       project: batch.specs.manifest?.project ?? "",
       overlapSpecIds: batch.specs.specs.filter((s) => candIds.has(s.id)).length,
     }));
+}
+
+/** Whether two domain lists could both serve some page. An empty list is
+ *  render-time match-all (page-owned manual source), so it overlaps anything;
+ *  otherwise two lists overlap when a host in one equals or is a sub/superdomain
+ *  of a host in the other. Used only for the import-time collision warning. */
+function domainsOverlap(a: string[], b: string[]): boolean {
+  if (a.length === 0 || b.length === 0) return true;
+  return a.some((d) => b.some((e) => d === e || d.endsWith(`.${e}`) || e.endsWith(`.${d}`)));
+}
+
+/** Spec ids the candidate bundle shares with an existing batch whose domains
+ *  could serve the same page. Across batches `specsForOrigin` dedups first-wins,
+ *  so such a spec renders (and edits route) only to the first matching batch; the
+ *  import surfaces these ids as a non-blocking warning so the user can resolve the
+ *  overlap. Empty when there is no cross-batch collision. */
+export function findSpecIdCollisions(candidate: SpecsResponse, existing: ManualBatch[]): string[] {
+  const candDomains = candidate.manifest?.domains ?? [];
+  const candIds = new Set(candidate.specs.map((s) => s.id));
+  const collisions = new Set<string>();
+  for (const batch of existing) {
+    if (!domainsOverlap(candDomains, batch.specs.manifest?.domains ?? [])) continue;
+    for (const s of batch.specs.specs) if (candIds.has(s.id)) collisions.add(s.id);
+  }
+  return [...collisions];
 }
 
 function collectLocales(set: Set<string>, manifest: Manifest | null): void {

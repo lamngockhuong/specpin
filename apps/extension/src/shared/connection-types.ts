@@ -1,7 +1,9 @@
 import type { SpecWithFile } from "@specpin/api-client";
 
-/** Connection id used to tag specs from the page-owned Manual import source. It
- *  is not a real sidecar connection: capture cannot write to it. */
+/** The legacy bare id for the page-owned Manual source. Local batches are now
+ *  tagged per-batch as `manual:<batchId>` (see `shared/local-id.ts`); this bare
+ *  value remains only as the pre-batch tag that the background migrates to a
+ *  prefixed id on load. */
 export const MANUAL_CONNECTION_ID = "manual";
 
 // Pure, browser-free types shared by the storage layer (config.ts), the message
@@ -29,8 +31,15 @@ export interface Connection {
 
 /** A spec tagged with the connection (project) it came from. Extends
  *  SpecWithFile so existing single-project consumers keep working; the project
- *  label lets multi-project pages disambiguate colliding spec ids. */
-export type TaggedSpec = SpecWithFile & { connectionId: string; project: string };
+ *  label lets multi-project pages disambiguate colliding spec ids. `writable` is
+ *  true when this origin can edit the spec back to its source (a sidecar that
+ *  serves the page, or a local batch that serves it under the applyToAllSites
+ *  gate) - drives the Edit affordance so it never offers a save that would fail. */
+export type TaggedSpec = SpecWithFile & {
+  connectionId: string;
+  project: string;
+  writable?: boolean;
+};
 
 /** One Manual-import batch as shown in the Options list. Carries NO `specs`
  *  payload (only counts + metadata), so it is safe to send over GET_STATUS to any
@@ -39,7 +48,7 @@ export type TaggedSpec = SpecWithFile & { connectionId: string; project: string 
 export interface ManualBatchSummary {
   id: string;
   label: string;
-  source: "paste" | "files";
+  source: "paste" | "files" | "manual";
   fileNames?: string[];
   project: string;
   domains: string[];

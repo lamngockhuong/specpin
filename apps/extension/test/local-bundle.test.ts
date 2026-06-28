@@ -43,6 +43,14 @@ describe("parseLocalBundle", () => {
     expect(specs?.manifest.project).toBe("Test");
   });
 
+  it("retains each file's group in fileGroups (the flatten drops it from specs)", () => {
+    const { fileGroups, errors } = parseLocalBundle(
+      bundle({ manifest, files: { "login.spec.json": specFile } }),
+    );
+    expect(errors).toEqual([]);
+    expect(fileGroups).toEqual({ "login.spec.json": "Login" });
+  });
+
   it("rejects malformed JSON", () => {
     const { specs, errors } = parseLocalBundle("{ not json ");
     expect(specs).toBeUndefined();

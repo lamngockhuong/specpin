@@ -1,8 +1,9 @@
-import type { SpecsResponse } from "@specpin/api-client";
-import type { DisplayMode } from "@specpin/spec-schema";
+import type { SpecsResponse, SpecWithFile } from "@specpin/api-client";
+import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import type { UiLocale } from "../i18n/locales.js";
 import type { Connection } from "./connection-types.js";
+import { statusServesOrigin } from "./origin-match.js";
 import type { Theme } from "./theme.js";
 import type { PersonalVisibility } from "./visibility.js";
 
@@ -21,16 +22,26 @@ export interface ConnectionConfig {
  *  single overwrite slot). */
 export interface ManualBatch {
   /** Stable unique id for remove/dedup. Assigned by the background on add
-   *  (crypto.randomUUID()); the legacy migration also gets a fresh uuid. */
+   *  (crypto.randomUUID()); the legacy migration also gets a fresh uuid. The
+   *  per-batch local connection id is `manual:<id>` (see `shared/local-id.ts`). */
   id: string;
   /** Display label: manifest.project, else first file name, else "Pasted bundle". */
   label: string;
-  /** How it was imported (drives the row subtitle). */
-  source: "paste" | "files";
+  /** How it was created: imported (paste/files) or authored in the extension
+   *  ("manual" = created via CREATE_LOCAL_PROJECT). Drives the row subtitle. */
+  source: "paste" | "files" | "manual";
   /** Base names of picked files (files source only), for the row subtitle. */
   fileNames?: string[];
   /** Epoch ms when added (display only; do not use for ordering). */
   importedAt: number;
+  /** RT-SA1 parity for the WRITE path: a batch with empty `manifest.domains`
+   *  is a writable/capture target for a page only when this is true. Imported
+   *  batches leave it undefined (render keeps its historical match-all). */
+  applyToAllSites?: boolean;
+  /** Map of `_file` -> original file `group`, so a later export reconstructs the
+   *  per-file group (a file-level field, not a Spec field). Absent on pre-plan
+   *  batches; export then falls back to a file-base-derived group. */
+  fileGroups?: Record<string, string>;
   /** The validated bundle: manifest + flattened specs (unchanged shape). */
   specs: SpecsResponse;
 }
@@ -47,6 +58,12 @@ export interface LocalSpecsState {
  *  balloon specsForOrigin. MAX_SPECS in local-bundle.ts already caps one bundle's
  *  spec count; this caps the batch COUNT. */
 export const MAX_MANUAL_BATCHES = 50;
+
+/** Per-batch spec cap for the in-extension WRITE path (capture into a local
+ *  project). Mirrors `MAX_SPECS` in local-bundle.ts (the import-path cap); kept as
+ *  a separate constant so config.ts stays free of the spec-schema validator
+ *  import. A captured spec is rejected once the batch would exceed this. */
+export const MAX_SPECS_PER_BATCH = 5000;
 
 const CONFIG_KEY = "specpin:config";
 const CONNECTIONS_KEY = "specpin:connections";
@@ -279,4 +296,141 @@ export async function setLocalSpecs(state: LocalSpecsState | null): Promise<void
     return;
   }
   await browser.storage.local.set({ [LOCAL_SPECS_KEY]: state });
+}
+
+// ---------------------------------------------------------------------------
+// Pure mutators over LocalSpecsState (the in-extension authoring write path).
+//
+// Contract: each is `(state, ...args) => LocalMutationResult`. It returns a NEW
+// state (never mutates the input) and never touches storage. The background calls
+// it INSIDE its serialized mutate() callback, reading current storage truth first
+// and persisting the RETURNED state (not the input), so concurrent surfaces cannot
+// lose a write. Unit-tested in isolation; an integration test covers the full
+// SAVE_SPEC -> mutator -> setLocalSpecs -> reconcile -> GET_SPECS_FOR_ORIGIN loop.
+// ---------------------------------------------------------------------------
+
+/** Whether a local batch is a writable/capture target for an origin: the RT-SA1
+ *  gate (a batch with empty `domains` serves a page only with `applyToAllSites`).
+ *  One home for the rule, shared by the registry's capture picker and the
+ *  background write guard so they can never diverge. */
+export function batchServesOrigin(batch: ManualBatch, origin: string): boolean {
+  return statusServesOrigin(
+    {
+      domains: batch.specs.manifest?.domains ?? [],
+      matchesAllSites: batch.applyToAllSites === true,
+    },
+    origin,
+  );
+}
+
+/** Result of a pure local mutator: ok + the new state, or ok:false + reason. */
+export interface LocalMutationResult {
+  ok: boolean;
+  state?: LocalSpecsState;
+  error?: string;
+}
+
+/** Append an empty local project (created in the extension, not imported). Its
+ *  manifest pins `project` + `domains`; `applyToAllSites` controls whether an
+ *  empty-`domains` project is a writable target (RT-SA1 parity, defaults off).
+ *  Enforces MAX_MANUAL_BATCHES. */
+export function createLocalBatch(
+  state: LocalSpecsState,
+  opts: { id: string; project: string; domains: string[]; applyToAllSites?: boolean },
+): LocalMutationResult {
+  if (state.batches.length >= MAX_MANUAL_BATCHES) {
+    return {
+      ok: false,
+      error: `Limit reached (${MAX_MANUAL_BATCHES} batches). Remove some first.`,
+    };
+  }
+  const manifest: Manifest = {
+    version: "1.0",
+    project: opts.project,
+    domains: opts.domains,
+    specFiles: [],
+  };
+  const batch: ManualBatch = {
+    id: opts.id,
+    label: opts.project,
+    source: "manual",
+    importedAt: Date.now(),
+    applyToAllSites: opts.applyToAllSites,
+    fileGroups: {},
+    specs: { manifest, specs: [] },
+  };
+  return { ok: true, state: { batches: [...state.batches, batch] } };
+}
+
+/** Insert or replace a spec in the named batch: replace the one with the same
+ *  `spec.id`, else append. Stamps `_file`, records `fileGroups[file] = group`, and
+ *  rejects when an APPEND would push the batch past MAX_SPECS_PER_BATCH (a replace
+ *  never grows the count). Unknown batch id -> ok:false. */
+export function upsertLocalSpec(
+  state: LocalSpecsState,
+  batchId: string,
+  file: string,
+  group: string,
+  spec: Spec,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const batch = state.batches[idx] as ManualBatch;
+  const specWithFile = { ...spec, _file: file } as SpecWithFile;
+  const existing = batch.specs.specs.findIndex((s) => s.id === spec.id);
+  const isAppend = existing === -1;
+  if (isAppend && batch.specs.specs.length >= MAX_SPECS_PER_BATCH) {
+    return { ok: false, error: "batch full" };
+  }
+  const specs = isAppend
+    ? [...batch.specs.specs, specWithFile]
+    : batch.specs.specs.map((s, i) => (i === existing ? specWithFile : s));
+  const nextBatch: ManualBatch = {
+    ...batch,
+    fileGroups: { ...(batch.fileGroups ?? {}), [file]: group },
+    specs: { ...batch.specs, specs },
+  };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Remove a spec by id from the named batch (no-op-but-ok when the id is absent).
+ *  Unknown batch id -> ok:false. */
+export function removeLocalSpecById(
+  state: LocalSpecsState,
+  batchId: string,
+  id: string,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const batch = state.batches[idx] as ManualBatch;
+  const nextBatch: ManualBatch = {
+    ...batch,
+    specs: { ...batch.specs, specs: batch.specs.specs.filter((s) => s.id !== id) },
+  };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Rename a local project: update `manifest.project` (+ display label) and,
+ *  optionally, its `domains` (which changes its write-routing surface). Unknown
+ *  batch id -> ok:false. */
+export function renameLocalBatch(
+  state: LocalSpecsState,
+  batchId: string,
+  project: string,
+  domains?: string[],
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const batch = state.batches[idx] as ManualBatch;
+  const manifest: Manifest = {
+    ...(batch.specs.manifest ?? { version: "1.0", project, domains: domains ?? [], specFiles: [] }),
+    project,
+    ...(domains !== undefined ? { domains } : {}),
+  };
+  const nextBatch: ManualBatch = {
+    ...batch,
+    label: project,
+    specs: { ...batch.specs, manifest },
+  };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
 }

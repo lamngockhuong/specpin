@@ -68,6 +68,26 @@ const en = {
 
   // Popup-only.
   "popup.openSidepanel": "Open as side panel ⇥",
+  "popup.newProject": "New project",
+  "popup.exportLocal": "Export local specs",
+
+  // Shared "+ New project" inline form (popup + side panel).
+  "addProject.modeLocal": "Local project",
+  "addProject.modeSidecar": "Sidecar",
+  "addProject.projectPlaceholder": "Project name",
+  "addProject.domainsPlaceholder": "Domains (optional, comma-separated)",
+  "addProject.applyAllSites": "Apply to all sites",
+  "addProject.applyAllHint": "Without domains or this, the project serves no page.",
+  "addProject.urlPlaceholder": "http://127.0.0.1:PORT",
+  "addProject.labelPlaceholder": "Label (optional)",
+  "addProject.tokenPlaceholder": "Token",
+  "addProject.create": "Create",
+  "addProject.cancel": "Cancel",
+  "addProject.projectRequired": "Project name is required.",
+  "addProject.couldNotCreate": "Could not create the project.",
+  "addProject.urlTokenRequired": "URL and token are required.",
+  "addProject.urlError": "URL must be http://localhost or http://127.0.0.1 (optional port).",
+  "addProject.couldNotConnect": "Could not connect to the sidecar.",
 
   // Side panel per-spec controls.
   "sidepanel.hide": "Hide",
@@ -101,6 +121,10 @@ const en = {
   "capture.modeDefault": "Use project default",
   "capture.targetProject": "Target project",
   "capture.targetFile": "Target file",
+  "capture.targetKindLocal": "local",
+  "capture.targetKindSidecar": "sidecar",
+  "capture.noWritableProject":
+    "No writable project serves this page. Create a local project or connect a sidecar first.",
   "capture.relink": "Re-link element",
   "capture.relinkNote": "Re-linked to a new element. Save to apply.",
   "capture.couldNotSave": "Could not save:",
@@ -183,6 +207,12 @@ const en = {
   "options.untitled": "untitled",
   "options.sourcePasted": "pasted",
   "options.sourceFiles": "files",
+  "options.sourceLocal": "Local",
+  "options.export": "Export",
+  "options.rename": "Rename",
+  "options.projectNameLabel": "Project name",
+  "options.domainsLabel": "Sites (comma-separated, optional)",
+  "options.renamed": 'Renamed to "{project}".',
   "options.batchRemoved": "Batch removed.",
   "options.sharedSpecs": "{count} shared spec(s)",
   "options.sitesPrefix": "Sites: {sites}",
@@ -193,6 +223,8 @@ const en = {
   "options.couldNotAddBatch": "Could not add batch.",
   "options.loadedDuplicates":
     "Loaded (total {total} spec(s)). Note: duplicates {names} you imported earlier.",
+  "options.loadedIdCollisions":
+    "Loaded (total {total} spec(s)). Note: spec id(s) {ids} also exist in another project on the same site; only the first will render.",
   "options.loadedTotal": "Loaded. Total {count} spec(s) across all batches.",
   "options.pasteBundleFirst": "Paste a bundle first.",
   "options.invalidBundle": "Invalid bundle:\n- {errors}",
