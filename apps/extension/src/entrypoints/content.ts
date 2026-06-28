@@ -121,14 +121,21 @@ export default defineContentScript({
     const onNavigate = () => {
       if (location.href === lastRenderedUrl) return;
       lastRenderedUrl = location.href;
-      // Debounce: a route change triggers a burst of DOM mutations as the new
-      // view paints; collapse them into one re-render once the DOM settles (which
-      // also ensures the new route's elements are mounted before we re-match).
+      // Tear down the previous route's renderers immediately so stale tooltips
+      // don't linger over the new page during the debounce window (otherwise the
+      // new view paints first, then old tooltips vanish, then new ones appear).
+      // Skip while capturing/editing to keep the render-freeze invariant intact.
+      if (!captureActive) {
+        session?.destroy();
+        session = null;
+      }
+      // Debounce only the re-render: the new view paints over several frames, so
+      // render once the DOM settles and the new route's elements are mounted.
       if (navTimer) clearTimeout(navTimer);
       navTimer = setTimeout(() => {
         navTimer = null;
         rerender();
-      }, 150);
+      }, 100);
     };
 
     async function applyLocale(next: string, persist: boolean): Promise<void> {
