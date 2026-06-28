@@ -2,6 +2,7 @@ import { matchElement } from "@specpin/fingerprint-core";
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { createRenderer, resolveMode } from "../renderers/registry.js";
 import type { SpecRenderer } from "../renderers/renderer.js";
+import type { LauncherPosition } from "../shared/config.js";
 import { MANUAL_CONNECTION_ID, type TaggedSpec } from "../shared/connection-types.js";
 import type { Theme } from "../shared/theme.js";
 import {
@@ -49,6 +50,16 @@ export function renderSession(
   onHighlight?: (el: Element) => void,
   onEdit?: (specId: string) => void,
   theme?: Theme,
+  dismiss?: {
+    /** Modes currently dismissed; their renderers show the relaunch pill only. */
+    modes: Set<DisplayMode>;
+    /** Persist a dismiss/reopen and re-render (owned by the content script). */
+    onToggle: (mode: DisplayMode, dismissed: boolean) => void;
+    /** Stored relaunch-pill position, or null for the default corner. */
+    position?: LauncherPosition | null;
+    /** Persist a user-dragged pill position (owned by the content script). */
+    onMove?: (pos: LauncherPosition) => void;
+  },
 ): RenderSession {
   const byMode = new Map<DisplayMode, SpecRenderer>();
   const matches = new Map<string, Element>();
@@ -100,6 +111,10 @@ export function renderSession(
       // Manual-import specs are read-only; everything else can be edited.
       editable: (spec as Partial<TaggedSpec>).connectionId !== MANUAL_CONNECTION_ID,
       theme,
+      dismissed: dismiss?.modes.has(mode) ?? false,
+      onSetDismissed: dismiss?.onToggle,
+      launcherPosition: dismiss?.position ?? null,
+      onLauncherMove: dismiss?.onMove,
     });
     matches.set(spec.id, match.el);
     stats.rendered += 1;

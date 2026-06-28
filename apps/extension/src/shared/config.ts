@@ -64,6 +64,16 @@ export const UI_LOCALE_KEY = "specpin:uiLocale";
 /** Personal visibility override. In `storage.sync` (not local) so a user's
  *  show/hide choices follow them across machines on the same browser profile. */
 export const VISIBILITY_KEY = "specpin:visibility";
+/** Where the user dragged the floating relaunch pill, or null for the default
+ *  bottom-right corner. */
+export const LAUNCHER_POSITION_KEY = "specpin:launcherPosition";
+
+/** A relaunch-pill position, as viewport pixels from the top-left. Clamped to the
+ *  current viewport when applied, so a smaller window still keeps the pill visible. */
+export interface LauncherPosition {
+  x: number;
+  y: number;
+}
 
 /** Which surface a toolbar-icon click opens. Honored on Chrome only (the
  *  background applies it via chrome.action.setPopup + sidePanel behavior);
@@ -192,6 +202,22 @@ export async function setPersonalVisibility(visibility: PersonalVisibility): Pro
     return;
   }
   await browser.storage.sync.set({ [VISIBILITY_KEY]: visibility });
+}
+
+/** The user's dragged relaunch-pill position, or null for the default corner. */
+export async function getLauncherPosition(): Promise<LauncherPosition | null> {
+  const stored = await browser.storage.local.get(LAUNCHER_POSITION_KEY);
+  const v = stored[LAUNCHER_POSITION_KEY] as LauncherPosition | undefined;
+  return v && typeof v.x === "number" && typeof v.y === "number" ? { x: v.x, y: v.y } : null;
+}
+
+export async function setLauncherPosition(pos: LauncherPosition | null): Promise<void> {
+  // null = the default corner: drop the key so a default profile carries nothing.
+  if (pos === null) {
+    await browser.storage.local.remove(LAUNCHER_POSITION_KEY);
+    return;
+  }
+  await browser.storage.local.set({ [LAUNCHER_POSITION_KEY]: pos });
 }
 
 export async function getLocalSpecs(): Promise<LocalSpecsState | null> {

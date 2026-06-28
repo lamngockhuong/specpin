@@ -136,7 +136,9 @@ cd /path/to/project-b && /path/to/bin/specpin serve --port 51002
 
 ## Chế độ hiển thị
 
-Spec hiển thị dưới dạng **tooltip** (xem nhanh khi hover), **sidebar** (danh sách cố định), hoặc **modal** (hộp thoại giữa màn hình liệt kê mọi spec trên trang). Đổi bằng dropdown chế độ trong popup hoặc xoay vòng với `Alt+Shift+M`. `preferredDisplayMode` theo từng spec và `defaultDisplayMode` trong manifest vẫn áp dụng khi không ép chế độ.
+Spec hiển thị dưới dạng **tooltip** (xem nhanh khi hover), **sidebar** (danh sách cố định), hoặc **modal** (một panel kéo được, không chặn trang, liệt kê mọi spec trên trang). Modal mở ra ở giữa màn hình nhưng bạn có thể kéo nó bằng phần header tới bất kỳ vị trí nào, và trang phía sau vẫn tương tác được (không có lớp nền làm mờ) nên có thể giữ nó mở trong khi làm việc. Đổi bằng dropdown chế độ trong popup hoặc xoay vòng với `Alt+Shift+M`. `preferredDisplayMode` theo từng spec và `defaultDisplayMode` trong manifest vẫn áp dụng khi không ép chế độ.
+
+Bạn có thể ẩn tạm sidebar (nút **x** của nó) hoặc modal (chỉ bằng nút **x** - phím `Esc` và click ra ngoài không còn đóng nó nữa). Bề mặt đã ẩn thu gọn thành một pill **Specpin** nhỏ ở góc dưới bên phải trang, hiển thị số spec khớp; click vào để mở lại. Kéo pill để di chuyển nó tới bất kỳ vị trí nào trên trang, và vị trí mới được ghi nhớ cho lần sau (tự kẹp lại trong vùng nhìn thấy nếu cửa sổ nhỏ hơn). Trạng thái đã ẩn vẫn giữ qua các lần render lại và điều hướng trong trang, và được xóa mỗi khi bạn chủ động chọn một chế độ (dropdown hoặc `Alt+Shift+M`).
 
 ## Dùng không cần sidecar (Manual import)
 

@@ -11,10 +11,13 @@ import { initI18n, resolveUiLocale } from "../i18n/index.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
 import {
   getDisplayMode,
+  getLauncherPosition,
   getLocale,
   getTheme,
   getUiLocale,
+  type LauncherPosition,
   setDisplayMode,
+  setLauncherPosition,
   setLocale,
 } from "../shared/config.js";
 import { MANUAL_CONNECTION_ID, type TaggedSpec } from "../shared/connection-types.js";
@@ -47,6 +50,14 @@ export default defineContentScript({
     let specs: TaggedSpec[] = [];
     let enabled = true;
     let forcedMode: DisplayMode | null = null;
+    // Modes the user dismissed for this page session. The dismissed surface renders
+    // as the floating relaunch pill instead of its panel; the flag survives
+    // re-renders / SPA navigation (in-memory only, resets on full reload). Cleared
+    // when the user explicitly picks a mode (picker / Alt+Shift+M).
+    const dismissedModes = new Set<DisplayMode>();
+    // Where the user dragged the relaunch pill, or null for the default corner.
+    // Read once at startup; updated in place on drag (no re-render needed).
+    let launcherPosition: LauncherPosition | null = null;
     let locale = "en";
     let availableLocales: string[] = [];
     let visibility: VisibilityState = EMPTY_VISIBILITY;
@@ -100,9 +111,30 @@ export default defineContentScript({
               highlight,
               openEditForm,
               theme,
+              {
+                modes: dismissedModes,
+                onToggle: setDismissed,
+                position: launcherPosition,
+                onMove: moveLauncher,
+              },
             )
           : null;
     };
+
+    // Persist a dismiss/reopen for a whole display mode, then re-render. A function
+    // declaration (like openEditForm) so rerender above can reference it.
+    function setDismissed(mode: DisplayMode, dismissed: boolean): void {
+      if (dismissed) dismissedModes.add(mode);
+      else dismissedModes.delete(mode);
+      rerender();
+    }
+
+    // Persist a user-dragged pill position. No re-render: the pill already moved on
+    // screen; we only record the spot so the next mount restores it.
+    function moveLauncher(pos: LauncherPosition): void {
+      launcherPosition = pos;
+      void setLauncherPosition(pos);
+    }
 
     const flushPendingRerender = () => {
       if (pendingRerender) {
@@ -169,6 +201,9 @@ export default defineContentScript({
     function cycleMode(): void {
       const idx = forcedMode ? IMPLEMENTED_MODES.indexOf(forcedMode) : -1;
       forcedMode = IMPLEMENTED_MODES[(idx + 1) % IMPLEMENTED_MODES.length] ?? null;
+      // Explicitly choosing a mode is a "show me this" intent: clear dismissals so
+      // the chosen surface is visible (also the guaranteed un-dismiss escape hatch).
+      dismissedModes.clear();
       // Persist so the keyboard cycle survives reload and the popup/side-panel
       // picker reflects it (matches the SET_DISPLAY_MODE persistence there).
       void setDisplayMode(forcedMode);
@@ -315,6 +350,9 @@ export default defineContentScript({
           break;
         case "SET_DISPLAY_MODE":
           forcedMode = message.mode;
+          // Picking a mode in the popup/side-panel is an explicit "show me this":
+          // clear any dismissal so the chosen surface appears.
+          dismissedModes.clear();
           rerender();
           break;
         case "SET_LOCALE":
@@ -342,17 +380,19 @@ export default defineContentScript({
       }
     });
 
-    // Restore the persisted display-mode override and forced theme, and select
-    // the UI-chrome language, before the first render so renderers translate and
-    // a reloaded page honors both instead of resetting. These three reads are
-    // independent, so fetch them concurrently (content init runs on every page).
-    const [storedMode, storedTheme, storedUiLocale] = await Promise.all([
+    // Restore the persisted display-mode override, forced theme, dragged pill
+    // position, and UI-chrome language before the first render so renderers
+    // translate and a reloaded page honors them instead of resetting. These reads
+    // are independent, so fetch them concurrently (content init runs on every page).
+    const [storedMode, storedTheme, storedUiLocale, storedLauncherPosition] = await Promise.all([
       getDisplayMode(),
       getTheme(),
       getUiLocale(),
+      getLauncherPosition(),
     ]);
     forcedMode = storedMode;
     theme = storedTheme;
+    launcherPosition = storedLauncherPosition;
     initI18n(resolveUiLocale(storedUiLocale));
     await refresh();
     // Seed after the first render so a stray early mutation doesn't trigger a

@@ -158,6 +158,7 @@ src/
   renderers/
     registry.ts       - interface `SpecRenderer` + registry
     tooltip.ts / sidebar.ts / modal.ts - ba display mode đã hiện thực (tooltip: pin + open-in-panel)
+    launcher.ts       - pill nổi để mở lại, hiện khi một sidebar/modal đã ẩn thu gọn (host riêng theo mode, mở lại qua `onSetDismissed`)
   sources/
     registry.ts       - interface `SpecSource` + selection
     sidecar.ts        - SidecarSource adapter

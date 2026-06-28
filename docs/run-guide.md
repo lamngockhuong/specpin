@@ -126,7 +126,9 @@ To demo this against the single demo app, run two sidecars over two `.specs/` di
 
 ## Display modes
 
-Specs render as a **tooltip** (hover peek), a **sidebar** (persistent list), or a **modal** (centered dialog listing every spec on the page). Switch with the popup's mode dropdown or cycle with `Alt+Shift+M`. Per-spec `preferredDisplayMode` and the manifest `defaultDisplayMode` still apply when no mode is forced.
+Specs render as a **tooltip** (hover peek), a **sidebar** (persistent list), or a **modal** (a draggable, non-blocking panel listing every spec on the page). The modal opens centered but you can drag it by its header to anywhere on screen, and the page behind stays interactive (no dimming overlay) so you can keep it open while you work. Switch with the popup's mode dropdown or cycle with `Alt+Shift+M`. Per-spec `preferredDisplayMode` and the manifest `defaultDisplayMode` still apply when no mode is forced.
+
+You can dismiss the sidebar (its **x** button) or the modal (its **x** button only - `Esc` and clicks outside no longer close it). A dismissed surface collapses to a small **Specpin** pill in the page's bottom-right corner showing the matched-spec count; click it to reopen. Drag the pill to move it anywhere on the page, and the new position is remembered for next time (clamped back into view if the window is smaller). The dismissed state survives re-renders and in-page navigation, and clears whenever you explicitly pick a mode (the dropdown or `Alt+Shift+M`).
 
 ## Use without a sidecar (Manual import)
 
