@@ -170,7 +170,7 @@ src/
     origin-match.ts            - matching origin/domain thuần (dùng chung bởi SW + popup)
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
     config.ts                  - storage helper (connections, locale, enabled, danh sách manual-import batch + migration legacy, personal visibility, theme, uiLocale)
-    surface-renderers.ts       - helper dùng chung cho popup/side panel: sourceBadge() (pill sidecar vs manual)
+    surface-renderers.ts       - helper dùng chung cho popup/side panel: sourceBadge() (pill sidecar vs manual), setListControlsHidden() + render locale/filter có gate theo enabled (ẩn list controls khi Specpin off), giữ trạng thái đóng/mở của filter-group qua các lần rebuild
     surface-data.ts            - lọc spec dùng chung: specMatchesQuery() (predicate title/file/tags/description)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges

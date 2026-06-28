@@ -77,7 +77,7 @@ A project whose manifest pins no `domains` is inactive by default (its specs wou
 
 Visit the demo app (`http://localhost:3000`). Matched specs appear as tooltips on their elements (the badge turns amber when a match needs review). Edit a `.spec.json` on disk and the page live-updates via SSE.
 
-The popup lists the specs for the current page, toggles Specpin on/off, switches display mode, picks the spec language, and offers Reload / Reconnect. Each spec row shows a small source badge (`sidecar` or `manual`) marking which source it came from. An always-visible search box above the list filters specs live by title, file, and tags. When more than one project serves the page, the popup lists each matching project and renderers caption each spec with its project.
+The popup lists the specs for the current page and toggles Specpin on/off. A settings gear in the top-right corner opens the Options page. The primary controls (**+ Capture spec** and the display-mode select) sit directly above the list so they stay visible without scrolling, with the spec **Language** picker just above them. Each spec row shows a small source badge (`sidecar` or `manual`) marking which source it came from. A search box above the list filters specs live by title, file, and tags. When more than one project serves the page, the popup lists each matching project and renderers caption each spec with its project. Turning Specpin off for the page collapses the list to an off notice and hides the controls that only act on it (search, language, capture, mode, filters); the status, project list, and settings gear stay.
 
 ### Side panel (docked)
 
