@@ -35,10 +35,10 @@
       .row { display: flex; align-items: center; justify-content: space-between; }
       .status { margin-top: 14px; }
       .status > span { display: inline-flex; align-items: center; gap: 8px; }
-      .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sp-text-3); }
-      .dot.ok { background: var(--sp-success-dot); }
-      .dot.off { background: var(--sp-error-text); }
-      .dot.warn { background: var(--sp-warning-border); }
+      /* The status row carries only the informational states; when those are
+         absent (a project serves the page) the text is blank and the row
+         collapses, like #count:empty / #projects:empty below. */
+      .status:has(#status-text:empty) { display: none; }
 
       /* Global on/off toggle for ALL spec sources (sidecar + manual). On its own
          row, separate from the connection status, so it does not read as a
@@ -51,8 +51,8 @@
       .meta {
         margin-top: 14px; padding-top: 14px;
         border-top: 1px solid var(--sp-border);
+        justify-content: flex-end; /* the lone count pill sits at the right */
       }
-      #project { font: 600 13px/1 var(--sp-font-mono); color: var(--sp-text); }
       #count:empty { display: none; }
 
       /* Per-tab project list (distinct from the spec list: no pin marker). */
@@ -217,13 +217,13 @@
       </div>
     </div>
     <div class="row status">
-      <span><span id="status-dot" class="dot"></span><span id="status-text" data-i18n="common.loading">Loading&hellip;</span></span>
+      <span><span id="status-text" data-i18n="common.loading">Loading&hellip;</span></span>
     </div>
     <div class="row toggle-row">
       <label for="enabled" data-i18n="common.showSpecsLabel">Show specs on this page</label>
       <input type="checkbox" id="enabled" class="switch" data-i18n-aria="common.showSpecsAria" aria-label="Show all Specpin specs on this page" />
     </div>
-    <div class="row meta"><span id="project"></span><span id="count" class="pill"></span></div>
+    <div class="row meta"><span id="count" class="pill"></span></div>
     <ul id="projects"></ul>
     <div class="row locale-row" id="locale-row" hidden>
       <label for="locale" data-i18n="common.languageLabel">Language</label>

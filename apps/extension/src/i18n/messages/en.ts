@@ -40,7 +40,6 @@ const en = {
   // Status header (origin-scoped).
   "common.statusNotConfigured": "Not configured",
   "common.statusConnectedSidecar": "Connected (sidecar)",
-  "common.statusPartiallyConnected": "Partially connected ({up}/{total})",
   "common.statusDisconnectedSidecar": "Disconnected (sidecar)",
   "common.statusConnectedManual": "Connected (manual)",
   "common.statusNoProject": "No project for this page",

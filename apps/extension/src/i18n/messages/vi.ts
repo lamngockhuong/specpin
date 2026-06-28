@@ -38,7 +38,6 @@ const vi: Record<keyof Messages, string> = {
   // Status header (origin-scoped).
   "common.statusNotConfigured": "Chưa cấu hình",
   "common.statusConnectedSidecar": "Đã kết nối (sidecar)",
-  "common.statusPartiallyConnected": "Kết nối một phần ({up}/{total})",
   "common.statusDisconnectedSidecar": "Mất kết nối (sidecar)",
   "common.statusConnectedManual": "Đã kết nối (manual)",
   "common.statusNoProject": "Không có dự án cho trang này",
