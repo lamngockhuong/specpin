@@ -1,0 +1,55 @@
+name: Deploy website
+
+# Builds apps/web (Astro Starlight) and deploys it to GitHub Pages at
+# specpin.ohnice.app. Runs on pushes to main that touch the site or this
+# workflow; workflow_dispatch covers the first run (the paths filter would
+# otherwise skip it) and manual redeploys.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/web-deploy.yml"
+  workflow_dispatch:
+
+# GITHUB_TOKEN scopes the Pages deploy needs; no secrets required.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One in-flight Pages deploy at a time; newer pushes supersede older runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # pnpm version comes from package.json "packageManager"; do not also set
+      # "version" here or action-setup errors on the duplicate (matches ci.yml).
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @specpin/web build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

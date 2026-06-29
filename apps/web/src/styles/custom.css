@@ -1,0 +1,150 @@
+/*
+ * Specpin "branded teal" theme for Starlight.
+ *
+ * Palette mirrors the extension's single source of truth,
+ * apps/extension/designs/design-tokens.json (accent #2DD4BF, teal-tinted dark,
+ * pale-teal light). Values are copied here (Starlight has no shared token
+ * pipeline); keep them in sync if the extension palette changes.
+ *
+ * Fonts reference Inter (UI) + JetBrains Mono (code) via fallback stacks only,
+ * matching the extension's current "not bundled" stance (zero font payload).
+ */
+
+:root {
+  /* Inter for UI text, JetBrains Mono for code/paths. Fallback stacks only. */
+  --sl-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --sl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono",
+    Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Brand accent + glow, shared across themes. */
+  --specpin-accent: #2dd4bf;
+  --specpin-accent-hover: #5ee6d3;
+}
+
+/* Dark theme (Starlight default :root). Teal-tinted near-black. */
+:root {
+  --sl-color-accent-low: #032c27;
+  --sl-color-accent: #1f9e8d;
+  --sl-color-accent-high: #9beadd;
+  --sl-color-white: #f4fffd;
+  --sl-color-gray-1: #e3f5f1;
+  --sl-color-gray-2: #b9d7d1;
+  --sl-color-gray-3: #80a8a1;
+  --sl-color-gray-4: #4d716b;
+  --sl-color-gray-5: #2c4843;
+  --sl-color-gray-6: #143430;
+  --sl-color-black: #04130f;
+
+  /* Radial top-glow backdrop (gradTop -> gradBottom from the dark tokens). */
+  --specpin-glow: radial-gradient(
+    80% 60% at 50% -10%,
+    #10463e 0%,
+    #04130f 60%
+  );
+}
+
+/* Light theme. Pale teal canvas with white cards. */
+:root[data-theme="light"] {
+  --sl-color-accent-low: #c5f3eb;
+  --sl-color-accent: #0d8276;
+  --sl-color-accent-high: #06302a;
+  --sl-color-white: #06302a;
+  --sl-color-gray-1: #123f39;
+  --sl-color-gray-2: #1f4f48;
+  --sl-color-gray-3: #4a6b65;
+  --sl-color-gray-4: #6b8b85;
+  --sl-color-gray-5: #b9d7d1;
+  --sl-color-gray-6: #e6f5f1;
+  --sl-color-gray-7: #f2fbf9;
+  --sl-color-black: #f2fbf9;
+
+  --specpin-glow: radial-gradient(
+    80% 60% at 50% -10%,
+    #e6f9f4 0%,
+    #f2fbf9 60%
+  );
+}
+
+/* Rounded cards/asides to match the extension's 16px card radius.
+   Targets Starlight's current class names; re-verify on a Starlight upgrade. */
+.card,
+.starlight-aside {
+  border-radius: 16px;
+}
+
+/* ---- Landing page (splash template) ---- */
+
+/* Apply the radial top-glow behind the hero. */
+.hero {
+  position: relative;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: -10% -20% 0;
+  z-index: -1;
+  background: var(--specpin-glow);
+  pointer-events: none;
+}
+
+/* Hero title in the brand accent for a strong first impression. */
+.hero h1 {
+  background: linear-gradient(
+    120deg,
+    var(--sl-color-white),
+    var(--specpin-accent)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Primary CTA gets the accent fill + glow, matching the extension's CTA. */
+.hero .sl-link-button.primary {
+  background: var(--specpin-accent);
+  border-color: var(--specpin-accent);
+  color: #04221e;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--specpin-accent) 40%, transparent);
+}
+.hero .sl-link-button.primary:hover {
+  background: var(--specpin-accent-hover);
+  border-color: var(--specpin-accent-hover);
+}
+
+/* The 3-tier how-it-works flow band. */
+.specpin-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.specpin-flow .step {
+  flex: 1 1 200px;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 16px;
+  background: var(--sl-color-gray-6);
+  padding: 1rem 1.25rem;
+}
+.specpin-flow .step .n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: var(--specpin-accent);
+  color: #04221e;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.specpin-flow .step h3 {
+  margin: 0 0 0.25rem;
+  font-size: var(--sl-text-lg);
+}
+.specpin-flow .step p {
+  margin: 0;
+  color: var(--sl-color-gray-2);
+  font-size: var(--sl-text-sm);
+}

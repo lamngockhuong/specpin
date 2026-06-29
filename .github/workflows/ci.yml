@@ -24,6 +24,7 @@ jobs:
             js:
               - 'packages/**'
               - 'apps/extension/**'
+              - 'apps/web/**'
               - 'examples/**'
               - 'tests/fixtures/**'
               - 'package.json'

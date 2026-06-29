@@ -1,0 +1,116 @@
+---
+title: Specpin
+description: Pin living business specs onto the elements of your running web UI. Git-native, local-first, framework-agnostic. No code generation.
+template: splash
+hero:
+  tagline: Pin living business specs onto the elements of your running web UI. Git-native, local-first, framework-agnostic. No code generation.
+  image:
+    file: ../../assets/specpin-icon.svg
+    alt: Specpin
+  actions:
+    - text: Get started
+      link: /guide/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/lamngockhuong/specpin
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What Specpin does
+
+Specpin attaches business specifications (rules, descriptions, acceptance
+criteria) directly onto the elements of a *running* web UI, then renders them
+in-browser as you hover or browse. It is **not** a code generator: it pins
+living, Git-versioned documentation onto the interface you already have.
+
+<CardGrid>
+  <Card title="Pin specs onto live elements" icon="pin">
+    Resilient fingerprint matching (test-id, aria, selector, xpath, text,
+    position) keeps specs attached to their elements across refactors.
+  </Card>
+  <Card title="Three display modes" icon="laptop">
+    Read specs as a tooltip, an in-page sidebar, or a draggable modal. Switch
+    per spec or for the whole page.
+  </Card>
+  <Card title="Capture in place" icon="add-document">
+    Click an element and author a spec without leaving the page. Markdown
+    descriptions, business rules, tags, and multi-language tabs.
+  </Card>
+  <Card title="Writable local projects" icon="document">
+    Edit, capture, create, and group-zip export specs even without a running
+    sidecar.
+  </Card>
+  <Card title="Multi-project, by origin" icon="open-book">
+    One extension serves many projects at once, routed to each page by its
+    domains. Enable or disable each project independently.
+  </Card>
+  <Card title="Secure by default" icon="approve-check">
+    The sidecar binds localhost only, authenticates every request with a bearer
+    token, and accepts only extension origins. Nothing leaves your machine.
+  </Card>
+</CardGrid>
+
+## How it works
+
+<div class="specpin-flow" not-content>
+  <div class="step">
+    <span class="n">1</span>
+    <h3>Specs live in your repo</h3>
+    <p>Specs are JSON in your repo's <code>.specs/</code> directory: versioned,
+    reviewable via PR, and diffable.</p>
+  </div>
+  <div class="step">
+    <span class="n">2</span>
+    <h3>The sidecar serves them</h3>
+    <p><code>specpin serve</code> exposes <code>.specs/</code> over a
+    token-authenticated localhost API with live reload.</p>
+  </div>
+  <div class="step">
+    <span class="n">3</span>
+    <h3>The extension renders them</h3>
+    <p>The browser extension matches each spec to a live element and renders it
+    on the page.</p>
+  </div>
+</div>
+
+```text
+.specs/ (in your repo)  -->  specpin serve (localhost HTTP + SSE)  -->  browser extension (match + render)
+```
+
+## Quick start
+
+```bash
+# 1. Install workspace deps and build everything
+pnpm install
+pnpm build
+
+# 2. Build the Go sidecar (from apps/cli)
+cd apps/cli && make build      # -> bin/specpin
+
+# 3. In your project repo: scaffold and serve specs
+specpin init                   # creates .specs/manifest.json
+specpin serve                  # prints a localhost URL + bearer token
+
+# 4. Build the extension (unpacked) and connect
+#    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
+#    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
+```
+
+Paste the printed URL and token into the extension, open your app, and specs
+render on their elements.
+
+<CardGrid>
+  <Card title="New to Specpin?" icon="rocket">
+    Start with the [Introduction](/guide/introduction/), then
+    [install the extension](/guide/install/) and
+    [see your first spec render](/guide/getting-started/).
+  </Card>
+  <Card title="Serving your own repo?" icon="setting">
+    Set up the [CLI sidecar](/sidecar/cli/) and learn the
+    [spec format](/sidecar/spec-format/).
+  </Card>
+</CardGrid>
