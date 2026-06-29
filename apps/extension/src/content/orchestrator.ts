@@ -83,6 +83,16 @@ export function renderSession(
     if (project) projects.add(project);
   }
   const showProject = projects.size > 1;
+  // Origin of the host page, so spec-text links to the same origin open in the
+  // current tab (renderers run inside the host page, so a plain same-origin <a>
+  // navigates it). Falls back to undefined when `url` is empty/unparseable, which
+  // leaves every link opening in a new tab (legacy behavior).
+  let pageOrigin: string | undefined;
+  try {
+    if (url) pageOrigin = new URL(url).origin;
+  } catch {
+    // Unparseable url: leave pageOrigin undefined (legacy: all links new-tab).
+  }
 
   for (const spec of visibleSpecs) {
     const match = matchElement(spec.fingerprint, doc);
@@ -114,6 +124,7 @@ export function renderSession(
       // offering an Edit whose save the origin guard would reject.
       editable: Boolean((spec as Partial<TaggedSpec>).writable),
       theme,
+      pageOrigin,
       dismissed: dismiss?.modes.has(mode) ?? false,
       onSetDismissed: dismiss?.onToggle,
       launcherPosition: dismiss?.position ?? null,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  classifyHref,
   renderInlineMarkdown,
   renderMarkdownBlock,
   safeHref,
@@ -134,5 +135,90 @@ describe("safeHref", () => {
     expect(safeHref("/relative/path")).toBeNull();
     expect(safeHref("//evil.com")).toBeNull();
     expect(safeHref("relative.html")).toBeNull();
+  });
+});
+
+describe("classifyHref", () => {
+  const origin = "https://app.example.com";
+
+  it("flags a same-origin absolute URL internal, keeping it verbatim", () => {
+    expect(classifyHref("https://app.example.com/admin#x", origin)).toEqual({
+      href: "https://app.example.com/admin#x",
+      internal: true,
+    });
+  });
+
+  it("resolves a relative URL against the page origin as internal", () => {
+    expect(classifyHref("/admin/users", origin)).toEqual({
+      href: "https://app.example.com/admin/users",
+      internal: true,
+    });
+  });
+
+  it("flags a cross-origin URL external", () => {
+    expect(classifyHref("https://other.example.com/x", origin)).toEqual({
+      href: "https://other.example.com/x",
+      internal: false,
+    });
+    // A different subdomain is a different origin -> external (exact-origin rule).
+    expect(classifyHref("https://www.example.com/x", origin)?.internal).toBe(false);
+  });
+
+  it("treats a scheme-relative //other URL as external", () => {
+    expect(classifyHref("//other.example.com/x", origin)).toEqual({
+      href: "https://other.example.com/x",
+      internal: false,
+    });
+  });
+
+  it("never marks mailto internal", () => {
+    expect(classifyHref("mailto:a@b.com", origin)).toEqual({
+      href: "mailto:a@b.com",
+      internal: false,
+    });
+  });
+
+  it("drops dangerous schemes with or without a page origin", () => {
+    expect(classifyHref("javascript:alert(1)", origin)).toBeNull();
+    expect(classifyHref("data:text/html,x", origin)).toBeNull();
+    expect(classifyHref("javascript:alert(1)")).toBeNull();
+  });
+
+  it("without a page origin, rejects relative and never flags internal (legacy)", () => {
+    expect(classifyHref("/admin")).toBeNull();
+    expect(classifyHref("https://x.com")).toEqual({ href: "https://x.com", internal: false });
+  });
+});
+
+describe("internal vs external links in rendered markup", () => {
+  const origin = "https://app.example.com";
+
+  it("renders a same-origin link without target and marks it internal", () => {
+    expect(renderInlineMarkdown("[admin](/admin)", origin)).toBe(
+      '<a href="https://app.example.com/admin" data-specpin-internal="">admin</a>',
+    );
+    expect(renderInlineMarkdown("[admin](https://app.example.com/admin)", origin)).toBe(
+      '<a href="https://app.example.com/admin" data-specpin-internal="">admin</a>',
+    );
+  });
+
+  it("keeps cross-origin links opening in a new tab", () => {
+    expect(renderInlineMarkdown("[ext](https://other.com)", origin)).toBe(
+      '<a href="https://other.com" rel="noopener noreferrer" target="_blank">ext</a>',
+    );
+  });
+
+  it("renders internal links inside a description block", () => {
+    expect(renderMarkdownBlock("see [users](/admin/users)", origin)).toBe(
+      '<p>see <a href="https://app.example.com/admin/users" data-specpin-internal="">users</a></p>',
+    );
+  });
+
+  it("without a page origin, every link still opens in a new tab (back-compat)", () => {
+    expect(renderInlineMarkdown("[docs](https://x.com)")).toBe(
+      '<a href="https://x.com" rel="noopener noreferrer" target="_blank">docs</a>',
+    );
+    // Relative links remain dropped to literal text without a base origin.
+    expect(renderInlineMarkdown("[admin](/admin)")).toBe("admin");
   });
 });

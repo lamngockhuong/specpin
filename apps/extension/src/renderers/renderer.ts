@@ -53,6 +53,10 @@ export interface RenderMeta {
    *  script so the host carries `data-theme` and the `:host([data-theme])` token
    *  block activates. Omitted in tests/stubs leaves the host on the system default. */
   theme?: Theme;
+  /** Origin of the page the spec is pinned to. Threaded so spec-text links to the
+   *  same origin open in the current tab and cross-origin links open in a new tab
+   *  (see classifyHref). Omitted leaves every link opening in a new tab. */
+  pageOrigin?: string;
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already
@@ -80,9 +84,9 @@ export function projectCaptionHtml(meta?: RenderMeta): string {
 /** `<ul>` of business rules, or "" when there are none. Each rule renders its
  *  inline Markdown subset (bold/italic/link); the renderer escapes every leaf, so
  *  the output is safe to insert via innerHTML. Shared by tooltip/modal/sidebar. */
-export function rulesListHtml(rules: string[]): string {
+export function rulesListHtml(rules: string[], pageOrigin?: string): string {
   if (rules.length === 0) return "";
-  return `<ul>${rules.map((r) => `<li>${renderInlineMarkdown(r)}</li>`).join("")}</ul>`;
+  return `<ul>${rules.map((r) => `<li>${renderInlineMarkdown(r, pageOrigin)}</li>`).join("")}</ul>`;
 }
 
 /** Shared CSS for the Markdown subset emitted into a `.d` description block (its

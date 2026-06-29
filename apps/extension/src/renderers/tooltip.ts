@@ -17,6 +17,8 @@ interface Pin {
   tags: string[];
   project: string;
   editable: boolean;
+  /** Host page origin, so same-origin links in the tip open in the current tab. */
+  pageOrigin?: string;
 }
 
 const HOST_ID = "specpin-tooltip-host";
@@ -177,6 +179,7 @@ export class TooltipRenderer implements SpecRenderer {
       tags: spec.tags ?? [],
       project,
       editable: meta?.editable ?? true,
+      pageOrigin: meta?.pageOrigin,
     };
     this.pins.push(pin);
     // The reveal tooltip (showBadges=false) skips the badge entirely: no hover
@@ -240,8 +243,8 @@ export class TooltipRenderer implements SpecRenderer {
       // Description renders its Markdown subset (block: paragraphs + lists). The
       // renderer escapes every leaf and emits only allowlisted tags, so this
       // trusted fragment is safe via innerHTML.
-      `<div class="d">${renderMarkdownBlock(pin.text.description)}</div>` +
-      rulesListHtml(pin.text.businessRules) +
+      `<div class="d">${renderMarkdownBlock(pin.text.description, pin.pageOrigin)}</div>` +
+      rulesListHtml(pin.text.businessRules, pin.pageOrigin) +
       tags +
       (pinned && canEdit
         ? `<button type="button" class="pin-edit">${escapeHtml(t("tooltip.editSpec"))}</button>`
