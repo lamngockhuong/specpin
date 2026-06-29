@@ -145,3 +145,22 @@ Khi `.specs/guides.json` không có, sidecar trả về default rỗng `{ "versi
 - TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides } from "@specpin/spec-schema"`.
 - Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides`.
 - Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).
+
+## Dùng schema (consuming)
+
+Ba cách lấy schema, theo mức độ tiện dần:
+
+- **Autocomplete trong editor qua `$schema` (không cần cài).** `specpin init` ghi
+  sẵn `"$schema": "https://specpin.ohnice.app/schema/v1.json"` vào file spec. Editor
+  nào tôn trọng `$schema` (VS Code, JetBrains) sẽ validate + gợi ý khi soạn. URL do
+  trang docs (`apps/web`) phục vụ.
+- **SchemaStore.org (không cần `$schema`).** Sau khi entry catalog được merge ở
+  upstream, editor tự gắn schema cho `**/.specs/*.spec.json`, nên dòng `$schema` trở
+  thành tùy chọn.
+- **Gói npm** cho dùng lập trình: `pnpm add @specpin/spec-schema` cung cấp type sinh
+  ra + ajv validator (xem Validation ở trên). Schema thô cũng lấy được qua CDN mà
+  không cần URL hosted: `https://unpkg.com/@specpin/spec-schema/schema/v1.json` hoặc
+  `https://cdn.jsdelivr.net/npm/@specpin/spec-schema/schema/v1.json`.
+
+Versioning: `/schema/v1.json` ổn định cho schema v1. Breaking change sau này sẽ thêm
+`/schema/v2.json` và giữ v1 sống cho các repo cũ.

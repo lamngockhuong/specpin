@@ -143,3 +143,23 @@ When `.specs/guides.json` is absent, the sidecar returns the empty default `{ "v
 - TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides } from "@specpin/spec-schema"`.
 - Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides`.
 - Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).
+
+## Consuming the schema
+
+Three ways to get the schema, in order of convenience:
+
+- **Editor autocomplete via `$schema` (zero install).** `specpin init` writes
+  `"$schema": "https://specpin.ohnice.app/schema/v1.json"` into spec files. Any
+  editor that honors `$schema` (VS Code, JetBrains) then validates and autocompletes
+  while authoring. The URL is served by the docs site (`apps/web`).
+- **SchemaStore.org (no `$schema` needed).** Once the catalog entry is merged
+  upstream, editors auto-associate `**/.specs/*.spec.json` with the schema, so the
+  `$schema` line becomes optional.
+- **npm package** for programmatic use: `pnpm add @specpin/spec-schema` gives the
+  generated types + ajv validators (see Validation above). The raw schema is also
+  reachable over a CDN without the hosted URL:
+  `https://unpkg.com/@specpin/spec-schema/schema/v1.json` or
+  `https://cdn.jsdelivr.net/npm/@specpin/spec-schema/schema/v1.json`.
+
+Versioning: `/schema/v1.json` is stable for the v1 schema. A future breaking change
+adds `/schema/v2.json` and keeps v1 alive for existing repos.
