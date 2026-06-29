@@ -265,24 +265,22 @@ describe("CaptureForm edit mode", () => {
     expect(title.value).toBe("VI edit");
   });
 
-  it("the + tab adds a validated locale tab and switches to it", () => {
-    const original = window.prompt;
-    window.prompt = (() => "ja") as typeof window.prompt;
-    try {
-      const shadow = openEdit();
-      expect(shadow.querySelector('.lang-tab[data-locale="ja"]')).toBeNull();
-      click(shadow, ".lang-tab.add");
-      const ja = shadow.querySelector('.lang-tab[data-locale="ja"]');
-      expect(ja).not.toBeNull();
-      expect(ja?.classList.contains("is-active")).toBe(true);
-      // The + tab stays last after the new locale tab is inserted.
-      const tabs = [...shadow.querySelectorAll(".lang-tab")].map(
-        (b) => (b as HTMLElement).dataset.locale,
-      );
-      expect(tabs).toEqual(["en", "vi", "ja", "__add__"]);
-    } finally {
-      window.prompt = original;
-    }
+  it("the + tab adds a validated locale tab and switches to it", async () => {
+    const shadow = openEdit();
+    expect(shadow.querySelector('.lang-tab[data-locale="ja"]')).toBeNull();
+    // The + tab opens the modal prompt (in the same shadow); enter "ja" and confirm.
+    click(shadow, ".lang-tab.add");
+    (must(shadow.querySelector(".sp-dlg-input")) as HTMLInputElement).value = "ja";
+    click(shadow, ".sp-dlg-btn.primary");
+    await flush();
+    const ja = shadow.querySelector('.lang-tab[data-locale="ja"]');
+    expect(ja).not.toBeNull();
+    expect(ja?.classList.contains("is-active")).toBe(true);
+    // The + tab stays last after the new locale tab is inserted.
+    const tabs = [...shadow.querySelectorAll(".lang-tab")].map(
+      (b) => (b as HTMLElement).dataset.locale,
+    );
+    expect(tabs).toEqual(["en", "vi", "ja", "__add__"]);
   });
 
   it("the description Bold button wraps the current selection in **", () => {
@@ -311,19 +309,17 @@ describe("CaptureForm edit mode", () => {
     expect(cmds).toEqual(["bold", "italic", "link"]);
   });
 
-  it("the Link button inserts [selection](url) from the prompt", () => {
-    const original = window.prompt;
-    window.prompt = (() => "https://x.com") as typeof window.prompt;
-    try {
-      const shadow = openEdit();
-      const desc = must(shadow.querySelector("#sp-desc")) as HTMLTextAreaElement;
-      desc.value = "see docs";
-      desc.setSelectionRange(4, 8);
-      click(shadow, ".md-toolbar.desc .md-link");
-      expect(desc.value).toBe("see [docs](https://x.com)");
-    } finally {
-      window.prompt = original;
-    }
+  it("the Link button inserts [selection](url) from the modal", async () => {
+    const shadow = openEdit();
+    const desc = must(shadow.querySelector("#sp-desc")) as HTMLTextAreaElement;
+    desc.value = "see docs";
+    desc.setSelectionRange(4, 8);
+    // The link toolbar button opens the modal prompt; enter the URL and confirm.
+    click(shadow, ".md-toolbar.desc .md-link");
+    (must(shadow.querySelector(".sp-dlg-input")) as HTMLInputElement).value = "https://x.com";
+    click(shadow, ".sp-dlg-btn.primary");
+    await flush();
+    expect(desc.value).toBe("see [docs](https://x.com)");
   });
 });
 
