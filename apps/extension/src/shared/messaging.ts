@@ -251,11 +251,19 @@ export function sendToBackground<T = unknown>(message: Message): Promise<T> {
   return browser.runtime.sendMessage(message) as Promise<T>;
 }
 
-/** Send a message to the active tab's content script (popup -> content). */
-export async function sendToActiveTab(message: Message): Promise<void> {
+/** Send a message to the active tab's content script (popup -> content).
+ *  Returns true when a content script received it. Pages with no content script
+ *  (the extension's own pages, chrome://, the store) reject the send, so this
+ *  resolves false and the caller can surface that (e.g. a toast) instead of
+ *  failing silently. */
+export async function sendToActiveTab(message: Message): Promise<boolean> {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id !== undefined) {
-    await browser.tabs.sendMessage(tab.id, message).catch(() => {});
+  if (tab?.id === undefined) return false;
+  try {
+    await browser.tabs.sendMessage(tab.id, message);
+    return true;
+  } catch {
+    return false;
   }
 }
 

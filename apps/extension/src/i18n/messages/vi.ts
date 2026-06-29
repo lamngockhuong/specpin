@@ -30,6 +30,8 @@ const vi: Record<keyof Messages, string> = {
   "common.reopenPanel": "Hiện spec Specpin",
   "common.and": "và",
   "common.clickToHighlight": "Nhấp để làm nổi bật trên trang",
+  "common.cannotActOnPage":
+    "Không thể thao tác trên trang này. Hãy chuyển sang tab trang web trước.",
   "common.specsOnThisPage": "Spec trên trang này",
   "common.needsReview": "Cần xem lại",
   "common.needReview": "{count} cần xem lại",

@@ -32,6 +32,7 @@ const en = {
   "common.reopenPanel": "Show Specpin specs",
   "common.and": "and",
   "common.clickToHighlight": "Click to highlight on the page",
+  "common.cannotActOnPage": "Can't do that on this page. Switch to the website tab first.",
   "common.specsOnThisPage": "Specs on this page",
   "common.needsReview": "Needs review",
   "common.needReview": "{count} need review",

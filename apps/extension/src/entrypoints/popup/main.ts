@@ -18,6 +18,8 @@ import "../../shared/icon-btn.css";
 import "../../shared/link.css";
 import "../../shared/add-project.css";
 import "../../shared/project-menu.css";
+import "../../shared/surface-toast.css";
+import { actOnActiveTab } from "../../shared/active-tab-action.js";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
 import { wireProjectActions } from "../../shared/project-actions.js";
 import {
@@ -62,12 +64,12 @@ function renderSpecs(res: SpecsForOrigin): void {
   for (const spec of matches) {
     const li = document.createElement("li");
     li.className = "spec";
-    // Clicking a spec scrolls to and highlights its element on the page, then
-    // closes the popup so the page (and the highlight) is unobstructed.
     li.title = t("common.clickToHighlight");
-    li.addEventListener("click", async () => {
-      await sendToActiveTab({ type: "HIGHLIGHT_ELEMENT", specId: spec.id });
-      window.close();
+    // Clicking a spec highlights its element on the page; close the popup (so the
+    // page + highlight are unobstructed) only on delivery, else actOnActiveTab
+    // keeps the popup open and toasts why.
+    li.addEventListener("click", () => {
+      void actOnActiveTab({ type: "HIGHLIGHT_ELEMENT", specId: spec.id }, () => window.close());
     });
     const title = document.createElement("div");
     title.className = "t";
@@ -111,9 +113,10 @@ byId("enabled").addEventListener("change", async (e) => {
   await sendToBackground({ type: "SET_ENABLED", enabled: (e.target as HTMLInputElement).checked });
   await refresh();
 });
-byId("capture").addEventListener("click", async () => {
-  await sendToActiveTab({ type: "START_CAPTURE" });
-  window.close(); // let the user click the target element on the page
+byId("capture").addEventListener("click", () => {
+  // Close (so the user can click the target element) only on delivery; otherwise
+  // actOnActiveTab keeps the popup open and shows why capture could not start.
+  void actOnActiveTab({ type: "START_CAPTURE" }, () => window.close());
 });
 void wireDisplayModePicker(byId("mode") as HTMLSelectElement);
 byId("locale").addEventListener("change", async (e) => {
