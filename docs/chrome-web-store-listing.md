@@ -133,6 +133,11 @@ Open the Specpin surface in Chrome's side panel for an inline, persistent spec b
 **host_permissions - http://127.0.0.1/* , http://localhost/* :**
 Connect from the background service worker to the local Go sidecar over localhost HTTP + SSE to read `.specs/` and receive live-reload updates. Specpin makes no requests to any remote host.
 
+**Content script broad match (`http://*/*`, `https://*/*`):**
+Specpin is a developer tool that pins business specs onto the elements of the user's own running web UI. The content script must be able to run on any origin because the user configures at runtime which projects/origins to attach specs to (local dev servers on arbitrary ports and their deployed staging/production domains). On every page the content script only queries the background for specs matching that page's origin and renders nothing unless the user has explicitly connected a project for that origin. No page data is collected, transmitted, or sent to any remote host; the extension communicates only with a user-run sidecar on localhost.
+
+> Note: this broad match is declared as the content script's `matches` in `apps/extension/wxt.config.ts` -> the content entrypoint (`src/entrypoints/content.ts`), NOT as a manifest `host_permissions` entry (those stay localhost-only). Chrome's "broad host permissions" submission warning is triggered by this content-script match and means an in-depth review (delayed publishing), not a rejection. Paste the justification above if the reviewer asks.
+
 ### Remote Code (Có phải bạn đang dùng mã từ xa không?)
 
 No. The extension executes no remote code and loads no remote scripts. It communicates only with a user-run sidecar on localhost (127.0.0.1 / localhost); all spec data stays on the user's machine.
@@ -170,8 +175,8 @@ Text fields above are ready to paste. The items below are NOT in this repo yet a
 - [ ] **Developer account**: a Chrome Web Store developer account (one-time 5 USD registration fee). Verify the publisher email.
 - [ ] **Packaged build**: `pnpm --filter @specpin/extension zip` (or `build` -> `.output/chrome-mv3`) to produce the upload ZIP. Bump the manifest `version` from `0.0.0` to `0.1.0` before zipping (the planned first release).
 - [ ] **Store icon**: 128x128 PNG (already have `apps/extension/public/icon/128.png`).
-- [ ] **Screenshots**: at least 1, ideally 5. Size **1280x800** or 640x400 PNG/JPEG (1280x800 recommended). See the [Screenshot shot list](#screenshot-shot-list) below.
-- [ ] **Promo tile (optional but recommended)**: small 440x280 PNG.
+- [ ] **Screenshots**: at least 1, ideally 5. Size **1280x800** or 640x400 PNG/JPEG (1280x800 recommended). See the [Screenshot shot list](#screenshot-shot-list) below. Shot 1 is prepared in `apps/extension/store-assets/` (`screenshot-1-tooltip-1280x800.png` + a 640x400 variant); shots 2-5 still to capture.
+- [ ] **Promo tile (optional but recommended)**: small 440x280 PNG. Prepared: `apps/extension/store-assets/promo-tile-440x280.png`.
 - [ ] **Privacy policy live**: deploy the website so <https://specpin.ohnice.app/help/privacy-policy/> resolves before submitting (the URL above must be reachable at review time).
 - [ ] **Single-purpose + permission justifications**: paste from the Privacy section above into the "Privacy practices" tab.
 - [ ] **Verify the publisher contact email** shown in the developer console.
