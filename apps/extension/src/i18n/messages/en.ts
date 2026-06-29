@@ -107,7 +107,7 @@ const en = {
   "capture.invalidLocale": '"{code}" is not a valid BCP-47 locale code.',
   "capture.languageLabel": "Language",
   "capture.languageHint": "(title & description per language)",
-  "capture.addLanguageOption": "+ Add language…",
+  "capture.addLanguageTab": "Add language",
   "capture.titleField": "Title",
   "capture.titlePlaceholder": "Login button",
   "capture.descField": "Description",
@@ -134,6 +134,13 @@ const en = {
   "capture.saveSpec": "Save spec",
   "capture.saveChanges": "Save changes",
   "capture.saveFailed": "Save failed; check the sidecar.",
+  "capture.fmtHint": "(Markdown supported)",
+  "capture.fmtBold": "Bold",
+  "capture.fmtItalic": "Italic",
+  "capture.fmtLink": "Link",
+  "capture.fmtBullet": "Bullet list",
+  "capture.fmtNumber": "Numbered list",
+  "capture.fmtLinkPrompt": "Link URL (http, https, or mailto):",
 
   // Page right-click context menu (background-set titles; shown only when on).
   "contextMenu.parent": "Specpin",

@@ -97,7 +97,8 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, ships seede
 - **Side panel surface** - open Specpin in Chrome's side panel / Firefox's sidebar, with inline spec detail
 - **Spec search** - live client-side filter by title, file, tags, and description
 - **Source badges** - see at a glance whether a spec comes from the sidecar or a local batch
-- **Multi-language spec content** - locale-keyed strings with an in-browser language toggle and per-locale authoring
+- **Multi-language spec content** - locale-keyed strings with an in-browser language toggle and a tabbed per-locale editor
+- **Markdown-formatted specs** - descriptions and business rules carry a safe Markdown subset (bold, italic, links, lists), authored via a toolbar and rendered across every surface
 - **User-selectable theme** - System / Light / Dark, dual-theme design tokens
 - **UI-chrome i18n** - English + Vietnamese interface, independent from spec content language
 - **Offline validation** - `specpin validate` + CI spec-lint to keep `.specs/` honest
@@ -175,7 +176,7 @@ cd apps/cli && make check-schema && go test ./...
 
 ## Status
 
-Phase 1 MVP shipped, plus 1.1 slices: the Go sidecar serves `.specs/`, and the WXT extension matches fingerprints and renders specs (tooltip + sidebar + modal) with manual capture. Specs are multi-language with an in-browser language toggle and per-locale authoring; the extension connects to multiple projects at once, routed by origin. Also delivered: offline `specpin validate` + CI spec-lint, writable local projects (edit, capture, create, group-zip export), client-side spec search, source badges, per-project enable/disable, a side panel surface, user-selectable theme (System / Light / Dark), and UI-chrome i18n (EN + VI). Still deferred: the FileSystem Access source, hybrid fingerprint scoring, the overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI).
+Phase 1 MVP shipped, plus 1.1 slices: the Go sidecar serves `.specs/`, and the WXT extension matches fingerprints and renders specs (tooltip + sidebar + modal) with manual capture. Specs are multi-language with an in-browser language toggle and a tabbed per-locale editor; descriptions and business rules carry a safe Markdown subset authored via a toolbar; the extension connects to multiple projects at once, routed by origin. Also delivered: offline `specpin validate` + CI spec-lint, writable local projects (edit, capture, create, group-zip export), client-side spec search, source badges, per-project enable/disable, a side panel surface, user-selectable theme (System / Light / Dark), and UI-chrome i18n (EN + VI). Still deferred: the FileSystem Access source, hybrid fingerprint scoring, the overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI).
 
 ## Sponsor
 

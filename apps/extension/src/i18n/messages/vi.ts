@@ -105,7 +105,7 @@ const vi: Record<keyof Messages, string> = {
   "capture.invalidLocale": '"{code}" không phải mã ngôn ngữ BCP-47 hợp lệ.',
   "capture.languageLabel": "Ngôn ngữ",
   "capture.languageHint": "(tiêu đề & mô tả theo từng ngôn ngữ)",
-  "capture.addLanguageOption": "+ Thêm ngôn ngữ…",
+  "capture.addLanguageTab": "Thêm ngôn ngữ",
   "capture.titleField": "Tiêu đề",
   "capture.titlePlaceholder": "Nút đăng nhập",
   "capture.descField": "Mô tả",
@@ -132,6 +132,13 @@ const vi: Record<keyof Messages, string> = {
   "capture.saveSpec": "Lưu spec",
   "capture.saveChanges": "Lưu thay đổi",
   "capture.saveFailed": "Lưu thất bại; hãy kiểm tra sidecar.",
+  "capture.fmtHint": "(hỗ trợ Markdown)",
+  "capture.fmtBold": "Đậm",
+  "capture.fmtItalic": "Nghiêng",
+  "capture.fmtLink": "Liên kết",
+  "capture.fmtBullet": "Danh sách dấu đầu dòng",
+  "capture.fmtNumber": "Danh sách đánh số",
+  "capture.fmtLinkPrompt": "URL liên kết (http, https hoặc mailto):",
 
   // Page right-click context menu (background-set titles; shown only when on).
   "contextMenu.parent": "Specpin",

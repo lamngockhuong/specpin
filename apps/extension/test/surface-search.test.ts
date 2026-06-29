@@ -55,4 +55,13 @@ describe("specMatchesQuery", () => {
     expect(specMatchesQuery(s, "order", "en", "en")).toBe(false);
     expect(specMatchesQuery(s, "order", "en", "en", true)).toBe(true);
   });
+
+  it("strips Markdown from the description before matching the visible text", () => {
+    const s = spec({ title: { en: "Btn" }, description: { en: "**bold** [docs](https://x)" } });
+    // Query the visible words, not the syntax.
+    expect(specMatchesQuery(s, "bold", "en", "en", true)).toBe(true);
+    expect(specMatchesQuery(s, "docs", "en", "en", true)).toBe(true);
+    // The markup characters are not part of the searchable text.
+    expect(specMatchesQuery(s, "**", "en", "en", true)).toBe(false);
+  });
 });

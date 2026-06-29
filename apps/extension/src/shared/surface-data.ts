@@ -5,6 +5,7 @@ import { t } from "../i18n/index.js";
 import { getLocale } from "./config.js";
 import type { TaggedSpec } from "./connection-types.js";
 import { localConnId } from "./local-id.js";
+import { stripMarkdown } from "./markdown.js";
 import { type SpecsForOrigin, type StatusResult, sendToBackground } from "./messaging.js";
 import { connectionServesOrigin, originMatchesDomains } from "./origin-match.js";
 import type { ExportTarget } from "./project-actions.js";
@@ -78,7 +79,11 @@ export function specMatchesQuery(
     resolveLocalized(spec.title, locale, defaultLocale),
     spec._file,
     ...(spec.tags ?? []),
-    ...(includeBody ? [resolveLocalized(spec.description, locale, defaultLocale)] : []),
+    // Description carries a Markdown subset; strip it so a query matches the
+    // visible text the reader sees, not the markup (e.g. "bold" hits "**bold**").
+    ...(includeBody
+      ? [stripMarkdown(resolveLocalized(spec.description, locale, defaultLocale) ?? "")]
+      : []),
   ];
   return haystack.some((s) => s?.toLowerCase().includes(q));
 }

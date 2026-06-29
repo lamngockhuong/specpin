@@ -1,6 +1,7 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import type { LauncherPosition } from "../shared/config.js";
 import { escapeHtml } from "../shared/html.js";
+import { renderInlineMarkdown } from "../shared/markdown.js";
 import type { Theme } from "../shared/theme.js";
 
 // Extra signal passed from the matcher so renderers can distinguish a confident
@@ -76,8 +77,22 @@ export function projectCaptionHtml(meta?: RenderMeta): string {
     : "";
 }
 
-/** Escaped `<ul>` of business rules, or "" when there are none. */
+/** `<ul>` of business rules, or "" when there are none. Each rule renders its
+ *  inline Markdown subset (bold/italic/link); the renderer escapes every leaf, so
+ *  the output is safe to insert via innerHTML. Shared by tooltip/modal/sidebar. */
 export function rulesListHtml(rules: string[]): string {
   if (rules.length === 0) return "";
-  return `<ul>${rules.map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul>`;
+  return `<ul>${rules.map((r) => `<li>${renderInlineMarkdown(r)}</li>`).join("")}</ul>`;
 }
+
+/** Shared CSS for the Markdown subset emitted into a `.d` description block (its
+ *  paragraphs + lists) and for content links. The styled tag set is a property of
+ *  the renderer here, so it lives in one place; each Shadow-DOM renderer
+ *  interpolates it into its own STYLES and keeps its surface-specific container
+ *  (`.d`/`.tip`/`.card`) and rule-list chrome. Token-based, so it themes per host. */
+export const MARKDOWN_BODY_CSS = `
+.d p { margin: 4px 0; }
+.d p:first-child { margin-top: 0; }
+.d ul, .d ol { margin: 4px 0; padding-left: 18px; }
+a { color: var(--sp-accent); text-decoration: underline; }
+`;

@@ -9,6 +9,7 @@ import {
 } from "../../i18n/index.js";
 import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
+import { renderInlineMarkdown, renderMarkdownBlock } from "../../shared/markdown.js";
 import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
@@ -147,7 +148,11 @@ function renderSpecs(res: SpecsForOrigin): void {
     if (description) {
       const d = document.createElement("div");
       d.className = "d";
-      d.textContent = description;
+      // Only the Phase 1 Markdown renderer's output is assigned here: it escapes
+      // every leaf and emits an allowlisted tag set, so the side panel keeps its
+      // "no untrusted string via innerHTML" property (the input is spec text, the
+      // output is a fully module-controlled trusted fragment).
+      d.innerHTML = renderMarkdownBlock(description);
       li.appendChild(d);
     }
 
@@ -156,7 +161,8 @@ function renderSpecs(res: SpecsForOrigin): void {
       rules.className = "rules";
       for (const rule of spec.businessRules) {
         const item = document.createElement("li");
-        item.textContent = resolveLocalized(rule, activeLocale, defaultLocale);
+        // Trusted fragment (see description note above): inline Markdown only.
+        item.innerHTML = renderInlineMarkdown(resolveLocalized(rule, activeLocale, defaultLocale));
         rules.appendChild(item);
       }
       li.appendChild(rules);

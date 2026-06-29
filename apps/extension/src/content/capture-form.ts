@@ -2,6 +2,7 @@ import type { DisplayMode, ElementFingerprint, LocalizedString, Spec } from "@sp
 import { formatErrors, validateSpec } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import { escapeAttr, escapeHtml } from "../shared/html.js";
+import { insertLink, prefixLines, toggleWrap } from "../shared/markdown-input.js";
 import type { WriteTarget } from "../shared/messaging.js";
 import { createShadowHost } from "../shared/shadow.js";
 import { slugify } from "../shared/slug.js";
@@ -63,6 +64,31 @@ export interface CaptureFormOptions {
   /** Forced UI theme for the form's shadow host (threaded from the content
    *  script). Omitted leaves the host on the system default. */
   theme?: Theme;
+}
+
+// Markdown toolbar commands: glyph shown on the button + i18n label key. The
+// description toolbar uses all five; the business-rules toolbar uses the three
+// inline marks only (each rule is one <li>, so block lists do not apply).
+const MD_GLYPHS = {
+  bold: { glyph: "B", labelKey: "capture.fmtBold" },
+  italic: { glyph: "I", labelKey: "capture.fmtItalic" },
+  link: { glyph: "🔗", labelKey: "capture.fmtLink" },
+  bullet: { glyph: "•", labelKey: "capture.fmtBullet" },
+  number: { glyph: "1.", labelKey: "capture.fmtNumber" },
+} as const;
+
+type MdCommand = keyof typeof MD_GLYPHS;
+
+/** Build a toolbar of Markdown-insert buttons for one textarea. `variant` scopes
+ *  the click handler to its textarea (desc vs rules). */
+function mdToolbarHtml(cmds: readonly MdCommand[], variant: string): string {
+  const buttons = cmds
+    .map((cmd) => {
+      const label = t(MD_GLYPHS[cmd].labelKey);
+      return `<button type="button" class="md-btn md-${cmd}" data-cmd="${cmd}" aria-label="${escapeAttr(label)}" title="${escapeAttr(label)}">${escapeHtml(MD_GLYPHS[cmd].glyph)}</button>`;
+    })
+    .join("");
+  return `<div class="md-toolbar ${variant}">${buttons}</div>`;
 }
 
 /** A capture-target option label: project name plus its kind, so "CRM (local)"
@@ -176,6 +202,35 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px var(--sp-accent-glow);
 }
 textarea { min-height: 64px; resize: vertical; }
+.lang-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.lang-tab {
+  flex: 0 0 auto; width: auto; padding: 6px 12px;
+  font: 600 12px/1 var(--sp-font-ui);
+  color: var(--sp-text-2);
+  background: var(--sp-elevated);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.lang-tab:hover { border-color: var(--sp-accent); color: var(--sp-text); }
+.lang-tab:focus-visible { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
+.lang-tab.is-active {
+  color: var(--sp-accent-on); background: var(--sp-accent); border-color: var(--sp-accent);
+}
+.lang-tab.add { color: var(--sp-text-3); font-weight: 700; }
+.md-toolbar { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 4px; }
+.md-btn {
+  flex: 0 0 auto; width: auto; min-width: 30px; padding: 5px 8px;
+  font: 600 12px/1 var(--sp-font-ui);
+  color: var(--sp-text-2);
+  background: var(--sp-elevated);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.md-btn:hover { border-color: var(--sp-accent); color: var(--sp-text); filter: none; }
+.md-btn:focus-visible { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
+.md-btn.md-italic { font-style: italic; }
 .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 button {
   padding: 10px 18px;
@@ -255,7 +310,7 @@ export class CaptureForm {
     const titleEl = q<HTMLInputElement>("#sp-title");
     const descEl = q<HTMLTextAreaElement>("#sp-desc");
     const rulesEl = q<HTMLTextAreaElement>("#sp-rules");
-    const localeSel = q<HTMLSelectElement>("#sp-locale");
+    const tabStrip = q<HTMLElement>(".lang-tabs");
 
     // Preload content for editing an existing spec: per-locale text plus the
     // locale-independent tags + display mode (else saving would wipe them).
@@ -280,34 +335,100 @@ export class CaptureForm {
       descEl.value = c?.description ?? "";
       rulesEl.value = c?.businessRules.join("\n") ?? "";
     };
+    // Mark the active tab in the strip (skips the "+" add tab, whose sentinel
+    // locale never equals a real one).
+    const setActiveTab = (loc: string): void => {
+      for (const btn of tabStrip.querySelectorAll<HTMLButtonElement>(".lang-tab")) {
+        const active = btn.dataset.locale === loc;
+        btn.classList.toggle("is-active", active);
+        btn.setAttribute("aria-selected", String(active));
+      }
+    };
     loadLocale(current);
 
-    localeSel.addEventListener("change", () => {
-      const value = localeSel.value;
+    // One delegated click handler for the whole strip: the "+" tab opens the
+    // add-language prompt; any other tab stashes the current locale's edits then
+    // loads the clicked one (same stash/load model the dropdown used).
+    tabStrip.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".lang-tab");
+      if (!btn) return;
+      const value = btn.dataset.locale ?? "";
       if (value === ADD_LOCALE_VALUE) {
-        localeSel.value = current; // revert until the prompt resolves
         const code = this.doc.defaultView?.prompt(t("capture.addLanguagePrompt"))?.trim();
         if (!code) return;
         if (!LOCALE_PATTERN.test(code)) {
           this.showErrors(errorsBox, [t("capture.invalidLocale", { code })]);
           return;
         }
-        if (![...localeSel.options].some((o) => o.value === code)) {
-          const opt = this.doc.createElement("option");
-          opt.value = code;
-          opt.textContent = code;
-          localeSel.insertBefore(opt, localeSel.lastElementChild);
+        const exists = [...tabStrip.querySelectorAll<HTMLButtonElement>(".lang-tab")].some(
+          (b) => b.dataset.locale === code,
+        );
+        if (!exists) {
+          const tab = this.doc.createElement("button");
+          tab.type = "button";
+          tab.className = "lang-tab";
+          tab.setAttribute("role", "tab");
+          tab.dataset.locale = code;
+          tab.textContent = code;
+          tabStrip.insertBefore(tab, btn); // before the "+" tab
         }
         stashCurrent();
         current = code;
-        localeSel.value = code;
         loadLocale(code);
+        setActiveTab(code);
         return;
       }
       stashCurrent();
       current = value;
       loadLocale(value);
+      setActiveTab(value);
     });
+
+    // Markdown toolbars: each button inserts its syntax into the focused
+    // textarea's selection. Read selectionStart/End synchronously (a type=button
+    // click does not blur the textarea, but reading first is safe), apply the pure
+    // helper, then write the value back and restore focus + selection so typing
+    // continues naturally. The textarea value is the source of truth, so save
+    // picks the edits up via stashCurrent with no extra wiring.
+    const runMdCommand = (textarea: HTMLTextAreaElement, cmd: string): void => {
+      const start = textarea.selectionStart ?? textarea.value.length;
+      const end = textarea.selectionEnd ?? textarea.value.length;
+      const { value } = textarea;
+      let edit: ReturnType<typeof toggleWrap>;
+      switch (cmd) {
+        case "bold":
+          edit = toggleWrap(value, start, end, "**");
+          break;
+        case "italic":
+          edit = toggleWrap(value, start, end, "_");
+          break;
+        case "link": {
+          const url = this.doc.defaultView?.prompt(t("capture.fmtLinkPrompt"))?.trim();
+          if (url === undefined) return; // prompt cancelled
+          edit = insertLink(value, start, end, url);
+          break;
+        }
+        case "bullet":
+          edit = prefixLines(value, start, end, "bullet");
+          break;
+        case "number":
+          edit = prefixLines(value, start, end, "number");
+          break;
+        default:
+          return;
+      }
+      textarea.value = edit.value;
+      textarea.focus();
+      textarea.setSelectionRange(edit.selStart, edit.selEnd);
+    };
+    const wireToolbar = (selector: string, textarea: HTMLTextAreaElement): void => {
+      q<HTMLElement>(selector).addEventListener("click", (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".md-btn");
+        if (btn) runMdCommand(textarea, btn.dataset.cmd ?? "");
+      });
+    };
+    wireToolbar(".md-toolbar.desc", descEl);
+    wireToolbar(".md-toolbar.rules", rulesEl);
 
     // Re-link: hide the form (not close, so field edits survive), run the page
     // picker via onRelink, then restore. A returned fingerprint repoints the spec.
@@ -414,10 +535,10 @@ export class CaptureForm {
     targets: WriteTarget[],
     opts: { editing: boolean; relinkable: boolean },
   ): string {
-    const localeOptions = locales
+    const localeTabs = locales
       .map(
         (l) =>
-          `<option value="${escapeAttr(l)}"${l === current ? " selected" : ""}>${escapeHtml(l)}</option>`,
+          `<button type="button" class="lang-tab${l === current ? " is-active" : ""}" role="tab" aria-selected="${l === current}" data-locale="${escapeAttr(l)}">${escapeHtml(l)}</button>`,
       )
       .join("");
     // Ask which project to save into only when more than one serves this page
@@ -449,10 +570,14 @@ export class CaptureForm {
         <h3>${escapeHtml(opts.editing ? t("capture.titleEdit") : t("capture.titleCapture"))}</h3>
         ${targetField}
         <label>${escapeHtml(t("capture.languageLabel"))} <span class="hint">${escapeHtml(t("capture.languageHint"))}</span></label>
-        <select id="sp-locale">${localeOptions}<option value="${ADD_LOCALE_VALUE}">${escapeHtml(t("capture.addLanguageOption"))}</option></select>
+        <div class="lang-tabs" role="tablist">${localeTabs}<button type="button" class="lang-tab add" data-locale="${ADD_LOCALE_VALUE}" aria-label="${escapeAttr(t("capture.addLanguageTab"))}" title="${escapeAttr(t("capture.addLanguageTab"))}">+</button></div>
         <label>${escapeHtml(t("capture.titleField"))}</label><input id="sp-title" placeholder="${escapeAttr(t("capture.titlePlaceholder"))}" />
-        <label>${escapeHtml(t("capture.descField"))}</label><textarea id="sp-desc" placeholder="${escapeAttr(t("capture.descPlaceholder"))}"></textarea>
-        <label>${escapeHtml(t("capture.rulesField"))} <span class="hint">${escapeHtml(t("capture.rulesHint"))}</span></label><textarea id="sp-rules"></textarea>
+        <label>${escapeHtml(t("capture.descField"))} <span class="hint">${escapeHtml(t("capture.fmtHint"))}</span></label>
+        ${mdToolbarHtml(["bold", "italic", "link", "bullet", "number"], "desc")}
+        <textarea id="sp-desc" placeholder="${escapeAttr(t("capture.descPlaceholder"))}"></textarea>
+        <label>${escapeHtml(t("capture.rulesField"))} <span class="hint">${escapeHtml(t("capture.rulesHint"))}</span></label>
+        ${mdToolbarHtml(["bold", "italic", "link"], "rules")}
+        <textarea id="sp-rules"></textarea>
         <label>${escapeHtml(t("capture.tagsField"))} <span class="hint">${escapeHtml(t("capture.tagsHint"))}</span></label><input id="sp-tags" placeholder="${escapeAttr(t("capture.tagsPlaceholder"))}" />
         <label>${escapeHtml(t("capture.displayModeLabel"))}</label>
         <select id="sp-mode">

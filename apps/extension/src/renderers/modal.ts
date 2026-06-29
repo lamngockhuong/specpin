@@ -2,11 +2,13 @@ import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { localizeSpec } from "../content/localize-spec.js";
 import { plural, t } from "../i18n/index.js";
 import { escapeHtml } from "../shared/html.js";
+import { renderMarkdownBlock } from "../shared/markdown.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 import { LauncherSlot } from "./launcher.js";
 import {
+  MARKDOWN_BODY_CSS,
   projectCaptionHtml,
   type RenderMeta,
   rulesListHtml,
@@ -83,7 +85,9 @@ ${SHADOW_PREAMBLE}
 .card .t { font-weight: 700; font-size: 14px; color: var(--sp-text); }
 .card .d { color: var(--sp-text-2); margin-top: 4px; }
 .card ul { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
+.card ol { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .card li { margin: 2px 0; }
+${MARKDOWN_BODY_CSS}
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
 `;
 
@@ -170,7 +174,7 @@ export class ModalRenderer implements SpecRenderer {
       tag +
       projectCaptionHtml(meta) +
       `<div class="t">${escapeHtml(text.title)}</div>` +
-      `<div class="d">${escapeHtml(text.description)}</div>` +
+      `<div class="d">${renderMarkdownBlock(text.description)}</div>` +
       rulesListHtml(text.businessRules);
     const onHighlight = meta?.onHighlight;
     // Jump to the element (scroll + outline) but keep the panel open: only the

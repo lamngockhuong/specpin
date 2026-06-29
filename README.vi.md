@@ -97,7 +97,8 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 - **Bề mặt side panel** - mở Specpin trong side panel của Chrome / sidebar của Firefox, kèm chi tiết đặc tả inline
 - **Tìm kiếm đặc tả** - lọc phía client theo thời gian thực dựa trên tiêu đề, file, tag và mô tả
 - **Huy hiệu nguồn** - nhận biết nhanh đặc tả đến từ sidecar hay từ batch cục bộ
-- **Nội dung đặc tả đa ngôn ngữ** - chuỗi theo locale với công tắc đổi ngôn ngữ ngay trong trình duyệt và soạn theo từng locale
+- **Nội dung đặc tả đa ngôn ngữ** - chuỗi theo locale với công tắc đổi ngôn ngữ ngay trong trình duyệt và trình soạn thảo theo từng locale dạng tab
+- **Đặc tả định dạng Markdown** - mô tả và quy tắc nghiệp vụ mang một tập con Markdown an toàn (đậm, nghiêng, liên kết, danh sách), soạn qua thanh công cụ và hiển thị trên mọi bề mặt
 - **Tự chọn giao diện** - System / Light / Dark, design token hai chế độ
 - **i18n cho giao diện** - tiếng Anh + tiếng Việt, độc lập với ngôn ngữ nội dung đặc tả
 - **Kiểm tra offline** - `specpin validate` + spec-lint trong CI để giữ `.specs/` luôn hợp lệ
@@ -175,7 +176,7 @@ cd apps/cli && make check-schema && go test ./...
 
 ## Trạng thái
 
-Phase 1 MVP đã ra mắt, kèm các phần của 1.1: sidecar Go phục vụ `.specs/`, và extension WXT khớp fingerprint rồi hiển thị đặc tả (tooltip + sidebar + modal) với capture thủ công. Đặc tả đa ngôn ngữ với công tắc đổi ngôn ngữ ngay trong trình duyệt và soạn theo từng locale; extension kết nối nhiều dự án cùng lúc, định tuyến theo origin. Đã có thêm: `specpin validate` offline + spec-lint trong CI, dự án cục bộ ghi được (sửa, capture, tạo mới, export nhóm dạng zip), tìm kiếm đặc tả phía client, huy hiệu nguồn, bật/tắt theo từng dự án, bề mặt side panel, tự chọn giao diện (System / Light / Dark), và i18n cho giao diện (EN + VI). Vẫn còn hoãn lại: nguồn FileSystem Access, chấm điểm fingerprint kiểu hybrid, renderer overlay + inline-badge, đóng gói Safari, và `specpin generate` (AI).
+Phase 1 MVP đã ra mắt, kèm các phần của 1.1: sidecar Go phục vụ `.specs/`, và extension WXT khớp fingerprint rồi hiển thị đặc tả (tooltip + sidebar + modal) với capture thủ công. Đặc tả đa ngôn ngữ với công tắc đổi ngôn ngữ ngay trong trình duyệt và trình soạn thảo theo từng locale dạng tab; mô tả và quy tắc nghiệp vụ mang một tập con Markdown an toàn soạn qua thanh công cụ và hiển thị trên mọi bề mặt; extension kết nối nhiều dự án cùng lúc, định tuyến theo origin. Đã có thêm: `specpin validate` offline + spec-lint trong CI, dự án cục bộ ghi được (sửa, capture, tạo mới, export nhóm dạng zip), tìm kiếm đặc tả phía client, huy hiệu nguồn, bật/tắt theo từng dự án, bề mặt side panel, tự chọn giao diện (System / Light / Dark), và i18n cho giao diện (EN + VI). Vẫn còn hoãn lại: nguồn FileSystem Access, chấm điểm fingerprint kiểu hybrid, renderer overlay + inline-badge, đóng gói Safari, và `specpin generate` (AI).
 
 ## Tài trợ
 

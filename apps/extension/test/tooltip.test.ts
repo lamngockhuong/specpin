@@ -192,7 +192,7 @@ describe("TooltipRenderer", () => {
     const renderer = new TooltipRenderer(document);
     renderer.render(spec, must(document.querySelector("button")));
     const { tip } = pin();
-    mouse(must(tip.querySelector("p")), "mousedown", { clientX: 100, clientY: 100 });
+    mouse(must(tip.querySelector(".d")), "mousedown", { clientX: 100, clientY: 100 });
     expect(tip.classList.contains("dragging")).toBe(false);
     renderer.destroy();
   });
@@ -270,6 +270,43 @@ describe("TooltipRenderer", () => {
     expect(tip.classList.contains("show")).toBe(true);
     expect(tip.classList.contains("pinned")).toBe(true);
     expect(must(tip.querySelector("h4")).textContent).toBe("Login button");
+    renderer.destroy();
+  });
+
+  it("renders the Markdown subset in description and rules", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const md: Spec = {
+      ...spec,
+      description: { en: "Submits the **login** form\n\n- step one\n- step two" },
+      businessRules: [{ en: "See [docs](https://x.com)" }],
+    };
+    const renderer = new TooltipRenderer(document);
+    renderer.render(md, must(document.querySelector("button")));
+    const { tip } = pin();
+    expect(must(tip.querySelector(".d strong")).textContent).toBe("login");
+    expect(tip.querySelectorAll(".d ul li")).toHaveLength(2);
+    const link = must(tip.querySelector("a")) as HTMLAnchorElement;
+    expect(link.getAttribute("href")).toBe("https://x.com");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+    renderer.destroy();
+  });
+
+  it("renders XSS-laden spec text inert (no live tags)", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const evil: Spec = {
+      ...spec,
+      description: { en: "<img src=x onerror=alert(1)>" },
+      businessRules: [{ en: "[x](javascript:alert(1))" }],
+    };
+    const renderer = new TooltipRenderer(document);
+    renderer.render(evil, must(document.querySelector("button")));
+    const { tip } = pin();
+    expect(tip.querySelector("img")).toBeNull();
+    // No anchor carries a javascript: scheme.
+    expect(
+      [...tip.querySelectorAll("a")].some((a) => /javascript:/i.test(a.getAttribute("href") ?? "")),
+    ).toBe(false);
+    expect(must(tip.querySelector(".d")).textContent).toContain("<img");
     renderer.destroy();
   });
 });

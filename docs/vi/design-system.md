@@ -149,3 +149,7 @@ chạy `sync-tokens.mjs` + `render.sh` như bình thường.
   `sync-tokens.mjs` (vd: `bg-surface`, `text-muted`, `success-bg`) để nó tự bind và
   theme. Tên nằm ngoài map sẽ giữ dạng scalar (vd: `overlay-bg` scrim của modal, vốn
   cố ý theme-agnostic).
+- **Tab ngôn ngữ** (`.lang-tab`) và **thanh công cụ Markdown** (`.md-btn`) của
+  form capture dùng lại các token điều khiển sẵn có (`--sp-elevated`, `--sp-border`,
+  `--sp-accent`, `--sp-accent-glow`); tab đang chọn dùng nền accent. Không thêm
+  token mới nào, nên chúng tự theme cùng mọi thứ khác.

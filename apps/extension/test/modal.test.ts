@@ -1,6 +1,7 @@
 import type { Spec } from "@specpin/spec-schema";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ModalRenderer } from "../src/renderers/modal.js";
+import { must } from "./test-utils.js";
 
 function spec(id: string, title: string): Spec {
   return {
@@ -195,5 +196,31 @@ describe("ModalRenderer", () => {
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })),
     ).not.toThrow();
     expect(modalHost()).toBeNull();
+  });
+
+  it("renders the Markdown subset and keeps XSS inert", () => {
+    const r = new ModalRenderer(document);
+    const target = document.createElement("button");
+    document.body.appendChild(target);
+    const md = {
+      id: "m",
+      title: { en: "T" },
+      description: { en: "A **bold** word\n\n- one\n- two" },
+      businessRules: [{ en: "See [docs](https://x.com)" }],
+    } as unknown as Spec;
+    const evil = {
+      id: "e",
+      title: { en: "E" },
+      description: { en: "<img src=x onerror=alert(1)>" },
+    } as unknown as Spec;
+    r.render(md, target);
+    r.render(evil, target);
+    const shadow = must(modalHost()).shadowRoot;
+    expect(shadow?.querySelector(".d strong")?.textContent).toBe("bold");
+    expect(shadow?.querySelectorAll(".d ul li")).toHaveLength(2);
+    expect(shadow?.querySelector(".card a")?.getAttribute("href")).toBe("https://x.com");
+    // The injected <img> never becomes a live element.
+    expect(shadow?.querySelector("img")).toBeNull();
+    r.destroy();
   });
 });

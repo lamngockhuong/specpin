@@ -236,6 +236,95 @@ describe("CaptureForm edit mode", () => {
     const [, spec] = onSubmit.mock.calls[0];
     expect(spec.fingerprint.cssSelector).toBe("form.login button");
   });
+
+  it("renders a language tab per locale plus a + tab, no locale <select>", () => {
+    const shadow = openEdit();
+    expect(shadow.querySelector("#sp-locale")).toBeNull();
+    const tabs = [...shadow.querySelectorAll(".lang-tab")].map(
+      (b) => (b as HTMLElement).dataset.locale,
+    );
+    expect(tabs).toEqual(["en", "vi", "__add__"]);
+    expect(
+      must(shadow.querySelector('.lang-tab[data-locale="en"]')).classList.contains("is-active"),
+    ).toBe(true);
+  });
+
+  it("switching tabs preserves each locale's edits (stash/load round-trip)", () => {
+    const shadow = openEdit();
+    const title = must(shadow.querySelector("#sp-title")) as HTMLInputElement;
+    title.value = "EN edit";
+    click(shadow, '.lang-tab[data-locale="vi"]');
+    expect(title.value).toBe("Nút đăng nhập");
+    expect(
+      must(shadow.querySelector('.lang-tab[data-locale="vi"]')).classList.contains("is-active"),
+    ).toBe(true);
+    title.value = "VI edit";
+    click(shadow, '.lang-tab[data-locale="en"]');
+    expect(title.value).toBe("EN edit");
+    click(shadow, '.lang-tab[data-locale="vi"]');
+    expect(title.value).toBe("VI edit");
+  });
+
+  it("the + tab adds a validated locale tab and switches to it", () => {
+    const original = window.prompt;
+    window.prompt = (() => "ja") as typeof window.prompt;
+    try {
+      const shadow = openEdit();
+      expect(shadow.querySelector('.lang-tab[data-locale="ja"]')).toBeNull();
+      click(shadow, ".lang-tab.add");
+      const ja = shadow.querySelector('.lang-tab[data-locale="ja"]');
+      expect(ja).not.toBeNull();
+      expect(ja?.classList.contains("is-active")).toBe(true);
+      // The + tab stays last after the new locale tab is inserted.
+      const tabs = [...shadow.querySelectorAll(".lang-tab")].map(
+        (b) => (b as HTMLElement).dataset.locale,
+      );
+      expect(tabs).toEqual(["en", "vi", "ja", "__add__"]);
+    } finally {
+      window.prompt = original;
+    }
+  });
+
+  it("the description Bold button wraps the current selection in **", () => {
+    const shadow = openEdit();
+    const desc = must(shadow.querySelector("#sp-desc")) as HTMLTextAreaElement;
+    desc.value = "hello world";
+    desc.setSelectionRange(0, 5);
+    click(shadow, ".md-toolbar.desc .md-bold");
+    expect(desc.value).toBe("**hello** world");
+  });
+
+  it("the description Bullet button prefixes selected lines", () => {
+    const shadow = openEdit();
+    const desc = must(shadow.querySelector("#sp-desc")) as HTMLTextAreaElement;
+    desc.value = "one\ntwo";
+    desc.setSelectionRange(0, 7);
+    click(shadow, ".md-toolbar.desc .md-bullet");
+    expect(desc.value).toBe("- one\n- two");
+  });
+
+  it("the rules toolbar offers inline marks only (no list buttons)", () => {
+    const shadow = openEdit();
+    const cmds = [...shadow.querySelectorAll(".md-toolbar.rules .md-btn")].map(
+      (b) => (b as HTMLElement).dataset.cmd,
+    );
+    expect(cmds).toEqual(["bold", "italic", "link"]);
+  });
+
+  it("the Link button inserts [selection](url) from the prompt", () => {
+    const original = window.prompt;
+    window.prompt = (() => "https://x.com") as typeof window.prompt;
+    try {
+      const shadow = openEdit();
+      const desc = must(shadow.querySelector("#sp-desc")) as HTMLTextAreaElement;
+      desc.value = "see docs";
+      desc.setSelectionRange(4, 8);
+      click(shadow, ".md-toolbar.desc .md-link");
+      expect(desc.value).toBe("see [docs](https://x.com)");
+    } finally {
+      window.prompt = original;
+    }
+  });
 });
 
 describe("CaptureForm capture targets (Phase 2)", () => {
