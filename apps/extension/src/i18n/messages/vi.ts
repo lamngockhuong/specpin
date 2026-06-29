@@ -251,6 +251,12 @@ const vi: Record<keyof Messages, string> = {
   "options.pickFiles": "Chọn manifest.json và ít nhất một tệp .spec.json.",
   "options.invalidSelection": "Lựa chọn không hợp lệ:\n- {errors}",
   "options.allCleared": "Đã xóa tất cả spec thủ công.",
+
+  // Support & Feedback card.
+  "options.supportFeedback": "Hỗ trợ & Phản hồi",
+  "options.supportLead": "Gặp lỗi hoặc có câu hỏi? Liên hệ dự án trên GitHub.",
+  "options.reportIssue": "Báo lỗi",
+  "options.askQuestion": "Đặt câu hỏi",
 };
 
 export default vi;

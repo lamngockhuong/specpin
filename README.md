@@ -101,6 +101,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, ships seede
 - **Markdown-formatted specs** - descriptions and business rules carry a safe Markdown subset (bold, italic, links, lists), authored via a toolbar and rendered across every surface
 - **User-selectable theme** - System / Light / Dark, dual-theme design tokens
 - **UI-chrome i18n** - English + Vietnamese interface, independent from spec content language
+- **Support & Feedback** - one-click links from Options to the project's GitHub Issues and Discussions
 - **Offline validation** - `specpin validate` + CI spec-lint to keep `.specs/` honest
 - **Secure by default** - sidecar binds `127.0.0.1` only, bearer-token auth, extension-origin CORS, path-traversal guarded writes
 
