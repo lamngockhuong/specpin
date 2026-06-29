@@ -62,21 +62,34 @@ Specpin **không phải** công cụ sinh code từ đặc tả (không liên qu
 2. `specpin serve` mở `.specs/` qua API HTTP localhost có xác thực token kèm live-reload (SSE).
 3. Extension trình duyệt kết nối tới sidecar, khớp fingerprint của từng đặc tả với DOM đang chạy, rồi hiển thị đặc tả lên đúng phần tử.
 
+## Cài đặt CLI
+
+Sidecar là một file binary độc lập. Cách dễ nhất là qua npm, nó tự tải binary
+khớp với OS và CPU của bạn:
+
+```bash
+npm install -g @specpin/cli     # hoặc: pnpm add -g @specpin/cli
+specpin --version
+
+# hoặc chạy không cần cài:
+npx @specpin/cli serve
+```
+
+Muốn lấy binary thô? Tải `specpin-<os>-<arch>` từ
+[bản phát hành CLI mới nhất](https://github.com/lamngockhuong/specpin/releases?q=cli),
+hoặc build từ source: `cd apps/cli && make build`.
+
 ## Bắt đầu nhanh
 
 ```bash
-# 1. Cài deps cho workspace và build toàn bộ
-pnpm install
-pnpm build
+# 1. Cài đặt CLI
+npm install -g @specpin/cli
 
-# 2. Build sidecar Go (trong apps/cli)
-cd apps/cli && make build      # -> bin/specpin
-
-# 3. Trong repo dự án của bạn: tạo khung và phục vụ đặc tả
+# 2. Trong repo dự án của bạn: tạo khung và phục vụ đặc tả
 specpin init                   # tạo .specs/manifest.json
 specpin serve                  # in ra URL localhost + bearer token
 
-# 4. Nạp extension (unpacked) và kết nối
+# 3. Nạp extension (unpacked) và kết nối
 #    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
 #    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
 ```

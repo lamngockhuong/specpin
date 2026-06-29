@@ -9,7 +9,7 @@ Specpin gắn các business spec sống vào một UI đang chạy; nó **không
 ## Yêu cầu trước
 
 - Node >= 20, pnpm 10
-- Go 1.26 (cho sidecar)
+- Go 1.26 (chỉ khi build sidecar từ source)
 - Chrome hoặc Firefox
 
 ## 1. Build workspace
@@ -19,7 +19,15 @@ pnpm install
 pnpm build
 ```
 
-## 2. Build sidecar
+## 2. Cài đặt hoặc build sidecar
+
+Cài CLI đã phát hành (tự tải binary khớp OS và CPU của bạn):
+
+```bash
+npm install -g @specpin/cli     # hoặc: pnpm add -g @specpin/cli, hoặc: npx @specpin/cli serve
+```
+
+Hoặc build từ source (cần Go 1.26):
 
 ```bash
 cd apps/cli

@@ -1,8 +1,11 @@
 name: Release CLI
 
 # Cross-compiles the Go sidecar for 5 targets, stamps the version, checksums, and
-# publishes a GitHub Release. Driven by release-please (workflow_call); also
-# runnable manually (workflow_dispatch, with dry_run) or by pushing a `cli-v*` tag.
+# publishes a GitHub Release, then publishes the @specpin/cli npm wrapper (whose
+# postinstall downloads the matching binary from that Release). Driven by
+# release-please (workflow_call); also runnable manually (workflow_dispatch, with
+# dry_run) or by pushing a `cli-v*` tag. npm publish uses OIDC trusted publishing
+# (no NPM_TOKEN); the `@specpin/cli` package's Trusted Publisher must be set on npmjs.com.
 
 on:
   push:
@@ -113,3 +116,38 @@ jobs:
           name: cli-v${{ needs.prepare.outputs.version }}
           generate_release_notes: true
           files: release/*
+
+  publish-npm:
+    name: Publish @specpin/cli to npm
+    runs-on: ubuntu-latest
+    # Runs after the Release exists: the npm package's postinstall downloads the
+    # binaries from those Release assets, so they must be published first.
+    needs: [prepare, release]
+    if: needs.prepare.outputs.dry_run != 'true'
+    # OIDC trusted publishing: no long-lived NPM_TOKEN. npm exchanges the GitHub
+    # OIDC token for a short-lived publish token and auto-generates provenance.
+    # Requires the package's Trusted Publisher to be configured on npmjs.com
+    # (org lamngockhuong, repo specpin, workflow release-cli.yml).
+    permissions:
+      contents: read
+      id-token: write # OIDC token for trusted publishing + provenance
+    defaults:
+      run:
+        working-directory: apps/cli/npm
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+      # Trusted publishing needs npm >= 11.5.1; Node 24's bundled npm may be older.
+      - run: npm install -g npm@latest
+      # Align the published version with the released CLI version so postinstall
+      # resolves the `cli-v<version>` Release tag.
+      - name: Set version
+        run: npm version "${{ needs.prepare.outputs.version }}" --no-git-tag-version --allow-same-version
+      # No --provenance flag and no NODE_AUTH_TOKEN: trusted publishing supplies
+      # auth via OIDC and generates provenance automatically. --ignore-scripts
+      # skips the binary-download postinstall, which is irrelevant when packing.
+      - name: Publish
+        run: npm publish --access public --ignore-scripts

@@ -1,0 +1,39 @@
+{
+  "name": "@specpin/cli",
+  "version": "0.0.0",
+  "description": "Specpin sidecar CLI: init + serve the .specs/ knowledge layer for the Specpin browser extension. Installs the matching prebuilt Go binary.",
+  "keywords": [
+    "specpin",
+    "cli",
+    "sidecar",
+    "specs",
+    "documentation"
+  ],
+  "homepage": "https://github.com/lamngockhuong/specpin/tree/main/apps/cli",
+  "bugs": "https://github.com/lamngockhuong/specpin/issues",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lamngockhuong/specpin.git",
+    "directory": "apps/cli/npm"
+  },
+  "type": "module",
+  "bin": {
+    "specpin": "bin/specpin.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.mjs"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
