@@ -23,11 +23,16 @@ export default defineConfig({
     name: "specpin",
   },
   manifest: ({ manifestVersion }) => ({
-    name: "Specpin",
-    // Chrome Web Store caps the manifest description at 132 chars; keep this in sync
-    // with the store-listing summary in docs/chrome-web-store-listing.md.
-    description:
-      "Pin living business specs onto the elements of your running web UI. Git-native, local-first, framework-agnostic.",
+    // i18n via Chrome-native _locales/ (public/_locales/{en,vi}/messages.json).
+    // This drives the browser-level name/description AND populates the store's
+    // listing-language dropdown (the store offers exactly the shipped locales).
+    // It is separate from the in-UI runtime i18n (src/i18n + t()).
+    default_locale: "en",
+    name: "__MSG_extName__",
+    // Chrome Web Store caps the manifest description at 132 chars; the localized
+    // strings live in public/_locales/*/messages.json (keep in sync with the
+    // store-listing summaries in docs/chrome-web-store-listing.md).
+    description: "__MSG_extDescription__",
     // `sidePanel` is a Chrome MV3 permission; Firefox (MV2) uses sidebar_action
     // and would warn on an unknown permission, so add it only for MV3.
     permissions: [
@@ -46,7 +51,17 @@ export default defineConfig({
     // about:debugging). Chrome/MV3 derives its ID from the store/key, so this
     // is scoped to Firefox only.
     ...(manifestVersion === 2
-      ? { browser_specific_settings: { gecko: { id: "specpin@ohnice.app" } } }
+      ? {
+          browser_specific_settings: {
+            gecko: {
+              id: "specpin@ohnice.app",
+              // AMO requires every add-on to declare its data collection. Specpin
+              // collects/transmits no user data (specs stay local, sidecar is on
+              // localhost), so the required set is the special "none" sentinel.
+              data_collection_permissions: { required: ["none"] },
+            },
+          },
+        }
       : {}),
     ...(manifestVersion === 3
       ? { action: { default_icon: iconSet } }
