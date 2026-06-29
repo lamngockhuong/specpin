@@ -1,4 +1,4 @@
 {
-  "apps/extension": "0.0.0",
-  "apps/cli": "0.0.0"
+  "apps/extension": "0.0.1",
+  "apps/cli": "0.0.1"
 }
