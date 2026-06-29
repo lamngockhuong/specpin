@@ -56,9 +56,13 @@ jobs:
     name: Build + publish to npm
     runs-on: ubuntu-latest
     needs: [prepare]
+    # OIDC trusted publishing: no long-lived NPM_TOKEN. npm exchanges the
+    # GitHub OIDC token for a short-lived publish token and auto-generates
+    # provenance. Requires the package's Trusted Publisher to be configured on
+    # npmjs.com (org lamngockhuong, repo specpin, workflow release-spec-schema.yml).
     permissions:
       contents: read
-      id-token: write # npm provenance attestation
+      id-token: write # OIDC token for trusted publishing + provenance
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -67,6 +71,8 @@ jobs:
           node-version: 24
           cache: pnpm
           registry-url: "https://registry.npmjs.org"
+      # Trusted publishing needs npm >= 11.5.1; Node 24's bundled npm may be older.
+      - run: npm install -g npm@latest
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @specpin/spec-schema build
       # Align the published version with the resolved version. release-please
@@ -79,9 +85,9 @@ jobs:
         if: needs.prepare.outputs.dry_run == 'true'
         run: npm publish --dry-run --access public
         working-directory: packages/spec-schema
+      # No --provenance flag and no NODE_AUTH_TOKEN: trusted publishing supplies
+      # auth via OIDC and generates provenance automatically.
       - name: Publish
         if: needs.prepare.outputs.dry_run != 'true'
-        run: npm publish --provenance --access public
+        run: npm publish --access public
         working-directory: packages/spec-schema
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
