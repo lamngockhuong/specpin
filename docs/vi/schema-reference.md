@@ -63,6 +63,23 @@ Nội dung business của spec (`title`, `description`, mỗi item trong `busine
 
 Giá trị `description` không rỗng (`minLength: 1`), nên một description trống bây giờ không hợp lệ (trước đây là empty string được phép trước khi localize).
 
+## Định dạng (tập con Markdown)
+
+`description` và mỗi item `businessRules` có thể mang một **tập con Markdown** nhỏ. Đây thuần túy là quy ước hiển thị: giá trị lưu trữ vẫn là string thường (không đổi schema), nên `.specs/*.json` vẫn diff được trên Git và cả hai validator không bị ảnh hưởng.
+
+Cú pháp được hỗ trợ:
+
+- **Đậm** `**text**`, *nghiêng* `*text*` hoặc `_text_`.
+- Liên kết `[label](url)`. Chỉ URL `http`, `https`, và `mailto` hiển thị thành liên kết; URL tương đối, scheme-tương đối (`//host`), và các scheme khác (`javascript:`, `data:`) bị hạ xuống văn bản thường. Liên kết mở trong tab mới (`rel="noopener noreferrer" target="_blank"`).
+- `description` còn hỗ trợ cấu trúc khối: danh sách dấu đầu dòng (tiền tố dòng `- ` hoặc `* `), danh sách đánh số (tiền tố dòng `1. `), các đoạn cách nhau bởi dòng trống, và xuống dòng đơn thành ngắt dòng.
+- Mỗi item `businessRules` chỉ **inline** (đậm/nghiêng/liên kết); một rule là một dòng hiển thị thành một mục danh sách, nên danh sách khối bên trong một rule không áp dụng.
+
+Không hỗ trợ (hiển thị nguyên văn): heading, blockquote, code block/span, bảng, hình ảnh, gạch chân. Markdown trong `title` không được diễn giải (nó tạo id slug và một tiêu đề).
+
+Bộ render không phụ thuộc thư viện và an toàn CSP: nó escape mọi đoạn văn bản người dùng và chỉ phát ra một tập thẻ trong danh sách cho phép (`strong`, `em`, `a`, `ul`, `ol`, `li`, `p`, `br`), nên HTML thô và các vector injection trong nội dung spec vẫn vô hại.
+
+**Lưu ý tương thích ngược:** văn bản thường cũ tình cờ chứa cặp `*`/`_` hoặc `[text](url)` bây giờ được diễn giải là Markdown (ví dụ `a_b_c` có thể render `b` in nghiêng, dù quy tắc ranh giới từ cho `_` tránh được phần lớn trường hợp snake_case). Không có migration; URL trần không tự động thành liên kết.
+
 ## ElementFingerprint
 
 Required: `cssSelector`, `xpath`, `domPath`, `tagName`, `attributes`, `positionHint`.

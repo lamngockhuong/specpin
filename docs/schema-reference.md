@@ -61,6 +61,23 @@ Spec business content (`title`, `description`, each `businessRules` item) is a *
 
 The `description` value is non-empty (`minLength: 1`), so a blank description is now invalid (it was an allowed empty string before localization).
 
+## Formatting (Markdown subset)
+
+`description` and each `businessRules` item may carry a small **Markdown subset**. This is purely a rendering convention: the stored value is still a plain string (no schema change), so `.specs/*.json` stays Git-diffable and both validators are unaffected.
+
+Supported syntax:
+
+- **Bold** `**text**`, *italic* `*text*` or `_text_`.
+- Links `[label](url)`. Only `http`, `https`, and `mailto` URLs render as links; relative, scheme-relative (`//host`), and other schemes (`javascript:`, `data:`) are dropped to plain text. Links open in a new tab (`rel="noopener noreferrer" target="_blank"`).
+- `description` also supports block structure: bullet lists (`- ` or `* ` line prefix), numbered lists (`1. ` line prefix), blank-line-separated paragraphs, and single newlines as line breaks.
+- Each `businessRules` item is **inline-only** (bold/italic/link); a rule is one line rendered as one list item, so block lists inside a rule do not apply.
+
+Not supported (rendered literally): headings, blockquotes, code blocks/spans, tables, images, underline. Markdown in `title` is not interpreted (it seeds the id slug and a heading).
+
+The renderer is dependency-free and CSP-safe: it escapes every leaf of user text and emits only an allowlisted tag set (`strong`, `em`, `a`, `ul`, `ol`, `li`, `p`, `br`), so raw HTML and injection vectors in spec text stay inert.
+
+**Backward-compat caveat:** legacy plain text that happens to contain paired `*`/`_` or `[text](url)` is now interpreted as Markdown (e.g. `a_b_c` could render `b` in italics, though the word-boundary rule for `_` avoids most snake_case cases). There is no migration; bare URLs are not auto-linked.
+
 ## ElementFingerprint
 
 Required: `cssSelector`, `xpath`, `domPath`, `tagName`, `attributes`, `positionHint`.

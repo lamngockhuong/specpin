@@ -149,3 +149,7 @@ for s in 16 32 48 128; do rsvg-convert -w $s -h $s designs/specpin-icon.svg -o p
   `NAME_MAP` (e.g. `bg-surface`, `text-muted`, `success-bg`) so it binds and
   themes automatically. Names outside the map stay scalar (e.g. the modal
   `overlay-bg` scrim, which is intentionally theme-agnostic).
+- The capture form's **language tabs** (`.lang-tab`) and **Markdown toolbar**
+  (`.md-btn`) reuse the existing control tokens (`--sp-elevated`, `--sp-border`,
+  `--sp-accent`, `--sp-accent-glow`); the active tab uses the accent fill. No new
+  tokens were introduced, so they theme automatically with everything else.

@@ -2,11 +2,12 @@ import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { type LocalizedSpecText, localizeSpec } from "../content/localize-spec.js";
 import { t } from "../i18n/index.js";
 import { escapeHtml } from "../shared/html.js";
+import { renderMarkdownBlock } from "../shared/markdown.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 import type { RenderMeta, SpecRenderer } from "./renderer.js";
-import { rulesListHtml } from "./renderer.js";
+import { MARKDOWN_BODY_CSS, rulesListHtml } from "./renderer.js";
 
 interface Pin {
   target: Element;
@@ -58,9 +59,11 @@ ${SHADOW_PREAMBLE}
 .tip.dragging { box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45); }
 .tip .project { display: block; margin: 0 0 4px; font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sp-text-3); }
 .tip h4 { margin: 0 0 4px; padding-right: 18px; font-size: 13px; font-weight: 700; color: var(--sp-text); }
-.tip p { margin: 0 0 6px; color: var(--sp-text-2); }
+.tip .d { color: var(--sp-text-2); margin: 0 0 6px; }
 .tip ul { margin: 4px 0 0; padding-left: 16px; color: var(--sp-text-3); }
+.tip ol { margin: 4px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .tip li { margin: 2px 0; }
+${MARKDOWN_BODY_CSS}
 .tip .tags { margin-top: 6px; color: var(--sp-accent); font-family: var(--sp-font-mono); font-size: 11px; }
 .tip .pin-close {
   position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
@@ -234,7 +237,10 @@ export class TooltipRenderer implements SpecRenderer {
         : "") +
       (pin.project ? `<span class="project">${escapeHtml(pin.project)}</span>` : "") +
       `<h4>${escapeHtml(pin.text.title)}</h4>` +
-      `<p>${escapeHtml(pin.text.description)}</p>` +
+      // Description renders its Markdown subset (block: paragraphs + lists). The
+      // renderer escapes every leaf and emits only allowlisted tags, so this
+      // trusted fragment is safe via innerHTML.
+      `<div class="d">${renderMarkdownBlock(pin.text.description)}</div>` +
       rulesListHtml(pin.text.businessRules) +
       tags +
       (pinned && canEdit
