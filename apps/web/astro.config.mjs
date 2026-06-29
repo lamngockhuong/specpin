@@ -1,6 +1,6 @@
 // @ts-check
 import starlight from "@astrojs/starlight";
-import { defineConfig } from "astro/config";
+import { defineConfig, passthroughImageService } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
 
 // Custom domain serves at the apex path, so base stays "/".
@@ -8,6 +8,10 @@ import starlightLinksValidator from "starlight-links-validator";
 export default defineConfig({
   site: "https://specpin.ohnice.app",
   base: "/",
+  // The only images are SVGs (logo, hero, favicon); they need no raster
+  // optimization, so skip the Sharp-backed image service entirely (keeps Sharp
+  // out of the dependency tree). Revisit if raster assets are added later.
+  image: { service: passthroughImageService() },
   integrations: [
     starlight({
       title: "Specpin",
