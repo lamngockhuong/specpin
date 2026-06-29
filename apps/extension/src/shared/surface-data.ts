@@ -7,7 +7,7 @@ import type { TaggedSpec } from "./connection-types.js";
 import { localConnId } from "./local-id.js";
 import { stripMarkdown } from "./markdown.js";
 import { type SpecsForOrigin, type StatusResult, sendToBackground } from "./messaging.js";
-import { connectionServesOrigin, originMatchesDomains } from "./origin-match.js";
+import { connectionServesOrigin, manualSummaryServesOrigin } from "./origin-match.js";
 import type { ExportTarget } from "./project-actions.js";
 import {
   EMPTY_VISIBILITY,
@@ -96,7 +96,9 @@ export function specMatchesQuery(
  *  list one way. */
 export function buildExportTargets(status: StatusResult, origin: string): ExportTarget[] {
   const local = (status.manualBatches ?? [])
-    .filter((b) => originMatchesDomains(origin, b.domains))
+    // A disabled batch serves no page, so it is not a page-level export target
+    // (the Options per-batch Export still reaches it by id).
+    .filter((b) => manualSummaryServesOrigin(b, origin))
     .map((b) => ({
       id: localConnId(b.id),
       project: `${b.project || b.label} (${t("common.sourceManual")})`,

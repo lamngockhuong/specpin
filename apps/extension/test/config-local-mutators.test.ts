@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing";
 import { SidecarRegistry } from "../src/background/sidecar-registry.js";
 import {
+  batchServesOrigin,
   createLocalBatch,
   getLocalSpecs,
   type LocalSpecsState,
@@ -12,6 +13,7 @@ import {
   normalizeLocalSpecsState,
   removeLocalSpecById,
   renameLocalBatch,
+  setLocalBatchEnabled,
   setLocalSpecs,
   upsertLocalSpec,
 } from "../src/shared/config.js";
@@ -155,6 +157,40 @@ describe("renameLocalBatch", () => {
     const base: LocalSpecsState = { batches: [makeBatch("b1", "Old", ["keep.test"])] };
     const r = renameLocalBatch(base, "b1", "New");
     expect((r.state?.batches[0] as ManualBatch).specs.manifest?.domains).toEqual(["keep.test"]);
+  });
+});
+
+describe("setLocalBatchEnabled", () => {
+  it("toggles the enabled flag without touching other fields", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", ["p.test"])] };
+    const off = setLocalBatchEnabled(base, "b1", false);
+    expect((off.state?.batches[0] as ManualBatch).enabled).toBe(false);
+    expect((off.state?.batches[0] as ManualBatch).label).toBe("P");
+    const on = setLocalBatchEnabled(off.state as LocalSpecsState, "b1", true);
+    expect((on.state?.batches[0] as ManualBatch).enabled).toBe(true);
+  });
+
+  it("does not mutate the input state", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", [])] };
+    setLocalBatchEnabled(base, "b1", false);
+    expect(base.batches[0]?.enabled).toBeUndefined();
+  });
+
+  it("rejects an unknown batch id", () => {
+    expect(setLocalBatchEnabled(empty, "nope", false).ok).toBe(false);
+  });
+});
+
+describe("batchServesOrigin gates on enabled", () => {
+  it("a disabled batch serves no page even when its domains match", () => {
+    const batch = { ...makeBatch("b1", "P", ["p.test"]), enabled: false };
+    expect(batchServesOrigin(batch, "https://p.test")).toBe(false);
+  });
+
+  it("an undefined or true enabled flag still serves (backward compatible)", () => {
+    const batch = makeBatch("b1", "P", ["p.test"]);
+    expect(batchServesOrigin(batch, "https://p.test")).toBe(true);
+    expect(batchServesOrigin({ ...batch, enabled: true }, "https://p.test")).toBe(true);
   });
 });
 

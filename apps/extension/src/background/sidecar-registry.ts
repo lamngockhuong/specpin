@@ -180,6 +180,12 @@ export class SidecarRegistry {
     // same element): first matching batch wins.
     const seenManualIds = new Set<string>();
     for (const batch of this.manual) {
+      // A disabled batch serves no page (parallel to a disabled sidecar
+      // connection); skip it before the render match. This enabled check is
+      // separate from `batchServesOrigin` (which the guide + write paths use)
+      // because rendering matches by the looser `originMatchesDomains` (match-all
+      // on empty domains), not the stricter `applyToAllSites` write gate.
+      if (batch.enabled === false) continue;
       const domains = batch.specs.manifest?.domains ?? [];
       if (!originMatchesDomains(origin, domains)) continue;
       const project = batch.specs.manifest?.project ?? "";
@@ -449,6 +455,7 @@ export class SidecarRegistry {
       domains: b.specs.manifest?.domains ?? [],
       specCount: b.specs.specs.length,
       importedAt: b.importedAt,
+      enabled: b.enabled !== false,
     }));
   }
 

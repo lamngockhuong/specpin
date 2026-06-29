@@ -50,6 +50,23 @@ export function connectionServesOrigin(
 }
 
 /**
+ * Does an enabled Manual-batch summary render on this origin? The surface-chrome
+ * counterpart to `connectionServesOrigin`: a single home for the
+ * "enabled + domains match" rule so the popup project list and the export picker
+ * cannot gate one path and miss the other. Uses the looser RENDER rule
+ * (`originMatchesDomains`, empty domains = match-all), distinct from the stricter
+ * write/capture gate in `batchServesOrigin`. Callers add display-only concerns
+ * (e.g. `specCount > 0`) themselves. `enabled` is optional so a summary missing
+ * the field is treated as enabled.
+ */
+export function manualSummaryServesOrigin(
+  batch: { domains: string[]; enabled?: boolean },
+  origin: string,
+): boolean {
+  return batch.enabled !== false && originMatchesDomains(origin, batch.domains);
+}
+
+/**
  * The origin a guides read is bound to (RT-C1, the personal-guide trust boundary).
  * A trusted extension page (popup/side panel) may query any origin, so its payload
  * `origin` is honored - it legitimately asks for the active tab. A web-page content

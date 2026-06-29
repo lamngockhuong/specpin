@@ -126,15 +126,17 @@
         color: var(--sp-text-3);
       }
       #specs .t { font-weight: 700; font-size: 14px; color: var(--sp-text); display: flex; align-items: center; gap: 6px; }
-      /* Provenance badge: which source a spec came from (sidecar vs manual). */
-      #specs .src {
+      /* Provenance badge: which source a spec came from (sidecar vs manual).
+         Global (not #specs-scoped) so the shared guide section's personal badge,
+         which mounts under #guides, is styled too - matching the popup. */
+      .src {
         flex: none;
         font: 600 9px/1 var(--sp-font-mono);
         text-transform: uppercase; letter-spacing: 0.04em;
         padding: 2px 5px; border-radius: 4px;
         border: 1px solid var(--sp-border); color: var(--sp-text-3);
       }
-      #specs .src-sidecar { color: var(--sp-accent); border-color: var(--sp-accent); }
+      .src-sidecar { color: var(--sp-accent); border-color: var(--sp-accent); }
 
       /* Spec search box: client-side filter over the loaded list. */
       #search {

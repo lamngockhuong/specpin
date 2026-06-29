@@ -2,7 +2,7 @@ import { t } from "../i18n/index.js";
 import type { ManualBatchSummary, TaggedSpec } from "./connection-types.js";
 import { isLocalConnectionId } from "./local-id.js";
 import type { StatusResult } from "./messaging.js";
-import { connectionServesOrigin, originMatchesDomains } from "./origin-match.js";
+import { connectionServesOrigin, manualSummaryServesOrigin } from "./origin-match.js";
 import { applyFacetToggle, type FilterModel, resetPersonalVisibility } from "./surface-data.js";
 import type { FacetInventory, FacetItem, FacetKey } from "./visibility.js";
 
@@ -40,15 +40,16 @@ export function sourceBadge(spec: Pick<TaggedSpec, "connectionId">): HTMLElement
   return tag;
 }
 
-/** The Manual (local) batches that render on this page: they carry specs and
- *  their domains match the origin (empty domains = match-all, mirroring
- *  `specsForOrigin`). These are page-owned projects, so they always count as
- *  "serving" alongside the connected sidecars in the project chrome. Empty
- *  batches (write targets with no specs yet) are excluded so they never name a
- *  header or pad the project list. */
+/** The Manual (local) batches that render on this page: they are enabled, carry
+ *  specs, and their domains match the origin (empty domains = match-all,
+ *  mirroring `specsForOrigin`). These are page-owned projects, so they count as
+ *  "serving" alongside the connected sidecars in the project chrome. A disabled
+ *  batch serves no page (parallel to a disabled sidecar dropped by
+ *  `connectionServesOrigin`), and empty batches (write targets with no specs yet)
+ *  are excluded so neither names a header or pads the project list. */
 function servingManualBatches(status: StatusResult, origin: string): ManualBatchSummary[] {
   return (status.manualBatches ?? []).filter(
-    (b) => b.specCount > 0 && originMatchesDomains(origin, b.domains),
+    (b) => b.specCount > 0 && manualSummaryServesOrigin(b, origin),
   );
 }
 

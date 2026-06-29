@@ -40,6 +40,7 @@ function batch(partial: Partial<ManualBatchSummary>): ManualBatchSummary {
     domains: partial.domains ?? [],
     specCount: partial.specCount ?? 1,
     importedAt: partial.importedAt ?? 0,
+    enabled: partial.enabled ?? true,
   };
 }
 
@@ -213,6 +214,12 @@ describe("renderProjects lists Manual projects", () => {
 
   it("ignores a Manual project whose domains do not match the page", () => {
     const local = batch({ project: "Other", specCount: 2, domains: ["other.test"] });
+    renderProjects(status([], [local]), "https://x.test");
+    expect(pnames()).toEqual([]);
+  });
+
+  it("ignores a disabled Manual project even when its domains match", () => {
+    const local = batch({ project: "Disabled", specCount: 2, domains: [], enabled: false });
     renderProjects(status([], [local]), "https://x.test");
     expect(pnames()).toEqual([]);
   });
