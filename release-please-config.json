@@ -8,6 +8,7 @@
       "component": "extension",
       "package-name": "extension",
       "changelog-path": "CHANGELOG.md",
+      "initial-version": "0.0.1",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true
     },
@@ -16,6 +17,7 @@
       "component": "cli",
       "package-name": "cli",
       "changelog-path": "CHANGELOG.md",
+      "initial-version": "0.0.1",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": ["cmd/root.go"]
