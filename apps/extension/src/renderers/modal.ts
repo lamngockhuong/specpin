@@ -174,8 +174,8 @@ export class ModalRenderer implements SpecRenderer {
       tag +
       projectCaptionHtml(meta) +
       `<div class="t">${escapeHtml(text.title)}</div>` +
-      `<div class="d">${renderMarkdownBlock(text.description)}</div>` +
-      rulesListHtml(text.businessRules);
+      `<div class="d">${renderMarkdownBlock(text.description, meta?.pageOrigin)}</div>` +
+      rulesListHtml(text.businessRules, meta?.pageOrigin);
     const onHighlight = meta?.onHighlight;
     // Jump to the element (scroll + outline) but keep the panel open: only the
     // corner close button dismisses it. Drag the panel aside if it covers the

@@ -54,6 +54,9 @@ let activeLocale = "en";
 let lastSpecs: SpecsForOrigin | null = null;
 let searchQuery = "";
 let currentPath = "/";
+// Active tab's origin, so spec-text links to that origin render as same-tab
+// navigations (see the data-specpin-internal interceptor below).
+let currentOrigin = "";
 let currentState: VisibilityState = { teamHidden: [], personal: { forceHide: [], forceShow: [] } };
 
 // Per-spec eye toggle: a hard per-spec override that wins across axes (a spec
@@ -78,6 +81,8 @@ function renderSpecs(res: SpecsForOrigin): void {
     return;
   }
   const defaultLocale = res.manifest?.settings?.defaultLocale;
+  // Page origin for internal-link routing; undefined before the first refresh.
+  const pageOrigin = currentOrigin || undefined;
   const multiProject = new Set(res.specs.map((s) => s.project)).size > 1;
   const state = visibilityOf(res);
   const matches = res.specs.filter((spec) =>
@@ -154,7 +159,7 @@ function renderSpecs(res: SpecsForOrigin): void {
       // every leaf and emits an allowlisted tag set, so the side panel keeps its
       // "no untrusted string via innerHTML" property (the input is spec text, the
       // output is a fully module-controlled trusted fragment).
-      d.innerHTML = renderMarkdownBlock(description);
+      d.innerHTML = renderMarkdownBlock(description, pageOrigin);
       li.appendChild(d);
     }
 
@@ -164,7 +169,10 @@ function renderSpecs(res: SpecsForOrigin): void {
       for (const rule of spec.businessRules) {
         const item = document.createElement("li");
         // Trusted fragment (see description note above): inline Markdown only.
-        item.innerHTML = renderInlineMarkdown(resolveLocalized(rule, activeLocale, defaultLocale));
+        item.innerHTML = renderInlineMarkdown(
+          resolveLocalized(rule, activeLocale, defaultLocale),
+          pageOrigin,
+        );
         rules.appendChild(item);
       }
       li.appendChild(rules);
@@ -184,6 +192,7 @@ async function refresh(): Promise<void> {
   activeLocale = locale;
   lastSpecs = specs;
   currentPath = path;
+  currentOrigin = origin;
   currentState = visibilityOf(specs);
   renderStatus(status, origin, specs.specs.length);
   renderProjects(status, origin);
@@ -238,6 +247,27 @@ byId("search").addEventListener("input", (e) => {
   if (lastSpecs) renderSpecs(lastSpecs);
 });
 byId("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
+
+// Same-origin spec-text links carry `data-specpin-internal` and no `target`. In
+// the in-page renderers a plain <a> navigates the host tab directly, but the side
+// panel is an extension page, so navigating in place would replace the panel.
+// Intercept those links here and steer the active web tab instead; cross-origin
+// links keep their `target="_blank"` and open a new tab untouched. Capture phase
+// so this runs before the card's bubble-phase highlight handler.
+byId("specs").addEventListener(
+  "click",
+  (e) => {
+    const link = (e.target as Element | null)?.closest("a[data-specpin-internal]");
+    if (!(link instanceof HTMLAnchorElement)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const url = link.href;
+    void browser.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+      if (tab?.id !== undefined) void browser.tabs.update(tab.id, { url });
+    });
+  },
+  true,
+);
 
 // Keep the panel in sync with the active tab as the user navigates.
 browser.tabs.onActivated.addListener(() => queueRefresh());

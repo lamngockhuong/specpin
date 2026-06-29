@@ -70,7 +70,7 @@ Giá trị `description` không rỗng (`minLength: 1`), nên một description 
 Cú pháp được hỗ trợ:
 
 - **Đậm** `**text**`, *nghiêng* `*text*` hoặc `_text_`.
-- Liên kết `[label](url)`. Chỉ URL `http`, `https`, và `mailto` hiển thị thành liên kết; URL tương đối, scheme-tương đối (`//host`), và các scheme khác (`javascript:`, `data:`) bị hạ xuống văn bản thường. Liên kết mở trong tab mới (`rel="noopener noreferrer" target="_blank"`).
+- Liên kết `[label](url)`. Chỉ URL `http`, `https`, và `mailto` hiển thị thành liên kết; các scheme khác (`javascript:`, `data:`) bị hạ xuống văn bản thường. URL tương đối (`/path`) được phân giải theo origin của trang chứa spec, và liên kết tới **cùng origin** đó mở trong **tab hiện tại** (không có `target`); mọi liên kết khác, gồm cả subdomain khác hay bất kỳ URL khác origin nào, mở trong **tab mới** (`rel="noopener noreferrer" target="_blank"`). Khi không biết origin của trang (caller cũ), URL tương đối bị bỏ và mọi liên kết mở trong tab mới.
 - `description` còn hỗ trợ cấu trúc khối: danh sách dấu đầu dòng (tiền tố dòng `- ` hoặc `* `), danh sách đánh số (tiền tố dòng `1. `), các đoạn cách nhau bởi dòng trống, và xuống dòng đơn thành ngắt dòng.
 - Mỗi item `businessRules` chỉ **inline** (đậm/nghiêng/liên kết); một rule là một dòng hiển thị thành một mục danh sách, nên danh sách khối bên trong một rule không áp dụng.
 

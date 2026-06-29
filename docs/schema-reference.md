@@ -68,7 +68,7 @@ The `description` value is non-empty (`minLength: 1`), so a blank description is
 Supported syntax:
 
 - **Bold** `**text**`, *italic* `*text*` or `_text_`.
-- Links `[label](url)`. Only `http`, `https`, and `mailto` URLs render as links; relative, scheme-relative (`//host`), and other schemes (`javascript:`, `data:`) are dropped to plain text. Links open in a new tab (`rel="noopener noreferrer" target="_blank"`).
+- Links `[label](url)`. Only `http`, `https`, and `mailto` URLs render as links; other schemes (`javascript:`, `data:`) are dropped to plain text. A relative URL (`/path`) is resolved against the spec's page origin, and a link to that **same origin** opens in the **current tab** (no `target`); every other link, including a different subdomain or any cross-origin URL, opens in a **new tab** (`rel="noopener noreferrer" target="_blank"`). Without a known page origin (legacy callers) relative URLs are dropped and all links open in a new tab.
 - `description` also supports block structure: bullet lists (`- ` or `* ` line prefix), numbered lists (`1. ` line prefix), blank-line-separated paragraphs, and single newlines as line breaks.
 - Each `businessRules` item is **inline-only** (bold/italic/link); a rule is one line rendered as one list item, so block lists inside a rule do not apply.
 
