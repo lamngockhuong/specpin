@@ -1,6 +1,7 @@
 import type { DisplayMode, ElementFingerprint, LocalizedString, Spec } from "@specpin/spec-schema";
 import { formatErrors, validateSpec } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
+import { anyDialogOpen, promptDialog } from "../shared/dialog.js";
 import { escapeAttr, escapeHtml } from "../shared/html.js";
 import { insertLink, prefixLines, toggleWrap } from "../shared/markdown-input.js";
 import type { WriteTarget } from "../shared/messaging.js";
@@ -349,12 +350,16 @@ export class CaptureForm {
     // One delegated click handler for the whole strip: the "+" tab opens the
     // add-language prompt; any other tab stashes the current locale's edits then
     // loads the clicked one (same stash/load model the dropdown used).
-    tabStrip.addEventListener("click", (e) => {
+    tabStrip.addEventListener("click", async (e) => {
       const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".lang-tab");
       if (!btn) return;
       const value = btn.dataset.locale ?? "";
       if (value === ADD_LOCALE_VALUE) {
-        const code = this.doc.defaultView?.prompt(t("capture.addLanguagePrompt"))?.trim();
+        const code = await promptDialog({
+          message: t("capture.addLanguagePrompt"),
+          placeholder: "vi",
+          root: shadow,
+        });
         if (!code) return;
         if (!LOCALE_PATTERN.test(code)) {
           this.showErrors(errorsBox, [t("capture.invalidLocale", { code })]);
@@ -390,7 +395,7 @@ export class CaptureForm {
     // helper, then write the value back and restore focus + selection so typing
     // continues naturally. The textarea value is the source of truth, so save
     // picks the edits up via stashCurrent with no extra wiring.
-    const runMdCommand = (textarea: HTMLTextAreaElement, cmd: string): void => {
+    const runMdCommand = async (textarea: HTMLTextAreaElement, cmd: string): Promise<void> => {
       const start = textarea.selectionStart ?? textarea.value.length;
       const end = textarea.selectionEnd ?? textarea.value.length;
       const { value } = textarea;
@@ -403,8 +408,8 @@ export class CaptureForm {
           edit = toggleWrap(value, start, end, "_");
           break;
         case "link": {
-          const url = this.doc.defaultView?.prompt(t("capture.fmtLinkPrompt"))?.trim();
-          if (url === undefined) return; // prompt cancelled
+          const url = await promptDialog({ message: t("capture.fmtLinkPrompt"), root: shadow });
+          if (url === null) return; // dialog cancelled
           edit = insertLink(value, start, end, url);
           break;
         }
@@ -424,7 +429,7 @@ export class CaptureForm {
     const wireToolbar = (selector: string, textarea: HTMLTextAreaElement): void => {
       q<HTMLElement>(selector).addEventListener("click", (e) => {
         const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".md-btn");
-        if (btn) runMdCommand(textarea, btn.dataset.cmd ?? "");
+        if (btn) void runMdCommand(textarea, btn.dataset.cmd ?? "");
       });
     };
     wireToolbar(".md-toolbar.desc", descEl);
@@ -452,7 +457,12 @@ export class CaptureForm {
     // Escape closes the form like Cancel, so a half-filled form is never stuck
     // open. Bound on the document and removed in close() (no listener leak).
     this.escHandler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      // A prompt/confirm dialog open over the form owns Escape (it closes itself);
+      // the form must not also close out from under it. This guard (not the dialog's
+      // stopPropagation) is what prevents the double-close: both handlers bind on
+      // `document` in the capture phase, the form's was registered first, so it runs
+      // before the dialog's and stopPropagation cannot retroactively stop it.
+      if (e.key === "Escape" && !anyDialogOpen()) {
         e.preventDefault();
         cancel();
       }

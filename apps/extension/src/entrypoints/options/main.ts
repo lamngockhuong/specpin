@@ -11,6 +11,7 @@ import {
   setUiLocale,
   type Theme,
 } from "../../shared/config.js";
+import { confirmDialog } from "../../shared/dialog.js";
 import { downloadExportBundles } from "../../shared/export-download.js";
 import { localConnId } from "../../shared/local-id.js";
 import { normalizeLocalUrl } from "../../shared/local-url.js";
@@ -106,6 +107,8 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
   remove.className = "secondary";
   remove.textContent = t("options.remove");
   remove.addEventListener("click", async () => {
+    if (!(await confirmDialog({ message: t("options.confirmRemoveConnection"), danger: true })))
+      return;
     await sendToBackground({ type: "REMOVE_CONNECTION", id: c.id });
     await refresh();
   });
@@ -370,6 +373,7 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
   remove.className = "secondary";
   remove.textContent = t("options.remove");
   remove.addEventListener("click", async () => {
+    if (!(await confirmDialog({ message: t("options.confirmRemoveBatch"), danger: true }))) return;
     await sendToBackground({ type: "REMOVE_LOCAL_BATCH", id: b.id });
     showResult(localResult, true, t("options.batchRemoved"));
     await refresh();
@@ -636,6 +640,7 @@ byId("loadFiles").addEventListener("click", async () => {
 });
 
 byId("clearLocal").addEventListener("click", async () => {
+  if (!(await confirmDialog({ message: t("options.confirmClearLocal"), danger: true }))) return;
   await sendToBackground({ type: "CLEAR_LOCAL_SPECS" });
   localSpecs.value = "";
   showResult(localResult, true, t("options.allCleared"));
