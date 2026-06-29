@@ -7,8 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Version is the CLI version, overridable at build time via -ldflags.
-var Version = "0.0.0-dev"
+// Version is the CLI version, overridable at build time via -ldflags. The
+// release workflow stamps it via -X specpin/cmd.Version; release-please bumps
+// the literal below via the trailing release marker, which must stay last.
+var Version = "0.0.0" // x-release-please-version
 
 var rootCmd = &cobra.Command{
 	Use:   "specpin",

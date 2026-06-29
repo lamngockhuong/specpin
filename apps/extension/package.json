@@ -8,6 +8,7 @@
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
     "postinstall": "wxt prepare",
     "sync-css-tokens": "node designs/sync-css-tokens.mjs",
     "typecheck": "tsc --noEmit",

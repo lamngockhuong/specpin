@@ -1,0 +1,54 @@
+name: Release Please
+
+# Maintains per-component release PRs from conventional commits. Merging a release
+# PR bumps the version (apps/extension/package.json or apps/cli/cmd/root.go),
+# updates the CHANGELOG, tags (extension-v* / cli-v*), and triggers the matching
+# reusable release workflow. Each component releases independently.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release PR / tag
+    runs-on: ubuntu-latest
+    # "Did this component release?" is gated on the top-level `paths_released`
+    # output (a JSON array of the released package paths) via contains(), which is
+    # immune to per-package key naming. The version VALUE uses the per-package
+    # output, keyed by package path joined with `--`: `<path>--version`. Names
+    # with `/` and `--` require bracket access in expressions.
+    outputs:
+      extension_released: ${{ contains(fromJSON(steps.rp.outputs.paths_released || '[]'), 'apps/extension') }}
+      extension_version: ${{ steps.rp.outputs['apps/extension--version'] }}
+      cli_released: ${{ contains(fromJSON(steps.rp.outputs.paths_released || '[]'), 'apps/cli') }}
+      cli_version: ${{ steps.rp.outputs['apps/cli--version'] }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  release-extension:
+    needs: release-please
+    if: needs.release-please.outputs.extension_released == 'true'
+    uses: ./.github/workflows/release-extension.yml
+    with:
+      version: ${{ needs.release-please.outputs.extension_version }}
+    permissions:
+      contents: write
+
+  release-cli:
+    needs: release-please
+    if: needs.release-please.outputs.cli_released == 'true'
+    uses: ./.github/workflows/release-cli.yml
+    with:
+      version: ${{ needs.release-please.outputs.cli_version }}
+    permissions:
+      contents: write

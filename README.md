@@ -165,7 +165,17 @@ go test ./...
 - [`docs/schema-reference.md`](./docs/schema-reference.md) - the v1 spec format
 - [`docs/code-standards.md`](./docs/code-standards.md) - TS/Go conventions, tooling config, schema management
 - [`docs/design-system.md`](./docs/design-system.md) - extension UI mockups + shared color/font token workflow
+- [`docs/deployment-guide.md`](./docs/deployment-guide.md) - website Pages deploy + extension/CLI release pipeline
 - [`docs/project-roadmap.md`](./docs/project-roadmap.md) - Phase 1 MVP completion + 1.1 planned features
+
+## Releases
+
+Prebuilt artifacts ship via [GitHub Releases](../../releases), versioned per
+component: the extension (`extension-vX.Y.Z`: chrome + firefox zips) and the CLI
+(`cli-vX.Y.Z`: linux/macOS/windows binaries), each with `checksums.txt`. Releases
+are driven by `release-please` from conventional commits; see
+[`docs/deployment-guide.md`](./docs/deployment-guide.md) for the full pipeline,
+manual `workflow_dispatch`, and tag-push fallbacks.
 
 ## Contributing
 

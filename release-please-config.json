@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "separator": "-",
+  "include-component-in-tag": true,
+  "packages": {
+    "apps/extension": {
+      "release-type": "node",
+      "component": "extension",
+      "package-name": "extension",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    },
+    "apps/cli": {
+      "release-type": "simple",
+      "component": "cli",
+      "package-name": "cli",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": ["cmd/root.go"]
+    }
+  }
+}

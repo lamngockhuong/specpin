@@ -16,6 +16,12 @@ const iconSet = {
 
 export default defineConfig({
   srcDir: "src",
+  // Release zip naming: `specpin-{version}-{browser}.zip` (the default would be
+  // the sanitized package name "specpinextension"). Keeps GitHub Release assets
+  // readable; the release workflow attaches the chrome + firefox zips.
+  zip: {
+    name: "specpin",
+  },
   manifest: ({ manifestVersion }) => ({
     name: "Specpin",
     // Chrome Web Store caps the manifest description at 132 chars; keep this in sync
