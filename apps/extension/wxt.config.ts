@@ -18,7 +18,10 @@ export default defineConfig({
   srcDir: "src",
   manifest: ({ manifestVersion }) => ({
     name: "Specpin",
-    description: "Pin business specifications to UI elements. Read-only MVP.",
+    // Chrome Web Store caps the manifest description at 132 chars; keep this in sync
+    // with the store-listing summary in docs/chrome-web-store-listing.md.
+    description:
+      "Pin living business specs onto the elements of your running web UI. Git-native, local-first, framework-agnostic.",
     // `sidePanel` is a Chrome MV3 permission; Firefox (MV2) uses sidebar_action
     // and would warn on an unknown permission, so add it only for MV3.
     permissions: [
