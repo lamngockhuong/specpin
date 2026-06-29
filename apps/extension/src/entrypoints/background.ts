@@ -1,5 +1,11 @@
 import type { SpecsResponse, SpecWithFile, ViewsConfig } from "@specpin/api-client";
-import { formatErrors, type Spec, validateSpec } from "@specpin/spec-schema";
+import {
+  formatErrors,
+  type GuideDef,
+  type Spec,
+  validateGuides,
+  validateSpec,
+} from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
 import {
   retitleContextMenu,
@@ -15,25 +21,30 @@ import { initI18n, resolveUiLocale, type UiLocale } from "../i18n/index.js";
 import { chromeApi } from "../shared/chrome-api.js";
 import {
   batchServesOrigin,
+  canonicalOrigin,
   createLocalBatch,
   getConnections,
   getDefaultSurface,
   getEnabled,
   getLocalSpecs,
+  getPersonalGuides,
   getPersonalVisibility,
   getUiLocale,
   LOCAL_SPECS_KEY,
   MAX_MANUAL_BATCHES,
   type ManualBatch,
   normalizeLocalSpecsState,
+  removeLocalGuide,
   renameLocalBatch,
   SURFACE_KEY,
   setConfig,
   setConnections,
   setEnabled,
   setLocalSpecs,
+  setPersonalGuides,
   setPersonalVisibility,
   UI_LOCALE_KEY,
+  upsertLocalGuide,
   upsertLocalSpec,
   VISIBILITY_KEY,
 } from "../shared/config.js";
@@ -44,16 +55,19 @@ import {
   type AddLocalBatchResult,
   type CreateLocalProjectResult,
   type ExportBundle,
+  type GuideMutationResult,
+  type GuidesForOrigin,
   type ManualMutationResult,
   type Message,
   PRIVILEGED_MESSAGE_TYPES,
   type SaveSpecResult,
   type SpecsForOrigin,
   type StatusResult,
+  type TaggedGuide,
   type TestConnectionResult,
   type WriteTarget,
 } from "../shared/messaging.js";
-import { connectionServesOrigin } from "../shared/origin-match.js";
+import { connectionServesOrigin, trustedReadOrigin } from "../shared/origin-match.js";
 import { slugify } from "../shared/slug.js";
 import { buildVisibilityState, type PersonalVisibility } from "../shared/visibility.js";
 
@@ -313,6 +327,16 @@ export default defineBackground(() => {
         return Promise.resolve(registry.getViews(message.connectionId));
       case "SAVE_TEAM_VIEWS":
         return handleSaveTeamViews(message.connectionId, message.views);
+      case "GET_TEAM_GUIDES":
+        return Promise.resolve(registry.getGuides(message.connectionId));
+      case "GET_GUIDES_FOR_ORIGIN":
+        return handleGetGuidesForOrigin(message.origin, sender);
+      case "SAVE_TEAM_GUIDE":
+        return handleSaveTeamGuide(message);
+      case "SAVE_PERSONAL_GUIDE":
+        return handleSavePersonalGuide(message);
+      case "DELETE_GUIDE":
+        return handleDeleteGuide(message);
       case "OPEN_SPEC_IN_PANEL":
         return handleOpenSpecInPanel(message.specId, sender);
       default:
@@ -329,13 +353,7 @@ export default defineBackground(() => {
   }
 
   function originOf(sender: { tab?: { url?: string } } | undefined): string {
-    const url = sender?.tab?.url;
-    if (!url) return "";
-    try {
-      return new URL(url).origin;
-    } catch {
-      return "";
-    }
+    return canonicalOrigin(sender?.tab?.url ?? "") ?? "";
   }
 
   async function handleGetSpecs(origin: string): Promise<SpecsForOrigin> {
@@ -372,6 +390,145 @@ export default defineBackground(() => {
     const result = await registry.saveViews(connectionId, views);
     if (result.ok) await broadcastSpecsChanged();
     return result;
+  }
+
+  // The guides applying to a page: team (sidecar + local committed) merged with
+  // the user's PRIVATE personal guides for the origin. Origin trust (RT-C1): a
+  // web content script is pinned to its own tab origin (originOf, browser-set and
+  // unspoofable); only a trusted extension page (popup/side panel) may pass the
+  // active-tab `origin`. So a content script can never read another origin's
+  // personal guides. Read+personal-store keys share canonicalOrigin (RT-H2) so
+  // they line up with the write path.
+  async function handleGetGuidesForOrigin(
+    origin: string,
+    sender: { url?: string; tab?: { url?: string } } | undefined,
+  ): Promise<GuidesForOrigin> {
+    // Respect the global on/off switch, like GET_SPECS_FOR_ORIGIN: a disabled
+    // extension serves no guide data, even to its own surfaces.
+    if (!(await getEnabled())) return { guides: [] };
+    const trustedOrigin = trustedReadOrigin({
+      fromExtensionPage: isExtensionPageSender(sender),
+      payloadOrigin: origin,
+      senderTabUrl: sender?.tab?.url,
+    });
+    if (!trustedOrigin) return { guides: [] };
+    const team = registry.guidesForOrigin(trustedOrigin);
+    const canon = canonicalOrigin(trustedOrigin);
+    const personal: TaggedGuide[] = canon
+      ? (await getPersonalGuides(canon)).map((g) => ({ ...g, scope: "personal", origin: canon }))
+      : [];
+    return { guides: [...team, ...personal] };
+  }
+
+  // Save a guide to a team target. RT-H7: a `manual:<batchId>` target writes the
+  // local project's guides blob in storage (origin-bounded, RT-SA7); any other
+  // id is a sidecar connection (PUT /guides, re-read-before-write in the
+  // registry, RT-H3). Under mutate() so the storage path serializes with every
+  // other writer (single SW thread, no seq guard).
+  function handleSaveTeamGuide(message: {
+    targetId: string;
+    guide: GuideDef;
+    origin: string;
+  }): Promise<GuideMutationResult> {
+    return mutate(async () => {
+      if (isLocalConnectionId(message.targetId)) {
+        const batchId = localBatchId(message.targetId);
+        if (!batchId) return { ok: false, error: "invalid local project" };
+        const state = (await getLocalSpecs()) ?? { batches: [] };
+        const batch = state.batches.find((b) => b.id === batchId);
+        if (!batch) return { ok: false, error: "unknown local project" };
+        if (!batchServesOrigin(batch, message.origin)) {
+          return { ok: false, error: "no local project serves this page" };
+        }
+        // Local guides never reach the sidecar's Go validator, so re-validate here
+        // (parallel to writeLocalSpec) - the editor builds well-formed guides, but
+        // a direct message or a migrated blob must not store an off-schema guide.
+        const invalid = guideError(message.guide);
+        if (invalid) return { ok: false, error: invalid };
+        const result = upsertLocalGuide(state, batchId, message.guide);
+        if (!result.ok || !result.state) return { ok: false, error: result.error };
+        await setLocalSpecs(result.state);
+        registry.setLocalBatches(result.state.batches);
+        await broadcastSpecsChanged();
+        return { ok: true };
+      }
+      const result = await registry.upsertGuide(message.targetId, message.guide);
+      if (result.ok) await broadcastSpecsChanged();
+      return { ok: result.ok, error: result.errors?.join("; ") };
+    });
+  }
+
+  // Save a guide to the user's personal store for a canonical origin (RT-H2).
+  // Re-reads the live list before upsert (RT-H3); surfaces the storage.sync quota
+  // rejection as an error rather than swallowing it (RT-H1).
+  function handleSavePersonalGuide(message: {
+    guide: GuideDef;
+    origin: string;
+  }): Promise<GuideMutationResult> {
+    return mutate(async () => {
+      const canon = canonicalOrigin(message.origin);
+      if (!canon) return { ok: false, error: "invalid origin" };
+      // Personal guides live in storage.sync (never the sidecar validator), so
+      // re-validate against the schema before storing (RT-H2 parity).
+      const invalid = guideError(message.guide);
+      if (invalid) return { ok: false, error: invalid };
+      try {
+        const current = await getPersonalGuides(canon);
+        const idx = current.findIndex((g) => g.id === message.guide.id);
+        const guides =
+          idx === -1
+            ? [...current, message.guide]
+            : current.map((g, i) => (i === idx ? message.guide : g));
+        await setPersonalGuides(canon, guides);
+        await broadcastSpecsChanged();
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: String(e) };
+      }
+    });
+  }
+
+  // Delete a guide by id from a team target (sidecar or local, by `targetId`) or
+  // the personal store (by canonical `origin`), selected by `scope`. Under
+  // mutate() so storage writes serialize.
+  function handleDeleteGuide(message: {
+    scope: "team" | "personal";
+    id: string;
+    targetId?: string;
+    origin?: string;
+  }): Promise<GuideMutationResult> {
+    return mutate(async () => {
+      if (message.scope === "personal") {
+        const canon = canonicalOrigin(message.origin ?? "");
+        if (!canon) return { ok: false, error: "invalid origin" };
+        try {
+          const current = await getPersonalGuides(canon);
+          await setPersonalGuides(
+            canon,
+            current.filter((g) => g.id !== message.id),
+          );
+          await broadcastSpecsChanged();
+          return { ok: true };
+        } catch (e) {
+          return { ok: false, error: String(e) };
+        }
+      }
+      if (!message.targetId) return { ok: false, error: "missing target" };
+      if (isLocalConnectionId(message.targetId)) {
+        const batchId = localBatchId(message.targetId);
+        if (!batchId) return { ok: false, error: "invalid local project" };
+        const state = (await getLocalSpecs()) ?? { batches: [] };
+        const result = removeLocalGuide(state, batchId, message.id);
+        if (!result.ok || !result.state) return { ok: false, error: result.error };
+        await setLocalSpecs(result.state);
+        registry.setLocalBatches(result.state.batches);
+        await broadcastSpecsChanged();
+        return { ok: true };
+      }
+      const result = await registry.deleteGuide(message.targetId, message.id);
+      if (result.ok) await broadcastSpecsChanged();
+      return { ok: result.ok, error: result.errors?.join("; ") };
+    });
   }
 
   // Tooltip pin "open in side panel". Best-effort: Chrome can open the panel only
@@ -789,4 +946,14 @@ function defaultLocalFile(batch: ManualBatch): string {
   const firstFile = batch.specs.specs.find((s) => s._file)?._file;
   if (firstFile) return firstFile;
   return `${slugify(batch.specs.manifest?.project || "specs") || "specs"}.spec.json`;
+}
+
+// Validate one guide against the schema before storing it on a non-sidecar path
+// (personal storage.sync or a local project). The sidecar branch is validated
+// server-side in Go; these stores are not, so a malformed guide must be rejected
+// here. Returns a one-line error string, or null when valid. Wraps the guide in a
+// minimal GuidesConfig so the existing root validator applies its bounds.
+function guideError(guide: GuideDef): string | null {
+  const { valid, errors } = validateGuides({ version: "1.0", guides: [guide] });
+  return valid ? null : formatErrors(errors);
 }

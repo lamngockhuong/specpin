@@ -28,7 +28,7 @@ const genRoot = {
   $id: "https://specpin.ohnice.app/schema/v1.types.json",
   title: "SpecpinSchemaRoots",
   type: "object",
-  required: ["specFile", "manifest", "views"],
+  required: ["specFile", "manifest", "views", "guides"],
   additionalProperties: false,
   properties: {
     specFile: { $ref: "#/$defs/SpecFile" },
@@ -36,6 +36,9 @@ const genRoot = {
     // ViewsConfig is not referenced by SpecFile/Manifest; reference it here so the
     // type emitter declares its interface (like Manifest above).
     views: { $ref: "#/$defs/ViewsConfig" },
+    // GuidesConfig (and GuideDef) are likewise unreferenced by the roots above;
+    // reference here so their interfaces are emitted.
+    guides: { $ref: "#/$defs/GuidesConfig" },
   },
   $defs: schema.$defs,
 };
@@ -90,6 +93,7 @@ const validatorsCode = standaloneCode(standaloneAjv, {
   validateSpec: `${schemaId}#/$defs/Spec`,
   validateManifest: `${schemaId}#/$defs/Manifest`,
   validateViews: `${schemaId}#/$defs/ViewsConfig`,
+  validateGuides: `${schemaId}#/$defs/GuidesConfig`,
 });
 
 const validatorsBanner = [
@@ -110,6 +114,7 @@ const validatorsDts = [
   "export const validateSpec: ValidateFunction;",
   "export const validateManifest: ValidateFunction;",
   "export const validateViews: ValidateFunction;",
+  "export const validateGuides: ValidateFunction;",
   "",
 ].join("\n");
 

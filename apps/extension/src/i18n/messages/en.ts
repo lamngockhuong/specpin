@@ -257,6 +257,52 @@ const en = {
   "options.supportLead": "Found a bug or have a question? Reach the project on GitHub.",
   "options.reportIssue": "Report an Issue",
   "options.askQuestion": "Ask a Question",
+
+  // Guide-mode tour chrome (the in-page walkthrough controls).
+  "guide.defaultName": "Guided tour",
+  "guide.next": "Next",
+  "guide.prev": "Back",
+  "guide.skip": "Skip",
+  "guide.done": "Done",
+  "guide.close": "Close guide",
+  "guide.stepCounter": "{current} / {total}",
+  "guide.elementMissing": "This step's element isn't on the page.",
+
+  // Guide launch list + curation editor (popup / side panel).
+  "guide.sectionTitle": "Guides",
+  "guide.start": "Start",
+  "guide.startDefault": "Start guided tour",
+  "guide.newGuide": "+ New guide",
+  "guide.edit": "Edit",
+  "guide.delete": "Delete",
+  "guide.deleteConfirm": 'Delete guide "{name}"?',
+  "guide.noGuides": "No guides for this page yet.",
+  "guide.editorTitleNew": "New guide",
+  "guide.editorTitleEdit": "Edit guide",
+  "guide.nameLabel": "Name",
+  "guide.namePlaceholder": "Guide name",
+  "guide.descLabel": "Description (optional)",
+  "guide.stepsLabel": "Steps (in order)",
+  "guide.addStepLabel": "Add a step",
+  "guide.moveUp": "Move up",
+  "guide.moveDown": "Move down",
+  "guide.removeStep": "Remove step",
+  "guide.addStep": "Add",
+  "guide.missingSpec": "Missing spec: {id}",
+  "guide.saveTo": "Save to",
+  "guide.personal": "Personal (only you)",
+  "guide.save": "Save guide",
+  "guide.nameRequired": "A guide name is required.",
+  "guide.emptyDefaultHint": "Leave steps empty to walk every spec in default order.",
+  "guide.noTargets": "No project on this page can store a team guide; saved guides go to Personal.",
+  "guide.saved": "Guide saved.",
+  "guide.saveFailed": "Could not save guide: {error}",
+  "guide.deleteFailed": "Could not delete guide: {error}",
+
+  // Options: per-connection team-guides management.
+  "options.teamGuidesSummary": "Team guides",
+  "options.teamGuidesNote": "Named onboarding tours committed to .specs/guides.json.",
+  "options.noTeamGuides": "No team guides.",
 } satisfies Record<string, string>;
 
 export type Messages = typeof en;

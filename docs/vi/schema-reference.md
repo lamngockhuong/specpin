@@ -12,6 +12,7 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 .specs/
 ├── manifest.json          # index + project config
 ├── views.json             # cài đặt hiển thị mặc định theo nhóm (tùy chọn, commit vào Git)
+├── guides.json            # các tour onboarding có tên (tùy chọn, commit vào Git)
 └── <area>.spec.json       # a group of specs (SpecFile)
 ```
 
@@ -108,8 +109,39 @@ Facet key là các string dạng `tag:<name>`, `file:<filename>`, `spec:<id>`, h
 
 Khi `.specs/views.json` không có, sidecar trả về default rỗng `{ "version": "1.0", "hidden": [] }` trên `GET /views`. Tất cả spec đều hiển thị trừ khi user đặt override cá nhân. Team default được chỉnh sửa qua trang Options của extension (per connection) và ghi vào `.specs/views.json` qua `PUT /views` (schema-validated, atomic, pretty-printed). Sidecar watch `.specs/` nên thay đổi trigger SSE (watch đang có cover luôn `views.json`).
 
+## GuidesConfig (`.specs/guides.json`)
+
+Các tour onboarding có tên (tùy chọn): lối đi tuần tự qua các spec đã gắn trên trang. Mỗi guide làm nổi bật phần tử của từng bước và hiển thị nội dung đã bản địa hóa. Tệp này giữ các guide **của nhóm** (commit vào Git); extension còn giữ guide **cá nhân** riêng tư trong `storage.sync` (không bao giờ ghi vào đây).
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|--------|------|----------|---------|
+| `version` | string | có | ví dụ `"1.0"` |
+| `guides` | GuideDef[] | có | có thể rỗng; tối đa 50 (`maxItems`) |
+
+`GuideDef`:
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|--------|------|----------|---------|
+| `id` | string | có | duy nhất trong tệp; pattern `^[a-z0-9-]+$`, `maxLength` 100 |
+| `name` | string | có | nhãn UI dạng plain (KHÔNG phải LocalizedString), không rỗng, `maxLength` 200 |
+| `description` | string | không | mô tả plain, `maxLength` 2000 |
+| `steps` | string[] | có | danh sách spec id theo thứ tự; có thể rỗng, `maxItems` 200, mỗi phần tử `maxLength` 200 |
+
+```json
+{
+  "version": "1.0",
+  "guides": [
+    { "id": "onboarding", "name": "Onboarding tour", "description": "First-run walkthrough", "steps": ["login-submit-btn", "nav-dashboard"] }
+  ]
+}
+```
+
+`name` là chuỗi plain (không bản địa hóa) theo thiết kế: nó là nhãn ngắn, còn **nội dung** từng bước bản địa hóa qua spec được tham chiếu. Guide có `steps` **rỗng** khi khởi chạy sẽ chạy qua mọi spec khớp trên trang theo thứ tự mặc định (theo tên tệp nguồn, rồi thứ tự trong tệp, dự án cục bộ xếp cuối), nên một guide dùng được mà không cần tùy biến. Các step id không còn phân giải được (spec bị đổi tên/xóa, hoặc không có trên trang hiện tại) bị bỏ khi khởi chạy và được đánh dấu trong trình chỉnh sửa.
+
+Khi `.specs/guides.json` không có, sidecar trả về default rỗng `{ "version": "1.0", "guides": [] }` trên `GET /guides`. Guide được tạo trong extension (trình chỉnh sửa ở popup / thanh bên) và ghi qua `PUT /guides` (schema-validated, atomic, pretty-printed), hoặc lưu vào dự án cục bộ / lưu trữ cá nhân. Các giới hạn ở trên nằm trong SSOT nên cả hai validator đều kế thừa; guide cá nhân còn tôn trọng quota per-item của `storage.sync` (ghi bị từ chối sẽ báo lỗi thay vì âm thầm bỏ).
+
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews`.
-- Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides`.
+- Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).

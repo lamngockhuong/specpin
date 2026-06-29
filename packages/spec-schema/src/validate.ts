@@ -3,6 +3,7 @@ import type { ErrorObject, ValidateFunction } from "ajv";
 // scripts/gen-types.ts. Compiling at runtime breaks in content scripts whose
 // host page CSP forbids `unsafe-eval`.
 import {
+  validateGuides as guidesValidator,
   validateManifest as manifestValidator,
   validateSpecFile as specFileValidator,
   validateSpec as specValidator,
@@ -37,6 +38,11 @@ export function validateSpecFile(data: unknown): ValidationResult {
 /** Validate a .specs/views.json team-default visibility config. */
 export function validateViews(data: unknown): ValidationResult {
   return run(viewsValidator, data);
+}
+
+/** Validate a .specs/guides.json named-guides config. */
+export function validateGuides(data: unknown): ValidationResult {
+  return run(guidesValidator, data);
 }
 
 /** Human-readable one-line summary of validation errors (e.g. for HTTP 400 bodies). */

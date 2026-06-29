@@ -180,6 +180,57 @@
         }
       }
     },
+    "GuideDef": {
+      "title": "GuideDef",
+      "description": "One named onboarding guide: an ordered list of spec ids to walk through. Empty steps means the guide falls back to all matched specs in default order at launch.",
+      "type": "object",
+      "required": ["id", "name", "steps"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "maxLength": 100,
+          "description": "Stable unique id within the file, e.g. \"onboarding\"."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Plain-string UI label (not a LocalizedString; step content is localized via the referenced specs)."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Optional plain-string blurb shown when the guide launches."
+        },
+        "steps": {
+          "type": "array",
+          "maxItems": 200,
+          "items": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "description": "Ordered spec ids. May be empty, in which case the guide walks all matched specs in default order."
+        }
+      }
+    },
+    "GuidesConfig": {
+      "title": "GuidesConfig",
+      "description": "The .specs/guides.json named-guides config: a versioned file holding an array of named onboarding guides.",
+      "type": "object",
+      "required": ["version", "guides"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Optional pointer to this schema for editor tooling."
+        },
+        "version": { "type": "string", "minLength": 1 },
+        "guides": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "$ref": "#/$defs/GuideDef" }
+        }
+      }
+    },
     "Manifest": {
       "title": "Manifest",
       "description": "The .specs/manifest.json index + project configuration.",

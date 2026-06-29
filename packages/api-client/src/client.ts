@@ -1,8 +1,8 @@
-import type { Manifest, Spec, ViewsConfig } from "@specpin/spec-schema";
+import type { GuidesConfig, Manifest, Spec, ViewsConfig } from "@specpin/spec-schema";
 import { SidecarError } from "./errors.js";
 import { type ConnectionState, type SubscribeOptions, subscribeEvents } from "./events.js";
 
-export type { ViewsConfig } from "@specpin/spec-schema";
+export type { GuidesConfig, ViewsConfig } from "@specpin/spec-schema";
 
 export interface SidecarClientOptions {
   baseUrl: string;
@@ -93,6 +93,17 @@ export class SidecarClient {
   /** Write the team-default visibility config (validated server-side). */
   async putViews(config: ViewsConfig): Promise<void> {
     await this.request("PUT", "/views", config);
+  }
+
+  /** The named-guides config from .specs/guides.json. The sidecar returns the
+   *  empty default ({ version, guides: [] }) when the file is absent. */
+  getGuides(): Promise<GuidesConfig> {
+    return this.request<GuidesConfig>("GET", "/guides");
+  }
+
+  /** Write the named-guides config (validated server-side). */
+  async putGuides(config: GuidesConfig): Promise<void> {
+    await this.request("PUT", "/guides", config);
   }
 
   async saveSpec(file: string, spec: Spec): Promise<void> {

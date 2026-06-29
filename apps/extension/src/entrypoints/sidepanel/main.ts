@@ -19,7 +19,10 @@ import "../../shared/link.css";
 import "../../shared/add-project.css";
 import "../../shared/project-menu.css";
 import "../../shared/surface-toast.css";
+import "../../shared/guide-section.css";
+import "../../shared/guide-editor.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
+import { mountGuideSection } from "../../shared/guide-section.js";
 import {
   type Message,
   type SpecsForOrigin,
@@ -205,8 +208,20 @@ async function refresh(): Promise<void> {
   // Export is per project serving THIS page (one click exports one project); the
   // shared builder lists the local + sidecar export targets.
   projectActions.update(specs.enabled, buildExportTargets(status, origin));
+  await guideSection.refresh({
+    origin,
+    enabled: specs.enabled,
+    locale,
+    defaultLocale: specs.manifest?.settings?.defaultLocale,
+  });
   renderSpecs(specs);
 }
+
+// The Guides launch section. The side panel is persistent, so launching a tour
+// does NOT close it (unlike the popup); it just sends START_GUIDE to the tab.
+const guideSection = mountGuideSection(byId("guides"), {
+  launch: (steps, name) => void sendToActiveTab({ type: "START_GUIDE", steps, name }),
+});
 
 // The shared "+ New project" inline form; refresh() re-renders the project list
 // on a successful create. Toggled from the header button.

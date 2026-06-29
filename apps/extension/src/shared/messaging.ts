@@ -1,12 +1,22 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
-import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
+import type { DisplayMode, GuideDef, Manifest, Spec } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import type { UiLocale } from "../i18n/locales.js";
-import type { ConnectionStatus, ManualBatchSummary, TaggedSpec } from "./connection-types.js";
+import type {
+  ConnectionStatus,
+  ManualBatchSummary,
+  TaggedGuide,
+  TaggedSpec,
+} from "./connection-types.js";
 import type { Theme } from "./theme.js";
 import type { PersonalVisibility, VisibilityState } from "./visibility.js";
 
-export type { ConnectionStatus, ManualBatchSummary, TaggedSpec } from "./connection-types.js";
+export type {
+  ConnectionStatus,
+  ManualBatchSummary,
+  TaggedGuide,
+  TaggedSpec,
+} from "./connection-types.js";
 
 // Message protocol between content script, popup, options, and the background
 // service worker. The SW owns the api-client + token + cache + SSE.
@@ -97,6 +107,12 @@ export type Message =
   // content script highlights the rendered spec matched to the last right-clicked
   // element (or its nearest matched ancestor); no-op if none matches.
   | { type: "SHOW_SPEC_HERE" }
+  // Launch a guide tour in the active tab's content script (popup/side panel ->
+  // content, or the in-page keyboard shortcut). `steps` is the guide's ordered
+  // spec ids; omitted/empty runs the default (all matched specs in default order).
+  // `name` is the popover header (a plain string, escaped before render). The
+  // content script resolves the steps against its current page specs.
+  | { type: "START_GUIDE"; steps?: string[]; name: string }
   | { type: "SET_DISPLAY_MODE"; mode: DisplayMode | null }
   // Viewer locale change, dispatched popup -> active tab's content script. The
   // popup persists the choice to storage; the content script re-renders with it.
@@ -125,7 +141,34 @@ export type Message =
   // Options page: read one connection's team-default views (.specs/views.json).
   | { type: "GET_TEAM_VIEWS"; connectionId: string }
   // Options page: write a connection's team-default views to Git via the sidecar.
-  | { type: "SAVE_TEAM_VIEWS"; connectionId: string; views: ViewsConfig };
+  | { type: "SAVE_TEAM_VIEWS"; connectionId: string; views: ViewsConfig }
+  // Options page: read one sidecar connection's team guides (.specs/guides.json),
+  // for the per-connection management list. Mirrors GET_TEAM_VIEWS (not privileged;
+  // team guides are not private data).
+  | { type: "GET_TEAM_GUIDES"; connectionId: string }
+  // The guides (team + the user's personal) that apply to a page. Read-only, but
+  // it returns the caller's PRIVATE personal guides, so the background derives the
+  // origin from the trusted sender for a web content script and trusts `origin`
+  // only from a privileged extension page (popup/side panel querying the active
+  // tab). A content script can thus never read another origin's personal guides
+  // (RT-C1).
+  | { type: "GET_GUIDES_FOR_ORIGIN"; origin: string }
+  // Save a guide to a team target: a sidecar connection (PUT /guides) OR a local
+  // committed project (storage.local guides blob), routed by `targetId` kind
+  // (RT-H7). `origin` bounds the local-project write (RT-SA7). Privileged.
+  | { type: "SAVE_TEAM_GUIDE"; targetId: string; guide: GuideDef; origin: string }
+  // Save a guide to the user's personal store for `origin` (canonicalized +
+  // validated, RT-H2). Privileged: only an extension page may write personal data.
+  | { type: "SAVE_PERSONAL_GUIDE"; guide: GuideDef; origin: string }
+  // Delete a guide by id from a team target (sidecar or local, by `targetId`) or
+  // the personal store (by canonical `origin`), selected by `scope`. Privileged.
+  | {
+      type: "DELETE_GUIDE";
+      scope: "team" | "personal";
+      id: string;
+      targetId?: string;
+      origin?: string;
+    };
 
 // Message types that mutate stored state and must originate from an extension
 // page (popup/options/side panel), never from a web-page content script. The
@@ -159,6 +202,12 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   "SET_PERSONAL_VISIBILITY",
   // Writes the team-default views.json to Git via the sidecar.
   "SAVE_TEAM_VIEWS",
+  // Guide mutations: a save/delete to a team target (sidecar or local) or the
+  // user's PRIVATE personal store must come from an extension page, never a web
+  // content script (RT-C1/H2: protects per-user private data + the write path).
+  "SAVE_TEAM_GUIDE",
+  "SAVE_PERSONAL_GUIDE",
+  "DELETE_GUIDE",
 ]);
 
 export interface SaveSpecResult {
@@ -243,6 +292,19 @@ export interface StatusResult {
 export interface TestConnectionResult {
   ok: boolean;
   project?: string;
+  error?: string;
+}
+
+/** The guides that apply to a page: team guides (sidecar + local) merged with the
+ *  user's personal guides for the origin, each tagged by scope. */
+export interface GuidesForOrigin {
+  guides: TaggedGuide[];
+}
+
+/** Result of a guide save/delete. `error` carries a single human-readable reason
+ *  (e.g. a sync quota rejection surfaced rather than swallowed, RT-H1). */
+export interface GuideMutationResult {
+  ok: boolean;
   error?: string;
 }
 

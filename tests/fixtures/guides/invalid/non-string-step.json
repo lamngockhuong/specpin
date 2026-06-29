@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "guides": [
+    {
+      "id": "onboarding",
+      "name": "Onboarding tour",
+      "steps": ["login-submit-btn", 42]
+    }
+  ]
+}

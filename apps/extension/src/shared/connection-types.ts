@@ -1,4 +1,5 @@
 import type { SpecWithFile } from "@specpin/api-client";
+import type { GuideDef } from "@specpin/spec-schema";
 
 /** The legacy bare id for the page-owned Manual source. Local batches are now
  *  tagged per-batch as `manual:<batchId>` (see `shared/local-id.ts`); this bare
@@ -39,6 +40,23 @@ export type TaggedSpec = SpecWithFile & {
   connectionId: string;
   project: string;
   writable?: boolean;
+};
+
+/** A guide tagged with where it came from, for the merged GET_GUIDES_FOR_ORIGIN
+ *  list. `scope` is "team" for a guide served by a project (sidecar OR local
+ *  committed batch) and "personal" for one kept privately in storage.sync.
+ *  Team guides carry the owning `connectionId` (a sidecar uuid or the
+ *  `manual:<batchId>` local form) + the project label for disambiguation; cross-
+ *  project id collisions are keyed by `connectionId + id` at the UI. Personal
+ *  guides carry the canonical `origin` they are pinned to instead. */
+export type TaggedGuide = GuideDef & {
+  scope: "team" | "personal";
+  /** Project display label (team scope). */
+  project?: string;
+  /** Owning connection id for a team guide (sidecar uuid or `manual:<batchId>`). */
+  connectionId?: string;
+  /** Canonical origin a personal guide is pinned to (personal scope). */
+  origin?: string;
 };
 
 /** One Manual-import batch as shown in the Options list. Carries NO `specs`

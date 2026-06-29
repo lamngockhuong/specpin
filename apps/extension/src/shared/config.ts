@@ -1,5 +1,5 @@
 import type { SpecsResponse, SpecWithFile } from "@specpin/api-client";
-import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
+import type { DisplayMode, GuideDef, Manifest, Spec } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import type { UiLocale } from "../i18n/locales.js";
 import type { Connection } from "./connection-types.js";
@@ -42,6 +42,11 @@ export interface ManualBatch {
    *  per-file group (a file-level field, not a Spec field). Absent on pre-plan
    *  batches; export then falls back to a file-base-derived group. */
   fileGroups?: Record<string, string>;
+  /** Named onboarding guides committed alongside this local project (RT-H7): the
+   *  local equivalent of a sidecar's `.specs/guides.json`. Absent until the user
+   *  saves one. Stored inline on the batch so a local project is a self-contained
+   *  guide target without a sidecar. */
+  guides?: GuideDef[];
   /** The validated bundle: manifest + flattened specs (unchanged shape). */
   specs: SpecsResponse;
 }
@@ -81,6 +86,12 @@ export const UI_LOCALE_KEY = "specpin:uiLocale";
 /** Personal visibility override. In `storage.sync` (not local) so a user's
  *  show/hide choices follow them across machines on the same browser profile. */
 export const VISIBILITY_KEY = "specpin:visibility";
+/** Personal onboarding guides, private to the user. In `storage.sync` so they
+ *  follow the profile across machines. The stored value is an origin-keyed map
+ *  (`{ [origin]: GuideDef[] }`) so a guide is scoped to the page it was built for;
+ *  an empty map drops the key. This is a per-user trust boundary distinct from
+ *  team guides (RT-C1/H2): reads + writes key by a canonical, trusted origin. */
+export const GUIDES_KEY = "specpin:guides";
 /** Where the user dragged the floating relaunch pill, or null for the default
  *  bottom-right corner. */
 export const LAUNCHER_POSITION_KEY = "specpin:launcherPosition";
@@ -219,6 +230,48 @@ export async function setPersonalVisibility(visibility: PersonalVisibility): Pro
     return;
   }
   await browser.storage.sync.set({ [VISIBILITY_KEY]: visibility });
+}
+
+/** Canonicalize a raw origin string to its `URL.origin` form, or null when it is
+ *  malformed (RT-H2). The single normalizer so a personal guide's read key always
+ *  matches its write key and a foreign/garbage origin can never seed an entry. */
+export function canonicalOrigin(raw: string): string | null {
+  if (!raw) return null;
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+}
+
+/** The user's personal guides for one canonical origin (empty when none). Reads
+ *  the origin-keyed `storage.sync` map; a malformed origin yields []. */
+export async function getPersonalGuides(origin: string): Promise<GuideDef[]> {
+  const key = canonicalOrigin(origin);
+  if (!key) return [];
+  const stored = await browser.storage.sync.get(GUIDES_KEY);
+  const map = stored[GUIDES_KEY] as Record<string, GuideDef[]> | undefined;
+  const guides = map?.[key];
+  return Array.isArray(guides) ? guides : [];
+}
+
+/** Persist the user's personal guides for one canonical origin. An empty list
+ *  drops that origin's entry; an empty map drops the whole key so a default
+ *  profile carries nothing (sync caps item size at ~8KB). Rejects a malformed
+ *  origin (RT-H2). The browser's `storage.sync.set` throws on quota overflow
+ *  (RT-H1); callers must surface that rather than swallow it. */
+export async function setPersonalGuides(origin: string, guides: GuideDef[]): Promise<void> {
+  const key = canonicalOrigin(origin);
+  if (!key) throw new Error("invalid origin");
+  const stored = await browser.storage.sync.get(GUIDES_KEY);
+  const map = { ...((stored[GUIDES_KEY] as Record<string, GuideDef[]> | undefined) ?? {}) };
+  if (guides.length === 0) delete map[key];
+  else map[key] = guides;
+  if (Object.keys(map).length === 0) {
+    await browser.storage.sync.remove(GUIDES_KEY);
+    return;
+  }
+  await browser.storage.sync.set({ [GUIDES_KEY]: map });
 }
 
 /** The user's dragged relaunch-pill position, or null for the default corner. */
@@ -407,6 +460,52 @@ export function removeLocalSpecById(
     ...batch,
     specs: { ...batch.specs, specs: batch.specs.specs.filter((s) => s.id !== id) },
   };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Max guides committed to one local project, mirroring the schema's `maxItems`
+ *  on `guides` so a local batch can never hold more than the sidecar would. */
+export const MAX_GUIDES_PER_BATCH = 50;
+
+/** Insert or replace a guide (by `guide.id`) in the named local batch's `guides`
+ *  blob (RT-H7); lazily creates the array. Rejects an APPEND past
+ *  MAX_GUIDES_PER_BATCH (a replace never grows the count). Unknown batch id ->
+ *  ok:false. */
+export function upsertLocalGuide(
+  state: LocalSpecsState,
+  batchId: string,
+  guide: GuideDef,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const batch = state.batches[idx] as ManualBatch;
+  const guides = batch.guides ?? [];
+  const existing = guides.findIndex((g) => g.id === guide.id);
+  const isAppend = existing === -1;
+  if (isAppend && guides.length >= MAX_GUIDES_PER_BATCH) {
+    return { ok: false, error: `Limit reached (${MAX_GUIDES_PER_BATCH} guides).` };
+  }
+  const nextGuides = isAppend
+    ? [...guides, guide]
+    : guides.map((g, i) => (i === existing ? guide : g));
+  const nextBatch: ManualBatch = { ...batch, guides: nextGuides };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Remove a guide by id from the named local batch (no-op-but-ok when absent;
+ *  drops the `guides` array when it empties). Unknown batch id -> ok:false. */
+export function removeLocalGuide(
+  state: LocalSpecsState,
+  batchId: string,
+  guideId: string,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const batch = state.batches[idx] as ManualBatch;
+  const nextGuides = (batch.guides ?? []).filter((g) => g.id !== guideId);
+  const nextBatch: ManualBatch = { ...batch };
+  if (nextGuides.length) nextBatch.guides = nextGuides;
+  else delete nextBatch.guides;
   return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
 }
 

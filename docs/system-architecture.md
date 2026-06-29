@@ -22,7 +22,7 @@ browser extension (WXT, MV3)
 
 The extension exposes two equivalent control surfaces backed by the same background messaging: the **popup** (ephemeral dropdown) and a **side panel** (`entrypoints/sidepanel/`, a persistent docked page that shows spec description + business rules inline and auto-refreshes on tab/navigation changes and `SPECS_CHANGED`). Both fetch through one shared `fetchSurfaceState()` helper. WXT maps the single `sidepanel` entrypoint to Chrome `side_panel` and Firefox `sidebar_action`. A stored `defaultSurface` preference decides whether a toolbar click opens the popup or the side panel; the background applies it on Chrome via `chrome.action.setPopup` + `sidePanel.setPanelBehavior` (Firefox keeps the popup on the toolbar button and opens the sidebar from its native toggle).
 
-Data flows one schema, two validators: the published JSON Schema (`packages/spec-schema/schema/v1.json`) is the single source of truth. The TS side validates with ajv; the Go sidecar embeds the same file and validates with `santhosh-tekuri/jsonschema/v6`. CI cross-validates a shared fixture corpus through both and fails on drift. This applies to all schema entities: `Spec`, `SpecManifest`, `SpecFile`, and `ViewsConfig`.
+Data flows one schema, two validators: the published JSON Schema (`packages/spec-schema/schema/v1.json`) is the single source of truth. The TS side validates with ajv; the Go sidecar embeds the same file and validates with `santhosh-tekuri/jsonschema/v6`. CI cross-validates a shared fixture corpus through both and fails on drift. This applies to all schema entities: `Spec`, `SpecManifest`, `SpecFile`, `ViewsConfig`, and `GuidesConfig`.
 
 User-selectable theme: the extension UI supports System / Light / Dark modes. Previously dark existed only behind `@media (prefers-color-scheme: dark)`. Now the user can force a theme via the Options page. The generator emits four `:root...` selector blocks in `tokens.gen.css` (shared + light, forced dark, forced light, system default media query), and `tokens.ts` rewrites all forms to `:host(...)` for Shadow DOM renderers. The choice persists in `specpin:theme`; "System" means `data-theme` is absent. Forced themes may flash the system default for one frame on load (accepted).
 
@@ -70,6 +70,17 @@ Two-layer sync cascade: `effectiveDisabled = (teamHidden union personalForceHide
 
 Empty state everywhere = all visible (backward compatible). Filter UI: facet checklists (Tags / Files / This page) in popup + side panel; per-spec eye toggle in side panel; Reset clears personal overrides.
 
+## Guide mode (onboarding tours)
+
+A **guide** is a manually-launched, ordered walkthrough over specs already pinned to the current page: it spotlights each step's element and shows that spec's localized content in an anchored popover with Prev/Next/Skip/Done. It is **not** a `DisplayMode` (renderers show every matched spec at once; a guide is sequential over a page-filtered, ordered subset). The `GuideController` (`content/guide.ts`) is a separate page-level controller, launched on demand, that **suspends** the active render session while running and restores it on exit; a module-level `guideActive` flag gates `rerender()` so a background `SPECS_CHANGED` / theme / mode / locale event cannot rebuild a session over the live tour. It owns its own Shadow-DOM spotlight overlay (it ports the rect-tracking technique from `highlight.ts` rather than calling the auto-fading singleton). A mid-tour spec change hard-stops the guide; SPA navigation tears it down. Launch is manual only: a "Start guide" entry in popup + side panel, plus `Alt+Shift+G` for the default tour.
+
+Guides live in two scopes that share one `GuideDef` shape:
+
+- **Team** - committed `.specs/guides.json`, served by the sidecar (mirrors `views.json`), OR stored inline on a local (Manual) project. Read per connection (in the same `reload()` group as specs + views, so a guides-only change refreshes via SSE).
+- **Personal** - private to the user in `chrome.storage.sync`, keyed by a canonical origin (a per-user trust boundary). The background derives the read origin from the trusted sender for a content script and only trusts a payload origin from a privileged extension page, so a content script can never read another origin's personal guides.
+
+The background aggregates both into one origin-tagged list (`GET_GUIDES_FOR_ORIGIN`); mutations (`SAVE_TEAM_GUIDE` routing sidecar vs local, `SAVE_PERSONAL_GUIDE`, `DELETE_GUIDE`) are privileged, re-read live state before write, and broadcast the existing `SPECS_CHANGED`. An empty-`steps` guide falls back to all matched specs in default order. Curation (name, description, ordered step include/reorder, Save-to picker over sidecar/local/personal targets) lives in `shared/guide-editor.ts`; the launch list in `shared/guide-section.ts`; Options manages a connection's team guides (list + delete).
+
 ## Security model (sidecar)
 
 - Binds `127.0.0.1` only; the port is auto-picked unless `--port` is given.
@@ -77,7 +88,7 @@ Empty state everywhere = all visible (backward compatible). Filter UI: facet che
 - CORS accepts only extension origins (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`); web origins are rejected.
 - Writes are confined to `.specs/` (path-traversal guard), atomic, and pretty-printed for clean Git diffs.
 - **Multi-token trust model.** With N connections the extension stores N localhost bearer tokens. Tokens stay in background/extension storage: they are never echoed into the Options DOM, never included in `ConnectionStatus` (so an unprivileged status query cannot read them), and connection-mutating messages are privileged (rejected from a web-page content script). Capture writes are routed only to a connection whose `domains` cover the page origin.
-- **Endpoints**: `GET /ping`, `GET /manifest`, `GET /specs`, `GET /specs/:id`, `POST /specs`, `PUT /specs/:id`, `DELETE /specs/:id`, `GET /views`, `PUT /views`, `GET /events` (SSE). All except `/ping` require bearer auth; `PUT /views` validates the payload against the `ViewsConfig` schema on both TS and Go sides.
+- **Endpoints**: `GET /ping`, `GET /manifest`, `GET /specs`, `GET /specs/:id`, `POST /specs`, `PUT /specs/:id`, `DELETE /specs/:id`, `GET /views`, `PUT /views`, `GET /guides`, `PUT /guides`, `GET /events` (SSE). All except `/ping` require bearer auth; `PUT /views` and `PUT /guides` validate the payload against the `ViewsConfig` / `GuidesConfig` schema on both TS and Go sides.
 
 ## Design references
 

@@ -3,10 +3,14 @@
 //   Alt+Shift+S  toggle Specpin on/off
 //   Alt+Shift+M  cycle display mode
 //   Alt+Shift+C  toggle capture mode
+//   Alt+Shift+G  start (or stop) the default guide tour
+// Note: while a tour is running it owns Left/Right/Esc itself (its own listener,
+// see GuideController); these Alt+Shift chords stay global.
 export interface KeyboardHandlers {
   onToggleEnabled(): void;
   onCycleMode(): void;
   onToggleCapture(): void;
+  onToggleGuide(): void;
 }
 
 export function registerKeyboard(target: EventTarget, handlers: KeyboardHandlers): () => void {
@@ -25,6 +29,10 @@ export function registerKeyboard(target: EventTarget, handlers: KeyboardHandlers
       case "c":
         e.preventDefault();
         handlers.onToggleCapture();
+        break;
+      case "g":
+        e.preventDefault();
+        handlers.onToggleGuide();
         break;
     }
   };

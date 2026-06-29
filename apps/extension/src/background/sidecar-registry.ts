@@ -1,10 +1,11 @@
-import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
-import type { Manifest, Spec } from "@specpin/spec-schema";
+import type { GuidesConfig, SpecsResponse, ViewsConfig } from "@specpin/api-client";
+import type { GuideDef, Manifest, Spec } from "@specpin/spec-schema";
 import { batchServesOrigin, type ManualBatch } from "../shared/config.js";
 import type {
   Connection,
   ConnectionStatus,
   ManualBatchSummary,
+  TaggedGuide,
   TaggedSpec,
 } from "../shared/connection-types.js";
 import { localConnId } from "../shared/local-id.js";
@@ -292,6 +293,80 @@ export class SidecarRegistry {
     if (!conn) return { ok: false, errors: ["unknown connection"] };
     try {
       await conn.saveViews(config);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, errors: [String(e)] };
+    }
+  }
+
+  /** The cached team guides for one sidecar connection (for the Options editor),
+   *  or the empty default when unknown. */
+  getGuides(connectionId: string): GuidesConfig {
+    return this.connections.get(connectionId)?.getGuides() ?? { version: "1.0", guides: [] };
+  }
+
+  /** Team guides that apply to a page origin, each tagged scope:"team" with its
+   *  owning project + connection id. Two sources contribute: sidecar connections
+   *  serving the origin (the same `matchesOrigin` boundary as specs), and local
+   *  committed batches serving it (RT-H7, `batchServesOrigin` - the same write
+   *  gate the local guide editor uses). Personal guides are merged separately by
+   *  the background (they live in storage.sync, a per-user trust boundary). */
+  guidesForOrigin(origin: string): TaggedGuide[] {
+    const out: TaggedGuide[] = [];
+    for (const conn of this.connections.values()) {
+      const cache = conn.getCache();
+      if (!cache || !conn.matchesOrigin(origin)) continue;
+      const project = cache.manifest?.project ?? "";
+      for (const guide of conn.getGuides().guides) {
+        out.push({ ...guide, scope: "team", project, connectionId: conn.id });
+      }
+    }
+    for (const batch of this.manual) {
+      if (!batch.guides?.length || !batchServesOrigin(batch, origin)) continue;
+      const project = batch.specs.manifest?.project || batch.label;
+      const connectionId = localConnId(batch.id);
+      for (const guide of batch.guides) {
+        out.push({ ...guide, scope: "team", project, connectionId });
+      }
+    }
+    return out;
+  }
+
+  /** Upsert a guide (by id) into a sidecar connection's whole-file guides config
+   *  and persist it (RT-H7 sidecar branch). Re-reads the LIVE config first via
+   *  reload() (RT-H3): three surfaces edit guides, so writing back a stale cache
+   *  would lose a concurrent change. Local + personal targets are handled by the
+   *  background's storage path, not here. */
+  async upsertGuide(
+    connectionId: string,
+    guide: GuideDef,
+  ): Promise<{ ok: boolean; errors?: string[] }> {
+    const conn = this.connections.get(connectionId);
+    if (!conn) return { ok: false, errors: ["unknown connection"] };
+    try {
+      await conn.reload();
+      const config = conn.getGuides();
+      const idx = config.guides.findIndex((g) => g.id === guide.id);
+      const guides =
+        idx === -1
+          ? [...config.guides, guide]
+          : config.guides.map((g, i) => (i === idx ? guide : g));
+      await conn.saveGuides({ ...config, guides });
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, errors: [String(e)] };
+    }
+  }
+
+  /** Remove a guide (by id) from a sidecar connection's whole-file guides config.
+   *  Re-reads the live config first (RT-H3), same as upsertGuide. */
+  async deleteGuide(connectionId: string, id: string): Promise<{ ok: boolean; errors?: string[] }> {
+    const conn = this.connections.get(connectionId);
+    if (!conn) return { ok: false, errors: ["unknown connection"] };
+    try {
+      await conn.reload();
+      const config = conn.getGuides();
+      await conn.saveGuides({ ...config, guides: config.guides.filter((g) => g.id !== id) });
       return { ok: true };
     } catch (e) {
       return { ok: false, errors: [String(e)] };

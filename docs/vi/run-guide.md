@@ -109,6 +109,22 @@ Mở một spec để sửa từ một trong hai nơi: click badge tooltip để
 
 Để trỏ một spec sang element khác, click **Re-link element** trong form sửa, rồi click element mới trên trang; form mở lại với các chỉnh sửa của bạn còn nguyên và fingerprint mới được áp dụng khi save. Các spec cục bộ (Manual) giờ cũng sửa được theo cách tương tự; bản sửa ghi vào `browser.storage.local` thay vì một sidecar. (Side panel Edit điều khiển form trong trang, nên giữ panel gắn cạnh trang mà nó mô tả.)
 
+## 12. Tour hướng dẫn (guide mode)
+
+Một **guide** là một walkthrough theo từng bước đi qua các spec đã có sẵn trên một trang: nó lần lượt làm nổi bật (spotlight) từng element và hiện nội dung của spec đó trong một popover với **Back / Skip / Next** (bước cuối là **Done**), một bộ đếm bước, và điều khiển bàn phím `←` / `→` / `Esc`. Nó được khởi chạy theo yêu cầu và không thay thế việc render tooltip/sidebar/modal thông thường.
+
+**Khởi chạy.** Popup và side panel có một mục **Guides**: click **Start guided tour** để đi qua mọi spec đã match theo thứ tự mặc định (không cần thiết lập), hoặc click **Start** cạnh một guide đã đặt tên để chạy các bước được biên soạn của nó. `Alt+Shift+G` khởi chạy tour mặc định từ bàn phím (nhấn lại để dừng). Từ popup, tour khởi chạy và popup đóng lại để trang không bị che; side panel vẫn mở.
+
+**Biên soạn.** Click **+ New guide** (hoặc **Edit** trên một guide) để mở editor: đặt tên cho nó (và description tùy chọn), thêm các spec của trang làm các bước có thứ tự (dùng nút ↑ / ↓ để sắp lại, × để xóa), và chọn nơi lưu nó trong bộ chọn **Save to**:
+
+- một dự án **sidecar** - được commit vào `.specs/guides.json` của repo đó và chia sẻ với team qua Git;
+- một dự án **local** - lưu trong extension cạnh dự án cục bộ đó;
+- **Personal** - riêng tư cho bạn, đồng bộ giữa các máy của bạn, không bao giờ ghi vào Git.
+
+Để trống các bước để lưu một guide luôn đi qua mọi spec đã match theo thứ tự mặc định. Một bước mà spec của nó không còn trên trang sẽ bị gắn cờ trong editor (và bỏ qua khi khởi chạy). Xóa một guide từ cùng danh sách đó, hoặc quản lý các team guide của một kết nối (liệt kê + xóa) từ trang Options trong mục **Team guides**.
+
+Một guide được dựng cho một trang phản ánh bất kỳ spec nào khớp với nó lúc khởi chạy; nếu một đồng đội thay đổi các spec giữa chừng tour, tour dừng lại gọn gàng và việc render thông thường trở lại.
+
 ## Phím tắt
 
 | Phím tắt | Hành động |
@@ -116,6 +132,7 @@ Mở một spec để sửa từ một trong hai nơi: click badge tooltip để
 | `Alt+Shift+S` | toggle Specpin on/off |
 | `Alt+Shift+M` | cycle display mode |
 | `Alt+Shift+C` | toggle capture mode (`Esc` để hủy) |
+| `Alt+Shift+G` | start / stop tour hướng dẫn mặc định (trong tour: `←` / `→` để chuyển bước, `Esc` để thoát) |
 
 ## Kết nối nhiều project cùng lúc
 
@@ -137,6 +154,7 @@ cd /path/to/project-b && /path/to/bin/specpin serve --port 51002
 | `Alt+Shift+S` | toggle Specpin on/off |
 | `Alt+Shift+M` | cycle display mode |
 | `Alt+Shift+C` | toggle capture mode (`Esc` để hủy) |
+| `Alt+Shift+G` | start / stop tour hướng dẫn mặc định (trong tour: `←` / `→` để chuyển bước, `Esc` để thoát) |
 
 ## Chế độ hiển thị
 

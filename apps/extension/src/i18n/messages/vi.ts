@@ -257,6 +257,53 @@ const vi: Record<keyof Messages, string> = {
   "options.supportLead": "Gặp lỗi hoặc có câu hỏi? Liên hệ dự án trên GitHub.",
   "options.reportIssue": "Báo lỗi",
   "options.askQuestion": "Đặt câu hỏi",
+
+  // Guide-mode tour chrome (the in-page walkthrough controls).
+  "guide.defaultName": "Hướng dẫn",
+  "guide.next": "Tiếp",
+  "guide.prev": "Quay lại",
+  "guide.skip": "Bỏ qua",
+  "guide.done": "Xong",
+  "guide.close": "Đóng hướng dẫn",
+  "guide.stepCounter": "{current} / {total}",
+  "guide.elementMissing": "Phần tử của bước này không có trên trang.",
+
+  // Guide launch list + curation editor (popup / side panel).
+  "guide.sectionTitle": "Hướng dẫn",
+  "guide.start": "Bắt đầu",
+  "guide.startDefault": "Bắt đầu hướng dẫn",
+  "guide.newGuide": "+ Hướng dẫn mới",
+  "guide.edit": "Sửa",
+  "guide.delete": "Xóa",
+  "guide.deleteConfirm": 'Xóa hướng dẫn "{name}"?',
+  "guide.noGuides": "Chưa có hướng dẫn cho trang này.",
+  "guide.editorTitleNew": "Hướng dẫn mới",
+  "guide.editorTitleEdit": "Sửa hướng dẫn",
+  "guide.nameLabel": "Tên",
+  "guide.namePlaceholder": "Tên hướng dẫn",
+  "guide.descLabel": "Mô tả (tùy chọn)",
+  "guide.stepsLabel": "Các bước (theo thứ tự)",
+  "guide.addStepLabel": "Thêm bước",
+  "guide.moveUp": "Lên",
+  "guide.moveDown": "Xuống",
+  "guide.removeStep": "Bỏ bước",
+  "guide.addStep": "Thêm",
+  "guide.missingSpec": "Thiếu spec: {id}",
+  "guide.saveTo": "Lưu vào",
+  "guide.personal": "Cá nhân (chỉ bạn)",
+  "guide.save": "Lưu hướng dẫn",
+  "guide.nameRequired": "Cần có tên hướng dẫn.",
+  "guide.emptyDefaultHint": "Để trống các bước để đi qua mọi spec theo thứ tự mặc định.",
+  "guide.noTargets":
+    "Không dự án nào trên trang lưu được hướng dẫn nhóm; hướng dẫn sẽ lưu vào Cá nhân.",
+  "guide.saved": "Đã lưu hướng dẫn.",
+  "guide.saveFailed": "Không thể lưu hướng dẫn: {error}",
+  "guide.deleteFailed": "Không thể xóa hướng dẫn: {error}",
+
+  // Options: per-connection team-guides management.
+  "options.teamGuidesSummary": "Hướng dẫn nhóm",
+  "options.teamGuidesNote": "Các hướng dẫn onboarding lưu trong .specs/guides.json.",
+  "options.noTeamGuides": "Chưa có hướng dẫn nhóm.",
 };
 
 export default vi;

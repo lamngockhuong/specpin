@@ -48,3 +48,25 @@ export function connectionServesOrigin(
 ): boolean {
   return status.enabled !== false && statusServesOrigin(status, origin);
 }
+
+/**
+ * The origin a guides read is bound to (RT-C1, the personal-guide trust boundary).
+ * A trusted extension page (popup/side panel) may query any origin, so its payload
+ * `origin` is honored - it legitimately asks for the active tab. A web-page content
+ * script is pinned to its OWN frame's origin, derived from the browser-set
+ * `senderTabUrl` (which a page script cannot forge), so it can never read another
+ * origin's private personal guides. Returns "" when no usable origin resolves.
+ */
+export function trustedReadOrigin(opts: {
+  fromExtensionPage: boolean;
+  payloadOrigin: string;
+  senderTabUrl: string | undefined;
+}): string {
+  if (opts.fromExtensionPage) return opts.payloadOrigin;
+  if (!opts.senderTabUrl) return "";
+  try {
+    return new URL(opts.senderTabUrl).origin;
+  } catch {
+    return "";
+  }
+}

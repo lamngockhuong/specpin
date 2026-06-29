@@ -1,4 +1,4 @@
-import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
+import type { GuidesConfig, SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { Spec } from "@specpin/spec-schema";
 
 // SpecSource abstracts where specs come from. Phase 1 ships only SidecarSource,
@@ -19,6 +19,10 @@ export interface SpecSource {
    *  loadViews as "no team default". */
   loadViews?(): Promise<ViewsConfig>;
   saveViews?(config: ViewsConfig): Promise<void>;
+  /** Optional named-guides config (sidecar /guides). Sources that do not support
+   *  it omit these; the registry treats a missing loadGuides as "no team guides". */
+  loadGuides?(): Promise<GuidesConfig>;
+  saveGuides?(config: GuidesConfig): Promise<void>;
   /** Optional live-change subscription; returns an unsubscribe function.
    *  `options.jitterMs` randomizes reconnect timing across concurrent watches. */
   watch?(onChange: () => void, options?: { jitterMs?: number }): () => void;

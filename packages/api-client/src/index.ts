@@ -4,6 +4,7 @@
 
 export {
   type ConnectionState,
+  type GuidesConfig,
   type HealthResponse,
   SidecarClient,
   type SidecarClientOptions,

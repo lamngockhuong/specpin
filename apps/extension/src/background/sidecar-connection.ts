@@ -1,4 +1,5 @@
 import {
+  type GuidesConfig,
   SidecarClient,
   SidecarError,
   type SpecsResponse,
@@ -41,6 +42,7 @@ export class SidecarConnection {
   private readonly injectedSource: boolean;
   private cache: SpecsResponse | null = null;
   private viewsCache: ViewsConfig | null = null;
+  private guidesCache: GuidesConfig | null = null;
   private unwatch: (() => void) | null = null;
   private connected = false;
   private lastError: string | null = null;
@@ -88,13 +90,17 @@ export class SidecarConnection {
    *  failure on the instance instead of throwing, so the registry can keep
    *  aggregating the others. */
   async reload(): Promise<void> {
-    // Fetch specs and views to the same sidecar in parallel (one round-trip, not
-    // two). allSettled keeps the views fetch isolated: an older sidecar without
-    // /views (404) must not drop the specs we loaded, and a specs failure marks
-    // the connection disconnected regardless of the views result.
-    const [specs, views] = await Promise.allSettled([
+    // Fetch specs, views, and guides to the same sidecar in parallel (one
+    // round-trip, not three). allSettled keeps the views/guides fetches isolated
+    // (RT-M3): an older sidecar without /views or /guides (404) must not drop the
+    // specs we loaded, and a specs failure marks the connection disconnected
+    // regardless of the views/guides results. guides being in this same group is
+    // exactly what gives it SSE liveness: a guides-only .specs/ change triggers a
+    // reload that refreshes guidesCache here.
+    const [specs, views, guides] = await Promise.allSettled([
       this.source.loadSpecs(),
       this.source.loadViews?.() ?? Promise.resolve(null),
+      this.source.loadGuides?.() ?? Promise.resolve(null),
     ]);
     if (specs.status === "fulfilled") {
       this.cache = specs.value;
@@ -105,6 +111,7 @@ export class SidecarConnection {
     } else {
       this.cache = null;
       this.viewsCache = null;
+      this.guidesCache = null;
       this.connected = false;
       if (specs.reason instanceof SidecarError) {
         this.lastError = specs.reason.code;
@@ -118,6 +125,7 @@ export class SidecarConnection {
       return;
     }
     this.viewsCache = views.status === "fulfilled" ? (views.value ?? null) : null;
+    this.guidesCache = guides.status === "fulfilled" ? (guides.value ?? null) : null;
   }
 
   getCache(): SpecsResponse | null {
@@ -138,6 +146,18 @@ export class SidecarConnection {
   async saveViews(config: ViewsConfig): Promise<void> {
     if (!this.source.saveViews) throw new Error("source does not support views");
     await this.source.saveViews(config);
+    await this.reload();
+  }
+
+  /** The team guides config, or the empty default when unavailable. */
+  getGuides(): GuidesConfig {
+    return this.guidesCache ?? { version: "1.0", guides: [] };
+  }
+
+  /** Persist a team guides config, then refresh the cache. */
+  async saveGuides(config: GuidesConfig): Promise<void> {
+    if (!this.source.saveGuides) throw new Error("source does not support guides");
+    await this.source.saveGuides(config);
     await this.reload();
   }
 
@@ -197,6 +217,7 @@ export class SidecarConnection {
     this.stopWatch();
     this.cache = null;
     this.viewsCache = null;
+    this.guidesCache = null;
     this.lastDomains = [];
   }
 
