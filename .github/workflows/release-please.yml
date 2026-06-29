@@ -63,5 +63,4 @@ jobs:
       version: ${{ needs.release-please.outputs.spec_schema_version }}
     permissions:
       contents: read
-      id-token: write
-    secrets: inherit
+      id-token: write # OIDC trusted publishing; no secrets needed
