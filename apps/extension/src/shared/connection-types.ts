@@ -72,6 +72,10 @@ export interface ManualBatchSummary {
   domains: string[];
   specCount: number;
   importedAt: number;
+  /** Per-batch on/off (parallel to ConnectionStatus.enabled). False means the
+   *  user disabled this batch: it serves no page but stays listed in Options to
+   *  be re-enabled. */
+  enabled: boolean;
 }
 
 /** Per-connection state for the management UI. NEVER carries the bearer token

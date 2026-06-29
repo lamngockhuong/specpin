@@ -251,6 +251,23 @@ describe("SidecarRegistry manual batches", () => {
     });
     expect(summaries[0]).not.toHaveProperty("specs");
   });
+
+  it("a disabled batch serves no page but stays in the summaries", () => {
+    const r = registryWith({});
+    r.setLocalBatches([{ ...batch("1", resp("A", ["a.test"], "a")), enabled: false }]);
+    // Withheld from rendering even though its domain matches.
+    expect(r.specsForOrigin("https://a.test").specs).toEqual([]);
+    // Still listed (re-enableable), with enabled=false reported.
+    const summaries = r.manualBatchSummaries();
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0]).toMatchObject({ id: "1", enabled: false });
+  });
+
+  it("manualBatchSummaries reports enabled=true for a batch with no flag", () => {
+    const r = registryWith({});
+    r.setLocalBatches([batch("1", resp("A", ["a.test"], "a"))]);
+    expect(r.manualBatchSummaries()[0]?.enabled).toBe(true);
+  });
 });
 
 describe("SidecarRegistry sidecarBatchesForExport", () => {

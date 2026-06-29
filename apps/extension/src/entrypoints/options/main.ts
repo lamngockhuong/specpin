@@ -406,7 +406,7 @@ function renderConnections(list: ConnectionStatus[]): void {
  *  and Remove drops the whole batch by id. */
 function batchRow(b: ManualBatchSummary): HTMLElement {
   const row = document.createElement("div");
-  row.className = "conn";
+  row.className = b.enabled ? "conn" : "conn conn-disabled";
 
   const head = document.createElement("div");
   head.className = "conn-head";
@@ -421,6 +421,30 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
 
   const actions = document.createElement("div");
   actions.className = "conn-actions";
+
+  // Per-batch on/off, mirroring the sidecar connection toggle. Disabling stops
+  // this batch from serving any page (specs + guides + capture); the row stays so
+  // it can be re-enabled.
+  const toggle = document.createElement("label");
+  toggle.className = "conn-toggle";
+  toggle.title = b.enabled ? t("options.disableProject") : t("options.enableProject");
+  const toggleBox = document.createElement("input");
+  toggleBox.type = "checkbox";
+  toggleBox.className = "switch";
+  toggleBox.checked = b.enabled;
+  toggleBox.addEventListener("change", async () => {
+    await sendToBackground({
+      type: "SET_LOCAL_BATCH_ENABLED",
+      id: b.id,
+      enabled: toggleBox.checked,
+    });
+    await refresh();
+  });
+  toggle.append(
+    document.createTextNode(b.enabled ? t("options.enabled") : t("options.disabled")),
+    toggleBox,
+  );
+  actions.append(toggle);
 
   // Export this batch as a <project>.specs.zip (reuses the Phase 4 utils).
   const exportBtn = document.createElement("button");
@@ -465,9 +489,11 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
         : t("options.sourcePasted");
   // importedAt is 0 for legacy-migrated batches (unknown time); omit it then.
   const when = b.importedAt ? ` · ${new Date(b.importedAt).toLocaleString()}` : "";
-  meta.textContent = `${b.project || t("options.untitled")} · ${t("options.specCount", {
+  const details = `${b.project || t("options.untitled")} · ${t("options.specCount", {
     count: b.specCount,
   })} · ${how}${when}`;
+  // A disabled batch serves no page; say so first (parallel to connectionRow).
+  meta.textContent = b.enabled ? details : t("options.disabledState", { state: details });
 
   // Pinned sites shown inline. An empty-domain batch matches every site.
   const sites = document.createElement("div");

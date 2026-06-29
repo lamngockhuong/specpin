@@ -40,6 +40,7 @@ import {
   setConfig,
   setConnections,
   setEnabled,
+  setLocalBatchEnabled,
   setLocalSpecs,
   setPersonalGuides,
   setPersonalVisibility,
@@ -317,6 +318,8 @@ export default defineBackground(() => {
         return handleCreateLocalProject(message);
       case "RENAME_LOCAL_PROJECT":
         return handleRenameLocalProject(message);
+      case "SET_LOCAL_BATCH_ENABLED":
+        return handleSetLocalBatchEnabled(message.id, message.enabled);
       case "GET_WRITE_TARGETS":
         return Promise.resolve(handleGetWriteTargets(message.origin));
       case "GET_EXPORT_BUNDLES":
@@ -865,6 +868,24 @@ export default defineBackground(() => {
       if (!project) return { ok: false, error: "project name required" };
       const state = (await getLocalSpecs()) ?? { batches: [] };
       const result = renameLocalBatch(state, message.id, project, message.domains);
+      if (!result.ok || !result.state) return { ok: false, error: result.error };
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      await broadcastSpecsChanged();
+      return { ok: true };
+    });
+  }
+
+  // Toggle a local project on/off (privileged). RMW under mutate(): persist FIRST
+  // (storage is truth), sync the registry from it, then broadcast so every surface
+  // re-renders with the batch served or withheld.
+  function handleSetLocalBatchEnabled(
+    id: string,
+    enabled: boolean,
+  ): Promise<{ ok: boolean; error?: string }> {
+    return mutate(async () => {
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const result = setLocalBatchEnabled(state, id, enabled);
       if (!result.ok || !result.state) return { ok: false, error: result.error };
       await setLocalSpecs(result.state);
       registry.setLocalBatches(result.state.batches);

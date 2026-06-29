@@ -3,7 +3,7 @@ import type { DisplayMode, GuideDef, Manifest, Spec } from "@specpin/spec-schema
 import { browser } from "#imports";
 import type { UiLocale } from "../i18n/locales.js";
 import type { Connection } from "./connection-types.js";
-import { statusServesOrigin } from "./origin-match.js";
+import { connectionServesOrigin } from "./origin-match.js";
 import type { Theme } from "./theme.js";
 import type { PersonalVisibility } from "./visibility.js";
 
@@ -38,6 +38,11 @@ export interface ManualBatch {
    *  is a writable/capture target for a page only when this is true. Imported
    *  batches leave it undefined (render keeps its historical match-all). */
   applyToAllSites?: boolean;
+  /** Per-batch on/off, the local-project parallel to `Connection.enabled`. A
+   *  disabled batch serves no page (no specs, no guides, not a write/capture
+   *  target) but stays listed in Options to be re-enabled. Undefined = enabled
+   *  (backward compatible with batches stored before this field existed). */
+  enabled?: boolean;
   /** Map of `_file` -> original file `group`, so a later export reconstructs the
    *  per-file group (a file-level field, not a Spec field). Absent on pre-plan
    *  batches; export then falls back to a file-base-derived group. */
@@ -363,14 +368,17 @@ export async function setLocalSpecs(state: LocalSpecsState | null): Promise<void
 // ---------------------------------------------------------------------------
 
 /** Whether a local batch is a writable/capture target for an origin: the RT-SA1
- *  gate (a batch with empty `domains` serves a page only with `applyToAllSites`).
- *  One home for the rule, shared by the registry's capture picker and the
- *  background write guard so they can never diverge. */
+ *  gate (a batch with empty `domains` serves a page only with `applyToAllSites`),
+ *  AND the batch is enabled. A disabled batch serves no page at all (parallel to
+ *  `matchesOrigin` baking in `Connection.enabled`), so guide serving and the
+ *  write/capture guards drop it. One home for the rule, shared by the registry's
+ *  capture picker and the background write guard so they can never diverge. */
 export function batchServesOrigin(batch: ManualBatch, origin: string): boolean {
-  return statusServesOrigin(
+  return connectionServesOrigin(
     {
       domains: batch.specs.manifest?.domains ?? [],
       matchesAllSites: batch.applyToAllSites === true,
+      enabled: batch.enabled,
     },
     origin,
   );
@@ -531,5 +539,19 @@ export function renameLocalBatch(
     label: project,
     specs: { ...batch.specs, manifest },
   };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Toggle a local batch on/off (the parallel to setConnectionEnabled). A disabled
+ *  batch serves no page but stays in the list. Unknown batch id -> ok:false. */
+export function setLocalBatchEnabled(
+  state: LocalSpecsState,
+  batchId: string,
+  enabled: boolean,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const batch = state.batches[idx] as ManualBatch;
+  const nextBatch: ManualBatch = { ...batch, enabled };
   return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
 }

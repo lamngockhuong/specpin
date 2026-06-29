@@ -87,6 +87,9 @@ export type Message =
   // Rename a local project (and optionally re-scope its domains, i.e. its
   // write-routing surface). Privileged: extension-page only.
   | { type: "RENAME_LOCAL_PROJECT"; id: string; project: string; domains?: string[] }
+  // Toggle a local project on/off (the parallel to UPDATE_CONNECTION's `enabled`).
+  // A disabled batch serves no page but stays listed. Privileged: extension-page only.
+  | { type: "SET_LOCAL_BATCH_ENABLED"; id: string; enabled: boolean }
   // The writable projects (sidecar + local) serving an origin, for the capture
   // "Save to" picker. Unprivileged: the content script needs it, and it exposes no
   // more than GET_SPECS_FOR_ORIGIN for the same origin. Includes EMPTY local
@@ -188,6 +191,7 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   // in the background is that boundary.)
   "CREATE_LOCAL_PROJECT",
   "RENAME_LOCAL_PROJECT",
+  "SET_LOCAL_BATCH_ENABLED",
   // Returns full spec payloads for many batches; restrict to extension pages so a
   // content script cannot harvest every local project's specs.
   "GET_EXPORT_BUNDLES",
