@@ -1,6 +1,6 @@
 {
   "name": "@specpin/spec-schema",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "description": "Specpin spec file JSON Schema (v1) with generated TypeScript types and ajv validators.",
   "license": "Apache-2.0",
   "author": "Lam Ngoc Khuong",
