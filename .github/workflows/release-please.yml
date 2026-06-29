@@ -29,7 +29,7 @@ jobs:
       cli_released: ${{ contains(fromJSON(steps.rp.outputs.paths_released || '[]'), 'apps/cli') }}
       cli_version: ${{ steps.rp.outputs['apps/cli--version'] }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: rp
         with:
           config-file: release-please-config.json
