@@ -1,0 +1,115 @@
+name: Release CLI
+
+# Cross-compiles the Go sidecar for 5 targets, stamps the version, checksums, and
+# publishes a GitHub Release. Driven by release-please (workflow_call); also
+# runnable manually (workflow_dispatch, with dry_run) or by pushing a `cli-v*` tag.
+
+on:
+  push:
+    tags: ["cli-v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 1.0.0)"
+        required: true
+        type: string
+      dry_run:
+        description: "Dry run (build only, skip the GitHub Release)"
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      version:
+        description: "Version from release-please"
+        required: true
+        type: string
+
+concurrency:
+  group: release-cli-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      dry_run: ${{ steps.v.outputs.dry_run }}
+    steps:
+      - name: Resolve version + dry_run
+        id: v
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+            DRY_RUN="${{ inputs.dry_run || 'false' }}"
+          else
+            # Tag push: refs/tags/cli-v1.2.3 -> 1.2.3
+            VERSION="${GITHUB_REF#refs/tags/cli-v}"
+            DRY_RUN="false"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "dry_run=$DRY_RUN" >> "$GITHUB_OUTPUT"
+          echo "cli release: version=$VERSION dry_run=$DRY_RUN"
+
+  build:
+    name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    strategy:
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64, ext: "" }
+          - { goos: linux, goarch: arm64, ext: "" }
+          - { goos: darwin, goarch: amd64, ext: "" }
+          - { goos: darwin, goarch: arm64, ext: "" }
+          - { goos: windows, goarch: amd64, ext: ".exe" }
+    defaults:
+      run:
+        working-directory: apps/cli
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache-dependency-path: apps/cli/go.sum
+      # Sync the embedded schema before building (same invariant as `make build`);
+      # internal/schema/v1.json is a generated copy of the canonical SSOT.
+      - run: make sync-schema
+      - name: Build static binary
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          OUT="specpin-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
+          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            go build -ldflags="-s -w -X specpin/cmd.Version=${VERSION}" -o "$OUT" .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cli-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: apps/cli/specpin-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}
+          retention-days: 1
+
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    if: needs.prepare.outputs.dry_run != 'true'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: cli-*
+          merge-multiple: true
+      - name: Collect assets + checksums
+        run: |
+          mkdir -p release
+          cp artifacts/specpin-* release/
+          chmod +x release/specpin-*
+          cd release && sha256sum specpin-* > checksums.txt
+      - uses: softprops/action-gh-release@v3
+        with:
+          tag_name: cli-v${{ needs.prepare.outputs.version }}
+          name: cli-v${{ needs.prepare.outputs.version }}
+          generate_release_notes: true
+          files: release/*
