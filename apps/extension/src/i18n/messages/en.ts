@@ -251,6 +251,12 @@ const en = {
   "options.pickFiles": "Pick manifest.json and at least one .spec.json file.",
   "options.invalidSelection": "Invalid selection:\n- {errors}",
   "options.allCleared": "All manual specs cleared.",
+
+  // Support & Feedback card.
+  "options.supportFeedback": "Support & Feedback",
+  "options.supportLead": "Found a bug or have a question? Reach the project on GitHub.",
+  "options.reportIssue": "Report an Issue",
+  "options.askQuestion": "Ask a Question",
 } satisfies Record<string, string>;
 
 export type Messages = typeof en;

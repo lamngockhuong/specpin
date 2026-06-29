@@ -101,6 +101,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 - **Đặc tả định dạng Markdown** - mô tả và quy tắc nghiệp vụ mang một tập con Markdown an toàn (đậm, nghiêng, liên kết, danh sách), soạn qua thanh công cụ và hiển thị trên mọi bề mặt
 - **Tự chọn giao diện** - System / Light / Dark, design token hai chế độ
 - **i18n cho giao diện** - tiếng Anh + tiếng Việt, độc lập với ngôn ngữ nội dung đặc tả
+- **Hỗ trợ & Phản hồi** - liên kết một chạm từ trang Tùy chọn tới GitHub Issues và Discussions của dự án
 - **Kiểm tra offline** - `specpin validate` + spec-lint trong CI để giữ `.specs/` luôn hợp lệ
 - **An toàn mặc định** - sidecar chỉ bind `127.0.0.1`, xác thực bearer-token, CORS chỉ chấp nhận origin của extension, ghi file có chặn path-traversal
 
