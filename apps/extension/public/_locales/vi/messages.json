@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Specpin",
+    "description": "Extension name shown in the browser and the store listing."
+  },
+  "extDescription": {
+    "message": "Ghim đặc tả nghiệp vụ sống lên các phần tử của giao diện web đang chạy. Git-native, ưu tiên cục bộ, không phụ thuộc framework.",
+    "description": "Extension description (Chrome caps this at 132 chars). Keep in sync with the store-listing summary."
+  }
+}
