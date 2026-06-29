@@ -62,21 +62,34 @@ It is **not** a spec-driven code generator (unrelated to GitHub Spec Kit / OpenS
 2. `specpin serve` exposes `.specs/` over a token-authenticated localhost HTTP API with live-reload (SSE).
 3. The browser extension connects to the sidecar, matches each spec's fingerprint against the live DOM, and renders it on its element.
 
+## Install the CLI
+
+The sidecar ships as a single self-contained binary. Easiest is via npm, which
+downloads the prebuilt binary matching your OS and CPU:
+
+```bash
+npm install -g @specpin/cli     # or: pnpm add -g @specpin/cli
+specpin --version
+
+# or run without installing:
+npx @specpin/cli serve
+```
+
+Prefer a raw binary? Grab `specpin-<os>-<arch>` from the
+[latest CLI release](https://github.com/lamngockhuong/specpin/releases?q=cli), or
+build from source: `cd apps/cli && make build`.
+
 ## Quick start
 
 ```bash
-# 1. Install workspace deps and build everything
-pnpm install
-pnpm build
+# 1. Install the CLI
+npm install -g @specpin/cli
 
-# 2. Build the Go sidecar (from apps/cli)
-cd apps/cli && make build      # -> bin/specpin
-
-# 3. In your project repo: scaffold and serve specs
+# 2. In your project repo: scaffold and serve specs
 specpin init                   # creates .specs/manifest.json
 specpin serve                  # prints a localhost URL + bearer token
 
-# 4. Load the extension (unpacked) and connect
+# 3. Load the extension (unpacked) and connect
 #    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
 #    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
 ```

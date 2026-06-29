@@ -7,7 +7,7 @@ Specpin attaches living business specs to a running UI; it is **not** a code gen
 ## Prerequisites
 
 - Node >= 20, pnpm 10
-- Go 1.26 (for the sidecar)
+- Go 1.26 (only if building the sidecar from source)
 - Chrome or Firefox
 
 ## 1. Build the workspace
@@ -17,7 +17,15 @@ pnpm install
 pnpm build
 ```
 
-## 2. Build the sidecar
+## 2. Install or build the sidecar
+
+Install the published CLI (downloads the prebuilt binary for your OS and CPU):
+
+```bash
+npm install -g @specpin/cli     # or: pnpm add -g @specpin/cli, or: npx @specpin/cli serve
+```
+
+Or build it from source (requires Go 1.26):
 
 ```bash
 cd apps/cli
