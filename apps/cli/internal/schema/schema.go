@@ -23,6 +23,7 @@ type Validator struct {
 	manifest *jsonschema.Schema
 	specFile *jsonschema.Schema
 	views    *jsonschema.Schema
+	guides   *jsonschema.Schema
 }
 
 // NewValidator compiles the embedded schema. Format assertions are enabled so
@@ -55,8 +56,12 @@ func NewValidator() (*Validator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compile ViewsConfig schema: %w", err)
 	}
+	guides, err := c.Compile(schemaID + "#/$defs/GuidesConfig")
+	if err != nil {
+		return nil, fmt.Errorf("compile GuidesConfig schema: %w", err)
+	}
 
-	return &Validator{spec: spec, manifest: manifest, specFile: specFile, views: views}, nil
+	return &Validator{spec: spec, manifest: manifest, specFile: specFile, views: views, guides: guides}, nil
 }
 
 func validate(sch *jsonschema.Schema, raw []byte) []string {
@@ -108,3 +113,6 @@ func (v *Validator) ValidateSpecFile(raw []byte) []string { return validate(v.sp
 
 // ValidateViews validates a .specs/views.json document (ViewsConfig).
 func (v *Validator) ValidateViews(raw []byte) []string { return validate(v.views, raw) }
+
+// ValidateGuides validates a .specs/guides.json document (GuidesConfig).
+func (v *Validator) ValidateGuides(raw []byte) []string { return validate(v.guides, raw) }

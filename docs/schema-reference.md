@@ -10,6 +10,7 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 .specs/
 ├── manifest.json          # index + project config
 ├── views.json             # team visibility defaults (optional, Git-committed)
+├── guides.json            # named onboarding tours (optional, Git-committed)
 └── <area>.spec.json       # a group of specs (SpecFile)
 ```
 
@@ -106,8 +107,39 @@ Facet keys are strings like `tag:<name>`, `file:<filename>`, `spec:<id>`, or `ur
 
 When `.specs/views.json` is absent, the sidecar returns the empty default `{ "version": "1.0", "hidden": [] }` on `GET /views`. All specs are visible unless the user sets a personal override. Team defaults are edited via the extension Options page (per connection) and written to `.specs/views.json` via `PUT /views` (schema-validated, atomic, pretty-printed). The sidecar watches `.specs/` so changes trigger SSE (existing watch covers `views.json` too).
 
+## GuidesConfig (`.specs/guides.json`)
+
+Optional named onboarding tours: ordered walkthroughs over specs already pinned to a page. A guide spotlights each step's element and shows its localized content. This file holds the **team** (Git-committed) guides; the extension also keeps **personal** guides privately in `storage.sync` (never written here).
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `version` | string | yes | e.g. `"1.0"` |
+| `guides` | GuideDef[] | yes | may be empty; at most 50 (`maxItems`) |
+
+`GuideDef`:
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | string | yes | unique within the file; pattern `^[a-z0-9-]+$`, `maxLength` 100 |
+| `name` | string | yes | plain UI label (NOT a LocalizedString), non-empty, `maxLength` 200 |
+| `description` | string | no | plain blurb, `maxLength` 2000 |
+| `steps` | string[] | yes | ordered spec ids; may be empty, `maxItems` 200, each `maxLength` 200 |
+
+```json
+{
+  "version": "1.0",
+  "guides": [
+    { "id": "onboarding", "name": "Onboarding tour", "description": "First-run walkthrough", "steps": ["login-submit-btn", "nav-dashboard"] }
+  ]
+}
+```
+
+`name` is a plain string (not localized) by design: it is a short label, while the step **content** localizes via the referenced specs. An **empty `steps`** guide falls back at launch to all specs matched on the page in the default order (alphabetical by source file, then in-file order, with local-project specs last), so a guide is usable with zero curation. Step ids that no longer resolve (renamed/deleted spec, or absent on the current page) are dropped at launch and flagged in the curation editor.
+
+When `.specs/guides.json` is absent, the sidecar returns the empty default `{ "version": "1.0", "guides": [] }` on `GET /guides`. Guides are authored in the extension (popup / side panel guide editor) and written via `PUT /guides` (schema-validated, atomic, pretty-printed), or saved to a local project / personal storage. The bounds above live in the SSOT so both validators inherit them; personal guides additionally respect the `storage.sync` per-item quota (a rejected write surfaces an error rather than dropping silently).
+
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews`.
-- Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides`.
+- Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).

@@ -33,7 +33,7 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 - `src/resolve-localized.ts` - prototype-safe `resolveLocalized()` / `resolveLocalizedList()` for `LocalizedString` content (locale -> defaultLocale -> first present fallback).
 - `scripts/gen-types.ts` - codegen runner (json-schema-to-typescript + ajv standalone).
 - `scripts/copy-gen-assets.ts` - copies `.gen.cjs` + `.gen.d.cts` to dist post-build.
-- `scripts/validate-fixtures.ts` - cross-validates fixtures (valid + invalid, specs + views) against schema.
+- `scripts/validate-fixtures.ts` - cross-validates fixtures (valid + invalid, specs + views + guides) against schema.
 
 **Scripts:**
 - `pnpm gen` - regenerate types + validators from `v1.json`.
@@ -70,7 +70,7 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 **Purpose**: Typed HTTP client over sidecar REST contract + SSE helper.
 
 **Key files:**
-- `src/client.ts` - `SidecarClient` class (200+ lines). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`. Handles Bearer token, JSON serialization, error mapping.
+- `src/client.ts` - `SidecarClient` class (200+ lines). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`, `getGuides()`, `putGuides(guides)`. Handles Bearer token, JSON serialization, error mapping.
 - `src/events.ts` - `SidecarEventSource` class (74 lines). SSE wrapper with exponential backoff (min 1s, max 30s, reset after 5s stable). Emits `specsChanged`, `manifestChanged`, `error`.
 - `src/errors.ts` - `SidecarError` hierarchy (42 lines). `NotFoundError`, `ValidationError`, `UnauthorizedError`, `NetworkError`.
 - `src/types.ts` - HTTP contract types (40+ lines). Re-exports from spec-schema (`ViewsConfig`) + `SidecarConfig`, `ConnectionStatus`.
@@ -101,11 +101,11 @@ internal/
     schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
-    server.go   - HTTP handlers: CRUD + SSE hub + GET/PUT /views (340+ lines)
+    server.go   - HTTP handlers: CRUD + SSE hub + GET/PUT /views + GET/PUT /guides (370+ lines)
     middleware.go - token auth + CORS (89 lines)
     hub.go      - SSE broadcast hub (102 lines)
   store/
-    store.go    - file-based spec store + views.json read/write (260+ lines, atomic, pretty JSON)
+    store.go    - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON)
   watch/
     watch.go    - fsnotify watcher, triggers SSE (87 lines)
 ```
@@ -114,7 +114,7 @@ internal/
 - `serve`: auto-pick free port (or --port), print URL+token, bind 127.0.0.1, start HTTP+SSE, watch `.specs/`.
 - `init`: create `.specs/manifest.json` with default values.
 - Middleware: every request needs `Authorization: Bearer <token>`. CORS accepts only `chrome-extension://`, `moz-extension://`, `safari-web-extension://` origins. Rejects web origins.
-- Store: writes confined to `.specs/`, path-traversal guard (H1 review fix). File ops atomic (temp + rename). Pretty-printed JSON (2-space indent) for clean Git diffs. `GET /views` returns `.specs/views.json` or the empty default `{version:"1.0",hidden:[]}` when absent; `PUT /views` validates then writes.
+- Store: writes confined to `.specs/`, path-traversal guard (H1 review fix). File ops atomic (temp + rename). Pretty-printed JSON (2-space indent) for clean Git diffs. `GET /views` returns `.specs/views.json` or the empty default `{version:"1.0",hidden:[]}` when absent; `PUT /views` validates then writes. `GET /guides` / `PUT /guides` mirror this for `.specs/guides.json` (empty default `{version:"1.0",guides:[]}`); the spec scanner ignores `guides.json` (not a `*.spec.json`).
 
 **Makefile:**
 - `make sync-schema` - cp schema from packages/spec-schema.
@@ -143,10 +143,10 @@ src/
     content.ts        - match+render loop, locale state, capture flow
     popup/            - per-tab view: status, specs, project list, language picker, filter UI
     sidepanel/        - docked surface (Chrome side_panel / Firefox sidebar_action)
-    options/          - connection manager (add/remove/reconnect) + manual import + per-batch rename/export + team views authoring
+    options/          - connection manager (add/remove/reconnect) + manual import + per-batch rename/export + team views authoring + per-connection team-guides management (list + delete)
   background/
-    sidecar-registry.ts   - map of connections + local (Manual) batch list; origin-gated aggregation (per-batch domains, cross-batch id dedup, per-batch `manual:<batchId>` tag) + views threading; `localTargetsForOrigin` (writable-target gate) + `manualBatchesForExport`
-    sidecar-connection.ts - one project's client + cache + SSE watch + team views cache (isolated)
+    sidecar-registry.ts   - map of connections + local (Manual) batch list; origin-gated aggregation (per-batch domains, cross-batch id dedup, per-batch `manual:<batchId>` tag) + views threading; `guidesForOrigin` (team guides: sidecar + local, origin-tagged) + re-read-before-write `upsertGuide`/`deleteGuide`; `localTargetsForOrigin` (writable-target gate) + `manualBatchesForExport`
+    sidecar-connection.ts - one project's client + cache + SSE watch + team views cache + team guides cache (all in one reload group, isolated)
     context-menu.ts       - page right-click "Specpin" submenu: build/visibility-gate/retitle + onClicked router (dispatches PIN_ELEMENT / SHOW_SPEC_HERE / START_CAPTURE to the tab, toggle-off in place)
   content/
     orchestrator.ts   - match loop; threads locale + project labels + visibility filtering into renderers
@@ -155,7 +155,9 @@ src/
     capture-form.ts   - per-locale spec authoring + kind-labelled "Save to" picker (sidecar + local; lone-target routing; disabled when no project serves the page)
     context-target.ts - pure helpers for the right-click actions (Specpin-owned-element guard + matched-ancestor walk)
     toast.ts          - transient shadow-DOM message pill (e.g. "Show spec here" with no spec under the cursor)
-    keyboard.ts       - shortcut handler
+    keyboard.ts       - shortcut handler (incl. Alt+Shift+G start/stop the default guide tour)
+    guide.ts          - GuideController: page-level onboarding tour (own spotlight overlay + anchored popover, Prev/Next/Skip/Done, keyboard, suspends + restores the render session, hard-stop on spec change / SPA nav)
+    resolve-guide.ts  - pure: resolve a guide's step ids -> matched DOM elements (drop unresolved, keep order) + the RT-H4 default order
   renderers/
     registry.ts       - `SpecRenderer` interface + registry
     tooltip.ts / sidebar.ts / modal.ts - the three implemented display modes (tooltip: pin + open-in-panel)
@@ -167,8 +169,10 @@ src/
   shared/
     shadow.ts / html.ts        - Shadow DOM isolation + safe HTML escaping
     theme.ts                   - Theme = "system"|"light"|"dark", applyTheme(el, theme), applyStoredTheme(), watchThemeChanges()
-    messaging.ts               - typed message protocol (includes OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs; local-authoring: CREATE_LOCAL_PROJECT/RENAME_LOCAL_PROJECT (privileged), GET_WRITE_TARGETS, GET_EXPORT_BUNDLES (privileged))
-    connection-types.ts        - browser-free Connection / ConnectionStatus / TaggedSpec; MANUAL_CONNECTION_ID is now the legacy/reserved bare id
+    messaging.ts               - typed message protocol (includes OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs; local-authoring: CREATE_LOCAL_PROJECT/RENAME_LOCAL_PROJECT (privileged), GET_WRITE_TARGETS, GET_EXPORT_BUNDLES (privileged); guides: GET_GUIDES_FOR_ORIGIN, GET_TEAM_GUIDES, START_GUIDE, SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE/DELETE_GUIDE (privileged))
+    guide-editor.ts (+ .css)   - shared curation modal: name + description + ordered step include/reorder + Save-to picker (sidecar/local/personal), routes SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE
+    guide-section.ts (+ .css)  - shared guide launch list (default tour + per-guide Start/Edit/Delete + New) for popup + side panel
+    connection-types.ts        - browser-free Connection / ConnectionStatus / TaggedSpec / TaggedGuide; MANUAL_CONNECTION_ID is now the legacy/reserved bare id
     local-id.ts                - `manual:<batchId>` prefix + isLocalConnectionId / localBatchId / localConnId predicates (replaces the bare-tag equality checks)
     local-url.ts               - extracted localhost-only sidecar URL guard (shared by Options + add-project; SSRF/phishing guard)
     add-project.ts (+ .css)    - shared "+ New project" inline form (Local via CREATE_LOCAL_PROJECT, Sidecar via ADD_CONNECTION); mounted by popup + side panel
@@ -177,13 +181,13 @@ src/
     download.ts / export-download.ts - Blob object-URL download + zip-and-download glue (popup/panel/Options)
     origin-match.ts            - pure origin/domain matching (shared by SW + popup; statusServesOrigin is the write/capture gate)
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
-    config.ts                  - storage helpers (connections, locale, enabled, local batch list + legacy migration, personal visibility, theme, uiLocale) + pure local mutators (createLocalBatch / upsertLocalSpec / removeLocalSpecById / renameLocalBatch)
+    config.ts                  - storage helpers (connections, locale, enabled, local batch list + legacy migration, personal visibility, theme, uiLocale, personal guides in storage.sync keyed by canonicalOrigin) + pure local mutators (createLocalBatch / upsertLocalSpec / removeLocalSpecById / renameLocalBatch / upsertLocalGuide / removeLocalGuide)
     surface-renderers.ts       - shared helpers for popup/side panel: sourceBadge() (sidecar vs manual pill), setListControlsHidden() + enabled-gated locale/filter rendering (hide list controls when Specpin is off), filter-group collapse state preserved across rebuilds
     surface-data.ts            - shared spec filtering: specMatchesQuery() (title/file/tags/description predicate)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
     locales.ts                 - SUPPORTED=["en","vi"], UiLocale, resolveUiLocale (stored -> browser UI -> "en")
-    messages/en.ts             - source of truth, ~195 keys
+    messages/en.ts             - source of truth, ~235 keys (incl. guide.* tour + curation chrome)
     messages/vi.ts             - typed against keyof Messages for compile-time parity
 ```
 
@@ -335,7 +339,9 @@ Two jobs (JS, Go):
 
 **Fingerprint logic**: `packages/fingerprint-core/src/capture.ts` (capture signals), `match.ts` (matching order), `selector.ts` (CSS optimization).
 
-**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views + GET/PUT /guides), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+
+**Guide mode**: `content/guide.ts` (tour runtime) + `content/resolve-guide.ts` (step resolution), `shared/guide-editor.ts` + `guide-section.ts` (curation + launch UI), background guide handlers in `entrypoints/background.ts`, sidecar `/guides` in `server.go`/`store.go`.
 
 **Extension rendering**: `apps/extension/src/renderers/` (tooltip.ts, sidebar.ts, modal.ts), `content/orchestrator.ts` (match loop).
 

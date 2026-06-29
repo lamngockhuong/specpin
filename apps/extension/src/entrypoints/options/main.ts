@@ -1,4 +1,4 @@
-import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
+import type { GuidesConfig, SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import { hydrateI18n, initI18n, resolveUiLocale, t, type UiLocale } from "../../i18n/index.js";
 import { parseDomains } from "../../shared/add-project.js";
 import {
@@ -13,6 +13,7 @@ import {
 } from "../../shared/config.js";
 import { confirmDialog } from "../../shared/dialog.js";
 import { downloadExportBundles } from "../../shared/export-download.js";
+import { guideRowElement } from "../../shared/guide-section.js";
 import { localConnId } from "../../shared/local-id.js";
 import { normalizeLocalUrl } from "../../shared/local-url.js";
 import {
@@ -28,6 +29,7 @@ import { applyTheme, watchThemeChanges } from "../../shared/theme.js";
 import { parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/switch.css";
+import "../../shared/guide-section.css";
 
 const byId = (id: string): HTMLElement => {
   const el = document.getElementById(id);
@@ -142,7 +144,7 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
 
   // Team-default visibility editor (sidecar-backed connections only). Writes
   // .specs/views.json to Git, shared with everyone on the project.
-  if (c.connected) row.append(teamViewsSection(c));
+  if (c.connected) row.append(teamViewsSection(c), teamGuidesSection(c));
 
   // Empty-domains projects are inactive until the user opts in (RT-SA1).
   if (c.domains.length === 0) {
@@ -313,6 +315,76 @@ function teamViewsSection(c: ConnectionStatus): HTMLElement {
   });
 
   wrap.append(note, area, actions, result);
+  return wrap;
+}
+
+/** Per-connection team-guides management: list the connection's committed guides
+ *  (.specs/guides.json) and delete them, without visiting a page. Authoring +
+ *  reorder happen in the popup/side-panel editor (which has the page specs);
+ *  Options is the list + delete surface, parallel to teamViewsSection. Guides
+ *  load lazily on expand. */
+function teamGuidesSection(c: ConnectionStatus): HTMLElement {
+  const wrap = document.createElement("details");
+  wrap.className = "team-views";
+  const summary = document.createElement("summary");
+  summary.textContent = t("options.teamGuidesSummary");
+  wrap.appendChild(summary);
+
+  const note = document.createElement("p");
+  note.className = "muted";
+  note.textContent = t("options.teamGuidesNote");
+  const list = document.createElement("ul");
+  list.className = "guides-list";
+  const result = document.createElement("div");
+  wrap.append(note, list, result);
+
+  async function load(): Promise<void> {
+    const config = await sendToBackground<GuidesConfig>({
+      type: "GET_TEAM_GUIDES",
+      connectionId: c.id,
+    });
+    renderList(config.guides);
+  }
+
+  function renderList(guides: GuidesConfig["guides"]): void {
+    list.innerHTML = "";
+    if (guides.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "muted";
+      empty.textContent = t("options.noTeamGuides");
+      list.appendChild(empty);
+      return;
+    }
+    for (const guide of guides) {
+      // Delete-only row (authoring/reorder live in the popup/side-panel editor);
+      // reuse the shared row builder so the markup never drifts from the launch list.
+      const li = guideRowElement(guide, {
+        onDelete: async () => {
+          const ok = await confirmDialog({
+            message: t("guide.deleteConfirm", { name: guide.name }),
+            danger: true,
+          });
+          if (!ok) return;
+          const res = await sendToBackground<{ ok: boolean; error?: string }>({
+            type: "DELETE_GUIDE",
+            scope: "team",
+            id: guide.id,
+            targetId: c.id,
+          });
+          if (res.ok) await load();
+          else showResult(result, false, t("guide.deleteFailed", { error: res.error ?? "error" }));
+        },
+      });
+      list.appendChild(li);
+    }
+  }
+
+  let loaded = false;
+  wrap.addEventListener("toggle", () => {
+    if (!wrap.open || loaded) return;
+    loaded = true;
+    void load();
+  });
   return wrap;
 }
 

@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "guides": [
+    {
+      "id": "onboarding",
+      "name": "Onboarding tour",
+      "description": "First-run walkthrough of the login page.",
+      "steps": ["login-submit-btn", "nav-dashboard"]
+    },
+    {
+      "id": "empty-default",
+      "name": "Everything",
+      "steps": []
+    }
+  ]
+}

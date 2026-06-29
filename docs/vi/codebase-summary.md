@@ -35,7 +35,7 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 - `src/resolve-localized.ts` - prototype-safe `resolveLocalized()` / `resolveLocalizedList()` cho nội dung `LocalizedString` (locale -> defaultLocale -> fallback first present).
 - `scripts/gen-types.ts` - codegen runner (json-schema-to-typescript + ajv standalone).
 - `scripts/copy-gen-assets.ts` - copy `.gen.cjs` + `.gen.d.cts` sang dist sau build.
-- `scripts/validate-fixtures.ts` - cross-validate fixtures (valid + invalid, specs + views) với schema.
+- `scripts/validate-fixtures.ts` - cross-validate fixtures (valid + invalid, specs + views + guides) với schema.
 
 **Scripts:**
 - `pnpm gen` - regenerate types + validators từ `v1.json`.
@@ -72,7 +72,7 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 **Purpose**: Typed HTTP client trên REST contract của sidecar + SSE helper.
 
 **Key files:**
-- `src/client.ts` - class `SidecarClient` (200+ dòng). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`. Xử lý Bearer token, JSON serialization, error mapping.
+- `src/client.ts` - class `SidecarClient` (200+ dòng). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`, `getGuides()`, `putGuides(guides)`. Xử lý Bearer token, JSON serialization, error mapping.
 - `src/events.ts` - class `SidecarEventSource` (74 dòng). SSE wrapper với exponential backoff (min 1s, max 30s, reset sau 5s ổn định). Phát `specsChanged`, `manifestChanged`, `error`.
 - `src/errors.ts` - cây kế thừa `SidecarError` (42 dòng). `NotFoundError`, `ValidationError`, `UnauthorizedError`, `NetworkError`.
 - `src/types.ts` - HTTP contract types (40+ dòng). Re-export từ spec-schema (`ViewsConfig`) + `SidecarConfig`, `ConnectionStatus`.
@@ -103,11 +103,11 @@ internal/
     schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
-    server.go   - HTTP handlers: CRUD + SSE hub + GET/PUT /views (340+ lines)
+    server.go   - HTTP handlers: CRUD + SSE hub + GET/PUT /views + GET/PUT /guides (370+ lines)
     middleware.go - token auth + CORS (89 lines)
     hub.go      - SSE broadcast hub (102 lines)
   store/
-    store.go    - file-based spec store + views.json read/write (260+ lines, atomic, pretty JSON)
+    store.go    - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON)
   watch/
     watch.go    - fsnotify watcher, triggers SSE (87 lines)
 ```
@@ -116,7 +116,7 @@ internal/
 - `serve`: tự chọn port rảnh (hoặc --port), in URL+token, bind 127.0.0.1, khởi động HTTP+SSE, watch `.specs/`.
 - `init`: tạo `.specs/manifest.json` với giá trị mặc định.
 - Middleware: mọi request cần `Authorization: Bearer <token>`. CORS chỉ chấp nhận origin `chrome-extension://`, `moz-extension://`, `safari-web-extension://`. Từ chối web origin.
-- Store: ghi giới hạn trong `.specs/`, path-traversal guard (fix review H1). File ops atomic (temp + rename). JSON pretty-printed (indent 2 space) cho Git diff sạch. `GET /views` trả về `.specs/views.json` hoặc default rỗng `{version:"1.0",hidden:[]}` khi không có; `PUT /views` validate rồi ghi.
+- Store: ghi giới hạn trong `.specs/`, path-traversal guard (fix review H1). File ops atomic (temp + rename). JSON pretty-printed (indent 2 space) cho Git diff sạch. `GET /views` trả về `.specs/views.json` hoặc default rỗng `{version:"1.0",hidden:[]}` khi không có; `PUT /views` validate rồi ghi. `GET /guides` / `PUT /guides` phản chiếu điều này cho `.specs/guides.json` (default rỗng `{version:"1.0",guides:[]}`); spec scanner bỏ qua `guides.json` (không phải `*.spec.json`).
 
 **Makefile:**
 - `make sync-schema` - cp schema từ packages/spec-schema.
@@ -145,10 +145,10 @@ src/
     content.ts        - vòng lặp match+render, locale state, capture flow
     popup/            - view per-tab: status, specs, project list, language picker, filter UI
     sidepanel/        - docked surface (Chrome side_panel / Firefox sidebar_action)
-    options/          - connection manager (add/remove/reconnect) + manual import + rename/export per-batch + team views authoring
+    options/          - connection manager (add/remove/reconnect) + manual import + rename/export per-batch + team views authoring + quản lý team-guides per-connection (liệt kê + xóa)
   background/
-    sidecar-registry.ts   - map của các connection + danh sách batch cục bộ (Manual); tổng hợp được gate theo origin (domains theo từng batch, dedupe id giữa các batch, tag `manual:<batchId>` theo từng batch) + views threading; `localTargetsForOrigin` (gate mục tiêu ghi được) + `manualBatchesForExport`
-    sidecar-connection.ts - client + cache + SSE watch + team views cache của một project (được cô lập)
+    sidecar-registry.ts   - map của các connection + danh sách batch cục bộ (Manual); tổng hợp được gate theo origin (domains theo từng batch, dedupe id giữa các batch, tag `manual:<batchId>` theo từng batch) + views threading; `guidesForOrigin` (team guides: sidecar + local, tag theo origin) + `upsertGuide`/`deleteGuide` đọc-lại-trước-khi-ghi; `localTargetsForOrigin` (gate mục tiêu ghi được) + `manualBatchesForExport`
+    sidecar-connection.ts - client + cache + SSE watch + team views cache + team guides cache của một project (tất cả trong một nhóm reload, được cô lập)
     context-menu.ts       - submenu "Specpin" của menu chuột phải: build/gate hiển thị/đổi tiêu đề + router onClicked (gửi PIN_ELEMENT / SHOW_SPEC_HERE / START_CAPTURE tới tab, tắt tại chỗ)
   content/
     orchestrator.ts   - vòng lặp match; thread locale + project label + visibility filtering vào renderer
@@ -157,7 +157,9 @@ src/
     capture-form.ts   - soạn spec per-locale + bộ chọn "Save to" gắn nhãn theo loại (sidecar + local; định tuyến mục tiêu duy nhất; vô hiệu khi không dự án nào phục vụ trang)
     context-target.ts - helper thuần cho hành động chuột phải (guard element thuộc Specpin + duyệt ancestor đã match)
     toast.ts          - pill thông báo tạm thời trong shadow-DOM (vd "Show spec here" khi không có spec dưới con trỏ)
-    keyboard.ts       - shortcut handler
+    keyboard.ts       - shortcut handler (gồm Alt+Shift+G start/stop tour guide mặc định)
+    guide.ts          - GuideController: tour onboarding ở tầng page (spotlight overlay riêng + popover được neo, Prev/Next/Skip/Done, bàn phím, suspend + khôi phục phiên render, hard-stop khi spec đổi / SPA nav)
+    resolve-guide.ts  - thuần: giải quyết step id của một guide -> các DOM element đã match (bỏ cái chưa giải quyết, giữ thứ tự) + thứ tự mặc định RT-H4
   renderers/
     registry.ts       - interface `SpecRenderer` + registry
     tooltip.ts / sidebar.ts / modal.ts - ba display mode đã hiện thực (tooltip: pin + open-in-panel)
@@ -169,8 +171,10 @@ src/
   shared/
     shadow.ts / html.ts        - cô lập Shadow DOM + safe HTML escaping
     theme.ts                   - Theme = "system"|"light"|"dark", applyTheme(el, theme), applyStoredTheme(), watchThemeChanges()
-    messaging.ts               - protocol message được type (bao gồm OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs; tạo nội dung cục bộ: CREATE_LOCAL_PROJECT/RENAME_LOCAL_PROJECT (privileged), GET_WRITE_TARGETS, GET_EXPORT_BUNDLES (privileged))
-    connection-types.ts        - Connection / ConnectionStatus / TaggedSpec không phụ thuộc browser; MANUAL_CONNECTION_ID giờ là id bare legacy/dành riêng
+    messaging.ts               - protocol message được type (bao gồm OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs; tạo nội dung cục bộ: CREATE_LOCAL_PROJECT/RENAME_LOCAL_PROJECT (privileged), GET_WRITE_TARGETS, GET_EXPORT_BUNDLES (privileged); guides: GET_GUIDES_FOR_ORIGIN, GET_TEAM_GUIDES, START_GUIDE, SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE/DELETE_GUIDE (privileged))
+    guide-editor.ts (+ .css)   - modal biên soạn dùng chung: name + description + include/sắp thứ tự các bước + bộ chọn Save-to (sidecar/local/personal), định tuyến SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE
+    guide-section.ts (+ .css)  - danh sách khởi chạy guide dùng chung (tour mặc định + Start/Edit/Delete per-guide + New) cho popup + side panel
+    connection-types.ts        - Connection / ConnectionStatus / TaggedSpec / TaggedGuide không phụ thuộc browser; MANUAL_CONNECTION_ID giờ là id bare legacy/dành riêng
     local-id.ts                - prefix `manual:<batchId>` + predicate isLocalConnectionId / localBatchId / localConnId (thay cho các phép so sánh bằng tag bare)
     local-url.ts               - guard URL sidecar chỉ-localhost được tách ra (dùng chung bởi Options + add-project; guard SSRF/phishing)
     add-project.ts (+ .css)    - form inline "+ New project" dùng chung (Local qua CREATE_LOCAL_PROJECT, Sidecar qua ADD_CONNECTION); mount bởi popup + side panel
@@ -179,13 +183,13 @@ src/
     download.ts / export-download.ts - tải về qua Blob object-URL + glue zip-và-tải (popup/panel/Options)
     origin-match.ts            - matching origin/domain thuần (dùng chung bởi SW + popup; statusServesOrigin là gate ghi/capture)
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
-    config.ts                  - storage helper (connections, locale, enabled, danh sách batch cục bộ + migration legacy, personal visibility, theme, uiLocale) + các mutator cục bộ thuần (createLocalBatch / upsertLocalSpec / removeLocalSpecById / renameLocalBatch)
+    config.ts                  - storage helper (connections, locale, enabled, danh sách batch cục bộ + migration legacy, personal visibility, theme, uiLocale, personal guides trong storage.sync đánh key theo canonicalOrigin) + các mutator cục bộ thuần (createLocalBatch / upsertLocalSpec / removeLocalSpecById / renameLocalBatch / upsertLocalGuide / removeLocalGuide)
     surface-renderers.ts       - helper dùng chung cho popup/side panel: sourceBadge() (pill sidecar vs manual), setListControlsHidden() + render locale/filter có gate theo enabled (ẩn list controls khi Specpin off), giữ trạng thái đóng/mở của filter-group qua các lần rebuild
     surface-data.ts            - lọc spec dùng chung: specMatchesQuery() (predicate title/file/tags/description)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
     locales.ts                 - SUPPORTED=["en","vi"], UiLocale, resolveUiLocale (stored -> browser UI -> "en")
-    messages/en.ts             - source of truth, ~195 keys
+    messages/en.ts             - source of truth, ~235 keys (gồm guide.* tour + chrome biên soạn)
     messages/vi.ts             - typed against keyof Messages để đảm bảo compile-time parity
 ```
 
@@ -337,7 +341,9 @@ Hai job (JS, Go):
 
 **Logic fingerprint**: `packages/fingerprint-core/src/capture.ts` (capture signals), `match.ts` (thứ tự matching), `selector.ts` (tối ưu CSS).
 
-**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views + GET/PUT /guides), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+
+**Guide mode**: `content/guide.ts` (runtime tour) + `content/resolve-guide.ts` (giải quyết bước), `shared/guide-editor.ts` + `guide-section.ts` (UI biên soạn + khởi chạy), các guide handler ở background trong `entrypoints/background.ts`, sidecar `/guides` trong `server.go`/`store.go`.
 
 **Extension rendering**: `apps/extension/src/renderers/` (tooltip.ts, sidebar.ts, modal.ts), `content/orchestrator.ts` (match loop).
 

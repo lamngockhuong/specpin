@@ -1,4 +1,5 @@
 import type {
+  GuidesConfig,
   SidecarClient,
   SpecsResponse,
   SubscribeOptions,
@@ -41,6 +42,14 @@ export class SidecarSource implements SpecSource {
 
   saveViews(config: ViewsConfig): Promise<void> {
     return this.client.putViews(config);
+  }
+
+  loadGuides(): Promise<GuidesConfig> {
+    return this.client.getGuides();
+  }
+
+  saveGuides(config: GuidesConfig): Promise<void> {
+    return this.client.putGuides(config);
   }
 
   watch(onChange: () => void, options?: Omit<SubscribeOptions, "fetch">): () => void {

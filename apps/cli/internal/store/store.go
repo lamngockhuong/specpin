@@ -18,6 +18,10 @@ import (
 // empty team default (everything visible), so clients need no 404 special-case.
 const defaultViewsJSON = "{\n  \"version\": \"1.0\",\n  \"hidden\": []\n}\n"
 
+// defaultGuidesJSON is returned by LoadGuides when .specs/guides.json is absent:
+// an empty named-guides default, so clients need no 404 special-case.
+const defaultGuidesJSON = "{\n  \"version\": \"1.0\",\n  \"guides\": []\n}\n"
+
 // ErrNotFound is returned when a spec id cannot be located across spec files.
 var ErrNotFound = errors.New("spec not found")
 
@@ -130,6 +134,41 @@ func (s *Store) LoadViews() ([]byte, error) {
 // schema first; json.Indent preserves the client's key order.
 func (s *Store) SaveViews(raw json.RawMessage) error {
 	full, err := s.resolve("views.json")
+	if err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	if err := json.Indent(&buf, raw, "", "  "); err != nil {
+		return err
+	}
+	out := append(buf.Bytes(), '\n')
+	return atomicWrite(full, out)
+}
+
+// LoadGuides reads the raw .specs/guides.json (the named-guides config), or
+// returns the empty default when the file does not exist. The traversal +
+// symlink guard applies via resolve, like every other .specs/ read. guides.json
+// is a singleton (one per .specs/); per-guide edits are whole-file PUTs.
+func (s *Store) LoadGuides() ([]byte, error) {
+	full, err := s.resolve("guides.json")
+	if err != nil {
+		return nil, err
+	}
+	raw, err := os.ReadFile(full)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []byte(defaultGuidesJSON), nil
+		}
+		return nil, err
+	}
+	return raw, nil
+}
+
+// SaveGuides writes guides.json atomically and pretty-printed (2-space) for clean
+// Git diffs, confined to .specs/. The caller validates the body against the
+// schema first; json.Indent preserves the client's key order.
+func (s *Store) SaveGuides(raw json.RawMessage) error {
+	full, err := s.resolve("guides.json")
 	if err != nil {
 		return err
 	}

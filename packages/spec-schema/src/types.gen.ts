@@ -18,6 +18,7 @@ export interface SpecpinSchemaRoots {
   specFile: SpecFile;
   manifest: Manifest;
   views: ViewsConfig;
+  guides: GuidesConfig;
 }
 /**
  * A Specpin <area>.spec.json file: a named group of specs pinned to UI elements.
@@ -138,4 +139,41 @@ export interface ViewsConfig {
   $schema?: string;
   version: string;
   hidden: string[];
+}
+/**
+ * The .specs/guides.json named-guides config: a versioned file holding an array of named onboarding guides.
+ */
+export interface GuidesConfig {
+  /**
+   * Optional pointer to this schema for editor tooling.
+   */
+  $schema?: string;
+  version: string;
+  /**
+   * @maxItems 50
+   */
+  guides: GuideDef[];
+}
+/**
+ * One named onboarding guide: an ordered list of spec ids to walk through. Empty steps means the guide falls back to all matched specs in default order at launch.
+ */
+export interface GuideDef {
+  /**
+   * Stable unique id within the file, e.g. "onboarding".
+   */
+  id: string;
+  /**
+   * Plain-string UI label (not a LocalizedString; step content is localized via the referenced specs).
+   */
+  name: string;
+  /**
+   * Optional plain-string blurb shown when the guide launches.
+   */
+  description?: string;
+  /**
+   * Ordered spec ids. May be empty, in which case the guide walks all matched specs in default order.
+   *
+   * @maxItems 200
+   */
+  steps: string[];
 }

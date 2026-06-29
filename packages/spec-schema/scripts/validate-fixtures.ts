@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  validateGuides,
   validateManifest,
   validateSpec,
   validateSpecFile,
@@ -15,6 +16,7 @@ import {
 const here = dirname(fileURLToPath(import.meta.url));
 const specsDir = resolve(here, "../../../tests/fixtures/specs");
 const viewsDir = resolve(here, "../../../tests/fixtures/views");
+const guidesDir = resolve(here, "../../../tests/fixtures/guides");
 
 async function readFixtures(
   baseDir: string,
@@ -52,6 +54,17 @@ async function main(): Promise<void> {
   for (const { name, data } of await readFixtures(viewsDir, "invalid")) {
     const { valid } = validateViews(data);
     if (valid) failures.push(`views/invalid/${name} should fail but passed`);
+  }
+
+  // guides.json corpus, cross-checked against validateGuides on both sides.
+  for (const { name, data } of await readFixtures(guidesDir, "valid")) {
+    const { valid, errors } = validateGuides(data);
+    if (!valid)
+      failures.push(`guides/valid/${name} should pass but failed: ${JSON.stringify(errors)}`);
+  }
+  for (const { name, data } of await readFixtures(guidesDir, "invalid")) {
+    const { valid } = validateGuides(data);
+    if (valid) failures.push(`guides/invalid/${name} should fail but passed`);
   }
 
   // Guard against demo rot: the seeded demo specs must stay schema-valid.

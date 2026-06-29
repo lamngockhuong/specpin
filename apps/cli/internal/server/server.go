@@ -38,6 +38,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("DELETE /specs/{id}", s.handleDeleteSpec)
 	mux.HandleFunc("GET /views", s.handleGetViews)
 	mux.HandleFunc("PUT /views", s.handlePutViews)
+	mux.HandleFunc("GET /guides", s.handleGetGuides)
+	mux.HandleFunc("PUT /guides", s.handlePutGuides)
 	mux.HandleFunc("GET /events", s.handleEvents)
 	return s.cors(s.auth(mux))
 }
@@ -149,6 +151,39 @@ func (s *Server) handlePutViews(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.store.SaveViews(body); err != nil {
+		writeError(w, statusForStoreError(err), "save_failed", []string{err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, body)
+}
+
+// handleGetGuides returns the named-guides config, or the empty default when
+// .specs/guides.json is absent (200, so clients need no 404 special-case).
+func (s *Server) handleGetGuides(w http.ResponseWriter, _ *http.Request) {
+	raw, err := s.store.LoadGuides()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "load_failed", []string{err.Error()})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(raw)
+}
+
+// handlePutGuides validates and writes .specs/guides.json (singleton, no {id};
+// per-guide edits are whole-file read-modify-write PUTs). Same bearer +
+// extension-origin middleware as /specs; the dir watcher fires SSE on the write.
+func (s *Server) handlePutGuides(w http.ResponseWriter, r *http.Request) {
+	var body json.RawMessage
+	if err := decodeBody(r, &body); err != nil {
+		writeError(w, http.StatusBadRequest, "bad_request", []string{err.Error()})
+		return
+	}
+	if errs := s.validator.ValidateGuides(body); errs != nil {
+		writeError(w, http.StatusBadRequest, "schema_invalid", errs)
+		return
+	}
+	if err := s.store.SaveGuides(body); err != nil {
 		writeError(w, statusForStoreError(err), "save_failed", []string{err.Error()})
 		return
 	}

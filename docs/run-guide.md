@@ -107,6 +107,22 @@ Open a spec for editing from either surface: click a tooltip badge to pin it and
 
 To point a spec at a different element, click **Re-link element** in the edit form, then click the new element on the page; the form reopens with your edits intact and the new fingerprint applied on save. Local (Manual) specs are now editable the same way; the edit writes back to `browser.storage.local` instead of a sidecar. (Side panel Edit drives the in-page form, so keep the panel docked next to the page it describes.)
 
+## 12. Guided tours (guide mode)
+
+A **guide** is a step-by-step walkthrough over the specs already on a page: it spotlights each element in turn and shows that spec's content in a popover with **Back / Skip / Next** (the last step is **Done**), a step counter, and `←` / `→` / `Esc` keyboard control. It is launched on demand and does not replace the normal tooltip/sidebar/modal rendering.
+
+**Launch.** The popup and side panel have a **Guides** section: click **Start guided tour** to walk every matched spec in default order (no setup needed), or **Start** next to a named guide to run its curated steps. `Alt+Shift+G` starts the default tour from the keyboard (press again to stop). From the popup the tour launches and the popup closes so the page is unobscured; the side panel stays open.
+
+**Curate.** Click **+ New guide** (or **Edit** on a guide) to open the editor: give it a name (and optional description), add the page's specs as ordered steps (use the ↑ / ↓ buttons to reorder, × to remove), and choose where to save it in the **Save to** picker:
+
+- a **sidecar** project - committed to that repo's `.specs/guides.json` and shared with the team via Git;
+- a **local** project - stored in the extension alongside that local project;
+- **Personal** - private to you, synced across your machines, never written to Git.
+
+Leave the steps empty to save a guide that always walks every matched spec in default order. A step whose spec is no longer on the page is flagged in the editor (and skipped at launch). Delete a guide from the same list, or manage a connection's team guides (list + delete) from the Options page under **Team guides**.
+
+A guide built for a page reflects whatever specs match it at launch; if a teammate changes the specs mid-tour, the tour stops cleanly and the normal rendering returns.
+
 ## Connect several projects at once
 
 One extension can serve many projects. Run a sidecar per project on its own port (each prints its own token), and add each in Options:
@@ -127,6 +143,7 @@ To demo this against the single demo app, run two sidecars over two `.specs/` di
 | `Alt+Shift+S` | toggle Specpin on/off |
 | `Alt+Shift+M` | cycle display mode |
 | `Alt+Shift+C` | toggle capture mode (`Esc` cancels) |
+| `Alt+Shift+G` | start / stop the default guided tour (in-tour: `←` / `→` step, `Esc` exits) |
 
 ## Display modes
 

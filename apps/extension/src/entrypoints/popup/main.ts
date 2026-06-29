@@ -19,7 +19,10 @@ import "../../shared/link.css";
 import "../../shared/add-project.css";
 import "../../shared/project-menu.css";
 import "../../shared/surface-toast.css";
+import "../../shared/guide-section.css";
+import "../../shared/guide-editor.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
+import { mountGuideSection } from "../../shared/guide-section.js";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
 import { wireProjectActions } from "../../shared/project-actions.js";
 import {
@@ -87,12 +90,25 @@ function renderSpecs(res: SpecsForOrigin): void {
   }
 }
 
+// The Guides launch section (start a tour, create/edit/delete guides). Launching
+// closes the popup so the tour is unobscured (only on delivery, like Capture).
+const guideSection = mountGuideSection(byId("guides"), {
+  launch: (steps, name) =>
+    void actOnActiveTab({ type: "START_GUIDE", steps, name }, () => window.close()),
+});
+
 async function refresh(): Promise<void> {
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
   renderStatus(status, origin, specs.specs.length);
   renderProjects(status, origin);
+  await guideSection.refresh({
+    origin,
+    enabled: specs.enabled,
+    locale,
+    defaultLocale: specs.manifest?.settings?.defaultLocale,
+  });
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The popup stays compact: group-level filters only (per-spec lives in the panel).
   renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh);

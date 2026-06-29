@@ -1,0 +1,168 @@
+/* Guide curation editor modal. Scoped to .ge-* so it never collides with host or
+   extension-page styles; uses the shared --sp-* tokens so it tracks the theme. */
+.ge-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  background: var(--sp-overlay-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.ge-card {
+  width: 420px;
+  max-width: 94vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--sp-surface);
+  color: var(--sp-text);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-card);
+  padding: 20px;
+  font: 13px / 1.5 var(--sp-font-ui);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+.ge-title {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.ge-field {
+  margin-bottom: 12px;
+}
+.ge-field > label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.ge-field input,
+.ge-field textarea,
+.ge-add select,
+.ge-field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font: 13px / 1.4 var(--sp-font-ui);
+  color: var(--sp-text);
+  background: var(--sp-elevated);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+}
+.ge-field input:focus,
+.ge-field textarea:focus,
+.ge-field select:focus,
+.ge-add select:focus {
+  outline: none;
+  border-color: var(--sp-accent);
+  box-shadow: 0 0 0 3px var(--sp-accent-glow);
+}
+.ge-section-label {
+  font-weight: 600;
+  margin: 6px 0 2px;
+}
+.ge-hint {
+  color: var(--sp-text-3);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.ge-steps {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+.ge-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--sp-border);
+}
+.ge-step-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ge-step-label.missing {
+  color: var(--sp-warning);
+}
+.ge-add {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.ge-add select {
+  flex: 1;
+}
+.ge-add-btn,
+.ge-btn,
+.ge-icon {
+  cursor: pointer;
+  font: 13px / 1 var(--sp-font-ui);
+  color: var(--sp-text);
+  background: var(--sp-control);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+}
+.ge-add-btn {
+  padding: 8px 12px;
+}
+.ge-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  line-height: 1;
+  font-size: 13px;
+}
+.ge-add-btn:hover,
+.ge-btn:hover,
+.ge-icon:hover:not([disabled]) {
+  background: var(--sp-elevated);
+}
+.ge-icon[disabled],
+.ge-add-btn[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+.ge-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.ge-btn {
+  padding: 9px 16px;
+  font-weight: 600;
+}
+.ge-btn.primary {
+  background: var(--sp-accent);
+  color: var(--sp-accent-on);
+  border-color: var(--sp-accent);
+}
+.ge-btn.primary:hover {
+  background: var(--sp-accent-hover);
+  border-color: var(--sp-accent-hover);
+}
+.ge-result {
+  margin-top: 10px;
+  font-size: 12px;
+}
+.ge-result.err {
+  color: var(--sp-error-text);
+}
+.ge-result.ok {
+  color: var(--sp-accent);
+}
+.ge-icon:focus-visible,
+.ge-btn:focus-visible,
+.ge-add-btn:focus-visible {
+  outline: none;
+  border-color: var(--sp-accent);
+  box-shadow: 0 0 0 3px var(--sp-accent-glow);
+}

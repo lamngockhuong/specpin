@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "guides": [
+    {
+      "id": "onboarding",
+      "name": "Onboarding tour",
+      "steps": [],
+      "unexpected": true
+    }
+  ]
+}

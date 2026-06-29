@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "guides": [
+    {
+      "id": "Bad Id",
+      "name": "Has spaces and capitals",
+      "steps": ["login-submit-btn"]
+    }
+  ]
+}

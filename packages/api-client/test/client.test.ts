@@ -95,6 +95,29 @@ describe("SidecarClient requests", () => {
     expect(init.method).toBe("PUT");
     expect(JSON.parse(init.body as string)).toEqual(views);
   });
+
+  it("getGuides() GETs /guides and returns the config", async () => {
+    const guides = { version: "1.0", guides: [] };
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(guides));
+    const res = await client(fetchImpl).getGuides();
+    expect(res).toEqual(guides);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/guides");
+    expect(init.method).toBe("GET");
+  });
+
+  it("putGuides() PUTs the config to /guides", async () => {
+    const guides = {
+      version: "1.0",
+      guides: [{ id: "onboarding", name: "Tour", steps: ["login-btn"] }],
+    };
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(guides));
+    await client(fetchImpl).putGuides(guides);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/guides");
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(init.body as string)).toEqual(guides);
+  });
 });
 
 describe("SidecarClient errors", () => {

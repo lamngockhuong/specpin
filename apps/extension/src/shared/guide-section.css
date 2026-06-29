@@ -1,0 +1,80 @@
+/* The Guides launch section shared by the popup + side panel. Uses the shared
+   --sp-* tokens so it tracks the active theme. */
+.guides {
+  margin: 8px 0;
+}
+.guides[hidden] {
+  display: none;
+}
+.guides-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.guides-title {
+  font: 600 11px / 1 var(--sp-font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sp-text-3);
+}
+.guides-default {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  font: 600 13px / 1 var(--sp-font-ui);
+  color: var(--sp-accent-on);
+  background: var(--sp-accent);
+  border: 1px solid var(--sp-accent);
+  border-radius: var(--sp-radius-control);
+}
+.guides-default:hover {
+  background: var(--sp-accent-hover);
+  border-color: var(--sp-accent-hover);
+}
+.guides-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.guides-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+}
+.guides-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.guides-start {
+  flex: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  font: 13px / 1 var(--sp-font-ui);
+  color: var(--sp-text);
+  background: var(--sp-control);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+}
+.guides-start:hover {
+  background: var(--sp-elevated);
+}
+.guides .link.danger {
+  color: var(--sp-error-text);
+}
+.guides-default:focus-visible,
+.guides-start:focus-visible {
+  outline: none;
+  border-color: var(--sp-accent);
+  box-shadow: 0 0 0 3px var(--sp-accent-glow);
+}

@@ -120,3 +120,59 @@ func TestNonSpecFileNameRejected(t *testing.T) {
 		}
 	}
 }
+
+func TestGuidesRoundTrip(t *testing.T) {
+	s := newTempStore(t)
+	// Absent file returns the empty default.
+	raw, err := s.LoadGuides()
+	if err != nil {
+		t.Fatalf("load default guides: %v", err)
+	}
+	if !strings.Contains(string(raw), `"guides"`) || !strings.Contains(string(raw), `"version"`) {
+		t.Errorf("default guides missing fields: %s", raw)
+	}
+
+	cfg := `{"version":"1.0","guides":[{"id":"onboarding","name":"Tour","steps":["login-btn"]}]}`
+	if err := s.SaveGuides(json.RawMessage(cfg)); err != nil {
+		t.Fatalf("save guides: %v", err)
+	}
+	raw, err = s.LoadGuides()
+	if err != nil {
+		t.Fatalf("reload guides: %v", err)
+	}
+	if !strings.Contains(string(raw), "onboarding") {
+		t.Errorf("guides round-trip lost content: %s", raw)
+	}
+	// Pretty-printed for clean Git diffs.
+	if !strings.Contains(string(raw), "\n  \"guides\"") {
+		t.Errorf("expected pretty-printed guides.json, got:\n%s", raw)
+	}
+}
+
+// RT-M2: a .specs/ containing guides.json must still load specs cleanly;
+// guides.json must not be scanned as a spec file (suffix is .json, not .spec.json).
+func TestGuidesJSONNotParsedAsSpec(t *testing.T) {
+	s := newTempStore(t)
+	if err := s.SaveSpec("login.spec.json", json.RawMessage(validSpec)); err != nil {
+		t.Fatalf("save spec: %v", err)
+	}
+	if err := s.SaveGuides(json.RawMessage(`{"version":"1.0","guides":[]}`)); err != nil {
+		t.Fatalf("save guides: %v", err)
+	}
+	bundle, err := s.Load()
+	if err != nil {
+		t.Fatalf("load with guides.json present: %v", err)
+	}
+	if len(bundle.Specs) != 1 {
+		t.Fatalf("guides.json polluted the spec scan: want 1 spec, got %d", len(bundle.Specs))
+	}
+	names, err := s.SpecFileNames()
+	if err != nil {
+		t.Fatalf("spec file names: %v", err)
+	}
+	for _, n := range names {
+		if n == "guides.json" {
+			t.Errorf("guides.json was listed as a spec file: %v", names)
+		}
+	}
+}

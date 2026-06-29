@@ -4,10 +4,12 @@ import { browser, defineContentScript } from "#imports";
 import { CaptureForm } from "../content/capture-form.js";
 import { CapturePicker } from "../content/capture-mode.js";
 import { findMatchedSpec, isSpecpinOwned } from "../content/context-target.js";
+import { GuideController } from "../content/guide.js";
 import { highlightElement } from "../content/highlight.js";
 import { registerKeyboard } from "../content/keyboard.js";
 import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
 import { type RenderSession, renderSession } from "../content/orchestrator.js";
+import { resolveGuideSteps } from "../content/resolve-guide.js";
 import { showToast } from "../content/toast.js";
 import { initI18n, resolveUiLocale, t } from "../i18n/index.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
@@ -81,6 +83,12 @@ export default defineContentScript({
     // and apply on capture exit instead.
     let captureActive = false;
     let pendingRerender = false;
+    // Guide-mode tour. `guideActive` gates rerender() exactly like captureActive
+    // (RT-C3): a background SPECS_CHANGED/theme/mode/locale must not rebuild a
+    // render session on top of the running tour. The controller is created lazily
+    // and reused across launches.
+    let guide: GuideController | null = null;
+    let guideActive = false;
     // The element under the last right-click, for the context-menu "Pin spec to
     // this element" / "Show spec here" actions (the background's onClicked never
     // carries the DOM element). Null when the click landed on Specpin's own UI.
@@ -105,7 +113,10 @@ export default defineContentScript({
     };
 
     const rerender = () => {
-      if (captureActive) {
+      // Freeze re-renders while capturing OR while a guide tour is running, so a
+      // background event (SPECS_CHANGED / theme / mode / locale) cannot rebuild a
+      // tooltip/sidebar session on top of the live overlay (RT-C3 / RT-FM6).
+      if (captureActive || guideActive) {
         pendingRerender = true;
         return;
       }
@@ -168,6 +179,9 @@ export default defineContentScript({
     const onNavigate = () => {
       if (location.href === lastRenderedUrl) return;
       lastRenderedUrl = location.href;
+      // A route change can unmount the tour's target element. Hard-stop the guide
+      // (it restores the session via onExit) before re-rendering the new route.
+      if (guideActive) guide?.stop();
       // Tear down the previous route's renderers immediately so stale tooltips
       // don't linger over the new page during the debounce window (otherwise the
       // new view paints first, then old tooltips vanish, then new ones appear).
@@ -231,6 +245,52 @@ export default defineContentScript({
       flushPendingRerender();
     }
 
+    // Launch a guide tour. The single launch path for both START_GUIDE (from the
+    // popup/side panel) and the keyboard shortcut (RT-M5): it refuses while a
+    // capture/edit is open OR a guide already runs, suspends the render session,
+    // resolves the steps against the current page specs (default order when none
+    // are given, RT-H4), and starts the controller. On exit (Done/Skip/Esc OR a
+    // hard-stop) `guideActive` clears and the suspended session is restored via the
+    // single flushPendingRerender primitive (RT-FM6) - never a hand-rolled rerender.
+    function launchGuide(steps: string[] | undefined, name: string): void {
+      if (captureActive || guideActive) return;
+      const { steps: resolved } = resolveGuideSteps(steps, specs, document);
+      if (resolved.length === 0) {
+        showToast(t("guide.elementMissing"), document, theme);
+        return;
+      }
+      guideActive = true;
+      // Suspend the active render session so its tooltip/sidebar/modal does not sit
+      // over the tour; flushPendingRerender rebuilds it on exit.
+      clearReveal();
+      session?.destroy();
+      session = null;
+      guide ??= new GuideController();
+      guide.start(resolved, {
+        guideName: name,
+        locale,
+        defaultLocale: manifest?.settings?.defaultLocale,
+        theme,
+        pageOrigin: location.origin,
+        doc: document,
+        onExit: () => {
+          guideActive = false;
+          flushPendingRerender();
+        },
+      });
+    }
+
+    // Keyboard toggle (Alt+Shift+G): stop a running tour, else launch the default
+    // guide (all matched specs in default order). The message path (START_GUIDE)
+    // launches a specific curated guide instead.
+    function toggleGuide(): void {
+      if (guideActive) {
+        guide?.stop();
+        return;
+      }
+      launchGuide(undefined, t("guide.defaultName"));
+    }
+
     // Resolve the writable projects (sidecar + local) serving this page. The
     // background resolves them so EMPTY local projects (which specsForOrigin omits)
     // are included and each target is labelled by kind. The form asks which to
@@ -268,6 +328,9 @@ export default defineContentScript({
     }
 
     async function startCapture(): Promise<void> {
+      // One authoring/overlay flow at a time: never start capture over a running
+      // tour (the Alt+Shift chords stay global while a guide owns Left/Right/Esc).
+      if (guideActive) return;
       if (picker.isActive) {
         picker.stop();
         endCapture();
@@ -287,7 +350,7 @@ export default defineContentScript({
     // last contextmenu event directly, skipping hover-pick. Honors the single-
     // authoring-flow guard; no-op when nothing valid was recorded.
     async function pinElement(): Promise<void> {
-      if (captureActive || !lastRightClicked) return;
+      if (captureActive || guideActive || !lastRightClicked) return;
       captureActive = true;
       const targets = await fetchWriteTargets();
       openCaptureFormForElement(lastRightClicked, targets);
@@ -395,6 +458,7 @@ export default defineContentScript({
       onToggleEnabled: () => void toggleEnabled(),
       onCycleMode: cycleMode,
       onToggleCapture: () => void startCapture(),
+      onToggleGuide: toggleGuide,
     });
 
     // Record the right-clicked element for the context-menu actions. Capture phase
@@ -434,10 +498,17 @@ export default defineContentScript({
       const message = raw as Message;
       switch (message?.type) {
         case "SPECS_CHANGED":
+          // RT-H6: a mid-tour spec change (a teammate's SSE edit can delete/alter
+          // a step's spec, stranding a captured element) hard-stops the guide and
+          // restores the session before the page re-queries its specs.
+          if (guideActive) guide?.stop();
           void refresh();
           break;
         case "START_CAPTURE":
           void startCapture();
+          break;
+        case "START_GUIDE":
+          launchGuide(message.steps, message.name);
           break;
         case "PIN_ELEMENT":
           void pinElement();
