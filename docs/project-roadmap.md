@@ -82,6 +82,8 @@ Independent review (`plans/reports/from-code-reviewer-to-orchestrator-specpin-mv
 
 Goal: robustness, flexibility, polish. No timeline committed.
 
+**Website shipped (2026-06-29)**: public marketing landing + a fresh end-user documentation set (EN + VI), built as an Astro Starlight app in `apps/web`, targeting `specpin.ohnice.app` via GitHub Pages (plan: `plans/260629-1348-specpin-landing-docs-site/`). The repo `docs/` set stays developer/contributor docs and is unrelated to the website's end-user content.
+
 **Lean first slice shipped (2026-06-26)** on branch `feat/spec-validate-cli-and-ci` (plan: `plans/260626-1415-specpin-phase-1-1/`):
 - `specpin validate`: offline schema check of `.specs/` (exit 0 valid / 1 invalid / 2 cannot-run), symlink guard in the store, manifest-drift warning.
 - CI spec-lint: in-repo step over the demo specs + a reusable composite action that builds the validator from a pinned ref (not the caller's PR).

@@ -27,6 +27,7 @@
 </p>
 
 <p align="center">
+  <a href="https://specpin.ohnice.app">Website</a> •
   <a href="#quick-start">Quick start</a> •
   <a href="#features">Features</a> •
   <a href="#how-it-fits-together">How it works</a> •

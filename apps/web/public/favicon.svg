@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Specpin">
+  <!-- Teal brand background (squircle, 112px corner radius) -->
+  <rect width="512" height="512" rx="112" fill="#2DD4BF"/>
+  <!-- White map pin: round head (center 256,184 r100); concave sides curve to a soft tip at 256,401.5 -->
+  <path d="M256 401.5 C252.2 349.3 204.9 297.2 175.5 245 A100 100 0 1 1 336.5 245 C307.1 297.2 259.8 349.3 256 401.5 Z" fill="#FFFFFF"/>
+  <!-- Teal disc inside the pin head -->
+  <circle cx="256" cy="185" r="64" fill="#2DD4BF"/>
+  <!-- White targeting reticle (four corner brackets) -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M241 155 H226 V170"/>
+    <path d="M271 155 H286 V170"/>
+    <path d="M226 200 V215 H241"/>
+    <path d="M286 200 V215 H271"/>
+  </g>
+</svg>

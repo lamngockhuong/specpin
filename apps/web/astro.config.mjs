@@ -1,0 +1,100 @@
+// @ts-check
+import starlight from "@astrojs/starlight";
+import { defineConfig } from "astro/config";
+import starlightLinksValidator from "starlight-links-validator";
+
+// Custom domain serves at the apex path, so base stays "/".
+// See plans/260629-1348-specpin-landing-docs-site for the full site plan.
+export default defineConfig({
+  site: "https://specpin.ohnice.app",
+  base: "/",
+  integrations: [
+    starlight({
+      title: "Specpin",
+      customCss: ["./src/styles/custom.css"],
+      logo: { src: "./src/assets/specpin-icon.svg", alt: "Specpin" },
+      favicon: "/favicon.svg",
+      // Social-share + favicon fallback tags. Starlight emits og:title/
+      // og:description/twitter:card per page; we add the static share image.
+      // og:locale is intentionally omitted: the head is global, so a static
+      // locale tag would mislabel the /vi/ subtree.
+      head: [
+        {
+          tag: "link",
+          attrs: { rel: "icon", href: "/favicon.ico", sizes: "any" },
+        },
+        {
+          tag: "meta",
+          attrs: { property: "og:image", content: "https://specpin.ohnice.app/og.png" },
+        },
+        { tag: "meta", attrs: { property: "og:image:width", content: "1200" } },
+        { tag: "meta", attrs: { property: "og:image:height", content: "630" } },
+        {
+          tag: "meta",
+          attrs: { name: "twitter:image", content: "https://specpin.ohnice.app/og.png" },
+        },
+        { tag: "meta", attrs: { name: "twitter:card", content: "summary_large_image" } },
+      ],
+      // EN at the root, VI mirrored under /vi/. The language switcher pairs
+      // pages that share a slug across these locales.
+      defaultLocale: "root",
+      locales: {
+        root: { label: "English", lang: "en" },
+        vi: { label: "Tiếng Việt", lang: "vi" },
+      },
+      social: [
+        {
+          icon: "github",
+          label: "GitHub",
+          href: "https://github.com/lamngockhuong/specpin",
+        },
+      ],
+      editLink: {
+        baseUrl: "https://github.com/lamngockhuong/specpin/edit/main/apps/web/",
+      },
+      // Fail the build on broken internal links (the docs integrity gate).
+      plugins: [starlightLinksValidator()],
+      // End-user docs IA. Group labels are localized for VI; page labels come
+      // from each page's own frontmatter title (localized in the vi/ mirror).
+      sidebar: [
+        {
+          label: "Getting started",
+          translations: { vi: "Bắt đầu" },
+          items: [
+            { slug: "guide/introduction" },
+            { slug: "guide/install" },
+            { slug: "guide/getting-started" },
+          ],
+        },
+        {
+          label: "Using Specpin",
+          translations: { vi: "Sử dụng Specpin" },
+          items: [
+            { slug: "usage/connecting-projects" },
+            { slug: "usage/viewing-specs" },
+            { slug: "usage/capturing-and-editing" },
+            { slug: "usage/settings" },
+          ],
+        },
+        {
+          label: "Concepts",
+          translations: { vi: "Khái niệm" },
+          items: [
+            { slug: "concepts/how-it-works" },
+            { slug: "concepts/security-and-privacy" },
+          ],
+        },
+        {
+          label: "Serving your specs",
+          translations: { vi: "Phục vụ đặc tả của bạn" },
+          items: [{ slug: "sidecar/cli" }, { slug: "sidecar/spec-format" }],
+        },
+        {
+          label: "Help",
+          translations: { vi: "Trợ giúp" },
+          items: [{ slug: "help/troubleshooting" }],
+        },
+      ],
+    }),
+  ],
+});

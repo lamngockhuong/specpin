@@ -27,6 +27,7 @@
 </p>
 
 <p align="center">
+  <a href="https://specpin.ohnice.app/vi/">Website</a> •
   <a href="#bắt-đầu-nhanh">Bắt đầu nhanh</a> •
   <a href="#tính-năng">Tính năng</a> •
   <a href="#cách-hoạt-động">Cách hoạt động</a> •
