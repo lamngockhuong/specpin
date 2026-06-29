@@ -18,6 +18,8 @@ import "../../shared/icon-btn.css";
 import "../../shared/link.css";
 import "../../shared/add-project.css";
 import "../../shared/project-menu.css";
+import "../../shared/surface-toast.css";
+import { actOnActiveTab } from "../../shared/active-tab-action.js";
 import {
   type Message,
   type SpecsForOrigin,
@@ -93,7 +95,7 @@ function renderSpecs(res: SpecsForOrigin): void {
     // Clicking the card scrolls to and highlights the matched element on the page.
     li.title = t("common.clickToHighlight");
     li.addEventListener("click", () => {
-      void sendToActiveTab({ type: "HIGHLIGHT_ELEMENT", specId: spec.id });
+      void actOnActiveTab({ type: "HIGHLIGHT_ELEMENT", specId: spec.id });
     });
 
     const facets = { id: spec.id, tags: spec.tags, file: spec._file };
@@ -124,7 +126,7 @@ function renderSpecs(res: SpecsForOrigin): void {
       edit.title = t("sidepanel.editThisSpec");
       edit.addEventListener("click", (e) => {
         e.stopPropagation();
-        void sendToActiveTab({ type: "EDIT_SPEC", specId: spec.id });
+        void actOnActiveTab({ type: "EDIT_SPEC", specId: spec.id });
       });
       li.appendChild(edit);
     }
@@ -222,7 +224,7 @@ byId("enabled").addEventListener("change", async (e) => {
 byId("capture").addEventListener("click", async () => {
   // Unlike the popup, the panel stays open: the user clicks the page element
   // while the panel remains docked alongside.
-  await sendToActiveTab({ type: "START_CAPTURE" });
+  await actOnActiveTab({ type: "START_CAPTURE" });
 });
 void wireDisplayModePicker(byId("mode") as HTMLSelectElement);
 byId("locale").addEventListener("change", async (e) => {

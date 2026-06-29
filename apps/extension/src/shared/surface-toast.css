@@ -1,0 +1,39 @@
+/* Transient warning pill for the popup / side panel surfaces (see
+   surface-toast.ts). Pinned to the top of the surface, above the rest of the UI,
+   using the shared warning tokens so it reads as "couldn't do that" without the
+   weight of a blocking error. Shared by both surfaces, like icon-btn.css. */
+.sp-toast {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 1000;
+  box-sizing: border-box;
+  padding: 9px 14px;
+  border-radius: var(--sp-radius-control);
+  background: var(--sp-warning-bg);
+  color: var(--sp-warning);
+  border: 1px solid var(--sp-warning-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  font-family: var(--sp-font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+.sp-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sp-toast {
+    transition: none;
+    transform: none;
+  }
+}
