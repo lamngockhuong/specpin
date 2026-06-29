@@ -96,7 +96,7 @@ export default defineConfig({
         {
           label: "Help",
           translations: { vi: "Trợ giúp" },
-          items: [{ slug: "help/troubleshooting" }],
+          items: [{ slug: "help/troubleshooting" }, { slug: "help/privacy-policy" }],
         },
       ],
     }),
