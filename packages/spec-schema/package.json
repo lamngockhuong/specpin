@@ -1,7 +1,29 @@
 {
   "name": "@specpin/spec-schema",
   "version": "0.0.0",
-  "private": true,
+  "description": "Specpin spec file JSON Schema (v1) with generated TypeScript types and ajv validators.",
+  "license": "Apache-2.0",
+  "author": "Lam Ngoc Khuong",
+  "homepage": "https://specpin.ohnice.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lamngockhuong/specpin.git",
+    "directory": "packages/spec-schema"
+  },
+  "bugs": {
+    "url": "https://github.com/lamngockhuong/specpin/issues"
+  },
+  "keywords": [
+    "specpin",
+    "json-schema",
+    "spec",
+    "ui-spec",
+    "ajv"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

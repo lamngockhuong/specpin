@@ -21,6 +21,15 @@
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "extra-files": ["cmd/root.go"]
+    },
+    "packages/spec-schema": {
+      "release-type": "node",
+      "component": "spec-schema",
+      "package-name": "@specpin/spec-schema",
+      "changelog-path": "CHANGELOG.md",
+      "initial-version": "0.0.1",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
     }
   }
 }
