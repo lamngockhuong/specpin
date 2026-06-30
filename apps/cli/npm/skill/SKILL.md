@@ -47,8 +47,12 @@ a. **Scaffold** (only if `.specs/manifest.json` is absent):
    existing manifest.
 
 b. **Identify the target element** in the UI source (JSX/HTML/Vue/Svelte) and
-   decide the fingerprint approach. Prefer a stable test-id anchor; fall back to
-   synthesized selectors. See `references/fingerprint-strategy.md`.
+   decide the fingerprint approach. Specpin is non-intrusive by default: build the
+   fingerprint from signals the element **already has** (an existing
+   `data-testid` / `data-spec-id`, a non-generated `id`, an `aria-label`, or a
+   unique selector) and do NOT edit the app's source. Adding a `data-spec-id` is
+   an optional opt-in upgrade for the most resilient anchor, only when the project
+   agrees to small markup additions. See `references/fingerprint-strategy.md`.
 
 c. **Write `<area>.spec.json`** (one file per page or feature). It has a `group`
    string and a `specs[]` array. Each spec needs:
@@ -83,11 +87,16 @@ DO:
 - Set `meta.source: "ai-generated"` on every spec you author (output is meant to
   be reviewed by a human).
 - Keep one `<area>.spec.json` per page or feature; name it after the area.
-- Prefer adding a `data-spec-id` (or `data-testid`) to the target element and
-  fingerprinting on it: this is an exact anchor (confidence 1.0).
+- Prefer an anchor the element **already has** (an existing `data-testid` /
+  `data-spec-id`, a non-generated `id`, or an `aria-label`): it gives exact
+  matching with zero source changes.
 - Ground every business rule in real code or stated requirements.
 
 DON'T:
+- Edit the app's source to add `data-spec-id` / `data-testid` unless the project
+  opts in. Specpin attaches to the UI you already have; adding an anchor is an
+  optional resilience upgrade, never a requirement. Default to synthesizing the
+  fingerprint from the existing markup.
 - Invent business rules not supported by the code or the user's requirements.
 - Use flat strings for `title` / `description` / `businessRules`: both
   validators reject `"title": "Log in"`. Use `{ "en": "Log in" }`.

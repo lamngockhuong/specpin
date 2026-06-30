@@ -42,10 +42,13 @@ bearer token on `serve`.
 ## The authoring loop
 
 1. **Scaffold** (once): `specpin init --project "<Name>" --domains <origin>`.
-2. **Author**: the agent picks a target element, prefers a `data-spec-id` /
-   `data-testid` anchor (exact match, confidence 1.0), and writes an
-   `<area>.spec.json` with locale-keyed `title` / `description`, optional
-   `businessRules`, a `fingerprint`, and `meta.source: "ai-generated"`.
+2. **Author**: the agent picks a target element and, by default, fingerprints it
+   from signals it already has (an existing `data-testid` / `data-spec-id`, a
+   non-generated `id`, an `aria-label`, or a unique selector) without editing the
+   app's source. It writes an `<area>.spec.json` with locale-keyed `title` /
+   `description`, optional `businessRules`, a `fingerprint`, and
+   `meta.source: "ai-generated"`. Adding a `data-spec-id` for an exact anchor is
+   an optional opt-in, only when the project wants it.
 3. **Register**: add the new file to `manifest.json` `specFiles[]`.
 4. **Validate**: `specpin validate` (exit 0 required; fix `FAIL` lines on exit 1).
 5. **Preview**: `specpin serve`, then the extension renders the specs live.
@@ -58,9 +61,12 @@ See the full loop, including the manual capture path, in
 The bundled demo carries an AI-authored spec produced by following this skill:
 [`examples/demo-react-app/.specs/nav.spec.json`](../examples/demo-react-app/.specs/nav.spec.json)
 pins a spec onto the nav "Log out" button via its `data-spec-id="nav-logout"`
-anchor, and passes `specpin validate` (exit 0). It is the test-id-first path end
-to end: add the attribute in source, mirror it in `fingerprint.testId`, fill the
-remaining required fields, register, validate.
+anchor, and passes `specpin validate` (exit 0). The demo app adopts `data-spec-id`
+across its elements by convention, so this example shows the **opt-in** exact
+anchor path: add the attribute, mirror it in `fingerprint.testId`, fill the
+remaining required fields, register, validate. Projects that prefer not to touch
+their source synthesize the fingerprint from existing markup instead (see the
+skill's fingerprint strategy).
 
 ## Guardrails
 

@@ -27,7 +27,7 @@ Không cần auth, key hay cấu hình model: sidecar chỉ chạy localhost và
 ## Vòng lặp soạn spec
 
 1. **Scaffold** (một lần): `specpin init --project "<Name>" --domains <origin>`.
-2. **Soạn**: agent chọn element mục tiêu, ưu tiên anchor `data-spec-id` / `data-testid` (khớp chính xác, confidence 1.0), và ghi một file `<area>.spec.json` với `title` / `description` đánh key theo locale, `businessRules` tuỳ chọn, một `fingerprint`, và `meta.source: "ai-generated"`.
+2. **Soạn**: agent chọn element mục tiêu và, mặc định, dựng fingerprint từ các signal element đã có sẵn (một `data-testid` / `data-spec-id` đang tồn tại, một `id` không phải dạng generated, một `aria-label`, hoặc một selector duy nhất) mà KHÔNG sửa source của ứng dụng. Nó ghi một file `<area>.spec.json` với `title` / `description` đánh key theo locale, `businessRules` tuỳ chọn, một `fingerprint`, và `meta.source: "ai-generated"`. Thêm `data-spec-id` để có anchor chính xác chỉ là opt-in tuỳ chọn, khi dự án muốn.
 3. **Đăng ký**: thêm file mới vào `manifest.json` `specFiles[]`.
 4. **Kiểm tra**: `specpin validate` (cần exit 0; sửa các dòng `FAIL` khi exit 1).
 5. **Xem trước**: `specpin serve`, rồi extension render spec trực tiếp.
@@ -36,7 +36,7 @@ Xem trọn vòng lặp, gồm cả đường capture thủ công, trong [`run-gu
 
 ## Ví dụ thực tế
 
-Demo đóng gói mang một spec do AI soạn bằng cách theo skill này: [`examples/demo-react-app/.specs/nav.spec.json`](../../examples/demo-react-app/.specs/nav.spec.json) gắn một spec lên nút "Log out" trên nav qua anchor `data-spec-id="nav-logout"`, và pass `specpin validate` (exit 0). Đây là đường ưu tiên test-id trọn vẹn: thêm attribute trong nguồn, phản chiếu vào `fingerprint.testId`, điền các field bắt buộc còn lại, đăng ký, kiểm tra.
+Demo đóng gói mang một spec do AI soạn bằng cách theo skill này: [`examples/demo-react-app/.specs/nav.spec.json`](../../examples/demo-react-app/.specs/nav.spec.json) gắn một spec lên nút "Log out" trên nav qua anchor `data-spec-id="nav-logout"`, và pass `specpin validate` (exit 0). Demo app dùng `data-spec-id` trên các element theo convention, nên ví dụ này minh hoạ đường anchor chính xác dạng **opt-in**: thêm attribute, phản chiếu vào `fingerprint.testId`, điền các field bắt buộc còn lại, đăng ký, kiểm tra. Dự án không muốn động vào source thì dựng fingerprint từ markup có sẵn thay vì vậy (xem fingerprint strategy trong skill).
 
 ## Lan can an toàn
 

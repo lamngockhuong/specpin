@@ -2,16 +2,30 @@
 
 You are not running inside the browser, so you cannot capture a live element.
 You synthesize the fingerprint from source (JSX/HTML/Vue/Svelte) or a DOM dump.
-Aim for an exact anchor; fall back to best-effort selectors.
+Specpin is **non-intrusive by default**: it attaches to the UI you already have,
+so do NOT edit the app's source unless the project opts in. Prefer an anchor the
+element already carries; fall back to synthesized selectors; treat adding a new
+attribute as an optional, opt-in upgrade.
 
 ## Decision tree
 
-1. **Test-id anchor (best, confidence 1.0).** If the element has, or you can
-   add, a stable `data-spec-id` (or `data-testid` / `data-cy` / `data-qa`), set
-   `fingerprint.testId` to that value. This is an exact match and survives
-   refactors. Prefer this for anything important.
+1. **Existing anchor (best, confidence 1.0, zero source changes).** If the
+   element already has a stable `data-testid` / `data-spec-id` / `data-cy` /
+   `data-qa`, set `fingerprint.testId` to it. A non-generated `id` or an
+   `aria-label` are also exact-ish anchors: set `fingerprint.id` / `ariaLabel`.
+   This is the default and preferred path: an exact match that survives refactors
+   without touching the app.
 
-   Add the attribute in source if missing:
+2. **Synthesize from the existing markup (no edits, lower confidence).** No ready
+   anchor: derive the required fields from the source as it is (see per-field
+   derivation below). Without an exact anchor a spec may render as `needsReview`
+   in the extension, but nothing in the app changes. This is the right default for
+   any project that does not want source modifications.
+
+3. **Add a `data-spec-id` (optional, opt-in only).** ONLY when the project agrees
+   to small non-functional markup additions, add a `data-spec-id` for the most
+   resilient anchor, then fingerprint on it (step 1). Specpin works fine without
+   this; never edit source unless asked.
 
    ```jsx
    // React
@@ -26,37 +40,36 @@ Aim for an exact anchor; fall back to best-effort selectors.
    <button data-spec-id="nav-logout" type="button" @click="logout">Log out</button>
    ```
 
-   Then mirror it: `"testId": "nav-logout"`. The remaining fingerprint fields are
-   still required by the schema, so fill them as below (they act as fallbacks).
+   Then mirror it: `"testId": "nav-logout"`. Either way, the remaining fingerprint
+   fields are still required by the schema, so fill them as below.
 
-2. **Synthesized selectors (best-effort, lower confidence).** No stable test-id
-   and you cannot add one: synthesize the required fields. Without an exact
-   anchor a spec may render as `needsReview` in the extension.
+### Per-field derivation (reading the source)
 
-3. **Per-field derivation** (reading the source):
-   - `cssSelector`: shortest unique selector, e.g. `nav button[type=button]` or
-     `form.login input[type=email]`. Prefer classes/attributes over nth-child.
-   - `xpath`: e.g. `//nav//button[@type='button']`.
-   - `domPath`: ancestor-to-element tag chain, e.g. `["nav", "button"]`.
-   - `tagName`: lowercase tag, e.g. `"button"`.
-   - `attributes`: whitelisted only (role, type, name, placeholder, href),
-     string values, e.g. `{ "type": "button" }`.
-   - `positionHint`: `{ index, siblingCount }` among siblings (0-based index).
-     Estimate from source order; both are integers >= 0.
-   - `textContent` (optional, nullable): the visible text, normalized, e.g.
-     `"Log out"`; `null` for inputs.
-   - `ariaLabel`, `id` (optional, nullable): set if present; exclude
-     auto-generated ids like `":r1:"` or `"css-1a2b3c"` (use `null`).
-   - `nearbyLabels` (optional): visible labels near the element, e.g.
-     `["Email", "Password"]`.
-   - `frameworkHint` (optional): `"react" | "vue" | "angular" | "vanilla"`.
+- `cssSelector`: shortest unique selector, e.g. `nav button[type=button]` or
+  `form.login input[type=email]`. Prefer classes/attributes over nth-child.
+- `xpath`: e.g. `//nav//button[@type='button']`.
+- `domPath`: ancestor-to-element tag chain, e.g. `["nav", "button"]`.
+- `tagName`: lowercase tag, e.g. `"button"`.
+- `attributes`: whitelisted only (role, type, name, placeholder, href),
+  string values, e.g. `{ "type": "button" }`.
+- `positionHint`: `{ index, siblingCount }` among siblings (0-based index).
+  Estimate from source order; both are integers >= 0.
+- `textContent` (optional, nullable): the visible text, normalized, e.g.
+  `"Log out"`; `null` for inputs.
+- `ariaLabel`, `id` (optional, nullable): set if present; exclude
+  auto-generated ids like `":r1:"` or `"css-1a2b3c"` (use `null`).
+- `nearbyLabels` (optional): visible labels near the element, e.g.
+  `["Email", "Password"]`.
+- `frameworkHint` (optional): `"react" | "vue" | "angular" | "vanilla"`.
 
 ## Brittleness caveat
 
 `positionHint` and `domPath` are the most fragile signals: any reorder or
-wrapper change breaks them. The CSS selector is moderately robust. The test-id
-is the only signal that survives a refactor unchanged. So for any critical
-element, add a `data-spec-id`.
+wrapper change breaks them. The CSS selector is moderately robust. A test-id is
+the only signal that survives a refactor unchanged. So for a critical element,
+fingerprint on the most stable signal it already has (an existing test-id, a
+non-generated `id`, or a unique selector); an added `data-spec-id` is the most
+robust option only if the project allows source edits.
 
 ## Match order (current)
 
