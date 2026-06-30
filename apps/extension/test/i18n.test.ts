@@ -3,6 +3,7 @@ import { fakeBrowser } from "wxt/testing";
 import { initI18n, plural, t } from "../src/i18n/index.js";
 import { resolveUiLocale, SUPPORTED } from "../src/i18n/locales.js";
 import en from "../src/i18n/messages/en.js";
+import ja from "../src/i18n/messages/ja.js";
 import vi from "../src/i18n/messages/vi.js";
 import { getUiLocale, setUiLocale } from "../src/shared/config.js";
 
@@ -18,6 +19,11 @@ describe("t()", () => {
   it("returns the Vietnamese string when locale is vi", () => {
     initI18n("vi");
     expect(t("common.captureSpec")).toBe(vi["common.captureSpec"]);
+  });
+
+  it("returns the Japanese string when locale is ja", () => {
+    initI18n("ja");
+    expect(t("common.captureSpec")).toBe(ja["common.captureSpec"]);
   });
 
   it("returns English when locale is en", () => {
@@ -56,6 +62,7 @@ describe("resolveUiLocale", () => {
   it("uses the stored choice when supported", () => {
     expect(resolveUiLocale("vi")).toBe("vi");
     expect(resolveUiLocale("en")).toBe("en");
+    expect(resolveUiLocale("ja")).toBe("ja");
   });
 
   it("defaults to en when nothing is stored and the browser is unsupported", () => {
@@ -64,7 +71,7 @@ describe("resolveUiLocale", () => {
   });
 
   it("only knows the supported locales", () => {
-    expect([...SUPPORTED]).toEqual(["en", "vi"]);
+    expect([...SUPPORTED]).toEqual(["en", "vi", "ja"]);
   });
 });
 
@@ -88,5 +95,9 @@ describe("uiLocale storage", () => {
 describe("catalog parity", () => {
   it("vi covers exactly the en key set", () => {
     expect(Object.keys(vi).sort()).toEqual(Object.keys(en).sort());
+  });
+
+  it("ja covers exactly the en key set", () => {
+    expect(Object.keys(ja).sort()).toEqual(Object.keys(en).sort());
   });
 });

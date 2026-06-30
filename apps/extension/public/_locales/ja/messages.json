@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Specpin",
+    "description": "Extension name shown in the browser and the store listing."
+  },
+  "extDescription": {
+    "message": "実行中のウェブUIの要素に生きたビジネス仕様をピン留め。Gitネイティブ・ローカルファースト・フレームワーク非依存。",
+    "description": "Extension description (Chrome caps this at 132 chars). Keep in sync with the store-listing summary."
+  }
+}

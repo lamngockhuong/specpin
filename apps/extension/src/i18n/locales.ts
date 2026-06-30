@@ -1,9 +1,9 @@
 import { browser } from "#imports";
 
-// Supported UI-chrome languages. English is the source of truth; Vietnamese is a
-// full translation. This axis is independent from the spec-content locale
-// (see shared/config.ts getLocale / localize-spec.ts pickLocale).
-export const SUPPORTED = ["en", "vi"] as const;
+// Supported UI-chrome languages. English is the source of truth; Vietnamese and
+// Japanese are full translations. This axis is independent from the spec-content
+// locale (see shared/config.ts getLocale / localize-spec.ts pickLocale).
+export const SUPPORTED = ["en", "vi", "ja"] as const;
 export type UiLocale = (typeof SUPPORTED)[number];
 
 function isSupported(value: string): value is UiLocale {
