@@ -21,7 +21,7 @@ Specpin không thu thập, truyền, bán hay chia sẻ bất kỳ dữ liệu c
 
 ### Chúng tôi thu thập gì
 
-Không gì cả. Specpin không gửi dữ liệu nào cho chúng tôi hay bất kỳ bên thứ ba nào. Kết nối mạng duy nhất nó thực hiện là tới một sidecar **do chính bạn chạy** trên `localhost` (xem [Hoạt động mạng](#hoạt-động-mạng)).
+Không gì cả. Specpin không gửi dữ liệu nào cho chúng tôi hay bất kỳ bên thứ ba nào. Kết nối mạng duy nhất nó thực hiện là tới một sidecar **do chính bạn chạy** — trên `localhost` theo mặc định, hoặc trên máy chủ từ xa của riêng bạn (qua HTTPS) nếu bạn chọn dùng (xem [Hoạt động mạng](#hoạt-động-mạng)).
 
 ### Chúng tôi lưu cục bộ những gì
 
@@ -33,7 +33,7 @@ Specpin lưu các dữ liệu sau **chỉ trên thiết bị của bạn**, qua 
 | Đặc tả của dự án cục bộ | `browser.storage` | Soạn và xem đặc tả khi không có sidecar đang chạy | Không |
 | Tùy chọn (chủ đề, ngôn ngữ giao diện, chế độ hiển thị, bề mặt mặc định) | `browser.storage` | Ghi nhớ lựa chọn giao diện của bạn | Không |
 
-Dữ liệu này không bao giờ rời khỏi thiết bị của bạn. Không có lưu trữ bên ngoài và không có dịch vụ cloud.
+Dữ liệu này ở trên thiết bị của bạn (cài đặt kết nối và đặc tả dự án cục bộ chỉ được gửi tới sidecar mà bạn kết nối). Không có lưu trữ bên ngoài và không có dịch vụ cloud của Specpin.
 
 ## Quyền trình duyệt
 
@@ -63,22 +63,23 @@ Mở bề mặt Specpin trong side panel của Chrome bên cạnh trang. Firefox
 
 ### `host_permissions` - `http://127.0.0.1/*`, `http://localhost/*`
 
-Cho phép service worker nền kết nối tới sidecar cục bộ qua HTTP và Server-Sent Events trên `localhost` để đọc `.specs/` và nhận cập nhật làm mới trực tiếp. Specpin **không** gửi yêu cầu nào tới bất kỳ máy chủ từ xa nào.
+Cho phép service worker nền kết nối tới sidecar cục bộ qua HTTP và Server-Sent Events trên `localhost` để đọc `.specs/` và nhận cập nhật làm mới trực tiếp. Theo mặc định, Specpin **không** gửi yêu cầu nào tới bất kỳ máy chủ từ xa nào. Nếu bạn thêm một sidecar từ xa, extension yêu cầu quyền truy cập đúng một origin đó khi kết nối (một quyền tùy chọn, có thể thu hồi) và thu hồi khi bạn xóa kết nối.
 
 ## Hoạt động mạng
 
-Specpin chỉ kết nối tới một sidecar **do chính bạn chạy** (`specpin serve`) trên `localhost` (`127.0.0.1` / `localhost`). Nó giao tiếp qua HTTP và Server-Sent Events, xác thực bằng bearer token.
+Specpin chỉ kết nối tới một sidecar **do chính bạn chạy** (`specpin serve`) — trên `localhost` (`127.0.0.1` / `localhost`) theo mặc định, hoặc trên máy chủ từ xa của riêng bạn qua HTTPS nếu bạn chọn dùng. Nó giao tiếp qua HTTP/HTTPS và Server-Sent Events, xác thực bằng bearer token.
 
 | Đích đến | Có dùng? |
 |----------|----------|
 | Sidecar cục bộ của bạn (`http://127.0.0.1:<port>`, `http://localhost:<port>`) | ✅ Chỉ khi bạn thêm kết nối |
+| Sidecar từ xa của riêng bạn (`https://<host-của-bạn>`) | ✅ Chỉ khi bạn thêm kết nối từ xa |
 | Dịch vụ analytics (Google Analytics, v.v.) | ❌ Không bao giờ |
 | Báo cáo lỗi/crash (Sentry, v.v.) | ❌ Không bao giờ |
 | Mạng quảng cáo | ❌ Không bao giờ |
 | API hay CDN bên ngoài | ❌ Không bao giờ |
 | Mã từ xa / script từ xa | ❌ Không bao giờ |
 
-Sidecar cục bộ được làm cứng (hardened): chỉ lắng nghe `127.0.0.1`, yêu cầu xác thực bearer-token, chỉ chấp nhận origin của tiện ích trình duyệt qua CORS, và giới hạn mọi thao tác ghi trong thư mục `.specs/` của bạn. Xem [Bảo mật và quyền riêng tư](/vi/concepts/security-and-privacy/) để biết mô hình bảo mật đầy đủ của sidecar.
+Sidecar được làm cứng (hardened): theo mặc định chỉ lắng nghe `127.0.0.1` (bind từ xa cần một reverse proxy HTTPS do bạn chạy), yêu cầu xác thực bearer-token, chỉ chấp nhận origin của tiện ích trình duyệt qua CORS, và giới hạn mọi thao tác ghi trong thư mục `.specs/` của bạn. Xem [Bảo mật và quyền riêng tư](/vi/concepts/security-and-privacy/) để biết mô hình bảo mật đầy đủ của sidecar.
 
 ## Chia sẻ dữ liệu
 
@@ -135,4 +136,4 @@ Câu hỏi hoặc lo ngại về quyền riêng tư?
 
 ---
 
-**Tóm lại**: Specpin là tiện ích ưu tiên quyền riêng tư, ưu tiên cục bộ. Dữ liệu của bạn ở trên thiết bị của bạn - chúng tôi không thu thập gì, không gửi gì, không theo dõi gì. Kết nối mạng duy nhất nó thực hiện là tới một sidecar do chính bạn chạy trên `localhost`.
+**Tóm lại**: Specpin là tiện ích ưu tiên quyền riêng tư, ưu tiên cục bộ. Chúng tôi không thu thập gì, không gửi gì, không theo dõi gì. Kết nối mạng duy nhất nó thực hiện là tới một sidecar do chính bạn chạy — trên `localhost` theo mặc định, hoặc trên máy chủ từ xa của riêng bạn qua HTTPS nếu bạn chọn dùng.

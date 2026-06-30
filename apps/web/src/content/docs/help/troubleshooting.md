@@ -173,7 +173,7 @@ The extension will capture a fresh fingerprint and save it back to `.specs/`. Th
 
 ### Is my data sent anywhere?
 
-No. Specpin is local-first. The sidecar binds to `127.0.0.1`, and the extension connects over localhost. No external server sees your specs or your page. See [Security and Privacy](/concepts/security-and-privacy/) for full details.
+Not to us. Specpin is local-first: by default the sidecar binds to `127.0.0.1` and the extension connects over localhost. If you opt into a remote sidecar, specs go only to that host — one you run yourself. No Specpin-operated server ever sees your specs or your page. See [Security and Privacy](/concepts/security-and-privacy/) for full details.
 
 ### Do I need the CLI to use Specpin?
 
@@ -188,7 +188,7 @@ The extension works on both browsers with minor differences:
 
 ### Why does the token keep changing?
 
-The token changes every time you restart `specpin serve`. This is by design for security: if a token is leaked, it becomes invalid when the sidecar restarts. Update the token in the extension's Options page after every restart.
+By default the token changes every time you restart `specpin serve`. This is by design for security: if a token is leaked, it becomes invalid when the sidecar restarts. Update the token in the extension's Options page after every restart. For a long-running or shared sidecar, pin a stable token with `--token <secret>` (or the `SPECPIN_TOKEN` environment variable) so restarts do not disconnect everyone.
 
 ### Can I use Specpin without Git?
 
@@ -196,7 +196,7 @@ Yes. Specs are stored as JSON files in `.specs/`, but you do not need to commit 
 
 ### Can I connect to a sidecar on a different machine?
 
-Not directly. The sidecar binds to `127.0.0.1` only, so it is not reachable from another machine. If you need remote access, you would need to set up an SSH tunnel or a reverse proxy with your own authentication. This is not officially supported.
+Yes. Run the sidecar on the remote host behind an HTTPS reverse proxy (keep it on loopback with a co-located proxy, or use `--host` plus a firewall), pin a stable `--token`, and connect the extension to the `https://` proxy URL. Remote connections must use HTTPS — plaintext `http://` to a remote host is blocked. See [Serve on a remote machine](/sidecar/cli/#serve-on-a-remote-machine) for details.
 
 ### Where can I get help?
 

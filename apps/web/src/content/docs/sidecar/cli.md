@@ -52,9 +52,40 @@ The port is auto-picked unless you pass `--port`:
 specpin serve --port 5173
 ```
 
-The sidecar binds `127.0.0.1` only (never `0.0.0.0`) for security. Requests must include `Authorization: Bearer <token>` in the header. CORS accepts only extension origins (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`) and rejects web origins. Writes are confined to `.specs/` (path-traversal guarded), atomic, and pretty-printed for clean Git diffs.
+By default the sidecar binds `127.0.0.1` only. Requests must include `Authorization: Bearer <token>` in the header. CORS accepts only extension origins (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`) and rejects web origins. Writes are confined to `.specs/` (path-traversal guarded), serialized, and pretty-printed for clean Git diffs.
 
-The bearer token is regenerated each time you run `serve`. If the extension loses connection, run `serve` again and update the token in the extension's connection settings.
+The bearer token is regenerated each time you run `serve`. Pass `--token <secret>` (or set the `SPECPIN_TOKEN` environment variable) to pin a stable token so a restart does not disconnect every client:
+
+```bash
+specpin serve --port 5173 --token "$(openssl rand -hex 24)"
+```
+
+If the extension loses connection after a restart with a random token, run `serve` again and update the token in the extension's connection settings.
+
+## Serve on a remote machine
+
+By default Specpin is a single-user localhost tool. To share one `.specs/` with a team, run the sidecar on a shared host and connect the extension to it over **HTTPS**. The Go binary speaks plain HTTP only; **TLS is terminated by a reverse proxy** in front of it. Remote *requires* HTTPS — the extension's requests run from a secure context, so a plaintext `http://` remote is blocked as mixed content.
+
+Recommended: keep the sidecar on loopback and run the proxy (Caddy, nginx, Cloudflare Tunnel) on the **same host**, pinning the port and token:
+
+```bash
+specpin serve --port 51234 --token "$(openssl rand -hex 24)"
+```
+
+```
+# Caddy
+specs.example.com {
+  reverse_proxy 127.0.0.1:51234
+}
+```
+
+`--host <addr>` binds a non-loopback address for the advanced "proxy on another host" case. This does **not** put a proxy in the path — it exposes the raw, **plaintext, token-only** port directly, so firewall it and always pin `--port`. The serve command prints a blunt warning whenever it binds off-loopback.
+
+:::caution
+The bearer token is the only authorization boundary for non-browser network clients (CORS only constrains browsers). Treat it like a password and distribute it out-of-band. The non-loopback raw port is plaintext — never expose it to the internet without the HTTPS proxy in front.
+:::
+
+See the run guide's "Serve on a remote machine" section for working Caddy + nginx examples (SSE buffering, CORS preflight) and the full threat model.
 
 ## Live reload
 
@@ -107,7 +138,7 @@ Because specs are JSON files committed to your repo, they follow the same review
 4. Commit, push, and open a PR.
 5. Teammates review the spec changes alongside code changes.
 
-Specs never leave your machine. The sidecar only binds localhost, and the extension never sends specs to any remote server.
+By default specs never leave your machine: the sidecar binds localhost and there is no cloud service or telemetry. If you opt into a remote sidecar, specs are sent only to that sidecar — a server **you** run and control — never to any Specpin-operated service.
 
 ## Multiple projects
 

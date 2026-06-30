@@ -25,8 +25,14 @@ Connect to a running `specpin serve` instance.
 5. Paste the **Token**.
 6. Click **Test & add project**. If the connection succeeds, the project appears in the Options page list.
 
+The URL may be a localhost address (`http://127.0.0.1:<port>` or `http://localhost:<port>`) or a **remote** sidecar over HTTPS (e.g. `https://specs.example.com`). A remote sidecar must use `https://` — plaintext `http://` to a remote host is rejected. When you add a remote connection, the browser asks for permission to access that host; approve it to connect. Removing the connection revokes that permission. See [Serve on a remote machine](/sidecar/cli/#serve-on-a-remote-machine) for running the sidecar behind a reverse proxy.
+
 :::tip
 Each sidecar runs on its own port. To serve multiple projects at once, run `specpin serve --port 51001` in project A and `specpin serve --port 51002` in project B, then add both connections with their own tokens.
+:::
+
+:::note
+If a teammate changes a spec while you are editing the same project, your save is rejected with a "changed elsewhere" notice and the project reloads — review and save again. This prevents one write from silently overwriting another.
 :::
 
 ### Local project

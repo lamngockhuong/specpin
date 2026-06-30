@@ -52,9 +52,40 @@ Port được chọn tự động trừ khi bạn truyền `--port`:
 specpin serve --port 5173
 ```
 
-Sidecar chỉ bind `127.0.0.1` (không bao giờ `0.0.0.0`) vì lý do bảo mật. Các request phải bao gồm `Authorization: Bearer <token>` trong header. CORS chỉ chấp nhận origin của extension (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`) và từ chối web origin. Các thao tác ghi được giới hạn trong `.specs/` (có bảo vệ path-traversal), atomic, và pretty-printed để có Git diff sạch.
+Theo mặc định, sidecar chỉ bind `127.0.0.1`. Các request phải bao gồm `Authorization: Bearer <token>` trong header. CORS chỉ chấp nhận origin của extension (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`) và từ chối web origin. Các thao tác ghi được giới hạn trong `.specs/` (có bảo vệ path-traversal), được tuần tự hóa, và pretty-printed để có Git diff sạch.
 
-Bearer token được tạo lại mỗi lần bạn chạy `serve`. Nếu extension mất kết nối, chạy `serve` lại và cập nhật token trong cài đặt kết nối của extension.
+Bearer token được tạo lại mỗi lần bạn chạy `serve`. Truyền `--token <secret>` (hoặc đặt biến môi trường `SPECPIN_TOKEN`) để ghim một token ổn định, để việc khởi động lại không làm ngắt kết nối mọi client:
+
+```bash
+specpin serve --port 5173 --token "$(openssl rand -hex 24)"
+```
+
+Nếu extension mất kết nối sau khi khởi động lại với token ngẫu nhiên, chạy `serve` lại và cập nhật token trong cài đặt kết nối của extension.
+
+## Phục vụ trên máy từ xa
+
+Theo mặc định Specpin là công cụ localhost một người dùng. Để chia sẻ một `.specs/` cho cả nhóm, hãy chạy sidecar trên một máy chung và kết nối extension tới nó qua **HTTPS**. Binary Go chỉ nói HTTP thuần; **TLS do một reverse proxy đứng trước đảm nhiệm**. Remote *bắt buộc* dùng HTTPS — request của extension chạy trong secure context, nên một remote `http://` thuần sẽ bị chặn vì mixed content.
+
+Khuyến nghị: giữ sidecar trên loopback và chạy proxy (Caddy, nginx, Cloudflare Tunnel) trên **cùng một máy**, ghim port và token:
+
+```bash
+specpin serve --port 51234 --token "$(openssl rand -hex 24)"
+```
+
+```
+# Caddy
+specs.example.com {
+  reverse_proxy 127.0.0.1:51234
+}
+```
+
+`--host <addr>` bind một địa chỉ không phải loopback cho trường hợp nâng cao "proxy trên máy khác". Điều này **không** tự đưa proxy vào đường đi — nó phơi bày trực tiếp cổng thô, **plaintext, chỉ-token**, nên hãy firewall cổng đó và luôn ghim `--port`. Lệnh serve sẽ in một cảnh báo rõ ràng mỗi khi bind ngoài loopback.
+
+:::caution
+Bearer token là ranh giới ủy quyền duy nhất đối với các client mạng không phải trình duyệt (CORS chỉ ràng buộc trình duyệt). Hãy coi nó như mật khẩu và phân phối ngoài luồng (out-of-band). Cổng thô ngoài loopback là plaintext — đừng bao giờ phơi nó ra internet mà không có HTTPS proxy đứng trước.
+:::
+
+Xem mục "Serve on a remote machine" trong hướng dẫn chạy để có ví dụ Caddy + nginx hoạt động được (đệm SSE, preflight CORS) và mô hình mối đe dọa đầy đủ.
 
 ## Live reload
 
@@ -107,7 +138,7 @@ Vì spec là các file JSON được commit vào repo của bạn, chúng tuân 
 4. Commit, push, và mở PR.
 5. Đồng đội review các thay đổi spec cùng với thay đổi code.
 
-Spec không bao giờ rời khỏi máy của bạn. Sidecar chỉ bind localhost, và extension không bao giờ gửi spec tới bất kỳ remote server nào.
+Theo mặc định spec không bao giờ rời khỏi máy của bạn: sidecar bind localhost và không có dịch vụ đám mây hay telemetry nào. Nếu bạn chọn dùng sidecar từ xa, spec chỉ được gửi tới sidecar đó — một máy chủ do **bạn** vận hành và kiểm soát — không bao giờ tới bất kỳ dịch vụ nào do Specpin vận hành.
 
 ## Nhiều dự án
 

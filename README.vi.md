@@ -48,7 +48,7 @@ Specpin gắn **đặc tả nghiệp vụ** (quy tắc, mô tả, tiêu chí ngh
 Specpin **không phải** công cụ sinh code từ đặc tả (không liên quan tới GitHub Spec Kit / OpenSpec): nó không sinh ra bất kỳ code ứng dụng nào. Đây là một lớp tri thức ghim tài liệu "sống", được quản lý phiên bản bằng Git, lên đúng giao diện bạn đã có sẵn. Giao diện vốn đã biết mọi thứ nằm ở đâu; Specpin trao cho nó một bộ nhớ.
 
 - **Gắn liền với Git.** Đặc tả được lưu dưới dạng JSON trong thư mục `.specs/` của repo: có phiên bản, review được qua PR, và xem diff được.
-- **Ưu tiên cục bộ.** Một sidecar Go nhỏ phục vụ đặc tả qua localhost có xác thực token. Không có gì rời khỏi máy của bạn.
+- **Ưu tiên cục bộ.** Một sidecar Go nhỏ phục vụ đặc tả qua API localhost có xác thực token; theo mặc định không có gì rời khỏi máy của bạn. Các nhóm có thể tùy chọn chạy chính sidecar đó trên máy chủ của riêng họ phía sau một reverse proxy HTTPS (xem hướng dẫn chạy).
 - **Liên kết bền bỉ.** Phần tử được khớp bằng fingerprint đa tín hiệu (test-id, aria, selector, xpath, text, vị trí), nên đặc tả vẫn sống sót qua các đợt refactor.
 - **Không phụ thuộc framework.** Khớp thuần DOM nên chạy trên mọi trang hoặc framework.
 
@@ -122,7 +122,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 - **Hỗ trợ & Phản hồi** - liên kết một chạm từ trang Tùy chọn tới GitHub Issues và Discussions của dự án
 - **Soạn spec bằng AI** - một skill đóng gói trong `@specpin/cli` dạy coding agent (Claude Code, Cursor, v.v.) soạn spec hợp lệ schema và điều khiển CLI; bản thân CLI không có LLM
 - **Kiểm tra offline** - `specpin validate` + spec-lint trong CI để giữ `.specs/` luôn hợp lệ
-- **An toàn mặc định** - sidecar chỉ bind `127.0.0.1`, xác thực bearer-token, CORS chỉ chấp nhận origin của extension, ghi file có chặn path-traversal
+- **An toàn mặc định** - sidecar mặc định bind `127.0.0.1` (remote là tùy chọn qua reverse proxy HTTPS), xác thực bearer-token, CORS chỉ chấp nhận origin của extension, ghi file có chặn path-traversal, ghi nhiều-người tuần tự hóa
 
 ## Cấu trúc monorepo
 
