@@ -1,4 +1,9 @@
-import type { GuidesConfig, SpecsResponse, ViewsConfig } from "@specpin/api-client";
+import {
+  type GuidesConfig,
+  SidecarError,
+  type SpecsResponse,
+  type ViewsConfig,
+} from "@specpin/api-client";
 import type { GuideDef, Manifest, Spec } from "@specpin/spec-schema";
 import { batchServesOrigin, type ManualBatch } from "../shared/config.js";
 import type {
@@ -400,7 +405,7 @@ export class SidecarRegistry {
     file: string,
     spec: Spec,
     connectionId?: string,
-  ): Promise<{ ok: boolean; errors?: string[] }> {
+  ): Promise<{ ok: boolean; errors?: string[]; conflict?: boolean }> {
     const target = this.writeTarget(origin, connectionId);
     if (!target) return { ok: false, errors: ["no connected project serves this page"] };
     try {
@@ -408,8 +413,22 @@ export class SidecarRegistry {
       await target.reload();
       return { ok: true };
     } catch (e) {
-      return { ok: false, errors: [String(e)] };
+      return this.writeError(target, e);
     }
+  }
+
+  /** Normalize a write failure. A 409 means the specs changed elsewhere: reload
+   *  the connection (refreshing its cache + the client's ETag so a retry can
+   *  succeed) and flag the conflict so the UI shows a non-fatal "review + retry". */
+  private async writeError(
+    target: SidecarConnection,
+    e: unknown,
+  ): Promise<{ ok: false; errors: string[]; conflict?: boolean }> {
+    if (e instanceof SidecarError && e.status === 409) {
+      await target.reload();
+      return { ok: false, conflict: true, errors: ["version_mismatch"] };
+    }
+    return { ok: false, errors: [String(e)] };
   }
 
   /** Update an existing spec (by id) in a connection serving the origin. Same
@@ -420,7 +439,7 @@ export class SidecarRegistry {
     id: string,
     spec: Spec,
     connectionId?: string,
-  ): Promise<{ ok: boolean; errors?: string[] }> {
+  ): Promise<{ ok: boolean; errors?: string[]; conflict?: boolean }> {
     const target = this.writeTarget(origin, connectionId);
     if (!target) return { ok: false, errors: ["no connected project serves this page"] };
     try {
@@ -428,7 +447,7 @@ export class SidecarRegistry {
       await target.reload();
       return { ok: true };
     } catch (e) {
-      return { ok: false, errors: [String(e)] };
+      return this.writeError(target, e);
     }
   }
 

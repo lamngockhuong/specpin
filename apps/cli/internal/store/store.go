@@ -5,6 +5,8 @@ package store
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +14,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 )
 
 // defaultViewsJSON is returned by LoadViews when .specs/views.json is absent: an
@@ -30,6 +33,12 @@ var ErrTraversal = errors.New("path escapes .specs directory")
 
 // ErrInvalidName is returned when a spec file name is not a *.spec.json file.
 var ErrInvalidName = errors.New("invalid spec file name")
+
+// ErrVersionMismatch is returned when a write carries an If-Match that no longer
+// matches the current /specs bundle ETag: a teammate changed the specs since the
+// caller last read them. The server maps this to 409 so the client reloads
+// instead of silently clobbering the newer state (optimistic concurrency).
+var ErrVersionMismatch = errors.New("specs changed since last read (stale If-Match)")
 
 // Manifest mirrors the schema's Manifest entity (loose; validation lives in the
 // schema package).
@@ -59,6 +68,11 @@ type Bundle struct {
 // Store operates on a single .specs/ directory.
 type Store struct {
 	dir string
+	// mu serializes every load-modify-write so two concurrent writers (multiple
+	// extension clients against one remote sidecar) cannot interleave a read and a
+	// write of the same file and silently drop one append. One coarse lock for the
+	// whole store is sufficient at this scale; per-file locking is premature.
+	mu sync.Mutex
 }
 
 // New returns a Store rooted at the given .specs/ directory (cleaned).
@@ -133,6 +147,8 @@ func (s *Store) LoadViews() ([]byte, error) {
 // Git diffs, confined to .specs/. The caller validates the body against the
 // schema first; json.Indent preserves the client's key order.
 func (s *Store) SaveViews(raw json.RawMessage) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	full, err := s.resolve("views.json")
 	if err != nil {
 		return err
@@ -168,6 +184,8 @@ func (s *Store) LoadGuides() ([]byte, error) {
 // Git diffs, confined to .specs/. The caller validates the body against the
 // schema first; json.Indent preserves the client's key order.
 func (s *Store) SaveGuides(raw json.RawMessage) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	full, err := s.resolve("guides.json")
 	if err != nil {
 		return err
@@ -241,6 +259,17 @@ func (s *Store) Load() (Bundle, error) {
 	return b, nil
 }
 
+// ETagFor computes the optimistic-concurrency tag for a /specs bundle: a quoted
+// SHA-256 of the marshaled bundle. encoding/json sorts map keys, so the bytes
+// (and therefore the tag) are deterministic for a given set of specs. Both the
+// GET /specs response header and the write-path If-Match compare go through this
+// one function so their formats cannot drift.
+func ETagFor(b Bundle) string {
+	data, _ := json.Marshal(b)
+	sum := sha256.Sum256(data)
+	return `"` + hex.EncodeToString(sum[:]) + `"`
+}
+
 func (s *Store) loadSpecFile(name string) (specFile, string, error) {
 	var sf specFile
 	full, err := s.resolve(name)
@@ -272,14 +301,21 @@ func specID(raw json.RawMessage) string {
 }
 
 // SaveSpec appends or updates (by id) a spec inside the named file, then writes
-// the file atomically. The spec's id is the upsert key.
-func (s *Store) SaveSpec(name string, spec json.RawMessage) error {
+// the file atomically. The spec's id is the upsert key. A non-empty ifMatch is an
+// optimistic-concurrency precondition: the write is rejected with
+// ErrVersionMismatch when it no longer matches the current bundle ETag.
+func (s *Store) SaveSpec(name string, spec json.RawMessage, ifMatch string) error {
 	id := specID(spec)
 	if id == "" {
 		return errors.New("spec has no id")
 	}
 	if !strings.HasSuffix(name, ".spec.json") {
 		return fmt.Errorf("%w: must end with .spec.json: %q", ErrInvalidName, name)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.checkIfMatch(ifMatch); err != nil {
+		return err
 	}
 	sf, full, err := s.loadSpecFile(name)
 	if err != nil {
@@ -302,19 +338,26 @@ func (s *Store) SaveSpec(name string, spec json.RawMessage) error {
 	return s.writeSpecFile(full, sf)
 }
 
-// UpdateSpec replaces a spec found by id in whichever file holds it.
-func (s *Store) UpdateSpec(id string, spec json.RawMessage) error {
-	return s.mutateByID(id, func(sf *specFile, i int) { sf.Specs[i] = spec })
+// UpdateSpec replaces a spec found by id in whichever file holds it. A non-empty
+// ifMatch is an optimistic-concurrency precondition (see SaveSpec).
+func (s *Store) UpdateSpec(id string, spec json.RawMessage, ifMatch string) error {
+	return s.mutateByID(id, ifMatch, func(sf *specFile, i int) { sf.Specs[i] = spec })
 }
 
-// DeleteSpec removes a spec by id from whichever file holds it.
-func (s *Store) DeleteSpec(id string) error {
-	return s.mutateByID(id, func(sf *specFile, i int) {
+// DeleteSpec removes a spec by id from whichever file holds it. A non-empty
+// ifMatch is an optimistic-concurrency precondition (see SaveSpec).
+func (s *Store) DeleteSpec(id string, ifMatch string) error {
+	return s.mutateByID(id, ifMatch, func(sf *specFile, i int) {
 		sf.Specs = append(sf.Specs[:i], sf.Specs[i+1:]...)
 	})
 }
 
-func (s *Store) mutateByID(id string, fn func(sf *specFile, i int)) error {
+func (s *Store) mutateByID(id string, ifMatch string, fn func(sf *specFile, i int)) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.checkIfMatch(ifMatch); err != nil {
+		return err
+	}
 	names, err := s.SpecFileNames()
 	if err != nil {
 		return err
@@ -332,6 +375,25 @@ func (s *Store) mutateByID(id string, fn func(sf *specFile, i int)) error {
 		}
 	}
 	return ErrNotFound
+}
+
+// checkIfMatch enforces the optimistic-concurrency precondition. An empty ifMatch
+// means "no precondition" (backward compatible for the single-writer localhost
+// case). Otherwise it must equal the current /specs bundle ETag. MUST be called
+// with s.mu held: it loads the bundle that the about-to-run write will mutate, so
+// the read-compare-write is atomic.
+func (s *Store) checkIfMatch(ifMatch string) error {
+	if ifMatch == "" {
+		return nil
+	}
+	b, err := s.Load()
+	if err != nil {
+		return err
+	}
+	if ETagFor(b) != ifMatch {
+		return ErrVersionMismatch
+	}
+	return nil
 }
 
 func (s *Store) writeSpecFile(full string, sf specFile) error {

@@ -10,7 +10,7 @@ Specpin pins business specifications onto the elements of a running web UI. It i
 .specs/ (consumer repo)
    |  read/write JSON
    v
-specpin serve  ── Go sidecar ──  localhost HTTP + SSE (token-authenticated, 127.0.0.1 only)
+specpin serve  ── Go sidecar ──  HTTP + SSE (token-authenticated; 127.0.0.1 by default, opt-in remote over an HTTPS reverse proxy)
    ^
    |  fetch() from the background service worker
    v
@@ -83,10 +83,11 @@ The background aggregates both into one origin-tagged list (`GET_GUIDES_FOR_ORIG
 
 ## Security model (sidecar)
 
-- Binds `127.0.0.1` only; the port is auto-picked unless `--port` is given.
-- Every request requires `Authorization: Bearer <token>` (printed on `serve`).
-- CORS accepts only extension origins (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`); web origins are rejected.
-- Writes are confined to `.specs/` (path-traversal guard), atomic, and pretty-printed for clean Git diffs.
+- Binds `127.0.0.1` by default; the port is auto-picked unless `--port` is given. `--host <addr>` can bind a non-loopback address for remote use, but that exposes the raw plaintext, token-only port directly (the reverse proxy is not in the path) and prints a warning — firewall it. Remote clients must reach the sidecar over **HTTPS via a reverse proxy** (the extension blocks plaintext remote as mixed content); the Go binary terminates no TLS itself. See `docs/run-guide.md` → "Serve on a remote machine".
+- Every request requires `Authorization: Bearer <token>` (printed on `serve`). The token is random per run unless pinned with `--token`/`SPECPIN_TOKEN`. **The token is the sole authorization boundary for non-browser network clients**: CORS constrains only browser origins, so a no-`Origin` client (e.g. `curl`) is gated by the token alone.
+- CORS accepts only extension origins (`chrome-extension://`, `moz-extension://`, `safari-web-extension://`); web origins are rejected. The preflight allows `Authorization`, `Content-Type`, and `If-Match`, and exposes `ETag` so a cross-origin (remote) client can read it.
+- Writes are confined to `.specs/` (path-traversal guard), atomic, and pretty-printed for clean Git diffs. A `sync.Mutex` serializes every read-modify-write so concurrent multi-writer requests cannot drop an append; spec writes additionally support optimistic concurrency — `GET /specs` returns a bundle `ETag`, and a `POST`/`PUT`/`DELETE` whose `If-Match` no longer matches is rejected with `409` (the extension reloads and re-prompts) instead of clobbering a newer state. Views/guides get the mutex but not the ETag check (the extension re-reads them before each write).
+- `/events` emits a periodic SSE heartbeat (~20s) so an idle-timeout reverse proxy keeps the change stream open.
 - **Multi-token trust model.** With N connections the extension stores N localhost bearer tokens. Tokens stay in background/extension storage: they are never echoed into the Options DOM, never included in `ConnectionStatus` (so an unprivileged status query cannot read them), and connection-mutating messages are privileged (rejected from a web-page content script). Capture writes are routed only to a connection whose `domains` cover the page origin.
 - **Endpoints**: `GET /ping`, `GET /manifest`, `GET /specs`, `GET /specs/:id`, `POST /specs`, `PUT /specs/:id`, `DELETE /specs/:id`, `GET /views`, `PUT /views`, `GET /guides`, `PUT /guides`, `GET /events` (SSE). All except `/ping` require bearer auth; `PUT /views` and `PUT /guides` validate the payload against the `ViewsConfig` / `GuidesConfig` schema on both TS and Go sides.
 

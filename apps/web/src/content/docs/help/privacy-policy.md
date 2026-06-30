@@ -21,7 +21,7 @@ Specpin does not collect, transmit, sell, or share any personal data. There is n
 
 ### What we collect
 
-Nothing. Specpin sends no data to us or to any third party. The only network connection it makes is to a sidecar **you run yourself** on `localhost` (see [Network Activity](#network-activity)).
+Nothing. Specpin sends no data to us or to any third party. The only network connection it makes is to a sidecar **you run yourself** — on `localhost` by default, or on your own remote host (over HTTPS) if you choose to (see [Network Activity](#network-activity)).
 
 ### What we store locally
 
@@ -33,7 +33,7 @@ Specpin stores the following data **only on your device**, via the browser's ext
 | Local project specs | `browser.storage` | Author and view specs without a running sidecar | No |
 | Preferences (theme, interface language, display mode, default surface) | `browser.storage` | Remember your UI choices | No |
 
-This data never leaves your device. There is no external storage and no cloud service.
+This data stays on your device (connection settings and local-project specs are sent only to the sidecar you connect to). There is no external storage and no Specpin cloud service.
 
 ## Browser Permissions
 
@@ -63,22 +63,23 @@ Opens the Specpin surface in Chrome's side panel alongside the page. Firefox use
 
 ### `host_permissions` - `http://127.0.0.1/*`, `http://localhost/*`
 
-Lets the background service worker connect to your local sidecar over `localhost` HTTP and Server-Sent Events to read `.specs/` and receive live-reload updates. Specpin makes **no** requests to any remote host.
+Lets the background service worker connect to your local sidecar over `localhost` HTTP and Server-Sent Events to read `.specs/` and receive live-reload updates. By default Specpin makes **no** requests to any remote host. If you add a remote sidecar, the extension requests access to that one origin at connect time (an optional, revocable permission) and revokes it when you remove the connection.
 
 ## Network Activity
 
-Specpin connects only to a sidecar **you run yourself** (`specpin serve`) on `localhost` (`127.0.0.1` / `localhost`). It communicates over HTTP and Server-Sent Events, authenticated with a bearer token.
+Specpin connects only to a sidecar **you run yourself** (`specpin serve`) — on `localhost` (`127.0.0.1` / `localhost`) by default, or on your own remote host over HTTPS if you opt in. It communicates over HTTP/HTTPS and Server-Sent Events, authenticated with a bearer token.
 
 | Destination | Used? |
 |-------------|-------|
 | Your local sidecar (`http://127.0.0.1:<port>`, `http://localhost:<port>`) | ✅ Only when you add a connection |
+| Your own remote sidecar (`https://<your-host>`) | ✅ Only if you add a remote connection |
 | Analytics services (Google Analytics, etc.) | ❌ Never |
 | Crash/error reporting (Sentry, etc.) | ❌ Never |
 | Advertising networks | ❌ Never |
 | External APIs or CDNs | ❌ Never |
 | Remote code / remote scripts | ❌ Never |
 
-The local sidecar is hardened: it binds to `127.0.0.1` only, requires bearer-token auth, accepts only browser-extension origins via CORS, and confines all writes to your `.specs/` directory. See [Security and Privacy](/concepts/security-and-privacy/) for the full sidecar security model.
+The sidecar is hardened: it binds to `127.0.0.1` by default (a remote bind requires an HTTPS reverse proxy you run), requires bearer-token auth, accepts only browser-extension origins via CORS, and confines all writes to your `.specs/` directory. See [Security and Privacy](/concepts/security-and-privacy/) for the full sidecar security model.
 
 ## Data Sharing
 
@@ -135,4 +136,4 @@ Questions or privacy concerns?
 
 ---
 
-**In short**: Specpin is a privacy-first, local-first extension. Your data stays on your device - we collect nothing, send nothing, and track nothing. The only network connection it makes is to a sidecar you run yourself on `localhost`.
+**In short**: Specpin is a privacy-first, local-first extension. We collect nothing, send nothing, and track nothing. The only network connection it makes is to a sidecar you run yourself — on `localhost` by default, or on your own remote host over HTTPS if you opt in.

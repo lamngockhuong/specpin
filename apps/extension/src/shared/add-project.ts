@@ -1,7 +1,8 @@
 import { type MessageKey, t } from "../i18n/index.js";
 import { clearDraft, loadDraft, saveDraft } from "./draft-store.js";
+import { ensureRemotePermission } from "./host-permission.js";
 import { escapeAttr, escapeHtml } from "./html.js";
-import { normalizeLocalUrl } from "./local-url.js";
+import { normalizeSidecarUrl } from "./local-url.js";
 import { type CreateLocalProjectResult, sendToBackground } from "./messaging.js";
 
 // Stashed "+ New project" input, so a popup dismissed mid-entry restores it on
@@ -201,7 +202,7 @@ export function mountAddProject(
   }
 
   async function submitSidecar(): Promise<void> {
-    const { url, valid } = normalizeLocalUrl(fields.url.value);
+    const { url, valid, isRemote } = normalizeSidecarUrl(fields.url.value);
     const tokenEl = q<HTMLInputElement>("#ap-token");
     const tok = tokenEl.value.trim();
     if (!url || !tok) {
@@ -209,9 +210,17 @@ export function mountAddProject(
       return;
     }
     if (!valid) {
-      setResult(false, t("addProject.urlError"));
+      setResult(false, t(isRemote ? "addProject.urlErrorRemoteHttps" : "addProject.urlError"));
       return;
     }
+    // Remote origins are NOT in the declared host_permissions; grant the optional
+    // permission within this gesture (no await before this point) before connecting.
+    // On denial: clear the secret from the DOM (RT-SA6) and surface the message.
+    const granted = await ensureRemotePermission(url, isRemote, () => {
+      tokenEl.value = "";
+      setResult(false, t("addProject.permissionDenied"));
+    });
+    if (!granted) return;
     const res = await sendToBackground<{ ok: boolean; project?: string | null; error?: string }>({
       type: "ADD_CONNECTION",
       baseUrl: url,

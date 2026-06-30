@@ -13,7 +13,7 @@ Specpin gắn đặc tả nghiệp vụ lên phần tử UI đang chạy thông 
 
 1. **Đặc tả của bạn nằm trong `.specs/`** dưới dạng file JSON trong repo dự án. Chúng được quản lý phiên bản bằng Git, review được qua pull request, và xem diff được như bất kỳ code nào khác.
 
-2. **`specpin serve` mở chúng ra ở cục bộ** qua HTTP (chỉ localhost, xác thực token, live-reload qua Server-Sent Events). Sidecar là một binary Go nhỏ bind tới `127.0.0.1` trên một cổng tự động chọn. Không có gì rời khỏi máy của bạn.
+2. **`specpin serve` mở chúng ra** qua HTTP (xác thực token, live-reload qua Server-Sent Events). Sidecar là một binary Go nhỏ, theo mặc định bind tới `127.0.0.1` trên một cổng tự động chọn; không có gì rời khỏi máy của bạn trừ khi bạn chọn dùng sidecar từ xa (HTTPS qua reverse proxy của riêng bạn).
 
 3. **Extension trình duyệt kết nối** tới sidecar, tải đặc tả của bạn, khớp từng đặc tả với một phần tử DOM trên trang, và hiển thị nó (dạng tooltip, sidebar, hoặc modal). Khi bạn sửa một file đặc tả trên đĩa, trang sẽ tự động refresh.
 
@@ -57,4 +57,4 @@ Bạn sẽ thấy đặc tả trong danh sách của extension với huy hiệu 
 
 ## Ưu Tiên Cục Bộ, Riêng Tư
 
-Tất cả dữ liệu đặc tả chỉ chạy qua máy cục bộ của bạn. Sidecar bind tới `127.0.0.1` và yêu cầu bearer token (được in ra khi bạn chạy `specpin serve`). Extension tải đặc tả qua HTTP localhost, và các thao tác ghi quay lại thư mục `.specs/` của bạn dưới dạng file JSON được format đẹp. Không có dịch vụ bên ngoài nào nhìn thấy đặc tả hoặc trang của bạn. Xem [Bảo Mật và Quyền Riêng Tư](/vi/concepts/security-and-privacy/) để biết chi tiết đầy đủ.
+Theo mặc định, tất cả dữ liệu đặc tả chỉ chạy qua máy cục bộ của bạn. Sidecar bind tới `127.0.0.1` và yêu cầu bearer token (được in ra khi bạn chạy `specpin serve`). Extension tải đặc tả qua HTTP localhost, và các thao tác ghi quay lại thư mục `.specs/` của bạn dưới dạng file JSON được format đẹp. Không có dịch vụ nào do Specpin vận hành nhìn thấy đặc tả hoặc trang của bạn; sidecar từ xa, nếu bạn chọn dùng, là một máy chủ do chính bạn vận hành. Xem [Bảo Mật và Quyền Riêng Tư](/vi/concepts/security-and-privacy/) để biết chi tiết đầy đủ.

@@ -3,26 +3,28 @@ title: Security and Privacy
 description: How Specpin keeps your specs and browsing private through localhost-only operation and token authentication.
 ---
 
-Specpin is designed local-first. Your specs never leave your machine, and the sidecar server is hardened to accept connections only from your browser extension.
+Specpin is designed local-first. By default your specs never leave your machine, and the sidecar server is hardened to accept connections only from your browser extension. A team can optionally run that same sidecar on its own host behind an HTTPS reverse proxy; even then, specs go only to a server you operate, never to any Specpin service.
 
 ## Local-First Architecture
 
 All data flows through your local machine:
 
 1. **Specs live in your repository** as `.specs/*.json` files. They are versioned with Git like any source code.
-2. **The sidecar (`specpin serve`) binds to `127.0.0.1` only.** It listens on localhost, on an auto-picked port (or one you specify with `--port`). No external traffic can reach it.
-3. **The browser extension fetches specs over localhost HTTP.** It connects to `http://127.0.0.1:<port>` using a bearer token.
+2. **The sidecar (`specpin serve`) binds to `127.0.0.1` by default.** It listens on localhost, on an auto-picked port (or one you specify with `--port`). No external traffic can reach it unless you explicitly bind a remote interface.
+3. **The browser extension fetches specs over localhost HTTP.** It connects to `http://127.0.0.1:<port>` using a bearer token (or to your own `https://` reverse proxy for a remote sidecar).
 4. **Writes go back to `.specs/` on disk.** When you capture or edit a spec, the extension sends it to the sidecar, which writes a pretty-printed JSON file atomically. The change appears in `git diff` immediately.
 
-No Specpin component sends data to an external server. There is no cloud service, no telemetry, no analytics. Everything stays on your machine.
+No Specpin component sends data to a Specpin-operated server. There is no cloud service, no telemetry, no analytics. Spec data goes only to the sidecar you run — on localhost by default, or on your own remote host if you opt in.
 
 ## Sidecar Security Model
 
 The sidecar is hardened to prevent unauthorized access:
 
-### Localhost Binding
+### Localhost Binding (default)
 
-The sidecar binds to `127.0.0.1`, not `0.0.0.0`. Only processes on your machine can reach it. The port is auto-picked from available high ports unless you override with `--port`.
+By default the sidecar binds to `127.0.0.1`. Only processes on your machine can reach it. The port is auto-picked from available high ports unless you override with `--port`.
+
+For team use, `--host <addr>` binds a non-loopback interface. This exposes the raw, **plaintext, token-only** port directly to the network (the reverse proxy is not magically in the path), so the sidecar prints a warning, and you must firewall that port and front it with an HTTPS reverse proxy. Remote clients always connect over HTTPS via that proxy — the extension blocks plaintext remote connections as mixed content.
 
 ### Bearer Token Authentication
 
@@ -37,7 +39,7 @@ Specpin sidecar running.
 Copy the token and paste it into the extension's connection settings. The extension stores it securely in its background service worker and sends it with every request. Without the correct token, all requests are rejected with `401 Unauthorized`.
 
 :::caution
-The token is printed in your terminal. If someone with physical or remote access to your machine sees the terminal output, they can connect to the sidecar while it is running. Treat the token like a password. The token changes every time you restart `specpin serve`.
+The token is printed in your terminal. If someone with physical or remote access to your machine sees the terminal output, they can connect to the sidecar while it is running. Treat the token like a password — it is the **only** authorization boundary for non-browser network clients (CORS only constrains browsers). By default the token changes every time you restart `specpin serve`; pin a stable one with `--token` / `SPECPIN_TOKEN` (for a remote/team sidecar) so a restart does not de-authenticate everyone — but then distribute and rotate it carefully.
 :::
 
 ### CORS: Extension Origins Only
@@ -89,7 +91,7 @@ You can connect the extension to multiple sidecar instances (e.g., one per proje
 ## Common Questions
 
 **Is my data sent anywhere?**  
-No. All spec data flows through your local machine only. The sidecar binds to `127.0.0.1`, and the extension connects to it over localhost. There is no external server.
+Not to us. By default all spec data flows through your local machine only — the sidecar binds to `127.0.0.1` and the extension connects over localhost. If you opt into a remote sidecar, specs go only to that host, which **you** operate; there is no Specpin server and no telemetry.
 
 **Can a website read my specs?**  
 No. The sidecar rejects requests from web origins (via CORS). Only the browser extension can fetch specs.
@@ -101,4 +103,4 @@ They can connect to the sidecar while it is running and read or write specs in t
 No. Local projects are stored in `browser.storage.local`, which is private to your browser profile. They are not synced unless you export them as a `.specs.zip` and share the file manually.
 
 **Can I use Specpin on a remote server?**  
-Not directly. The sidecar binds to `127.0.0.1` only. If you need to serve specs from a remote machine, you would need to set up an SSH tunnel or a reverse proxy with your own authentication layer. This is not officially supported.
+Yes. Run the sidecar on the remote host (keep it on loopback with a co-located HTTPS reverse proxy, or use `--host` + a firewall), pin a stable `--token`, and connect the extension to the `https://` proxy URL. The extension requests host access for that one origin when you add the connection and revokes it when you remove it. Remote requires HTTPS (plaintext remote is blocked as mixed content). See the run guide's "Serve on a remote machine" section for Caddy/nginx examples and the threat model.

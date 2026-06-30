@@ -217,6 +217,10 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
 export interface SaveSpecResult {
   ok: boolean;
   errors?: string[];
+  /** True when the write was rejected because the specs changed elsewhere since
+   *  this client last read them (HTTP 409). The connection was reloaded, so the
+   *  UI should tell the user to review + retry rather than show a hard failure. */
+  conflict?: boolean;
 }
 
 export interface AddLocalBatchResult {

@@ -3,9 +3,11 @@ package store
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -38,7 +40,7 @@ func newTempStore(t *testing.T) *Store {
 
 func TestSaveAndLoadRoundTrip(t *testing.T) {
 	s := newTempStore(t)
-	if err := s.SaveSpec("login.spec.json", json.RawMessage(validSpec)); err != nil {
+	if err := s.SaveSpec("login.spec.json", json.RawMessage(validSpec), ""); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 
@@ -65,9 +67,9 @@ func TestSaveAndLoadRoundTrip(t *testing.T) {
 
 func TestSaveSpecUpsertsByID(t *testing.T) {
 	s := newTempStore(t)
-	_ = s.SaveSpec("a.spec.json", json.RawMessage(validSpec))
+	_ = s.SaveSpec("a.spec.json", json.RawMessage(validSpec), "")
 	updated := strings.Replace(validSpec, `"submits the form"`, `"updated text"`, 1)
-	_ = s.SaveSpec("a.spec.json", json.RawMessage(updated))
+	_ = s.SaveSpec("a.spec.json", json.RawMessage(updated), "")
 
 	bundle, _ := s.Load()
 	if len(bundle.Specs) != 1 {
@@ -81,15 +83,15 @@ func TestSaveSpecUpsertsByID(t *testing.T) {
 
 func TestDeleteSpec(t *testing.T) {
 	s := newTempStore(t)
-	_ = s.SaveSpec("a.spec.json", json.RawMessage(validSpec))
-	if err := s.DeleteSpec("login-btn"); err != nil {
+	_ = s.SaveSpec("a.spec.json", json.RawMessage(validSpec), "")
+	if err := s.DeleteSpec("login-btn", ""); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
 	bundle, _ := s.Load()
 	if len(bundle.Specs) != 0 {
 		t.Errorf("expected 0 specs after delete, got %d", len(bundle.Specs))
 	}
-	if err := s.DeleteSpec("missing"); err != ErrNotFound {
+	if err := s.DeleteSpec("missing", ""); err != ErrNotFound {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
@@ -103,7 +105,7 @@ func TestPathTraversalRejected(t *testing.T) {
 		"/abs/path.spec.json",
 		"sub/../../out.spec.json",
 	} {
-		if err := s.SaveSpec(bad, json.RawMessage(validSpec)); !errors.Is(err, ErrTraversal) {
+		if err := s.SaveSpec(bad, json.RawMessage(validSpec), ""); !errors.Is(err, ErrTraversal) {
 			t.Errorf("expected ErrTraversal for %q, got %v", bad, err)
 		}
 	}
@@ -115,7 +117,7 @@ func TestPathTraversalRejected(t *testing.T) {
 func TestNonSpecFileNameRejected(t *testing.T) {
 	s := newTempStore(t)
 	for _, bad := range []string{"manifest.json", "notes.txt", "data.json"} {
-		if err := s.SaveSpec(bad, json.RawMessage(validSpec)); !errors.Is(err, ErrInvalidName) {
+		if err := s.SaveSpec(bad, json.RawMessage(validSpec), ""); !errors.Is(err, ErrInvalidName) {
 			t.Errorf("expected ErrInvalidName for %q, got %v", bad, err)
 		}
 	}
@@ -149,11 +151,68 @@ func TestGuidesRoundTrip(t *testing.T) {
 	}
 }
 
+// Concurrent appends to the SAME spec file must all survive: each SaveSpec is a
+// load-modify-write of one file, so without the store mutex two goroutines could
+// both read the pre-append slice and the second write would clobber the first's
+// append. Writing distinct ids into one file is the case that actually exercises
+// the lock. Run with -race to catch the data race directly.
+func TestConcurrentWritesNoLostSpec(t *testing.T) {
+	s := newTempStore(t)
+	const n = 16
+	var wg sync.WaitGroup
+	wg.Add(n)
+	for i := range n {
+		go func(i int) {
+			defer wg.Done()
+			spec := strings.Replace(validSpec, `"login-btn"`, fmt.Sprintf(`"spec-%d"`, i), 1)
+			if err := s.SaveSpec("shared.spec.json", json.RawMessage(spec), ""); err != nil {
+				t.Errorf("save %d: %v", i, err)
+			}
+		}(i)
+	}
+	wg.Wait()
+	bundle, err := s.Load()
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if len(bundle.Specs) != n {
+		t.Fatalf("want %d specs after concurrent same-file writes, got %d (lost append)", n, len(bundle.Specs))
+	}
+}
+
+// A stale If-Match (the bundle changed since the caller read it) is rejected with
+// ErrVersionMismatch; an empty or current If-Match proceeds.
+func TestIfMatchOptimisticConcurrency(t *testing.T) {
+	s := newTempStore(t)
+	if err := s.SaveSpec("a.spec.json", json.RawMessage(validSpec), ""); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	bundle, _ := s.Load()
+	etag := ETagFor(bundle)
+
+	// A matching If-Match succeeds and changes the bundle (so the tag goes stale).
+	updated := strings.Replace(validSpec, `"submits the form"`, `"v2"`, 1)
+	if err := s.UpdateSpec("login-btn", json.RawMessage(updated), etag); err != nil {
+		t.Fatalf("update with current etag: %v", err)
+	}
+
+	// Re-using the now-stale tag must be rejected.
+	updated2 := strings.Replace(validSpec, `"submits the form"`, `"v3"`, 1)
+	if err := s.UpdateSpec("login-btn", json.RawMessage(updated2), etag); !errors.Is(err, ErrVersionMismatch) {
+		t.Fatalf("want ErrVersionMismatch for stale If-Match, got %v", err)
+	}
+
+	// Empty If-Match always proceeds (backward compatible).
+	if err := s.UpdateSpec("login-btn", json.RawMessage(updated2), ""); err != nil {
+		t.Fatalf("empty If-Match should proceed: %v", err)
+	}
+}
+
 // RT-M2: a .specs/ containing guides.json must still load specs cleanly;
 // guides.json must not be scanned as a spec file (suffix is .json, not .spec.json).
 func TestGuidesJSONNotParsedAsSpec(t *testing.T) {
 	s := newTempStore(t)
-	if err := s.SaveSpec("login.spec.json", json.RawMessage(validSpec)); err != nil {
+	if err := s.SaveSpec("login.spec.json", json.RawMessage(validSpec), ""); err != nil {
 		t.Fatalf("save spec: %v", err)
 	}
 	if err := s.SaveGuides(json.RawMessage(`{"version":"1.0","guides":[]}`)); err != nil {

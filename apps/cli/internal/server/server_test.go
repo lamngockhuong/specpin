@@ -1,12 +1,15 @@
 package server
 
 import (
+	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"specpin/internal/schema"
 	"specpin/internal/store"
@@ -143,4 +146,101 @@ func TestPostTraversalRejected(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("traversal via POST: want 400, got %d", rec.Code)
 	}
+}
+
+// seedManifest writes a minimal manifest.json so GET /specs can Load() and emit
+// an ETag (the bare temp dir from newTestServer has no manifest).
+func seedManifest(t *testing.T, dir string) {
+	t.Helper()
+	m := `{"version":"1.0","project":"Test","domains":[],"specFiles":[]}`
+	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(m), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGetSpecsEmitsETag(t *testing.T) {
+	srv, dir := newTestServer(t)
+	seedManifest(t, dir)
+	rec := do(t, srv, http.MethodGet, "/specs", "", authHeader())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /specs: want 200, got %d (%s)", rec.Code, rec.Body.String())
+	}
+	if etag := rec.Header().Get("ETag"); etag == "" {
+		t.Error("GET /specs should set an ETag header")
+	}
+}
+
+// A stale If-Match (the bundle changed since the caller read the ETag) yields 409
+// version_mismatch; the current ETag succeeds; no header proceeds unconditionally.
+func TestPutStaleIfMatchReturns409(t *testing.T) {
+	srv, dir := newTestServer(t)
+	seedManifest(t, dir)
+
+	if rec := do(t, srv, http.MethodPost, "/specs", `{"file":"a.spec.json","spec":`+validSpec+`}`, authHeader()); rec.Code != http.StatusOK {
+		t.Fatalf("seed POST: %d (%s)", rec.Code, rec.Body.String())
+	}
+	etag := do(t, srv, http.MethodGet, "/specs", "", authHeader()).Header().Get("ETag")
+	if etag == "" {
+		t.Fatal("no ETag after seed")
+	}
+
+	// Current ETag: PUT succeeds and changes the bundle (so the tag goes stale).
+	updated := strings.Replace(validSpec, `"submits the form"`, `"v2"`, 1)
+	withMatch := authHeader()
+	withMatch["If-Match"] = etag
+	if rec := do(t, srv, http.MethodPut, "/specs/login-btn", updated, withMatch); rec.Code != http.StatusOK {
+		t.Fatalf("PUT with current ETag: want 200, got %d (%s)", rec.Code, rec.Body.String())
+	}
+
+	// Re-using the now-stale ETag is rejected with 409.
+	rec := do(t, srv, http.MethodPut, "/specs/login-btn", updated, withMatch)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("stale If-Match: want 409, got %d (%s)", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "version_mismatch") {
+		t.Errorf("expected version_mismatch code, got %s", rec.Body.String())
+	}
+
+	// No If-Match still proceeds (backward compatible).
+	if rec := do(t, srv, http.MethodPut, "/specs/login-btn", updated, authHeader()); rec.Code != http.StatusOK {
+		t.Fatalf("PUT without If-Match: want 200, got %d (%s)", rec.Code, rec.Body.String())
+	}
+}
+
+// /events emits a periodic heartbeat comment so an idle-timeout reverse proxy
+// keeps the stream open. The interval is dialed down for the test.
+func TestEventsHeartbeat(t *testing.T) {
+	srv, _ := newTestServer(t)
+	prev := sseHeartbeatInterval
+	sseHeartbeatInterval = 15 * time.Millisecond
+	t.Cleanup(func() { sseHeartbeatInterval = prev })
+
+	ts := httptest.NewServer(srv.Handler())
+	t.Cleanup(ts.Close)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/events", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("connect /events: %v", err)
+	}
+	defer res.Body.Close()
+	if ct := res.Header.Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("want text/event-stream, got %q", ct)
+	}
+
+	buf := make([]byte, 64)
+	deadline := time.Now().Add(1 * time.Second)
+	for time.Now().Before(deadline) {
+		n, err := res.Body.Read(buf)
+		if n > 0 && strings.Contains(string(buf[:n]), ": ping") {
+			return // heartbeat observed
+		}
+		if err == io.EOF {
+			break
+		}
+	}
+	t.Error("no heartbeat (: ping) observed on /events within the window")
 }

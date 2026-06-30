@@ -65,7 +65,11 @@ Specpin sidecar running.
   Token:   2da0480c...
 ```
 
-The port is auto-picked; pass `--port 5173` to pin one.
+The port is auto-picked; pass `--port 5173` to pin one. The token is fresh each
+run; pass `--token <secret>` (or set `SPECPIN_TOKEN`) to pin a stable one so
+restarts don't de-authenticate connected clients. By default the sidecar binds
+loopback (`127.0.0.1`); see [Serve on a remote machine](#serve-on-a-remote-machine)
+to expose it to a team.
 
 ## 5. Load the extension
 
@@ -145,6 +149,89 @@ cd /path/to/project-b && /path/to/bin/specpin serve --port 51002
 ```
 
 To demo this against the single demo app, run two sidecars over two `.specs/` directories on different ports; each page shows only the specs of the project(s) whose `domains` match its origin.
+
+## Serve on a remote machine
+
+By default the sidecar is a single-user localhost tool. To share one `.specs/`
+with a team, run it on a shared host and connect the extension to it over
+**HTTPS**. The Go binary speaks plain HTTP only; **TLS is terminated by a reverse
+proxy** in front of it. Remote *requires* HTTPS: the extension's requests run from
+a secure context, so a plaintext `http://` remote is blocked as mixed content and
+the extension rejects it.
+
+### Recommended: loopback bind + co-located proxy
+
+Keep the sidecar on `127.0.0.1` and run the proxy on the **same host**. Pin the
+port and the token so restarts don't churn the URL or de-authenticate the team:
+
+```bash
+specpin serve --port 51234 --token "$(openssl rand -hex 24)"
+```
+
+**Caddy** (automatic HTTPS):
+
+```
+specs.example.com {
+  reverse_proxy 127.0.0.1:51234
+}
+```
+
+**nginx** — must disable buffering (for SSE) and forward `OPTIONS` +
+`Authorization` (for the CORS preflight on writes), not just `proxy_pass`:
+
+```nginx
+location / {
+  proxy_pass http://127.0.0.1:51234;
+  proxy_set_header Host $host;
+  proxy_pass_request_headers on;   # keep Authorization + If-Match + Access-Control-*
+  proxy_buffering off;             # SSE: stream events as they arrive
+  proxy_read_timeout 1h;           # SSE idle (the server heartbeat ~20s keeps it warm)
+}
+```
+
+The server sends an SSE heartbeat (~20s) so an idle-timeout proxy keeps `/events`
+open. If `OPTIONS` or `Authorization`/`If-Match` are not forwarded, writes to
+`/specs`, `/views`, and `/guides` fail their preflight.
+
+### Advanced: bind off-loopback (proxy on another host)
+
+`specpin serve --host <addr>` binds a non-loopback address. **This does not put a
+proxy in the path** — it exposes the raw, **plaintext, token-only** port directly
+to the network. Only use it when the proxy runs on a *different* machine, and
+**firewall the raw port** so only the proxy can reach it. Always pin `--port`
+(an auto-picked port changes on restart and breaks the proxy config). The serve
+command prints a blunt warning whenever it binds off-loopback.
+
+> Note: the extension treats only `localhost` and `127.0.0.1` as local for
+> plaintext `http://`. If you bind IPv6 loopback (`--host ::1`) or another
+> loopback IP, connect the extension over `https://` (or use `127.0.0.1`), since a
+> plaintext non-`127.0.0.1`/`localhost` URL is rejected as remote.
+
+### Connect the extension
+
+In the popup or side panel, **+ New project → Sidecar** (or the Options
+**Connected projects** add form): paste `https://specs.example.com` and the token,
+then **approve the permission prompt** for that host. The extension requests host
+access per remote origin at connect time and revokes it when you delete the
+connection, so the default install carries no broad-host permission.
+
+### Threat model (read before exposing it)
+
+- **The bearer token is the only authorization boundary for network clients.**
+  CORS rejects browser requests from non-extension origins, but it does **not**
+  constrain `curl` or any non-browser client (a request with no `Origin` passes).
+  Anyone with the token has full read/write. Treat it like a password; distribute
+  it out-of-band. Pin it with `--token`/`SPECPIN_TOKEN` — otherwise every restart
+  mints a new token and every client must be updated.
+- **The raw non-loopback port is plaintext and token-only.** Firewall it; never
+  expose it to the public internet without the proxy in front.
+- **SSE liveness needs a local-disk `.specs/`.** File-change events rely on
+  inotify; networked/mounted filesystems (NFS, some Docker volumes) may not emit
+  them, leaving specs stale under a green "connected" status. Keep `.specs/` on
+  local disk.
+- **Concurrent edits are safe but coarse.** Writes are serialized server-side, and
+  a write against a stale read is rejected with `409` (the extension reloads and
+  asks you to re-save) rather than silently overwriting a teammate's change.
 
 ## Keyboard shortcuts
 

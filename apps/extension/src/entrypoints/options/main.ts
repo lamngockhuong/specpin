@@ -14,8 +14,9 @@ import {
 import { confirmDialog } from "../../shared/dialog.js";
 import { downloadExportBundles } from "../../shared/export-download.js";
 import { guideRowElement } from "../../shared/guide-section.js";
+import { ensureRemotePermission } from "../../shared/host-permission.js";
 import { localConnId } from "../../shared/local-id.js";
-import { normalizeLocalUrl } from "../../shared/local-url.js";
+import { normalizeSidecarUrl } from "../../shared/local-url.js";
 import {
   type AddLocalBatchResult,
   broadcastToTabs,
@@ -222,15 +223,22 @@ function editSection(c: ConnectionStatus): HTMLElement {
   });
 
   save.addEventListener("click", async () => {
-    const { url: nextUrl, valid } = normalizeLocalUrl(url.value);
+    const { url: nextUrl, valid, isRemote } = normalizeSidecarUrl(url.value);
     if (!nextUrl) {
       showResult(result, false, t("options.urlRequired"));
       return;
     }
     if (!valid) {
-      showResult(result, false, t("options.urlError"));
+      showResult(result, false, t(isRemote ? "options.urlErrorRemoteHttps" : "options.urlError"));
       return;
     }
+    // Grant the optional host permission for a remote endpoint within this gesture
+    // (no await precedes this) before the connection round-trip.
+    const granted = await ensureRemotePermission(nextUrl, isRemote, () => {
+      tokenInput.value = "";
+      showResult(result, false, t("addProject.permissionDenied"));
+    });
+    if (!granted) return;
     const tok = tokenInput.value.trim();
     const res = await sendToBackground<{ ok: boolean; project?: string | null; error?: string }>({
       type: "UPDATE_CONNECTION",
@@ -619,16 +627,23 @@ uiLocale.addEventListener("change", async () => {
 });
 
 byId("add").addEventListener("click", async () => {
-  const { url, valid } = normalizeLocalUrl(baseUrl.value);
+  const { url, valid, isRemote } = normalizeSidecarUrl(baseUrl.value);
   const tok = token.value.trim();
   if (!url || !tok) {
     showResult(addResult, false, t("options.urlTokenRequired"));
     return;
   }
   if (!valid) {
-    showResult(addResult, false, t("options.urlError"));
+    showResult(addResult, false, t(isRemote ? "options.urlErrorRemoteHttps" : "options.urlError"));
     return;
   }
+  // Request the optional host permission for a remote endpoint within this gesture
+  // (no await precedes this) before connecting.
+  const granted = await ensureRemotePermission(url, isRemote, () => {
+    token.value = "";
+    showResult(addResult, false, t("addProject.permissionDenied"));
+  });
+  if (!granted) return;
   const res = await sendToBackground<{ ok: boolean; project?: string | null; error?: string }>({
     type: "ADD_CONNECTION",
     baseUrl: url,

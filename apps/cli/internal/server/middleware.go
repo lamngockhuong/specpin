@@ -36,8 +36,15 @@ func (s *Server) cors(next http.Handler) http.Handler {
 			}
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Vary", "Origin")
-			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			// If-Match carries the optimistic-concurrency precondition on writes;
+			// it is not a CORS-safelisted request header, so a cross-origin (remote)
+			// PUT/POST/DELETE needs it allowed here or the preflight fails.
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, If-Match")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			// ETag is not a CORS-safelisted response header, so JS on a cross-origin
+			// fetch cannot read it unless it is explicitly exposed. The client needs
+			// it to send If-Match on the next write.
+			w.Header().Set("Access-Control-Expose-Headers", "ETag")
 		}
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)

@@ -13,7 +13,7 @@ Specpin attaches business specifications to live UI elements through a three-tie
 
 1. **Your specs live in `.specs/`** as JSON files in your project repository. They are versioned with Git, reviewable via pull requests, and diffable like any other code.
 
-2. **`specpin serve` exposes them locally** over HTTP (localhost only, token-authenticated, live-reload via Server-Sent Events). The sidecar is a small Go binary that binds to `127.0.0.1` on an auto-picked port. Nothing leaves your machine.
+2. **`specpin serve` exposes them** over HTTP (token-authenticated, live-reload via Server-Sent Events). The sidecar is a small Go binary that binds to `127.0.0.1` on an auto-picked port by default; nothing leaves your machine unless you opt into a remote sidecar (HTTPS via your own reverse proxy).
 
 3. **The browser extension connects** to the sidecar, fetches your specs, matches each one to a DOM element on the page, and renders it (as a tooltip, sidebar, or modal). When you edit a spec file on disk, the page refreshes automatically.
 
@@ -57,4 +57,4 @@ You will see the spec in the extension's spec list with a yellow badge. Click **
 
 ## Local-First, Private
 
-All spec data flows through your local machine only. The sidecar binds to `127.0.0.1` and requires a bearer token (printed when you run `specpin serve`). The extension fetches specs over localhost HTTP, and writes go back to your `.specs/` directory as pretty-printed JSON files. No external service sees your specs or your page. See [Security and Privacy](/concepts/security-and-privacy/) for full details.
+By default all spec data flows through your local machine only. The sidecar binds to `127.0.0.1` and requires a bearer token (printed when you run `specpin serve`). The extension fetches specs over localhost HTTP, and writes go back to your `.specs/` directory as pretty-printed JSON files. No Specpin-operated service ever sees your specs or your page; a remote sidecar, if you opt into one, is a host you run yourself. See [Security and Privacy](/concepts/security-and-privacy/) for full details.

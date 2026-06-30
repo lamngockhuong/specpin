@@ -91,7 +91,11 @@ const ja: Record<keyof Messages, string> = {
   "addProject.couldNotCreate": "プロジェクトを作成できませんでした。",
   "addProject.urlTokenRequired": "URLとtokenは必須です。",
   "addProject.urlError":
-    "URLはhttp://localhostまたはhttp://127.0.0.1である必要があります (ポートは任意)。",
+    "URLはlocalhostアドレス (http://localhostまたはhttp://127.0.0.1、ポートは任意) かリモートのhttps:// URLである必要があります。",
+  "addProject.urlErrorRemoteHttps":
+    "リモートのsidecarはhttps://を使う必要があります (平文httpはブロックされます)。",
+  "addProject.permissionDenied":
+    "そのホストへのアクセス許可が拒否されたため、プロジェクトは追加されませんでした。",
   "addProject.couldNotConnect": "sidecarに接続できませんでした。",
 
   // Side panel per-spec controls.
@@ -139,6 +143,8 @@ const ja: Record<keyof Messages, string> = {
   "capture.saveSpec": "specを保存",
   "capture.saveChanges": "変更を保存",
   "capture.saveFailed": "保存に失敗しました。sidecarを確認してください。",
+  "capture.specChangedReloaded":
+    "これらのspecは別の場所で変更され、再読み込みされました。編集内容を確認して保存し直してください。",
   "capture.fmtHint": "(Markdown対応)",
   "capture.fmtBold": "太字",
   "capture.fmtItalic": "斜体",
@@ -196,7 +202,10 @@ const ja: Record<keyof Messages, string> = {
   "options.orPaste": "またはバンドルJSONを貼り付け",
   "options.loadPasted": "貼り付けたバンドルを読み込む",
   "options.clearAll": "すべての手動specを消去",
-  "options.urlError": "URLはhttp://127.0.0.1:PORTまたはhttp://localhost:PORTである必要があります。",
+  "options.urlError":
+    "URLはlocalhostアドレス (http://127.0.0.1:PORTまたはhttp://localhost:PORT) かリモートのhttps:// URLである必要があります。",
+  "options.urlErrorRemoteHttps":
+    "リモートのsidecarはhttps://を使う必要があります (平文httpはブロックされます)。",
   "options.disableProject": "このプロジェクトを無効化",
   "options.enableProject": "このプロジェクトを有効化",
   "options.enabled": "有効",
