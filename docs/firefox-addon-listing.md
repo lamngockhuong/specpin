@@ -77,6 +77,38 @@ Tính năng:
 
 An toàn theo mặc định: sidecar chỉ lắng nghe 127.0.0.1, dùng xác thực bearer-token, chỉ chấp nhận CORS từ origin của tiện ích, và chống path traversal khi ghi. Mã nguồn mở. Không thu thập dữ liệu, không theo dõi, không dùng mã từ xa.
 
+### Japanese (ja)
+
+Specpinはビジネス仕様（ルール、説明、受け入れ基準）を、実行中のウェブUIの要素に直接付与し、ホバーや閲覧中にブラウザ内でレンダリングします。
+
+仕様駆動のコードジェネレーターではありません：アプリケーションコードを生成しません。既存のインターフェースに対して、Gitでバージョン管理された生きたドキュメントをピン留めするナレッジレイヤーです。specはリポジトリの`.specs/`ディレクトリにJSONとして保存され、トークン認証されたlocalhost経由で小さなローカルGoのsidecarからアドオンに提供されます。データは一切外部に出ません。
+
+機能:
+
+• ライブ要素にspecをピン留め: 堅牢なマルチシグナルfingerprintマッチング（test-id、aria、selector、xpath、テキスト、位置）により、specはリファクタリング後も生き続けます。
+
+• 3つの表示モード: tooltip、sidebar、ドラッグ可能なモーダルレンダラー。ワンクリックまたはAlt+Shift+Mで切り替え。
+
+• 手動キャプチャ: 要素をクリックしてその場でspecを作成、ページを離れる必要なし。Alt+Shift+Cでキャプチャを切り替え。
+
+• 書き込み可能なローカルプロジェクト: sidecarなしでもspecの編集、キャプチャ、作成、グループzipエクスポートが可能。
+
+• マルチプロジェクト接続: 1つのアドオンで複数のプロジェクトを同時に管理、originによってページごとにルーティング、プロジェクト単位の有効/無効。
+
+• Sidebarサーフェス: FirefoxのsidebarでSpecpinを開き、インラインspecの詳細とライブ自動更新を利用可能。
+
+• spec検索: タイトル、ファイル、タグ、説明によるクライアントサイドのリアルタイムフィルター。
+
+• 多言語specコンテンツ: ロケールキーの文字列、ブラウザ内の言語切り替え、タブ形式のロケール別エディター。
+
+• Markdownフォーマットのspec: 説明とビジネスルールが安全なMarkdownサブセット（太字、斜体、リンク、リスト）をサポート。ツールバーで作成し、全サーフェスでレンダリング。
+
+• ユーザー選択可能なテーマ: システム / ライト / ダーク、デュアルテーマのデザイントークン。
+
+• バイリンガルインターフェース（EN + VI）、specコンテンツ言語から独立。
+
+デフォルトでセキュア: sidecarは127.0.0.1のみにバインド、bearer-token認証、拡張機能originのみCORSを許可、パストラバーサル防止の書き込みガード。オープンソース。データ収集なし、トラッキングなし、リモートコードなし。
+
 ---
 
 ## This add-on requires payment
@@ -129,6 +161,8 @@ https://specpin.ohnice.app/help/privacy-policy/
 ## Summary (if separate field)
 
 > Pin living business specs onto the elements of your running web UI. Git-native, local-first, framework-agnostic.
+
+**Japanese (ja):** 実行中のウェブUIの要素に生きたビジネス仕様をピン留め。Gitネイティブ・ローカルファースト・フレームワーク非依存。
 
 ---
 

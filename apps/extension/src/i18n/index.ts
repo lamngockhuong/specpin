@@ -2,11 +2,16 @@ import { browser } from "#imports";
 import { UI_LOCALE_KEY } from "../shared/config.js";
 import { resolveUiLocale, type UiLocale } from "./locales.js";
 import en, { type Messages } from "./messages/en.js";
+import ja from "./messages/ja.js";
 import vi from "./messages/vi.js";
 
 export type { UiLocale } from "./locales.js";
 export { resolveUiLocale } from "./locales.js";
 export type MessageKey = keyof Messages;
+
+// One catalog per supported locale. English is the canonical key set; every other
+// catalog is typed against it, so this map stays exhaustive over UiLocale.
+const CATALOGS: Record<UiLocale, Record<string, string>> = { en, vi, ja };
 
 // The active catalog, set once per surface load by initI18n. English is the
 // startup default so a render before init still produces real text.
@@ -17,7 +22,7 @@ let table: Record<string, string> = en;
  *  main.ts or content-script startup) BEFORE rendering any string. */
 export function initI18n(locale: UiLocale): void {
   current = locale;
-  table = locale === "vi" ? vi : en;
+  table = CATALOGS[locale] ?? en;
 }
 
 /** The currently active UI locale. */

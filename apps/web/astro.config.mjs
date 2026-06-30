@@ -45,6 +45,7 @@ export default defineConfig({
       locales: {
         root: { label: "English", lang: "en" },
         vi: { label: "Tiếng Việt", lang: "vi" },
+        ja: { label: "日本語", lang: "ja" },
       },
       social: [
         {
@@ -63,7 +64,7 @@ export default defineConfig({
       sidebar: [
         {
           label: "Getting started",
-          translations: { vi: "Bắt đầu" },
+          translations: { vi: "Bắt đầu", ja: "はじめに" },
           items: [
             { slug: "guide/introduction" },
             { slug: "guide/install" },
@@ -72,7 +73,7 @@ export default defineConfig({
         },
         {
           label: "Using Specpin",
-          translations: { vi: "Sử dụng Specpin" },
+          translations: { vi: "Sử dụng Specpin", ja: "Specpinを使う" },
           items: [
             { slug: "usage/connecting-projects" },
             { slug: "usage/viewing-specs" },
@@ -82,7 +83,7 @@ export default defineConfig({
         },
         {
           label: "Concepts",
-          translations: { vi: "Khái niệm" },
+          translations: { vi: "Khái niệm", ja: "コンセプト" },
           items: [
             { slug: "concepts/how-it-works" },
             { slug: "concepts/security-and-privacy" },
@@ -90,12 +91,12 @@ export default defineConfig({
         },
         {
           label: "Serving your specs",
-          translations: { vi: "Phục vụ đặc tả của bạn" },
+          translations: { vi: "Phục vụ đặc tả của bạn", ja: "specを配信する" },
           items: [{ slug: "sidecar/cli" }, { slug: "sidecar/spec-format" }],
         },
         {
           label: "Help",
-          translations: { vi: "Trợ giúp" },
+          translations: { vi: "Trợ giúp", ja: "ヘルプ" },
           items: [{ slug: "help/troubleshooting" }, { slug: "help/privacy-policy" }],
         },
       ],

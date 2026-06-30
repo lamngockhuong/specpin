@@ -1,4 +1,4 @@
-🇬🇧 **English** • 🇻🇳 [Tiếng Việt](README.vi.md)
+🇬🇧 **English** • 🇻🇳 [Tiếng Việt](README.vi.md) • 🇯🇵 [日本語](README.ja.md)
 
 <p align="center">
   <img src="apps/extension/designs/specpin-icon.png" alt="Specpin" width="112" height="112" />
