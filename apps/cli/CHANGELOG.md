@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.1...cli-v0.0.2) (2026-06-30)
+
+
+### Features
+
+* **cli:** distribute the sidecar via npm as @specpin/cli ([#65](https://github.com/lamngockhuong/specpin/issues/65)) ([6fe7933](https://github.com/lamngockhuong/specpin/commit/6fe793360d49e37aa831fca6caad0fcbeeb5bc96))
+* **cli:** ship AI spec-authoring skill bundled in @specpin/cli ([#70](https://github.com/lamngockhuong/specpin/issues/70)) ([0faa665](https://github.com/lamngockhuong/specpin/commit/0faa66550a9148aac2fc09de907c2e3e9ee4d442))
+
 ## 0.0.1 (2026-06-29)
 
 
