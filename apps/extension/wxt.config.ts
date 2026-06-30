@@ -1,7 +1,9 @@
 import { defineConfig } from "wxt";
 
-// Single codebase, per-browser builds. The sidecar runs on localhost; all
-// sidecar fetches happen in the background service worker (host_permissions),
+// Single codebase, per-browser builds. The sidecar runs on localhost by default
+// (declared host_permissions) but may be a remote HTTPS endpoint behind a reverse
+// proxy, whose origin is granted at connect time via the optional host
+// permissions below. All sidecar fetches happen in the background service worker,
 // never in the content script, to avoid page-CSP blocking.
 // Brand icon set (PNGs live in public/icon/, generated from designs/specpin-icon.svg).
 // WXT auto-detects the top-level `icons` from public/icon/{size}.png; the toolbar
@@ -45,7 +47,18 @@ export default defineConfig({
       "contextMenus",
       ...(manifestVersion === 3 ? ["sidePanel"] : []),
     ],
+    // Declared (install-time) host access stays localhost-only, so the default
+    // install shows no broad-host warning. A remote HTTPS sidecar origin is NOT
+    // declared here; it is requested per-origin at connect time (and revoked on
+    // delete) via the optional permissions below.
     host_permissions: ["http://127.0.0.1/*", "http://localhost/*"],
+    // Optional (runtime-requested) access for a remote HTTPS sidecar. MV3 uses
+    // optional_host_permissions; MV2 (Firefox) folds host patterns into
+    // optional_permissions. Requesting a specific origin at connect time keeps the
+    // grant scoped and revocable without a broad install warning.
+    ...(manifestVersion === 3
+      ? { optional_host_permissions: ["https://*/*"] }
+      : { optional_permissions: ["https://*/*"] }),
     // Firefox (MV2) needs an explicit, stable add-on ID or the `storage` API
     // refuses to work for temporary add-ons (random ID each load via
     // about:debugging). Chrome/MV3 derives its ID from the store/key, so this
@@ -56,8 +69,12 @@ export default defineConfig({
             gecko: {
               id: "specpin@ohnice.app",
               // AMO requires every add-on to declare its data collection. Specpin
-              // collects/transmits no user data (specs stay local, sidecar is on
-              // localhost), so the required set is the special "none" sentinel.
+              // performs no telemetry; specs are transmitted only to the
+              // user-operated sidecar they explicitly connect to (localhost or
+              // their own remote host), which is not third-party data collection,
+              // so the required set is the special "none" sentinel. The remote
+              // case is verified against current AMO policy before the Firefox
+              // release (see docs/chrome-web-store-listing.md).
               data_collection_permissions: { required: ["none"] },
             },
           },

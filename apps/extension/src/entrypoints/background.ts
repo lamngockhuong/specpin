@@ -51,6 +51,7 @@ import {
 } from "../shared/config.js";
 import type { Connection } from "../shared/connection-types.js";
 import { bundleToFiles, groupFromFileName } from "../shared/export-bundle.js";
+import { removeHostPermissionIfUnused } from "../shared/host-permission.js";
 import { isLocalConnectionId, localBatchId } from "../shared/local-id.js";
 import {
   type AddLocalBatchResult,
@@ -647,9 +648,19 @@ export default defineBackground(() => {
 
   function handleRemoveConnection(id: string): Promise<{ ok: true }> {
     return mutate(async () => {
+      const all = await getConnections();
+      const removed = all.find((c) => c.id === id);
       registry.remove(id);
-      const connections = (await getConnections()).filter((c) => c.id !== id);
+      const connections = all.filter((c) => c.id !== id);
       await setConnections(connections);
+      // Revoke the optional host permission for a remote origin so grants do not
+      // accumulate, unless another connection still uses the same origin.
+      if (removed) {
+        await removeHostPermissionIfUnused(
+          removed.baseUrl,
+          connections.map((c) => c.baseUrl),
+        );
+      }
       await broadcastSpecsChanged();
       return { ok: true };
     });
@@ -730,7 +741,9 @@ export default defineBackground(() => {
       connectionId && isLocalConnectionId(connectionId)
         ? await writeLocalSpec(origin, connectionId, spec, file)
         : await registry.saveSpec(origin, file, spec, connectionId);
-    if (result.ok) await broadcastSpecsChanged();
+    // A conflict reloaded the connection with the teammate's change, so refresh
+    // the UI even though this write did not land.
+    if (result.ok || result.conflict) await broadcastSpecsChanged();
     return result;
   }
 
@@ -744,7 +757,7 @@ export default defineBackground(() => {
       connectionId && isLocalConnectionId(connectionId)
         ? await writeLocalSpec(origin, connectionId, spec, undefined)
         : await registry.updateSpec(origin, id, spec, connectionId);
-    if (result.ok) await broadcastSpecsChanged();
+    if (result.ok || result.conflict) await broadcastSpecsChanged();
     return result;
   }
 

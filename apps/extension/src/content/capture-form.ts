@@ -39,7 +39,7 @@ export type CaptureSubmit = (
   file: string,
   spec: Spec,
   connectionId?: string,
-) => Promise<{ ok: boolean; errors?: string[] }>;
+) => Promise<{ ok: boolean; errors?: string[]; conflict?: boolean }>;
 
 export interface CaptureFormOptions {
   defaultFile: string;
@@ -534,6 +534,7 @@ export class CaptureForm {
         : targetSel?.value || options.targets?.[0]?.id || undefined;
       const result = await options.onSubmit(file, spec, connectionId);
       if (result.ok) this.close();
+      else if (result.conflict) this.showErrors(errorsBox, [t("capture.specChangedReloaded")]);
       else this.showErrors(errorsBox, result.errors ?? [t("capture.saveFailed")]);
     });
   }

@@ -156,6 +156,45 @@ describe("SidecarClient errors", () => {
     const fetchImpl = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
     await expect(client(fetchImpl).health()).rejects.toMatchObject({ code: "network_error" });
   });
+
+  it("distinguishes a timeout (AbortSignal.timeout) from a network error", async () => {
+    // AbortSignal.timeout aborts with a TimeoutError DOMException.
+    const fetchImpl = vi
+      .fn()
+      .mockRejectedValue(new DOMException("The operation timed out.", "TimeoutError"));
+    await expect(client(fetchImpl).health()).rejects.toMatchObject({ code: "timeout" });
+  });
+});
+
+describe("SidecarClient optimistic concurrency (ETag / If-Match)", () => {
+  function etagResponse(body: unknown, etag: string): Response {
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { "content-type": "application/json", ETag: etag },
+    });
+  }
+
+  it("captures the ETag from GET /specs and echoes it as If-Match on the next write", async () => {
+    const specsBody = { manifest: { version: "1.0" }, specs: [] };
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(etagResponse(specsBody, '"abc123"'))
+      .mockResolvedValueOnce(jsonResponse({ file: "a.spec.json", spec: sampleSpec }));
+    const c = client(fetchImpl);
+    await c.getSpecs();
+    await c.saveSpec("a.spec.json", sampleSpec);
+    const writeInit = fetchImpl.mock.calls[1][1];
+    expect((writeInit.headers as Record<string, string>)["If-Match"]).toBe('"abc123"');
+  });
+
+  it("sends no If-Match before any GET /specs (fresh client is backward compatible)", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ file: "a.spec.json", spec: sampleSpec }));
+    await client(fetchImpl).saveSpec("a.spec.json", sampleSpec);
+    const init = fetchImpl.mock.calls[0][1];
+    expect((init.headers as Record<string, string>)["If-Match"]).toBeUndefined();
+  });
 });
 
 function changeStream(keepOpen: boolean): ReadableStream<Uint8Array> {

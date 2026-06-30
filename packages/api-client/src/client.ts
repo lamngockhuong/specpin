@@ -27,10 +27,18 @@ export interface SpecsResponse {
 
 /** Typed client over the sidecar HTTP contract. Attaches the bearer token to
  * every request and normalizes failures to {@link SidecarError}. */
+/** Per-request timeout. A black-holed remote (no RST, no response) must not hang
+ *  reload()'s Promise.allSettled forever; this bounds every request. */
+const REQUEST_TIMEOUT_MS = 10_000;
+
 export class SidecarClient {
   private readonly baseUrl: string;
   private token: string;
   private readonly fetchImpl: typeof fetch;
+  /** Last ETag seen on GET /specs. Echoed back as If-Match on spec writes so a
+   *  stale write (a teammate changed the bundle since this client last read it)
+   *  gets a 409 instead of silently clobbering the newer state. */
+  private lastSpecsEtag: string | undefined;
 
   constructor(options: SidecarClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "");
@@ -43,9 +51,15 @@ export class SidecarClient {
     this.token = token;
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  private async request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    opts?: { ifMatch?: boolean },
+  ): Promise<T> {
     const headers: Record<string, string> = { Authorization: `Bearer ${this.token}` };
-    const init: RequestInit = { method, headers };
+    if (opts?.ifMatch && this.lastSpecsEtag) headers["If-Match"] = this.lastSpecsEtag;
+    const init: RequestInit = { method, headers, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) };
     if (body !== undefined) {
       headers["Content-Type"] = "application/json";
       init.body = JSON.stringify(body);
@@ -55,7 +69,23 @@ export class SidecarClient {
     try {
       res = await this.fetchImpl(`${this.baseUrl}${path}`, init);
     } catch (cause) {
-      throw new SidecarError(0, "network_error", [String(cause)], "sidecar unreachable");
+      // AbortSignal.timeout aborts with a TimeoutError DOMException; distinguish
+      // it from a generic network failure so the UI can say "timed out".
+      const timedOut = cause instanceof DOMException && cause.name === "TimeoutError";
+      throw new SidecarError(
+        0,
+        timedOut ? "timeout" : "network_error",
+        [String(cause)],
+        timedOut ? "sidecar timed out" : "sidecar unreachable",
+      );
+    }
+
+    // Capture the bundle ETag from GET /specs for the next write. Guarded on the
+    // path so a future ETag on another endpoint (e.g. /views) can't overwrite the
+    // specs tag and make a spec write send a mismatched If-Match.
+    if (path === "/specs") {
+      const etag = res.headers.get("ETag");
+      if (etag) this.lastSpecsEtag = etag;
     }
 
     if (!res.ok) {
@@ -107,15 +137,15 @@ export class SidecarClient {
   }
 
   async saveSpec(file: string, spec: Spec): Promise<void> {
-    await this.request("POST", "/specs", { file, spec });
+    await this.request("POST", "/specs", { file, spec }, { ifMatch: true });
   }
 
   async updateSpec(id: string, spec: Spec): Promise<void> {
-    await this.request("PUT", `/specs/${encodeURIComponent(id)}`, spec);
+    await this.request("PUT", `/specs/${encodeURIComponent(id)}`, spec, { ifMatch: true });
   }
 
   async deleteSpec(id: string): Promise<void> {
-    await this.request("DELETE", `/specs/${encodeURIComponent(id)}`);
+    await this.request("DELETE", `/specs/${encodeURIComponent(id)}`, undefined, { ifMatch: true });
   }
 
   /** Subscribe to live change events. Returns an unsubscribe function. */

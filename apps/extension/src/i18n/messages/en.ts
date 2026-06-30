@@ -88,7 +88,12 @@ const en = {
   "addProject.projectRequired": "Project name is required.",
   "addProject.couldNotCreate": "Could not create the project.",
   "addProject.urlTokenRequired": "URL and token are required.",
-  "addProject.urlError": "URL must be http://localhost or http://127.0.0.1 (optional port).",
+  "addProject.urlError":
+    "URL must be a localhost address (http://localhost or http://127.0.0.1, optional port) or a remote https:// URL.",
+  "addProject.urlErrorRemoteHttps":
+    "A remote sidecar must use https:// (plaintext http is blocked).",
+  "addProject.permissionDenied":
+    "Permission to access that host was denied, so the project was not added.",
   "addProject.couldNotConnect": "Could not connect to the sidecar.",
 
   // Side panel per-spec controls.
@@ -136,6 +141,8 @@ const en = {
   "capture.saveSpec": "Save spec",
   "capture.saveChanges": "Save changes",
   "capture.saveFailed": "Save failed; check the sidecar.",
+  "capture.specChangedReloaded":
+    "These specs changed elsewhere and were reloaded. Review your edit and save again.",
   "capture.fmtHint": "(Markdown supported)",
   "capture.fmtBold": "Bold",
   "capture.fmtItalic": "Italic",
@@ -192,7 +199,9 @@ const en = {
   "options.orPaste": "Or paste bundle JSON",
   "options.loadPasted": "Load pasted bundle",
   "options.clearAll": "Clear all manual specs",
-  "options.urlError": "URL must be http://127.0.0.1:PORT or http://localhost:PORT.",
+  "options.urlError":
+    "URL must be a localhost address (http://127.0.0.1:PORT or http://localhost:PORT) or a remote https:// URL.",
+  "options.urlErrorRemoteHttps": "A remote sidecar must use https:// (plaintext http is blocked).",
   "options.disableProject": "Disable this project",
   "options.enableProject": "Enable this project",
   "options.enabled": "Enabled",

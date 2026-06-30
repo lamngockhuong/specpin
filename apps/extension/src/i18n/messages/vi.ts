@@ -87,7 +87,10 @@ const vi: Record<keyof Messages, string> = {
   "addProject.projectRequired": "Cần nhập tên dự án.",
   "addProject.couldNotCreate": "Không thể tạo dự án.",
   "addProject.urlTokenRequired": "Cần nhập URL và token.",
-  "addProject.urlError": "URL phải là http://localhost hoặc http://127.0.0.1 (có thể kèm cổng).",
+  "addProject.urlError":
+    "URL phải là địa chỉ localhost (http://localhost hoặc http://127.0.0.1, có thể kèm cổng) hoặc URL https:// từ xa.",
+  "addProject.urlErrorRemoteHttps": "Sidecar từ xa phải dùng https:// (http không mã hóa bị chặn).",
+  "addProject.permissionDenied": "Quyền truy cập máy chủ đó bị từ chối nên dự án chưa được thêm.",
   "addProject.couldNotConnect": "Không thể kết nối tới sidecar.",
 
   // Side panel per-spec controls.
@@ -135,6 +138,8 @@ const vi: Record<keyof Messages, string> = {
   "capture.saveSpec": "Lưu spec",
   "capture.saveChanges": "Lưu thay đổi",
   "capture.saveFailed": "Lưu thất bại; hãy kiểm tra sidecar.",
+  "capture.specChangedReloaded":
+    "Các spec này đã thay đổi ở nơi khác và đã được tải lại. Hãy xem lại chỉnh sửa và lưu lại.",
   "capture.fmtHint": "(hỗ trợ Markdown)",
   "capture.fmtBold": "Đậm",
   "capture.fmtItalic": "Nghiêng",
@@ -191,7 +196,9 @@ const vi: Record<keyof Messages, string> = {
   "options.orPaste": "Hoặc dán bundle JSON",
   "options.loadPasted": "Tải bundle đã dán",
   "options.clearAll": "Xóa tất cả spec thủ công",
-  "options.urlError": "URL phải là http://127.0.0.1:PORT hoặc http://localhost:PORT.",
+  "options.urlError":
+    "URL phải là địa chỉ localhost (http://127.0.0.1:PORT hoặc http://localhost:PORT) hoặc URL https:// từ xa.",
+  "options.urlErrorRemoteHttps": "Sidecar từ xa phải dùng https:// (http không mã hóa bị chặn).",
   "options.disableProject": "Tắt dự án này",
   "options.enableProject": "Bật dự án này",
   "options.enabled": "Đang bật",
