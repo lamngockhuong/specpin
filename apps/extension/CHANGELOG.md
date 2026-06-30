@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.2](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.1...extension-v0.0.2) (2026-06-30)
+
+
+### Features
+
+* **extension:** persist popup form drafts across blur-dismiss ([#69](https://github.com/lamngockhuong/specpin/issues/69)) ([5203714](https://github.com/lamngockhuong/specpin/commit/520371452be024713a452ab036e77a89cedadc5e))
+
 ## 0.0.1 (2026-06-29)
 
 
