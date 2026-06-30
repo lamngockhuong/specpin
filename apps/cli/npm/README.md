@@ -34,6 +34,21 @@ specpin validate  # lint the spec corpus (CI-friendly)
 specpin --help
 ```
 
+## Author specs with a coding agent
+
+This package bundles a portable skill that teaches a coding agent (Claude Code,
+Cursor, etc.) to author schema-valid specs and drive the CLI. The CLI adds no
+LLM; the host agent is the author. It ships in the tarball and is reachable
+without installing:
+
+```
+https://unpkg.com/@specpin/cli@latest/skill/SKILL.md
+```
+
+Point your agent at that URL (or the installed `skill/SKILL.md`), then it writes
+`.specs/` and runs `specpin validate`. See
+[`docs/ai-authoring.md`](https://github.com/lamngockhuong/specpin/blob/main/docs/ai-authoring.md).
+
 ## How it works
 
 - The npm package version matches the CLI release version. Postinstall fetches

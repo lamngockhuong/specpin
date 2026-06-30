@@ -139,10 +139,9 @@ Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi s
 - Đóng gói extension cho Safari (đang chờ Apple làm rõ tính tương đương MV3 tính đến 2026-06)
 - WXT tuyên bố hỗ trợ Safari, cần test + quy trình đóng gói
 
-**AI-Assisted Capture (`specpin generate`):**
-- Tích hợp LLM để soạn spec: chụp ảnh element, suy ra title/description/rules từ ngữ cảnh
-- Lựa chọn model, thiết kế prompt, local vs cloud, quản lý key - tất cả chưa được chốt
-- Lệnh stub đã tồn tại (`apps/cli/cmd/generate.go`), in ra "deferred to 1.1"
+**Soạn spec có hỗ trợ AI:**
+- Đã ship (đường host-agent): một skill di động đóng gói trong `@specpin/cli` (`apps/cli/skill/`, truy cập qua unpkg) dạy một coding agent (Claude Code, Cursor, v.v.) soạn spec hợp lệ schema và điều khiển CLI. Host agent là người soạn; không thêm LLM vào CLI. Xem `docs/ai-authoring.md`. `apps/cli/cmd/generate.go` nay trỏ người dùng tới skill này.
+- Hoãn lại (LLM `specpin generate` phía CLI): một bộ sinh tích hợp chụp ảnh element và suy ra title/description/rules. Lựa chọn model, thiết kế prompt, local vs cloud, quản lý key vẫn chưa chốt; lệnh vẫn là stub.
 
 **Tối ưu hiệu năng:**
 - Chuyển việc validate spec trước khi POST từ content script sang background SW (bỏ ~100 KB ajv khỏi content bundle, dời chi phí parse sang thread SW)

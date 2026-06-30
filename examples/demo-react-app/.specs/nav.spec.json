@@ -1,0 +1,42 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "group": "Navigation",
+  "specs": [
+    {
+      "id": "nav-logout",
+      "title": { "en": "Log out button", "vi": "Nút đăng xuất" },
+      "description": {
+        "en": "Ends the current session and returns to the login screen.",
+        "vi": "Kết thúc phiên hiện tại và quay lại màn hình đăng nhập."
+      },
+      "businessRules": [
+        {
+          "en": "Clears the auth token client-side before redirecting to /login",
+          "vi": "Xoá token xác thực phía client trước khi chuyển đến /login"
+        }
+      ],
+      "tags": ["auth", "navigation"],
+      "preferredDisplayMode": "tooltip",
+      "fingerprint": {
+        "testId": "nav-logout",
+        "ariaLabel": null,
+        "id": null,
+        "cssSelector": "nav button[type=button]",
+        "xpath": "//nav//button[@type='button']",
+        "domPath": ["nav", "button"],
+        "tagName": "button",
+        "textContent": "Log out",
+        "attributes": { "type": "button" },
+        "nearbyLabels": ["Settings"],
+        "positionHint": { "index": 6, "siblingCount": 7 },
+        "frameworkHint": "react"
+      },
+      "meta": {
+        "createdBy": "ai-agent",
+        "createdAt": "2026-06-30T07:00:00Z",
+        "updatedAt": "2026-06-30T07:00:00Z",
+        "source": "ai-generated"
+      }
+    }
+  ]
+}

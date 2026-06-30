@@ -25,6 +25,10 @@ jobs:
               - 'packages/**'
               - 'apps/extension/**'
               - 'apps/web/**'
+              # The bundled-skill drift gate (check-skill) runs in the js job; its
+              # inputs are the canonical skill source and the npm package copy.
+              - 'apps/cli/skill/**'
+              - 'apps/cli/npm/**'
               - 'examples/**'
               - 'tests/fixtures/**'
               - 'package.json'
@@ -39,6 +43,10 @@ jobs:
               # apps/cli is the Go sidecar; schema/** is the SSOT the drift gate
               # checks; tests/fixtures/** is the shared corpus go test reads too.
               - 'apps/cli/**'
+              # The skill source and its npm package carry no Go code; their gate
+              # (check-skill) lives in the js job, so skip the Go job for them.
+              - '!apps/cli/skill/**'
+              - '!apps/cli/npm/**'
               - 'packages/spec-schema/schema/**'
               - 'tests/fixtures/**'
               - '.github/workflows/ci.yml'
@@ -64,6 +72,10 @@ jobs:
       - run: pnpm test
       # Cross-validator (ajv side): shared fixtures must agree with the schema.
       - run: pnpm schema-validate
+      # Drift gate: the skill bundled into @specpin/cli must match its canonical
+      # source in apps/cli/skill/ (mirrors the embedded-schema check-schema gate).
+      - run: node scripts/sync-skill.mjs --check
+        working-directory: apps/cli/npm
 
   go:
     name: Go sidecar (vet, test, build, schema drift)

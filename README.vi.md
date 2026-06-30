@@ -100,6 +100,10 @@ Dán URL + token vừa in vào phần cài đặt kết nối của extension, m
 pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .specs/ mẫu
 ```
 
+### Soạn spec bằng AI
+
+Để một coding agent soạn spec giúp bạn. Một skill đóng gói trong `@specpin/cli` (truy cập tại `https://unpkg.com/@specpin/cli@latest/skill/SKILL.md`) dạy Claude Code, Cursor và các agent tương tự soạn `.specs/` hợp lệ schema và chạy `specpin validate`. Xem **[`docs/vi/ai-authoring.md`](./docs/vi/ai-authoring.md)**.
+
 ## Tính năng
 
 - **Ghim đặc tả lên phần tử đang chạy** - khớp fingerprint bền bỉ (test-id, aria, selector, xpath, text, vị trí)
@@ -116,6 +120,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 - **Tự chọn giao diện** - System / Light / Dark, design token hai chế độ
 - **i18n cho giao diện** - tiếng Anh + tiếng Việt, độc lập với ngôn ngữ nội dung đặc tả
 - **Hỗ trợ & Phản hồi** - liên kết một chạm từ trang Tùy chọn tới GitHub Issues và Discussions của dự án
+- **Soạn spec bằng AI** - một skill đóng gói trong `@specpin/cli` dạy coding agent (Claude Code, Cursor, v.v.) soạn spec hợp lệ schema và điều khiển CLI; bản thân CLI không có LLM
 - **Kiểm tra offline** - `specpin validate` + spec-lint trong CI để giữ `.specs/` luôn hợp lệ
 - **An toàn mặc định** - sidecar chỉ bind `127.0.0.1`, xác thực bearer-token, CORS chỉ chấp nhận origin của extension, ghi file có chặn path-traversal
 
@@ -175,6 +180,7 @@ go test ./...
 - [`docs/vi/system-architecture.md`](./docs/vi/system-architecture.md) - thành phần, package, fingerprinting, mô hình bảo mật
 - [`docs/vi/codebase-summary.md`](./docs/vi/codebase-summary.md) - tóm tắt theo từng package, file chính, trách nhiệm
 - [`docs/vi/run-guide.md`](./docs/vi/run-guide.md) - toàn bộ vòng lặp end-to-end (init -> serve -> nạp -> kết nối -> hiển thị -> capture)
+- [`docs/vi/ai-authoring.md`](./docs/vi/ai-authoring.md) - soạn spec bằng coding agent qua skill `@specpin/cli` đóng gói
 - [`docs/vi/schema-reference.md`](./docs/vi/schema-reference.md) - định dạng đặc tả v1
 - [`docs/vi/code-standards.md`](./docs/vi/code-standards.md) - quy ước TS/Go, cấu hình công cụ, quản lý schema
 - [`docs/vi/design-system.md`](./docs/vi/design-system.md) - mockup giao diện extension + quy trình token màu/font dùng chung

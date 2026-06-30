@@ -6,6 +6,8 @@
 
 Specpin gắn các business spec sống vào một UI đang chạy; nó **không** phải là code generator. Hướng dẫn này chạy trọn vòng từ đầu đến cuối: init sidecar, serve, load extension, kết nối, thấy spec render ra, và capture một spec mới.
 
+> Muốn để một coding agent soạn spec giúp bạn? Xem [`ai-authoring.md`](./ai-authoring.md): skill `@specpin/cli` dạy Claude Code, Cursor, v.v. soạn spec hợp lệ schema và chạy đúng vòng lặp này.
+
 ## Yêu cầu trước
 
 - Node >= 20, pnpm 10

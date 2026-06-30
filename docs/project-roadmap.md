@@ -137,10 +137,9 @@ Deferred from these slices pending a real corpus / usage feedback: the hybrid we
 - Package extension for Safari (awaiting Apple MV3 parity clarity as of 2026-06)
 - WXT claims Safari support, needs testing + packaging workflow
 
-**AI-Assisted Capture (`specpin generate`):**
-- LLM integration for spec authoring: screenshot element, infer title/description/rules from context
-- Model choice, prompt design, local vs cloud, key management - all unresolved
-- Stub command already exists (`apps/cli/cmd/generate.go`), prints "deferred to 1.1"
+**AI-Assisted Authoring:**
+- Shipped (host-agent path): a portable skill bundled in `@specpin/cli` (`apps/cli/skill/`, reachable via unpkg) teaches a coding agent (Claude Code, Cursor, etc.) to author schema-valid specs and drive the CLI. The host agent is the author; no LLM is added to the CLI. See `docs/ai-authoring.md`. `apps/cli/cmd/generate.go` now points users at this skill.
+- Deferred (CLI-side LLM `specpin generate`): a built-in generator that screenshots an element and infers title/description/rules. Model choice, prompt design, local vs cloud, and key management remain unresolved; the command stays a stub.
 
 **Performance Optimization:**
 - Move pre-POST spec validation from content script to background SW (drops ajv ~100 KB from content bundle, defers parse cost to SW thread)
