@@ -2,9 +2,20 @@ import type { GuideDef } from "@specpin/spec-schema";
 import { resolveLocalized } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import type { TaggedGuide, TaggedSpec } from "./connection-types.js";
+import { clearDraft, loadDraft, saveDraft } from "./draft-store.js";
 import { type GuideMutationResult, sendToBackground, type WriteTarget } from "./messaging.js";
 import { slugify } from "./slug.js";
 import { sourceBadge } from "./surface-renderers.js";
+
+// A stashed in-progress guide edit. Keyed by origin + guide id ("new" for a new
+// guide) so a draft is restored only into the same editor on the same page, and
+// two pages cannot cross-pollute (guides are origin-scoped).
+interface GuideDraft {
+  name: string;
+  description: string;
+  order: string[];
+  saveTo: string;
+}
 
 // The shared guide curation editor: a self-contained modal (own backdrop + card)
 // mounted on the page for both popup and side panel. It takes the page specs +
@@ -36,6 +47,7 @@ export function openGuideEditor(opts: GuideEditorOptions): void {
   const specById = new Map(opts.specs.map((s) => [s.id, s] as const));
   // Step order: from the existing guide, else empty (a default/uncurated guide).
   const order: string[] = [...(opts.guide?.steps ?? [])];
+  const draftKey = `guide-editor:${opts.origin}:${opts.guide?.id ?? "new"}`;
 
   const backdrop = doc.createElement("div");
   backdrop.className = "ge-backdrop";
@@ -170,6 +182,7 @@ export function openGuideEditor(opts: GuideEditorOptions): void {
         order.splice(i, 1);
         renderSteps();
         renderAddOptions();
+        persist();
       });
       li.append(label, up, down, rm);
       stepList.appendChild(li);
@@ -196,6 +209,7 @@ export function openGuideEditor(opts: GuideEditorOptions): void {
     order[a] = order[b] as string;
     order[b] = tmp;
     renderSteps();
+    persist();
   }
 
   addBtn.addEventListener("click", () => {
@@ -204,12 +218,27 @@ export function openGuideEditor(opts: GuideEditorOptions): void {
       order.push(id);
       renderSteps();
       renderAddOptions();
+      persist();
     }
   });
+
+  // Stash the in-progress edit on every change, so a popup dismissed mid-edit
+  // restores it the next time this editor opens. Closing the editor (cancel /
+  // Escape / backdrop / a successful save) is an explicit end and clears it;
+  // only an abrupt popup teardown leaves the draft for restore.
+  function persist(): void {
+    void saveDraft(draftKey, {
+      name: name.input.value,
+      description: desc.area.value,
+      order: [...order],
+      saveTo: saveTo.value,
+    } satisfies GuideDraft);
+  }
 
   function close(): void {
     backdrop.remove();
     doc.removeEventListener("keydown", onKey, true);
+    void clearDraft(draftKey);
   }
   const onKey = (e: KeyboardEvent): void => {
     if (e.key === "Escape") {
@@ -265,8 +294,32 @@ export function openGuideEditor(opts: GuideEditorOptions): void {
     await opts.onSaved();
   }
 
+  // Persist as the user edits the name, description, or Save-to target (step
+  // edits persist from their own handlers above).
+  name.input.addEventListener("input", persist);
+  desc.area.addEventListener("input", persist);
+  saveTo.addEventListener("change", persist);
+
   renderSteps();
   renderAddOptions();
+
+  // Restore a stashed edit, if any. Setting values here fires no input/change
+  // events, so this never re-triggers persist(). Applied after the initial
+  // render so the restored step order replaces the committed one.
+  void loadDraft<GuideDraft>(draftKey).then((draft) => {
+    if (!draft) return;
+    if (typeof draft.name === "string") name.input.value = draft.name;
+    if (typeof draft.description === "string") desc.area.value = draft.description;
+    if (Array.isArray(draft.order)) {
+      order.length = 0;
+      order.push(...draft.order);
+    }
+    if (draft.saveTo && Array.from(saveTo.options).some((o) => o.value === draft.saveTo)) {
+      saveTo.value = draft.saveTo;
+    }
+    renderSteps();
+    renderAddOptions();
+  });
 }
 
 function labelledInput(

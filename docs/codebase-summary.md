@@ -174,12 +174,13 @@ src/
     shadow.ts / html.ts        - Shadow DOM isolation + safe HTML escaping
     theme.ts                   - Theme = "system"|"light"|"dark", applyTheme(el, theme), applyStoredTheme(), watchThemeChanges()
     messaging.ts               - typed message protocol (includes OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs; local-authoring: CREATE_LOCAL_PROJECT/RENAME_LOCAL_PROJECT (privileged), GET_WRITE_TARGETS, GET_EXPORT_BUNDLES (privileged); guides: GET_GUIDES_FOR_ORIGIN, GET_TEAM_GUIDES, START_GUIDE, SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE/DELETE_GUIDE (privileged))
-    guide-editor.ts (+ .css)   - shared curation modal: name + description + ordered step include/reorder + Save-to picker (sidecar/local/personal), routes SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE
+    guide-editor.ts (+ .css)   - shared curation modal: name + description + ordered step include/reorder + Save-to picker (sidecar/local/personal), routes SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE; persists the in-progress edit to storage.session keyed by origin+guide-id (cleared on close/save)
+    draft-store.ts             - load/save/clearDraft over storage.session (namespaced "specpin:draft:"); restores unsubmitted popup input across a blur-dismiss, auto-clears on browser restart; graceful no-op if storage.session is absent
     guide-section.ts (+ .css)  - shared guide launch list (default tour + per-guide Start/Edit/Delete + New) for popup + side panel
     connection-types.ts        - browser-free Connection / ConnectionStatus / TaggedSpec / TaggedGuide; MANUAL_CONNECTION_ID is now the legacy/reserved bare id
     local-id.ts                - `manual:<batchId>` prefix + isLocalConnectionId / localBatchId / localConnId predicates (replaces the bare-tag equality checks)
     local-url.ts               - extracted localhost-only sidecar URL guard (shared by Options + add-project; SSRF/phishing guard)
-    add-project.ts (+ .css)    - shared "+ New project" inline form (Local via CREATE_LOCAL_PROJECT, Sidecar via ADD_CONNECTION); mounted by popup + side panel
+    add-project.ts (+ .css)    - shared "+ New project" inline form (Local via CREATE_LOCAL_PROJECT, Sidecar via ADD_CONNECTION); mounted by popup + side panel; persists in-progress input (sans token, RT-SA6) to storage.session per surface so a dismissed popup restores it
     export-bundle.ts           - bundleToFiles(batch): reconstruct manifest.json + per-group *.spec.json (fileGroups, $schema, _file stripped, zip-slip-sanitized names)
     zip-store.ts               - dependency-free STORE (uncompressed) zip writer + crc32
     download.ts / export-download.ts - Blob object-URL download + zip-and-download glue (popup/panel/Options)

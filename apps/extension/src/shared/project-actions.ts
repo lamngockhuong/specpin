@@ -46,9 +46,15 @@ async function exportTarget(id: string): Promise<void> {
  *  Export scopes to a single local project: it downloads immediately when one
  *  local project serves the page, or opens a small picker when several do, so a
  *  click never dumps every local project at once. The export targets are supplied
- *  by `update()` (scoped to the active page), so no origin getter is needed here. */
-export function wireProjectActions(onChanged: () => void | Promise<void>): ProjectActions {
-  const addProject = mountAddProject(byId("add-project"), onChanged);
+ *  by `update()` (scoped to the active page), so no origin getter is needed here.
+ *
+ *  `surface` ("popup" | "sidepanel") scopes the add-project draft so the two
+ *  surfaces keep independent in-progress forms. */
+export function wireProjectActions(
+  onChanged: () => void | Promise<void>,
+  surface: string,
+): ProjectActions {
+  const addProject = mountAddProject(byId("add-project"), onChanged, surface);
   byId("new-project").addEventListener("click", () => addProject.toggle());
 
   // The projects serving the active page, refreshed by update(). The Export click
