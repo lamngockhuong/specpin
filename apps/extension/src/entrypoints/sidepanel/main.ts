@@ -227,7 +227,7 @@ const guideSection = mountGuideSection(byId("guides"), {
 // on a successful create. Toggled from the header button.
 // Shared header controls: "+ New project" (inline form) + "Export" (zip the local
 // project(s) serving the page). refresh() re-renders the list after a create.
-const projectActions = wireProjectActions(refresh);
+const projectActions = wireProjectActions(refresh, "sidepanel");
 
 // Coalesce bursts of tab/SSE events into a single refresh per frame so rapid
 // navigation or SPECS_CHANGED storms do not trigger redundant fetches.

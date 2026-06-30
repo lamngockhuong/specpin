@@ -1,8 +1,11 @@
 import type { GuideDef } from "@specpin/spec-schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing";
+import { loadDraft, saveDraft } from "../src/shared/draft-store.js";
 import { openGuideEditor } from "../src/shared/guide-editor.js";
 import type { TaggedGuide, TaggedSpec, WriteTarget } from "../src/shared/messaging.js";
+
+const flush = () => new Promise((r) => setTimeout(r));
 
 function spec(id: string, title = id): TaggedSpec {
   return {
@@ -132,6 +135,35 @@ describe("openGuideEditor", () => {
     expect(rows).toHaveLength(2);
     // The off-page step id renders as a flagged "missing" row.
     expect(card().querySelector(".ge-step-label.missing")?.textContent).toContain("offpage");
+  });
+
+  it("restores a stashed draft into a new-guide editor", async () => {
+    await saveDraft("guide-editor:https://app.test:new", {
+      name: "Resumed",
+      description: "half typed",
+      order: ["b"],
+      saveTo: "personal",
+    });
+    open();
+    await flush();
+    expect(q<HTMLInputElement>(".ge-field input").value).toBe("Resumed");
+    expect(q<HTMLTextAreaElement>(".ge-field textarea").value).toBe("half typed");
+    expect(card().querySelectorAll(".ge-step")).toHaveLength(1);
+    expect(q<HTMLSelectElement>(".ge-field select").value).toBe("personal");
+  });
+
+  it("clears the draft when the editor is dismissed (cancel)", async () => {
+    await saveDraft("guide-editor:https://app.test:new", {
+      name: "x",
+      description: "",
+      order: [],
+      saveTo: "personal",
+    });
+    open();
+    await flush();
+    card().querySelectorAll<HTMLButtonElement>(".ge-btn")[0]?.click(); // Cancel
+    await flush();
+    expect(await loadDraft("guide-editor:https://app.test:new")).toBeNull();
   });
 
   it("preselects an empty default guide (no steps) and saves with empty steps", async () => {

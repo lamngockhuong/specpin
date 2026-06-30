@@ -22,6 +22,7 @@ import "../../shared/surface-toast.css";
 import "../../shared/guide-section.css";
 import "../../shared/guide-editor.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
+import { clearDraft, loadDraft, saveDraft } from "../../shared/draft-store.js";
 import { mountGuideSection } from "../../shared/guide-section.js";
 import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
 import { wireProjectActions } from "../../shared/project-actions.js";
@@ -123,7 +124,7 @@ async function refresh(): Promise<void> {
 
 // Shared header controls: "+ New project" (inline form) + "Export" (zip the local
 // project(s) serving the page). refresh() re-renders the list after a create.
-const projectActions = wireProjectActions(refresh);
+const projectActions = wireProjectActions(refresh, "popup");
 
 byId("enabled").addEventListener("change", async (e) => {
   await sendToBackground({ type: "SET_ENABLED", enabled: (e.target as HTMLInputElement).checked });
@@ -141,8 +142,13 @@ byId("locale").addEventListener("change", async (e) => {
   await sendToActiveTab({ type: "SET_LOCALE", locale: activeLocale });
   if (lastSpecs) renderSpecs(lastSpecs);
 });
+// The search query is the one popup-only field worth surviving a dismiss: the
+// popup closes on blur, so we stash the query (session-scoped) and restore it on
+// the next open. An empty query clears the draft rather than persisting "".
+const SEARCH_DRAFT_KEY = "popup:search";
 byId("search").addEventListener("input", (e) => {
   searchQuery = (e.target as HTMLInputElement).value;
+  void (searchQuery ? saveDraft(SEARCH_DRAFT_KEY, searchQuery) : clearDraft(SEARCH_DRAFT_KEY));
   if (lastSpecs) renderSpecs(lastSpecs);
 });
 byId("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
@@ -174,6 +180,13 @@ watchThemeChanges();
 async function init(): Promise<void> {
   initI18n(resolveUiLocale(await getUiLocale()));
   hydrateI18n(document);
+  // Restore a search query stashed from a prior (dismissed) popup before the
+  // first render, so the spec list comes up already filtered.
+  const draftSearch = await loadDraft<string>(SEARCH_DRAFT_KEY);
+  if (draftSearch) {
+    searchQuery = draftSearch;
+    (byId("search") as HTMLInputElement).value = draftSearch;
+  }
   await refresh();
 }
 // Re-hydrate + re-render if the UI language changes in Options while open.
