@@ -95,7 +95,11 @@ cmd/
   root.go       - cobra root command (33 lines)
   init.go       - `specpin init` scaffold manifest (62 lines)
   serve.go      - `specpin serve` entrypoint (115 lines)
-  generate.go   - stub for 1.1 AI feature (19 lines)
+  generate.go   - stub: points users at the bundled AI-authoring skill (no LLM)
+skill/          - canonical @specpin/cli skill source (SKILL.md + references/)
+                  that teaches a host coding agent to author specs; see docs/ai-authoring.md
+npm/
+  skill/        - synced copy bundled into the npm tarball (drift-gated by sync-skill.mjs --check)
 internal/
   schema/
     schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views` (50+ lines)

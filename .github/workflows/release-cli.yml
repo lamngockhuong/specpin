@@ -146,6 +146,12 @@ jobs:
       # resolves the `cli-v<version>` Release tag.
       - name: Set version
         run: npm version "${{ needs.prepare.outputs.version }}" --no-git-tag-version --allow-same-version
+      # Re-sync the bundled skill explicitly. The Publish step below uses
+      # --ignore-scripts (needed to skip the binary-download postinstall), which
+      # also skips the prepack hook, so the freshness guarantee runs as its own
+      # step instead of relying on prepack here.
+      - name: Sync bundled skill
+        run: node scripts/sync-skill.mjs
       # No --provenance flag and no NODE_AUTH_TOKEN: trusted publishing supplies
       # auth via OIDC and generates provenance automatically. --ignore-scripts
       # skips the binary-download postinstall, which is irrelevant when packing.

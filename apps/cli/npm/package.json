@@ -25,11 +25,15 @@
     "node": ">=20"
   },
   "scripts": {
-    "postinstall": "node scripts/postinstall.mjs"
+    "postinstall": "node scripts/postinstall.mjs",
+    "sync-skill": "node scripts/sync-skill.mjs",
+    "check-skill": "node scripts/sync-skill.mjs --check",
+    "prepack": "node scripts/sync-skill.mjs"
   },
   "files": [
     "bin",
     "scripts",
+    "skill",
     "README.md"
   ],
   "publishConfig": {

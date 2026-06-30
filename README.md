@@ -100,6 +100,10 @@ Paste the printed URL + token into the extension's connection settings, open you
 pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, ships seeded .specs/
 ```
 
+### Author with AI
+
+Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachable at `https://unpkg.com/@specpin/cli@latest/skill/SKILL.md`) teaches Claude Code, Cursor, and similar agents to author schema-valid `.specs/` and run `specpin validate`. See **[`docs/ai-authoring.md`](./docs/ai-authoring.md)**.
+
 ## Features
 
 - **Pin specs onto live elements** - resilient fingerprint matching (test-id, aria, selector, xpath, text, position)
@@ -116,6 +120,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, ships seede
 - **User-selectable theme** - System / Light / Dark, dual-theme design tokens
 - **UI-chrome i18n** - English + Vietnamese interface, independent from spec content language
 - **Support & Feedback** - one-click links from Options to the project's GitHub Issues and Discussions
+- **Author with AI** - a portable skill bundled in `@specpin/cli` teaches your coding agent (Claude Code, Cursor, etc.) to write schema-valid specs and drive the CLI; no LLM in the CLI itself
 - **Offline validation** - `specpin validate` + CI spec-lint to keep `.specs/` honest
 - **Secure by default** - sidecar binds `127.0.0.1` only, bearer-token auth, extension-origin CORS, path-traversal guarded writes
 
@@ -175,6 +180,7 @@ go test ./...
 - [`docs/system-architecture.md`](./docs/system-architecture.md) - components, packages, fingerprinting, security model
 - [`docs/codebase-summary.md`](./docs/codebase-summary.md) - per-package summary, key files, responsibilities
 - [`docs/run-guide.md`](./docs/run-guide.md) - the full end-to-end loop (init -> serve -> load -> connect -> render -> capture)
+- [`docs/ai-authoring.md`](./docs/ai-authoring.md) - authoring specs with a coding agent via the bundled `@specpin/cli` skill
 - [`docs/schema-reference.md`](./docs/schema-reference.md) - the v1 spec format
 - [`docs/code-standards.md`](./docs/code-standards.md) - TS/Go conventions, tooling config, schema management
 - [`docs/design-system.md`](./docs/design-system.md) - extension UI mockups + shared color/font token workflow

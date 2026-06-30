@@ -4,6 +4,8 @@
 
 Specpin attaches living business specs to a running UI; it is **not** a code generator. This guide runs the full loop end to end: init the sidecar, serve, load the extension, connect, see specs render, and capture a new one.
 
+> Prefer to let a coding agent author specs for you? See [`ai-authoring.md`](./ai-authoring.md): the `@specpin/cli` skill teaches Claude Code, Cursor, etc. to write schema-valid specs and run this same loop.
+
 ## Prerequisites
 
 - Node >= 20, pnpm 10

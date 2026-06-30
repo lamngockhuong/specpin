@@ -8,7 +8,8 @@
     "dashboard.spec.json",
     "customers.spec.json",
     "settings.spec.json",
-    "deals.spec.json"
+    "deals.spec.json",
+    "nav.spec.json"
   ],
   "settings": {
     "defaultLocale": "en",

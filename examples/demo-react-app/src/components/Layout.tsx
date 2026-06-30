@@ -33,6 +33,7 @@ export function Layout() {
         </NavLink>
         <span style={styles.navSpacer} />
         <button
+          data-spec-id="nav-logout"
           type="button"
           style={styles.buttonGhost}
           onClick={() => {
