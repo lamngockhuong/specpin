@@ -127,7 +127,10 @@ jobs:
     # OIDC trusted publishing: no long-lived NPM_TOKEN. npm exchanges the GitHub
     # OIDC token for a short-lived publish token and auto-generates provenance.
     # Requires the package's Trusted Publisher to be configured on npmjs.com
-    # (org lamngockhuong, repo specpin, workflow release-cli.yml).
+    # (org lamngockhuong, repo specpin). The workflow filename MUST be the
+    # entry-point caller, release-please.yml, NOT this file: npm validates the
+    # workflow that was triggered, and this job runs via workflow_call from
+    # release-please.yml. Both the caller job there and this job need id-token:write.
     permissions:
       contents: read
       id-token: write # OIDC token for trusted publishing + provenance
