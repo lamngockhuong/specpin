@@ -175,7 +175,10 @@ Provide a right-click "Specpin" submenu on the page for quick actions (toggle, c
 Open the Specpin surface in Chrome's side panel for an inline, persistent spec browser alongside the page.
 
 **host_permissions - http://127.0.0.1/* , http://localhost/* :**
-Connect from the background service worker to the local Go sidecar over localhost HTTP + SSE to read `.specs/` and receive live-reload updates. Specpin makes no requests to any remote host.
+Connect from the background service worker to the local Go sidecar over localhost HTTP + SSE to read `.specs/` and receive live-reload updates. By default Specpin makes no requests to any remote host.
+
+**optional_host_permissions - https://\*/\* (requested at runtime, not at install):**
+A user may run the same Go sidecar on their own remote machine (behind an HTTPS reverse proxy) and connect to it. When they add such a connection, the extension requests host access for that one origin within the user gesture, and revokes it when the connection is deleted. No remote access is granted at install; the default install carries no broad-host permission. The remote host is the user's own sidecar, chosen by them — not a Specpin-operated service.
 
 **Content script broad match (`http://*/*`, `https://*/*`):**
 Specpin is a developer tool that pins business specs onto the elements of the user's own running web UI. The content script must be able to run on any origin because the user configures at runtime which projects/origins to attach specs to (local dev servers on arbitrary ports and their deployed staging/production domains). On every page the content script only queries the background for specs matching that page's origin and renders nothing unless the user has explicitly connected a project for that origin. No page data is collected, transmitted, or sent to any remote host; the extension communicates only with a user-run sidecar on localhost.
@@ -184,7 +187,9 @@ Specpin is a developer tool that pins business specs onto the elements of the us
 
 ### Remote Code (Có phải bạn đang dùng mã từ xa không?)
 
-No. The extension executes no remote code and loads no remote scripts. It communicates only with a user-run sidecar on localhost (127.0.0.1 / localhost); all spec data stays on the user's machine.
+No. The extension executes no remote code and loads no remote scripts. It communicates only with a user-run sidecar — on localhost by default, or, if the user opts in, on their own remote host over HTTPS. Spec data is sent only to that user-operated sidecar; Specpin performs no telemetry and operates no server of its own. Because the destination is infrastructure the user runs and controls, this is not third-party data collection, so the AMO `data_collection` declaration stays `none`.
+
+> AMO compliance note (verify before each Firefox submission): the `data_collection_permissions: { required: ["none"] }` declaration in `wxt.config.ts` rests on the reasoning above — specs travel only to the user's own sidecar, never to a Specpin-operated or third-party service. If AMO's current data-collection policy treats transmission to a user-operated remote host differently, update the declaration and this listing before submitting.
 
 ### Data Usage (Sử dụng dữ liệu)
 

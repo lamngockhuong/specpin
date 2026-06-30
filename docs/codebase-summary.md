@@ -94,7 +94,7 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 cmd/
   root.go       - cobra root command (33 lines)
   init.go       - `specpin init` scaffold manifest (62 lines)
-  serve.go      - `specpin serve` entrypoint (115 lines)
+  serve.go      - `specpin serve` entrypoint: --port/--host/--token, loopback default + non-loopback warning
   generate.go   - stub: points users at the bundled AI-authoring skill (no LLM)
 skill/          - canonical @specpin/cli skill source (SKILL.md + references/)
                   that teaches a host coding agent to author specs; see docs/ai-authoring.md
@@ -105,17 +105,17 @@ internal/
     schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
-    server.go   - HTTP handlers: CRUD + SSE hub + GET/PUT /views + GET/PUT /guides (370+ lines)
+    server.go   - HTTP handlers: CRUD + SSE hub (with ~20s heartbeat) + GET/PUT /views + GET/PUT /guides; ETag on GET /specs + If-Match 409 on stale spec writes (370+ lines)
     middleware.go - token auth + CORS (89 lines)
     hub.go      - SSE broadcast hub (102 lines)
   store/
-    store.go    - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON)
+    store.go    - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON; sync.Mutex-serialized writes + bundle ETag/If-Match optimistic concurrency)
   watch/
     watch.go    - fsnotify watcher, triggers SSE (87 lines)
 ```
 
 **Key flows:**
-- `serve`: auto-pick free port (or --port), print URL+token, bind 127.0.0.1, start HTTP+SSE, watch `.specs/`.
+- `serve`: resolve token (--token / SPECPIN_TOKEN / random), auto-pick free port (or --port), bind `--host` (loopback default; non-loopback prints a network-exposure warning + HTTPS-proxy guidance), print URL+token, start HTTP+SSE, watch `.specs/`. Remote use is documented in run-guide ("Serve on a remote machine"): HTTPS via a reverse proxy, the Go binary stays plain HTTP.
 - `init`: create `.specs/manifest.json` with default values.
 - Middleware: every request needs `Authorization: Bearer <token>`. CORS accepts only `chrome-extension://`, `moz-extension://`, `safari-web-extension://` origins. Rejects web origins.
 - Store: writes confined to `.specs/`, path-traversal guard (H1 review fix). File ops atomic (temp + rename). Pretty-printed JSON (2-space indent) for clean Git diffs. `GET /views` returns `.specs/views.json` or the empty default `{version:"1.0",hidden:[]}` when absent; `PUT /views` validates then writes. `GET /guides` / `PUT /guides` mirror this for `.specs/guides.json` (empty default `{version:"1.0",guides:[]}`); the spec scanner ignores `guides.json` (not a `*.spec.json`).

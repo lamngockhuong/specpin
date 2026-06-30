@@ -48,7 +48,7 @@ Specpin attaches **business specifications** (rules, descriptions, acceptance cr
 It is **not** a spec-driven code generator (unrelated to GitHub Spec Kit / OpenSpec): it generates no application code. It is a knowledge layer that pins living, Git-versioned documentation onto the interface you already have. The interface already knows where everything is; Specpin gives it a memory.
 
 - **Git-native.** Specs live as JSON in your repo's `.specs/` directory: versioned, reviewable via PR, and diffable.
-- **Local-first.** A small Go sidecar serves your specs over token-authenticated localhost only. Nothing leaves your machine.
+- **Local-first.** A small Go sidecar serves your specs over a token-authenticated localhost API; by default nothing leaves your machine. Teams can optionally run that same sidecar on their own host behind an HTTPS reverse proxy (see the run guide).
 - **Resilient links.** Elements are matched by multi-signal fingerprints (test-id, aria, selector, xpath, text, position), so specs survive refactors.
 - **Framework-agnostic.** Pure DOM matching works on any site or framework.
 
@@ -122,7 +122,7 @@ Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachabl
 - **Support & Feedback** - one-click links from Options to the project's GitHub Issues and Discussions
 - **Author with AI** - a portable skill bundled in `@specpin/cli` teaches your coding agent (Claude Code, Cursor, etc.) to write schema-valid specs and drive the CLI; no LLM in the CLI itself
 - **Offline validation** - `specpin validate` + CI spec-lint to keep `.specs/` honest
-- **Secure by default** - sidecar binds `127.0.0.1` only, bearer-token auth, extension-origin CORS, path-traversal guarded writes
+- **Secure by default** - sidecar binds `127.0.0.1` by default (remote is opt-in over an HTTPS reverse proxy), bearer-token auth, extension-origin CORS, path-traversal guarded writes, serialized multi-writer writes
 
 ## Monorepo layout
 
