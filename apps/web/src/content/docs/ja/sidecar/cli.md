@@ -81,6 +81,15 @@ specs.example.com {
 
 `--host <addr>`は、非loopbackアドレスにバインドします（「別ホストにプロキシを置く」上級ケース向け）。これはプロキシを経路に**自動的に入れるわけではなく**、生の**プレーンテキストかつトークンのみ**のポートを直接公開します。そのポートはfirewallで保護し、必ず`--port`を固定してください。loopback以外にバインドすると、serveコマンドは明確な警告を表示します。
 
+### ドメインがない場合：IPで配信する
+
+IPのみでドメインのない社内サーバーはCaddyの*自動*HTTPSを使えませんが、extensionは`https://<ip>`をそのまま受け付けます — 証明書のSANには素のIPを指定できるため、ドメインは不要です。2つの方法があり、どちらもすべてのブラウザで動作します。
+
+- **内部CAによるHTTPS。** Caddyのサイトアドレスに素のIPを指定し`tls internal`を付けるか（`192.168.1.50 { tls internal; reverse_proxy 127.0.0.1:51234 }`）、nginx向けに`mkcert 192.168.1.50` / opensslでIP-SAN証明書を発行します。**ルートCA**をチームのブラウザに一度配布してから、`https://192.168.1.50`へ接続します。プライベートLANのIPでもパブリックIPでも使えます。
+- **localhostへのSSHトンネル。** `ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50`でsidecarをloopbackに保ったまま、`http://localhost:9123`へ接続します — `localhost`は常に免除されるため証明書は不要です。
+
+素の`http://<ip>`は使えません。ブラウザがプレーンテキストのリモートをブロックするためです（プライベートLANのIPはChrome 142+のLocal Network Access経由でのみ動作しますが、extensionのservice workerからは許可プロンプトを出せず、Firefoxには同等の仕組みがありません）。詳しいレシピはrun guideの「No domain? Serve over IP」セクションを参照してください。
+
 :::caution
 bearerトークンは、ブラウザ以外のネットワーククライアントに対する唯一の認可境界です（CORSはブラウザのみを制約します）。パスワードのように扱い、帯域外（out-of-band）で配布してください。非loopbackの生ポートはプレーンテキストです — HTTPSプロキシを前段に置かずにインターネットへ公開しないでください。
 :::

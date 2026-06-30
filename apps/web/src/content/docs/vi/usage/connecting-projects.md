@@ -25,7 +25,7 @@ Kết nối tới một instance `specpin serve` đang chạy.
 5. Dán **Token**.
 6. Nhấp **Kiểm tra & thêm dự án**. Nếu kết nối thành công, dự án sẽ xuất hiện trong danh sách trang Options.
 
-URL có thể là địa chỉ localhost (`http://127.0.0.1:<port>` hoặc `http://localhost:<port>`) hoặc một sidecar **từ xa** qua HTTPS (ví dụ `https://specs.example.com`). Sidecar từ xa bắt buộc dùng `https://` — `http://` thuần tới máy chủ từ xa sẽ bị từ chối. Khi bạn thêm một kết nối từ xa, trình duyệt sẽ hỏi quyền truy cập máy chủ đó; hãy chấp nhận để kết nối. Xóa kết nối sẽ thu hồi quyền đó. Xem [Phục vụ trên máy từ xa](/vi/sidecar/cli/) để chạy sidecar phía sau một reverse proxy.
+URL có thể là địa chỉ localhost (`http://127.0.0.1:<port>` hoặc `http://localhost:<port>`) hoặc một sidecar **từ xa** qua HTTPS (ví dụ `https://specs.example.com`). Sidecar từ xa bắt buộc dùng `https://` — `http://` thuần tới máy chủ từ xa sẽ bị từ chối. Một máy chủ chỉ có IP, không có domain vẫn dùng được: dùng `https://<ip>` với chứng chỉ có SAN là IP đó (qua CA nội bộ), hoặc một SSH tunnel về `http://localhost:<port>`. Khi bạn thêm một kết nối từ xa, trình duyệt sẽ hỏi quyền truy cập máy chủ đó; hãy chấp nhận để kết nối. Xóa kết nối sẽ thu hồi quyền đó. Xem [Phục vụ trên máy từ xa](/vi/sidecar/cli/) để chạy sidecar phía sau một reverse proxy.
 
 :::tip
 Mỗi sidecar chạy trên một cổng riêng. Để phục vụ nhiều dự án cùng lúc, chạy `specpin serve --port 51001` trong dự án A và `specpin serve --port 51002` trong dự án B, sau đó thêm cả hai kết nối với token riêng của chúng.

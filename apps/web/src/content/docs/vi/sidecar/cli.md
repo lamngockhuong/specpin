@@ -81,6 +81,15 @@ specs.example.com {
 
 `--host <addr>` bind một địa chỉ không phải loopback cho trường hợp nâng cao "proxy trên máy khác". Điều này **không** tự đưa proxy vào đường đi — nó phơi bày trực tiếp cổng thô, **plaintext, chỉ-token**, nên hãy firewall cổng đó và luôn ghim `--port`. Lệnh serve sẽ in một cảnh báo rõ ràng mỗi khi bind ngoài loopback.
 
+### Không có domain? Phục vụ qua IP
+
+Server nội bộ chỉ có IP (không có domain) không dùng được HTTPS *tự động* của Caddy, nhưng extension vẫn chấp nhận `https://<ip>` — SAN của chứng chỉ có thể là một IP trần, nên không cần domain. Hai hướng, đều chạy được trên mọi trình duyệt:
+
+- **HTTPS qua một CA nội bộ.** Đặt IP trần làm site address của Caddy với `tls internal` (`192.168.1.50 { tls internal; reverse_proxy 127.0.0.1:51234 }`), hoặc tạo chứng chỉ có IP-SAN bằng `mkcert 192.168.1.50` / openssl cho nginx. Phân phối **root CA** vào trình duyệt của cả nhóm một lần, rồi kết nối tới `https://192.168.1.50`. Áp dụng cho cả IP LAN nội bộ lẫn IP public.
+- **SSH tunnel về localhost.** `ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50`, giữ sidecar trên loopback, rồi kết nối tới `http://localhost:9123` — không cần chứng chỉ, vì `localhost` luôn được miễn.
+
+`http://<ip>` thuần **không** dùng được: trình duyệt chặn remote plaintext (IP LAN nội bộ chỉ chạy trên Chrome 142+ qua Local Network Access, vốn không thể hiện prompt từ service worker của extension, còn Firefox không có cơ chế tương đương). Xem mục "No domain? Serve over IP" trong hướng dẫn chạy để có công thức đầy đủ.
+
 :::caution
 Bearer token là ranh giới ủy quyền duy nhất đối với các client mạng không phải trình duyệt (CORS chỉ ràng buộc trình duyệt). Hãy coi nó như mật khẩu và phân phối ngoài luồng (out-of-band). Cổng thô ngoài loopback là plaintext — đừng bao giờ phơi nó ra internet mà không có HTTPS proxy đứng trước.
 :::
