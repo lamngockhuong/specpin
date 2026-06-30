@@ -3,7 +3,7 @@ name: Release Spec Schema
 # Publishes @specpin/spec-schema to npm with provenance. Driven by release-please
 # (workflow_call) on a merged release PR; also runnable manually
 # (workflow_dispatch, with dry_run) or by pushing a `spec-schema-v*` tag.
-# Requires the NPM_TOKEN secret (npm automation token, publish scope @specpin/*).
+# Publishes via OIDC trusted publishing (no NPM_TOKEN); see the publish job below.
 
 on:
   push:
@@ -59,7 +59,10 @@ jobs:
     # OIDC trusted publishing: no long-lived NPM_TOKEN. npm exchanges the
     # GitHub OIDC token for a short-lived publish token and auto-generates
     # provenance. Requires the package's Trusted Publisher to be configured on
-    # npmjs.com (org lamngockhuong, repo specpin, workflow release-spec-schema.yml).
+    # npmjs.com (org lamngockhuong, repo specpin). The workflow filename MUST be
+    # the entry-point caller, release-please.yml, NOT this file: npm validates the
+    # workflow that was triggered, and this job runs via workflow_call from
+    # release-please.yml. Both the caller job there and this job need id-token:write.
     permissions:
       contents: read
       id-token: write # OIDC token for trusted publishing + provenance
