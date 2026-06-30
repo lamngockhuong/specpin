@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 
 	"specpin/internal/schema"
 	"specpin/internal/store"
@@ -68,6 +69,9 @@ func (s *Server) handleGetSpecs(w http.ResponseWriter, _ *http.Request) {
 		writeError(w, http.StatusInternalServerError, "load_failed", []string{err.Error()})
 		return
 	}
+	// Optimistic-concurrency tag for the whole bundle. Clients echo it back as
+	// If-Match on writes; a stale tag yields 409 instead of a silent clobber.
+	w.Header().Set("ETag", store.ETagFor(bundle))
 	writeJSON(w, http.StatusOK, bundle)
 }
 
@@ -90,8 +94,8 @@ func (s *Server) handlePostSpec(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "schema_invalid", errs)
 		return
 	}
-	if err := s.store.SaveSpec(body.File, body.Spec); err != nil {
-		writeError(w, statusForStoreError(err), "save_failed", []string{err.Error()})
+	if err := s.store.SaveSpec(body.File, body.Spec, r.Header.Get("If-Match")); err != nil {
+		writeWriteError(w, "save_failed", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"file": body.File, "spec": body.Spec})
@@ -108,8 +112,8 @@ func (s *Server) handlePutSpec(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "schema_invalid", errs)
 		return
 	}
-	if err := s.store.UpdateSpec(id, spec); err != nil {
-		writeError(w, statusForStoreError(err), "update_failed", []string{err.Error()})
+	if err := s.store.UpdateSpec(id, spec, r.Header.Get("If-Match")); err != nil {
+		writeWriteError(w, "update_failed", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": id, "spec": spec})
@@ -117,8 +121,8 @@ func (s *Server) handlePutSpec(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDeleteSpec(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	if err := s.store.DeleteSpec(id); err != nil {
-		writeError(w, statusForStoreError(err), "delete_failed", []string{err.Error()})
+	if err := s.store.DeleteSpec(id, r.Header.Get("If-Match")); err != nil {
+		writeWriteError(w, "delete_failed", err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -205,10 +209,21 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	ch, cancel := s.hub.Subscribe()
 	defer cancel()
 
+	// Heartbeat: a reverse proxy (nginx, Cloudflare Tunnel) idle-closes a stream
+	// with no traffic. A periodic SSE comment keeps /events warm across an idle
+	// repo. The interval sits below common proxy idle defaults (nginx 60s,
+	// Cloudflare ~100s). The comment carries no `event:` line, so the client's
+	// frame parser ignores it.
+	ticker := time.NewTicker(sseHeartbeatInterval)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-r.Context().Done():
 			return
+		case <-ticker.C:
+			_, _ = io.WriteString(w, ": ping\n\n")
+			flusher.Flush()
 		case payload, ok := <-ch:
 			if !ok {
 				return
@@ -219,10 +234,26 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// sseHeartbeatInterval is how often /events emits a keepalive comment. Kept below
+// common reverse-proxy idle timeouts (nginx 60s, Cloudflare ~100s). A var (not a
+// const) only so tests can dial it down; nothing else reassigns it.
+var sseHeartbeatInterval = 20 * time.Second
+
 func decodeBody(r *http.Request, v any) error {
 	defer r.Body.Close()
 	dec := json.NewDecoder(io.LimitReader(r.Body, 1<<20))
 	return dec.Decode(v)
+}
+
+// writeWriteError maps a spec-write store error to an HTTP response. A stale
+// If-Match (ErrVersionMismatch) is the one case that gets its own code so the
+// client can recognize it and reload rather than treat it as a generic failure.
+func writeWriteError(w http.ResponseWriter, fallbackCode string, err error) {
+	if errors.Is(err, store.ErrVersionMismatch) {
+		writeError(w, http.StatusConflict, "version_mismatch", []string{err.Error()})
+		return
+	}
+	writeError(w, statusForStoreError(err), fallbackCode, []string{err.Error()})
 }
 
 func statusForStoreError(err error) int {
