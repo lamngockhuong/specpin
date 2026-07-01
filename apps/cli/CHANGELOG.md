@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.2...cli-v0.0.3) (2026-07-01)
+
+
+### Features
+
+* remote sidecar serve + extension remote connect ([#76](https://github.com/lamngockhuong/specpin/issues/76)) ([135020e](https://github.com/lamngockhuong/specpin/commit/135020e5b56cbc10ab9b3693f302cc0d11562321))
+
 ## [0.0.2](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.1...cli-v0.0.2) (2026-06-30)
 
 
