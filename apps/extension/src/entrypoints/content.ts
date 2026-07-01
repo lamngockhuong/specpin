@@ -27,6 +27,7 @@ import {
 } from "../shared/config.js";
 import type { TaggedSpec } from "../shared/connection-types.js";
 import { confirmDialog } from "../shared/dialog.js";
+import { isLocalConnectionId } from "../shared/local-id.js";
 import {
   type Message,
   type SaveSpecResult,
@@ -473,10 +474,15 @@ export default defineContentScript({
         SHADOW_PREAMBLE,
         theme,
       );
+      // The Git-recovery hint only applies to sidecar specs (committed to
+      // .specs/); a local spec lives in storage.local, so give it its own message.
+      const confirmMessage = isLocalConnectionId(spec.connectionId ?? "")
+        ? t("spec.deleteConfirmLocal")
+        : t("spec.deleteConfirm");
       let ok: boolean;
       try {
         ok = await confirmDialog({
-          message: t("spec.deleteConfirm"),
+          message: confirmMessage,
           okLabel: t("common.delete"),
           danger: true,
           root: shadow,

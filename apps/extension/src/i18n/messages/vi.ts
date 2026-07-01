@@ -111,7 +111,8 @@ const vi: Record<keyof Messages, string> = {
   "tooltip.openInPanel": "Mở trong thanh bên",
 
   // Spec delete flow (shared by tooltip + side panel).
-  "spec.deleteConfirm": "Xoá spec này? Có thể khôi phục spec sidecar từ Git nếu cần.",
+  "spec.deleteConfirm": "Xoá spec này? Có thể khôi phục từ Git nếu cần.",
+  "spec.deleteConfirmLocal": "Xoá spec này? Không thể hoàn tác.",
   "spec.deleteConflict": "Spec đã thay đổi ở nơi khác; giao diện đã được làm mới. Chưa xoá gì cả.",
   "spec.deleteFailed": "Không thể xoá spec: {error}",
 

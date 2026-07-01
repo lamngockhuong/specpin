@@ -115,7 +115,8 @@ const en = {
   "tooltip.openInPanel": "Open in side panel",
 
   // Spec delete flow (shared by tooltip + side panel).
-  "spec.deleteConfirm": "Delete this spec? Recover sidecar specs from Git if needed.",
+  "spec.deleteConfirm": "Delete this spec? Recover it from Git if needed.",
+  "spec.deleteConfirmLocal": "Delete this spec? This can't be undone.",
   "spec.deleteConflict": "The spec changed elsewhere; the view was refreshed. Nothing was deleted.",
   "spec.deleteFailed": "Could not delete spec: {error}",
 

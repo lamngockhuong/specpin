@@ -116,7 +116,8 @@ const ja: Record<keyof Messages, string> = {
   "tooltip.openInPanel": "サイドパネルで開く",
 
   // Spec delete flow (shared by tooltip + side panel).
-  "spec.deleteConfirm": "このspecを削除しますか？sidecarのspecは必要ならGitから復元できます。",
+  "spec.deleteConfirm": "このspecを削除しますか？必要ならGitから復元できます。",
+  "spec.deleteConfirmLocal": "このspecを削除しますか？この操作は元に戻せません。",
   "spec.deleteConflict":
     "specが他の場所で変更されたため、表示を更新しました。削除は行われていません。",
   "spec.deleteFailed": "specを削除できませんでした: {error}",
