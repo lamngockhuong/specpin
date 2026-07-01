@@ -22,25 +22,34 @@ import "../../shared/surface-toast.css";
 import "../../shared/guide-section.css";
 import "../../shared/guide-editor.css";
 import "../../shared/scope-toggle.css";
+import "../../shared/surface-health.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
 import { clearDraft, loadDraft, saveDraft } from "../../shared/draft-store.js";
 import { mountGuideSection } from "../../shared/guide-section.js";
-import { type SpecsForOrigin, sendToActiveTab, sendToBackground } from "../../shared/messaging.js";
+import {
+  type MatchReportEntry,
+  type SpecsForOrigin,
+  sendToActiveTab,
+  sendToBackground,
+} from "../../shared/messaging.js";
 import { wireProjectActions } from "../../shared/project-actions.js";
 import {
   buildExportTargets,
   buildFilterModel,
-  fetchMatchedIds,
+  fetchMatchState,
   fetchSurfaceState,
+  pageHealth,
   type SpecScope,
   scopeSpecs,
   specMatchesQuery,
 } from "../../shared/surface-data.js";
 import {
   byId,
+  mountFragileScan,
   mountScopeToggle,
   mutedRow,
   renderFilterSection,
+  renderHealthSummary,
   renderLocalePicker,
   renderProjects,
   renderStatus,
@@ -60,6 +69,9 @@ let searchQuery = "";
 // null when no content script could report it (fall back to the full list).
 let scope: SpecScope = "page";
 let matchedIds: Set<string> | null = null;
+// The page match report (per-spec tier + anchor strength), for the health summary
+// and the fragile-spec scan. Null when no content script could report it.
+let lastReport: MatchReportEntry[] | null = null;
 
 function renderSpecs(res: SpecsForOrigin): void {
   const list = byId("specs");
@@ -115,6 +127,19 @@ const guideSection = mountGuideSection(byId("guides"), {
     void actOnActiveTab({ type: "START_GUIDE", steps, name }, () => window.close()),
 });
 
+// The fragile-spec scan (shared wiring): a link toggle above the search box that
+// lists weak-anchored, currently-failing specs with a copyable data-spec-id
+// snippet. Reads module state (enabled, lastReport, specs, locale) on each render.
+const fragileScan = mountFragileScan(byId("scan"), byId("scan-results"), {
+  getState: () => ({
+    enabled: lastSpecs?.enabled ?? false,
+    report: lastReport,
+    specs: lastSpecs?.specs ?? [],
+    locale: activeLocale,
+    defaultLocale: lastSpecs?.manifest?.settings?.defaultLocale,
+  }),
+});
+
 // The "This page | All" scope toggle above the search box (shared wiring). It
 // reads module state (lastSpecs, scope, matchedIds) on each render and, on click,
 // re-renders itself + the list.
@@ -134,16 +159,19 @@ const scopeToggle = mountScopeToggle(byId("scope"), {
 });
 
 async function refresh(): Promise<void> {
-  // Query the page's match set concurrently with the background status/specs
-  // fetch (independent round trips); gate the assignment on `enabled` after.
-  const matchedPromise = fetchMatchedIds();
+  // Query the page's match state (ids + report) concurrently with the background
+  // status/specs fetch (independent round trips); gate the assignment on `enabled`.
+  const matchPromise = fetchMatchState();
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
-  // Skip the match set when off: the list collapses to the "off" message and the
+  // Skip the match state when off: the list collapses to the "off" message and the
   // toggle hides anyway (the in-flight query resolves to null and is discarded).
-  matchedIds = specs.enabled ? await matchedPromise : null;
+  const match = specs.enabled ? await matchPromise : { ids: null, report: null };
+  matchedIds = match.ids;
+  lastReport = match.report;
   renderStatus(status, origin, specs.specs.length);
+  renderHealthSummary(byId("health"), lastReport ? pageHealth(lastReport) : null, specs.enabled);
   renderProjects(status, origin);
   await guideSection.refresh({
     origin,
@@ -158,6 +186,7 @@ async function refresh(): Promise<void> {
   // act on the (now-hidden) spec list, plus the create affordance + its panel.
   setListControlsHidden(!specs.enabled);
   scopeToggle.render();
+  fragileScan.render();
   // Export is per project serving THIS page (one click exports one project); the
   // shared builder lists the local + sidecar export targets.
   projectActions.update(specs.enabled, buildExportTargets(status, origin));

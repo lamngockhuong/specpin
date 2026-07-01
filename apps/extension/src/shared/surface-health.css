@@ -1,0 +1,60 @@
+/* Page match-health summary line + fragile-spec scan, shared verbatim by the
+   popup and the side panel (their JS lives in surface-renderers.ts:
+   renderHealthSummary + mountFragileScan). Each surface keeps only its own
+   `.health` margin (and the side panel its orphaned/tier rules) inline. */
+
+.health[hidden] {
+  display: none;
+}
+.health-line {
+  color: var(--sp-text-2);
+  font: 500 12px / 1.4 var(--sp-font-ui);
+}
+
+/* Fragile-spec page scan: a link-styled toggle + its result list. */
+#scan {
+  margin-top: 8px;
+  font-size: 12px;
+}
+#scan[hidden] {
+  display: none;
+}
+#scan-results {
+  margin-top: 8px;
+}
+#scan-results:empty {
+  display: none;
+}
+.scan-title {
+  font: 600 11px / 1 var(--sp-font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sp-text-3);
+  margin-bottom: 6px;
+}
+.scan-empty {
+  color: var(--sp-text-3);
+  font-size: 12px;
+}
+.scan-row {
+  padding: 8px 0;
+  border-top: 1px solid var(--sp-border);
+}
+.scan-t {
+  font-weight: 600;
+  color: var(--sp-text);
+}
+.scan-snippet {
+  display: block;
+  margin: 4px 0;
+  padding: 6px 8px;
+  font: 500 11px / 1.4 var(--sp-font-mono);
+  color: var(--sp-text-2);
+  background: var(--sp-control);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  word-break: break-all;
+}
+.scan-copy {
+  font-size: 11px;
+}

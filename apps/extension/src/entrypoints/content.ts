@@ -1,4 +1,4 @@
-import { captureFingerprint, matchElement } from "@specpin/fingerprint-core";
+import { anchorStrength, captureFingerprint, matchElement } from "@specpin/fingerprint-core";
 import type { DisplayMode, ElementFingerprint, Manifest } from "@specpin/spec-schema";
 import { browser, defineContentScript } from "#imports";
 import { CaptureForm } from "../content/capture-form.js";
@@ -29,6 +29,7 @@ import type { TaggedSpec } from "../shared/connection-types.js";
 import { confirmDialog } from "../shared/dialog.js";
 import { isLocalConnectionId } from "../shared/local-id.js";
 import {
+  type MatchReportEntry,
   type Message,
   type SaveSpecResult,
   type SpecsForOrigin,
@@ -608,7 +609,7 @@ export default defineContentScript({
           if (el) highlight(el);
           break;
         }
-        case "GET_MATCHED_IDS":
+        case "GET_MATCHED_IDS": {
           // Report which specs resolve to an element on this page so the popup /
           // side panel can scope its list to "this page". "On this page" means the
           // element is PRESENT, independent of the visibility cascade (team/personal
@@ -622,17 +623,32 @@ export default defineContentScript({
           // Page scope is spec IDENTITY, not the visibility cascade: a spec pinned
           // on another route does not belong on this page, so exclude it here too
           // (keeps the "this page" list in step with what actually renders).
+          //
+          // The same single pass also builds `report`: one entry per page-scoped
+          // spec carrying its match tier (matched flag, strategy, confidence,
+          // anchor, needsReview) plus the stored-fingerprint anchor strength, so
+          // the surfaces render match health (badges, orphaned list, fragile scan)
+          // without a second match pass. `ids` stays the matched subset.
+          if (!enabled) return Promise.resolve({ ids: [], report: [] });
+          const report: MatchReportEntry[] = [];
+          for (const s of specs) {
+            if (!pageScopeAllows(s.fingerprint.pageUrl, location.href)) continue;
+            const m = matchElement(s.fingerprint, document);
+            report.push({
+              id: s.id,
+              matched: !!m.el,
+              strategy: m.strategy,
+              confidence: m.confidence,
+              anchor: m.anchor,
+              needsReview: m.needsReview,
+              strength: anchorStrength(s.fingerprint),
+            });
+          }
           return Promise.resolve({
-            ids: enabled
-              ? specs
-                  .filter(
-                    (s) =>
-                      pageScopeAllows(s.fingerprint.pageUrl, location.href) &&
-                      matchElement(s.fingerprint, document).el,
-                  )
-                  .map((s) => s.id)
-              : [],
+            ids: report.filter((e) => e.matched).map((e) => e.id),
+            report,
           });
+        }
       }
     });
 

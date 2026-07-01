@@ -1,15 +1,20 @@
+import { resolveLocalized } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
+import { copyText } from "./clipboard.js";
 import type { ManualBatchSummary, TaggedSpec } from "./connection-types.js";
+import { dataSpecIdSnippet, fragileEntries } from "./data-spec-id.js";
 import { isLocalConnectionId } from "./local-id.js";
-import type { StatusResult } from "./messaging.js";
+import type { MatchReportEntry, StatusResult } from "./messaging.js";
 import { connectionServesOrigin, manualSummaryServesOrigin } from "./origin-match.js";
 import {
   applyFacetToggle,
   type FilterModel,
+  type PageHealth,
   resetPersonalVisibility,
   type SpecScope,
   scopeSpecs,
 } from "./surface-data.js";
+import { showSurfaceToast } from "./surface-toast.js";
 import type { FacetInventory, FacetItem, FacetKey } from "./visibility.js";
 
 // DOM renderers shared verbatim by the popup and the side panel. Both surfaces
@@ -44,6 +49,139 @@ export function sourceBadge(spec: Pick<TaggedSpec, "connectionId">): HTMLElement
   tag.textContent = manual ? t("common.sourceManual") : t("common.sourceSidecar");
   tag.title = manual ? t("common.sourceManualTitle") : t("common.sourceSidecarTitle");
   return tag;
+}
+
+/** Render the one-line page match-health summary (N specs · X exact · Y fuzzy ·
+ *  Z orphaned) into `container`, shared by the popup and side panel. Hidden when
+ *  Specpin is off, the report is unknown (no content script), or the page has no
+ *  scoped specs — an empty summary is just noise. DOM-built (no innerHTML). */
+export function renderHealthSummary(
+  container: HTMLElement,
+  health: PageHealth | null,
+  enabled: boolean,
+): void {
+  container.replaceChildren();
+  if (!enabled || !health || health.total === 0) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
+  const line = document.createElement("div");
+  line.className = "health-line";
+  line.textContent = t("health.summary", {
+    total: health.total,
+    exact: health.exact,
+    fuzzy: health.fuzzy,
+    orphaned: health.orphaned,
+  });
+  container.appendChild(line);
+}
+
+/** A compact match-tier badge for a spec card, aligned with the in-page badges:
+ *  a "fuzzy" pill for a css-tier match, nothing for the silent exact tier (or an
+ *  orphaned/unknown entry). DOM-built so it is never an injection sink. */
+export function tierBadge(entry: MatchReportEntry | undefined): HTMLElement | null {
+  if (!entry?.matched || entry.strategy !== "css") return null;
+  const badge = document.createElement("span");
+  badge.className = "tier tier-fuzzy";
+  badge.textContent = t("health.fuzzy");
+  badge.title = t("match.fuzzy");
+  return badge;
+}
+
+export interface FragileScanDeps {
+  /** Latest surface state the scan reads on each render/click. `report` is null
+   *  when no content script could report matches (the scan then hides). */
+  getState: () => {
+    enabled: boolean;
+    report: MatchReportEntry[] | null;
+    specs: TaggedSpec[];
+    locale: string;
+    defaultLocale: string | undefined;
+  };
+}
+
+/** Mount the "Scan for fragile specs" control + its result list, shared by the
+ *  popup and side panel. Clicking the button toggles a list of the page's fragile
+ *  specs (weak anchor AND currently failing) each with a copyable `data-spec-id`
+ *  snippet; Copy writes to the clipboard and confirms via the surface toast.
+ *  Nothing edits source. Built with DOM nodes (no innerHTML). Owns its own
+ *  visibility: the button hides when Specpin is off or the report is unknown.
+ *  Returns a `render()` the surface calls from its refresh. */
+export function mountFragileScan(
+  button: HTMLElement,
+  container: HTMLElement,
+  deps: FragileScanDeps,
+): { render: () => void } {
+  let open = false;
+
+  const renderResults = (): void => {
+    container.replaceChildren();
+    const { report, specs, locale, defaultLocale } = deps.getState();
+    if (!open || !report) {
+      container.hidden = true;
+      return;
+    }
+    container.hidden = false;
+    const fragile = fragileEntries(report);
+    if (fragile.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "scan-empty";
+      empty.textContent = t("helper.scanEmpty");
+      container.appendChild(empty);
+      return;
+    }
+    const head = document.createElement("div");
+    head.className = "scan-title";
+    head.textContent = t("helper.scanTitle");
+    container.appendChild(head);
+    const specById = new Map(specs.map((s) => [s.id, s]));
+    // A shared "taken" set so duplicate titles get distinct ids across the list.
+    const taken = new Set<string>();
+    for (const entry of fragile) {
+      const spec = specById.get(entry.id);
+      const title = spec ? resolveLocalized(spec.title, locale, defaultLocale) : entry.id;
+      const { snippet } = dataSpecIdSnippet(title, taken);
+      const row = document.createElement("div");
+      row.className = "scan-row";
+      const name = document.createElement("div");
+      name.className = "scan-t";
+      name.textContent = title;
+      const code = document.createElement("code");
+      code.className = "scan-snippet";
+      code.textContent = snippet;
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.className = "scan-copy link";
+      copy.textContent = t("helper.copySnippet");
+      copy.addEventListener("click", async () => {
+        // Clipboard blocked leaves the snippet visible for a manual copy.
+        if (await copyText(snippet)) showSurfaceToast(t("helper.copied"));
+      });
+      row.append(name, code, copy);
+      container.appendChild(row);
+    }
+  };
+
+  const render = (): void => {
+    const { enabled, report } = deps.getState();
+    const show = enabled && report !== null;
+    button.hidden = !show;
+    if (!show) {
+      open = false;
+      container.replaceChildren();
+      container.hidden = true;
+      return;
+    }
+    renderResults();
+  };
+
+  button.addEventListener("click", () => {
+    open = !open;
+    renderResults();
+  });
+
+  return { render };
 }
 
 /** The Manual (local) batches that render on this page: they are enabled, carry

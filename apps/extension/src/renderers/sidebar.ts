@@ -6,6 +6,7 @@ import { renderMarkdownBlock } from "../shared/markdown.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
+import { CONFIDENCE_BADGE_CSS, confidenceBadge } from "./confidence-badge.js";
 import { LauncherSlot } from "./launcher.js";
 import {
   MARKDOWN_BODY_CSS,
@@ -108,7 +109,9 @@ ${SHADOW_PREAMBLE}
 .card ul { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .card ol { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .card li { margin: 2px 0; }
+.card .sp-conf { margin-bottom: 8px; }
 ${MARKDOWN_BODY_CSS}
+${CONFIDENCE_BADGE_CSS}
 `;
 
 /**
@@ -211,6 +214,7 @@ export class SidebarRenderer implements SpecRenderer {
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     card.innerHTML =
       tag +
+      confidenceBadge(meta) +
       projectCaptionHtml(meta) +
       `<div class="t">${escapeHtml(text.title)}</div>` +
       `<div class="d">${renderMarkdownBlock(text.description, meta?.pageOrigin)}</div>` +
