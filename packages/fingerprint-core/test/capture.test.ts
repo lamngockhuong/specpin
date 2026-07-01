@@ -100,4 +100,10 @@ describe("captureFingerprint", () => {
     const el = mount(`<button id="checkout">Buy</button>`);
     expect(captureFingerprint(el).cssSelector).toBe("#checkout");
   });
+
+  it("captures the current page path as pageUrl (scopes the spec to its route)", () => {
+    const el = mount(`<button>Go</button>`);
+    // jsdom serves fixtures from http://localhost/, so pathname is "/".
+    expect(captureFingerprint(el).pageUrl).toBe(document.location.pathname);
+  });
 });

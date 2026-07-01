@@ -89,6 +89,10 @@ export interface ElementFingerprint {
   nearbyLabels?: string[];
   positionHint: PositionHint;
   frameworkHint?: FrameworkHint;
+  /**
+   * Optional path glob scoping this spec to a page/route. '*' matches one path segment, '**' matches across segments. Auto-filled with the capture path and user-editable. Absent/null matches on any page (backward compatible).
+   */
+  pageUrl?: string | null;
 }
 export interface PositionHint {
   index: number;

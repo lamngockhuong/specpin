@@ -311,7 +311,11 @@ export class CaptureForm {
     const titleEl = q<HTMLInputElement>("#sp-title");
     const descEl = q<HTMLTextAreaElement>("#sp-desc");
     const rulesEl = q<HTMLTextAreaElement>("#sp-rules");
+    const pageUrlEl = q<HTMLInputElement>("#sp-pageurl");
     const tabStrip = q<HTMLElement>(".lang-tabs");
+    // Prefill the page-scope glob from the fingerprint (auto-filled at capture,
+    // preserved on edit). Blank means "match on any page".
+    pageUrlEl.value = activeFingerprint.pageUrl ?? "";
 
     // Preload content for editing an existing spec: per-locale text plus the
     // locale-independent tags + display mode (else saving would wipe them).
@@ -445,6 +449,9 @@ export class CaptureForm {
         if (this.host) this.host.style.display = "";
         if (fp) {
           activeFingerprint = fp;
+          // Re-link recaptures on the (possibly new) page: refresh the scope glob
+          // to the new element's path so it reflects where the spec now points.
+          pageUrlEl.value = fp.pageUrl ?? "";
           shadow.querySelector(".relink-note")?.classList.add("show");
         }
       });
@@ -506,10 +513,16 @@ export class CaptureForm {
         return;
       }
 
+      // Merge the edited page-scope glob into the fingerprint before building the
+      // spec; blank clears it back to "match anywhere".
+      const scopedFingerprint: ElementFingerprint = {
+        ...activeFingerprint,
+        pageUrl: pageUrlEl.value.trim() || null,
+      };
       const idSuffix = randomSuffix();
       const spec = buildSpec(
         fields,
-        activeFingerprint,
+        scopedFingerprint,
         new Date().toISOString(),
         idSuffix,
         options.initial,
@@ -596,6 +609,7 @@ export class CaptureForm {
           <option value="tooltip">tooltip</option>
           <option value="sidebar">sidebar</option>
         </select>
+        <label>${escapeHtml(t("capture.pageScopeField"))} <span class="hint">${escapeHtml(t("capture.pageScopeHint"))}</span></label><input id="sp-pageurl" placeholder="${escapeAttr(t("capture.pageScopePlaceholder"))}" />
         ${fileField}
         ${relinkField}
         <div class="errors"><strong>${escapeHtml(t("capture.couldNotSave"))}</strong><ul></ul></div>

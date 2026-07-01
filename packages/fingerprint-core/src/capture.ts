@@ -49,6 +49,13 @@ function whitelistedAttributes(el: Element): Record<string, string> {
   return out;
 }
 
+/** The page path the element was captured on, used to scope the spec to its
+ *  route. Query and hash are dropped (the scope model matches on path only).
+ *  Null when no location is available (e.g. a detached document). */
+function pageUrlOf(el: Element): string | null {
+  return el.ownerDocument?.location?.pathname || null;
+}
+
 function positionHint(el: Element): PositionHint {
   const parent = el.parentElement;
   if (!parent) return { index: 0, siblingCount: 1 };
@@ -121,5 +128,6 @@ export function captureFingerprint(el: Element): ElementFingerprint {
     nearbyLabels: nearbyLabels(el),
     positionHint: positionHint(el),
     frameworkHint: detectFramework(el.ownerDocument ?? undefined),
+    pageUrl: pageUrlOf(el),
   };
 }

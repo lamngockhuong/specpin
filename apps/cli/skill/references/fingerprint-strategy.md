@@ -61,6 +61,24 @@ attribute as an optional, opt-in upgrade.
 - `nearbyLabels` (optional): visible labels near the element, e.g.
   `["Email", "Password"]`.
 - `frameworkHint` (optional): `"react" | "vue" | "angular" | "vanilla"`.
+- `pageUrl` (optional, nullable): path glob scoping the spec to its route (see
+  "Page scope" below).
+
+## Page scope (multi-screen apps)
+
+The extension matches a spec against the live DOM by selector, so a spec pinned
+on one screen also renders on another screen whose layout produces the same
+`cssSelector`/`xpath` (common in SPAs: list screens sharing a search/filter bar).
+`fingerprint.pageUrl` prevents this: a spec renders only on paths its glob covers.
+
+- Derive the route from the source, not a live URL (you are not in the browser):
+  read the router config (React Router / Vue Router paths), the file-based route
+  (e.g. `pages/orders/[id].tsx` -> `/orders/**`), or the link/nav target.
+- `*` matches one path segment, `**` matches across segments; query and hash are
+  ignored. For a parameterized route use a glob: `/orders/**`, not `/orders/123`.
+- Set it whenever the element is screen-specific. Leave it `null` (or omit) for
+  elements present on every screen (global nav, header, footer) so they match
+  everywhere. Absent/null is backward compatible.
 
 ## Brittleness caveat
 

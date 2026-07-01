@@ -26,7 +26,8 @@
         "attributes": { "type": "text" },
         "nearbyLabels": ["Deal name"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/deals/new"
       },
       "meta": {
         "createdBy": "demo",
@@ -63,7 +64,8 @@
         "attributes": { "type": "number" },
         "nearbyLabels": ["Amount (USD)"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/deals/new"
       },
       "meta": {
         "createdBy": "demo",
@@ -99,7 +101,8 @@
         "attributes": {},
         "nearbyLabels": ["Stage"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/deals/new"
       },
       "meta": {
         "createdBy": "demo",
@@ -135,7 +138,8 @@
         "attributes": {},
         "nearbyLabels": ["Owner"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/deals/new"
       },
       "meta": {
         "createdBy": "demo",
@@ -171,7 +175,8 @@
         "attributes": { "type": "submit" },
         "nearbyLabels": ["Create deal"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/deals/new"
       },
       "meta": {
         "createdBy": "demo",

@@ -124,6 +124,15 @@ function pathGatedBy(disabled: Set<FacetKey>, url: string): boolean {
   return false;
 }
 
+/** Positive per-spec page scope: a spec whose fingerprint carries a `pageUrl`
+ *  glob renders only on paths that glob matches. A spec with no `pageUrl`
+ *  (absent/null/empty) matches on any page (backward compatible). Distinct from
+ *  the `url:` gate in {@link pageHidden}, which is a negative team/personal hide. */
+export function pageScopeAllows(pageUrl: string | null | undefined, url: string): boolean {
+  if (!pageUrl) return true;
+  return matchPathGlob(pageUrl, pathOf(url));
+}
+
 function pathOf(url: string): string {
   try {
     return new URL(url).pathname;

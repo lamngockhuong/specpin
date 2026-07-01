@@ -33,7 +33,8 @@
         "attributes": { "type": "search" },
         "nearbyLabels": ["Search by name or company"],
         "positionHint": { "index": 0, "siblingCount": 2 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/customers"
       },
       "meta": {
         "createdBy": "demo",
@@ -69,7 +70,8 @@
         "attributes": { "type": "button" },
         "nearbyLabels": ["+ Add customer"],
         "positionHint": { "index": 1, "siblingCount": 2 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/customers"
       },
       "meta": {
         "createdBy": "demo",
@@ -105,7 +107,8 @@
         "attributes": {},
         "nearbyLabels": ["Name", "Company", "Open deals"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/customers"
       },
       "meta": {
         "createdBy": "demo",
@@ -141,7 +144,8 @@
         "attributes": {},
         "nearbyLabels": ["Email:"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/customers/**"
       },
       "meta": {
         "createdBy": "demo",
@@ -177,7 +181,8 @@
         "attributes": {},
         "nearbyLabels": ["Deal", "Amount", "Stage"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/customers/**"
       },
       "meta": {
         "createdBy": "demo",
@@ -213,7 +218,8 @@
         "attributes": {},
         "nearbyLabels": ["Notes"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/customers/**"
       },
       "meta": {
         "createdBy": "demo",
@@ -253,7 +259,8 @@
         "attributes": { "type": "button" },
         "nearbyLabels": ["Delete customer"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/customers/**"
       },
       "meta": {
         "createdBy": "demo",

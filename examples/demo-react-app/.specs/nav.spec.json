@@ -29,7 +29,8 @@
         "attributes": { "type": "button" },
         "nearbyLabels": ["Settings"],
         "positionHint": { "index": 6, "siblingCount": 7 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": null
       },
       "meta": {
         "createdBy": "ai-agent",
