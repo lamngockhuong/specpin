@@ -207,6 +207,76 @@ command prints a blunt warning whenever it binds off-loopback.
 > loopback IP, connect the extension over `https://` (or use `127.0.0.1`), since a
 > plaintext non-`127.0.0.1`/`localhost` URL is rejected as remote.
 
+### No domain? Serve over IP
+
+Internal servers often have only an IP and no public domain, so the Caddy
+*automatic* HTTPS above (which needs a domain for the ACME challenge) doesn't
+apply. You still cannot connect over plain `http://<ip>`: the **browser** — not
+Specpin — blocks a plaintext request from the extension's secure-context service
+worker to any host other than `localhost`/`127.0.0.1`. The extension accepts
+`https://<ip>` as-is (no domain required), so the job is to put HTTPS on the IP,
+or to make the remote look like localhost. Two paths, both work today in every
+browser:
+
+**Path A — HTTPS on the IP via an internal CA (team-friendly).** A certificate's
+Subject Alternative Name (SAN) can be a bare IP, so no domain is needed; trust
+comes from an internal CA you distribute to your team's browsers once. Works for
+private LAN IPs **and** public IPs alike.
+
+- *Caddy* (`tls internal` issues an internal-CA cert for the IP):
+
+  ```
+  192.168.1.50 {
+    tls internal
+    reverse_proxy 127.0.0.1:51234
+  }
+  ```
+
+  Then trust Caddy's root CA on each machine: run `caddy trust`, or import
+  `pki/authorities/local/root.crt` (under Caddy's data dir) into each browser/OS
+  trust store.
+
+- *nginx / no Caddy* — mint an IP-SAN cert yourself and reuse the nginx block
+  from [Recommended](#recommended-loopback-bind--co-located-proxy) (the
+  `proxy_buffering off` + `Authorization`/`If-Match` forwarding still matters):
+
+  ```bash
+  mkcert 192.168.1.50            # easiest; also installs its root CA locally
+  # or with openssl, the key bit is the SAN:
+  #   openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem \
+  #     -days 365 -subj "/CN=192.168.1.50" -addext "subjectAltName=IP:192.168.1.50"
+  ```
+
+  Distribute the **root CA** (mkcert's `rootCA.pem`, or your openssl CA) to team
+  browsers; a bare self-signed leaf with no trusted root will still error.
+
+Then connect the extension to `https://192.168.1.50` and approve the permission
+prompt (see [Connect the extension](#connect-the-extension)).
+
+**Path B — SSH tunnel to localhost (zero cert, per-user).** For one user, or
+when installing a root CA isn't allowed, forward a local port to the server's
+loopback sidecar — `localhost` is exempt from mixed-content everywhere, so no
+cert and no proxy are needed:
+
+```bash
+# On the server, keep the sidecar on loopback (default) with a pinned port + token:
+specpin serve --port 51234 --token "$(openssl rand -hex 24)"
+# On your machine, tunnel a local port to it:
+ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50
+# Connect the extension to:  http://localhost:9123
+```
+
+SSH provides the encryption and authentication. It's per-user (each teammate
+runs their own tunnel) and the tunnel must stay up while you work.
+
+> **Why not just `http://192.168.1.50`?** A public IP is never allowed —
+> plaintext remote is blocked, period. A private LAN IP is allowed *only* on
+> Chrome 142+ via [Local Network Access](https://developer.chrome.com/blog/local-network-access),
+> and even there the permission prompt can't be raised from the extension's
+> background service worker, while [Firefox has no equivalent](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Local_network_access).
+> So Specpin intentionally rejects plaintext remote rather than ship a
+> connection that dies by browser and version.
+
 ### Connect the extension
 
 In the popup or side panel, **+ New project → Sidecar** (or the Options
@@ -232,6 +302,10 @@ connection, so the default install carries no broad-host permission.
 - **Concurrent edits are safe but coarse.** Writes are serialized server-side, and
   a write against a stale read is rejected with `409` (the extension reloads and
   asks you to re-save) rather than silently overwriting a teammate's change.
+- **An internal-CA / self-signed cert is only as safe as the root you trust.**
+  Any machine that trusts that root accepts every cert it signs, so keep the CA
+  private key secure and scope trust to managed machines. On untrusted clients
+  prefer the SSH-tunnel path, which needs no added trust.
 
 ## Keyboard shortcuts
 

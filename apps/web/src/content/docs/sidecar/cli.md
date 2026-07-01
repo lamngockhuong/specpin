@@ -81,6 +81,15 @@ specs.example.com {
 
 `--host <addr>` binds a non-loopback address for the advanced "proxy on another host" case. This does **not** put a proxy in the path — it exposes the raw, **plaintext, token-only** port directly, so firewall it and always pin `--port`. The serve command prints a blunt warning whenever it binds off-loopback.
 
+### No domain? Serve over IP
+
+Internal servers with only an IP (no domain) can't use Caddy's *automatic* HTTPS, but the extension still accepts `https://<ip>` — a certificate's SAN can be a bare IP, so no domain is needed. Two paths, both work in every browser:
+
+- **HTTPS via an internal CA.** Give Caddy the bare IP as its site address with `tls internal` (`192.168.1.50 { tls internal; reverse_proxy 127.0.0.1:51234 }`), or mint an IP-SAN cert with `mkcert 192.168.1.50` / openssl for nginx. Distribute the **root CA** to your team's browsers once, then connect to `https://192.168.1.50`. Works for private LAN and public IPs alike.
+- **SSH tunnel to localhost.** `ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50`, keep the sidecar on loopback, and connect to `http://localhost:9123` — no cert needed, since `localhost` is always exempt.
+
+Plain `http://<ip>` is **not** an option: the browser blocks plaintext remote (a private LAN IP works only on Chrome 142+ via Local Network Access, which can't prompt from the extension's service worker, and Firefox has no equivalent). See the run guide's "No domain? Serve over IP" section for full recipes.
+
 :::caution
 The bearer token is the only authorization boundary for non-browser network clients (CORS only constrains browsers). Treat it like a password and distribute it out-of-band. The non-loopback raw port is plaintext — never expose it to the internet without the HTTPS proxy in front.
 :::
