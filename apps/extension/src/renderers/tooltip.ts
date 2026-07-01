@@ -6,6 +6,7 @@ import { renderMarkdownBlock } from "../shared/markdown.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
+import { BADGE_SIZE, type BadgeBox, resolveBadgePosition } from "./badge-position.js";
 import type { RenderMeta, SpecRenderer } from "./renderer.js";
 import { MARKDOWN_BODY_CSS, rulesListHtml } from "./renderer.js";
 
@@ -32,9 +33,9 @@ const STYLES = `
 ${SHADOW_PREAMBLE}
 .layer { position: absolute; top: 0; left: 0; z-index: 2147483647; }
 .badge {
-  position: absolute; width: 16px; height: 16px; border-radius: 50%;
+  position: absolute; width: ${BADGE_SIZE}px; height: ${BADGE_SIZE}px; border-radius: 50%;
   background: var(--sp-accent); color: var(--sp-accent-on);
-  font: 600 10px/16px var(--sp-font-ui);
+  font: 600 10px/${BADGE_SIZE}px var(--sp-font-ui);
   text-align: center; cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--sp-accent-glow);
   pointer-events: auto; user-select: none;
@@ -193,8 +194,28 @@ export class TooltipRenderer implements SpecRenderer {
       });
       badge.addEventListener("click", () => this.togglePin(pin));
       layer.appendChild(badge);
-      this.positionBadge(pin);
+      // Place only the new badge, dodging the already-placed ones. Cheaper than a
+      // full re-lay on every render (one getBoundingClientRect, not N); scroll and
+      // resize still trigger positionAll() when every badge genuinely moves.
+      this.positionBadge(pin, this.placedBoxes(pin));
     }
+  }
+
+  // Boxes of every already-placed badge (all pins except `exclude`), read from
+  // their committed style so no layout is forced. Fed to the solver so a newly
+  // placed badge dodges its neighbors.
+  private placedBoxes(exclude: Pin): BadgeBox[] {
+    const boxes: BadgeBox[] = [];
+    for (const pin of this.pins) {
+      if (pin === exclude) continue;
+      boxes.push({
+        left: Number.parseFloat(pin.badge.style.left) || 0,
+        top: Number.parseFloat(pin.badge.style.top) || 0,
+        width: BADGE_SIZE,
+        height: BADGE_SIZE,
+      });
+    }
+    return boxes;
   }
 
   /** Pin the tip for a given spec id so its content shows without a hover (the
@@ -285,16 +306,35 @@ export class TooltipRenderer implements SpecRenderer {
     tip.style.top = `${rect.bottom + win.scrollY + 6}px`;
   }
 
-  private positionBadge(pin: Pin): void {
-    const rect = pin.target.getBoundingClientRect();
+  // Place one badge, dodging the already-placed ones, and return its box so the
+  // caller can accumulate it for the next badge to avoid.
+  private positionBadge(pin: Pin, placed: BadgeBox[]): BadgeBox | null {
     const win = this.doc.defaultView;
-    if (!win) return;
-    pin.badge.style.left = `${rect.left + win.scrollX - 8}px`;
-    pin.badge.style.top = `${rect.top + win.scrollY - 8}px`;
+    if (!win) return null;
+    const rect = pin.target.getBoundingClientRect();
+    const { left, top } = resolveBadgePosition(
+      rect,
+      {
+        scrollX: win.scrollX,
+        scrollY: win.scrollY,
+        innerWidth: win.innerWidth,
+        innerHeight: win.innerHeight,
+      },
+      placed,
+    );
+    pin.badge.style.left = `${left}px`;
+    pin.badge.style.top = `${top}px`;
+    return { left, top, width: BADGE_SIZE, height: BADGE_SIZE };
   }
 
   private positionAll(): void {
-    if (this.showBadges) for (const pin of this.pins) this.positionBadge(pin);
+    if (this.showBadges) {
+      const placed: BadgeBox[] = [];
+      for (const pin of this.pins) {
+        const box = this.positionBadge(pin, placed);
+        if (box) placed.push(box);
+      }
+    }
     // Keep the pinned tip anchored through scroll/resize, unless the user has
     // dragged it somewhere deliberately.
     if (this.pinnedAnchor && !this.dragged) this.positionTip(this.pinnedAnchor);
