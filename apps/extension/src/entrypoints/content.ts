@@ -1,4 +1,4 @@
-import { captureFingerprint } from "@specpin/fingerprint-core";
+import { captureFingerprint, matchElement } from "@specpin/fingerprint-core";
 import type { DisplayMode, ElementFingerprint, Manifest } from "@specpin/spec-schema";
 import { browser, defineContentScript } from "#imports";
 import { CaptureForm } from "../content/capture-form.js";
@@ -548,6 +548,22 @@ export default defineContentScript({
           if (el) highlight(el);
           break;
         }
+        case "GET_MATCHED_IDS":
+          // Report which specs resolve to an element on this page so the popup /
+          // side panel can scope its list to "this page". "On this page" means the
+          // element is PRESENT, independent of the visibility cascade (team/personal
+          // hide + tag filters) - that is an orthogonal axis the surfaces show as
+          // greying + the eye toggle. So match over ALL page specs, not the rendered
+          // (visible-only) `session.matches` subset, or a hidden-but-present spec
+          // would drop out of the list and lose its un-hide control. Matching live
+          // against the current DOM also keeps this correct mid-SPA-nav (no reliance
+          // on `session` being rebuilt). Returning a value (a Promise) makes this the
+          // sendMessage response; other cases return undefined (fire-and-forget).
+          return Promise.resolve({
+            ids: enabled
+              ? specs.filter((s) => matchElement(s.fingerprint, document).el).map((s) => s.id)
+              : [],
+          });
       }
     });
 

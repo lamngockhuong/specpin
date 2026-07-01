@@ -1,0 +1,47 @@
+/* "This page | All" segmented control above the spec list, shared by the popup
+   and side panel. Higher-specificity selectors (.scope-toggle .scope-btn) so it
+   overrides each surface's generic `button {}` reset regardless of import order. */
+.scope-toggle {
+  display: inline-flex;
+  margin-top: 12px;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  overflow: hidden;
+  background: var(--sp-control);
+}
+.scope-toggle[hidden] {
+  display: none;
+}
+.scope-toggle .scope-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--sp-text-2);
+  font: 600 12px / 1 var(--sp-font-ui);
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.scope-toggle .scope-btn:hover {
+  filter: none;
+  color: var(--sp-text);
+}
+.scope-toggle .scope-btn + .scope-btn {
+  border-left: 1px solid var(--sp-border);
+}
+.scope-toggle .scope-btn[aria-pressed="true"] {
+  background: var(--sp-accent);
+  color: var(--sp-accent-on);
+  cursor: default;
+}
+.scope-toggle .scope-btn .c {
+  font-family: var(--sp-font-mono);
+  font-size: 11px;
+  opacity: 0.8;
+}
