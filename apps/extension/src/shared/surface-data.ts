@@ -8,6 +8,7 @@ import { localConnId } from "./local-id.js";
 import { stripMarkdown } from "./markdown.js";
 import {
   type MatchedIds,
+  type MatchReportEntry,
   queryActiveTab,
   type SpecsForOrigin,
   type StatusResult,
@@ -72,13 +73,61 @@ export async function fetchSurfaceState(): Promise<SurfaceState> {
  *  origin set. Both surfaces default to "page"; the toggle switches to "all". */
 export type SpecScope = "page" | "all";
 
-/** Ask the active tab's content script which specs resolved to an element on the
- *  current page. Returns a Set for O(1) membership, or null when no content
- *  script could answer (unsupported tab) so the caller falls back to the full
- *  list. An empty Set (page pins none) is distinct from null. */
-export async function fetchMatchedIds(): Promise<Set<string> | null> {
+/** The active tab's match state in one round trip: the matched-id Set (for the
+ *  "This page" scope) and the full per-spec `report` (for match health), or null
+ *  when no content script could answer (unsupported tab) so callers fall back.
+ *  Both surfaces fetch this once instead of querying GET_MATCHED_IDS twice. */
+export interface MatchState {
+  /** Matched-id membership Set, or null when unknown (no content script). */
+  ids: Set<string> | null;
+  /** Per-spec match report, or null when unknown. */
+  report: MatchReportEntry[] | null;
+}
+
+/** Fetch the active tab's match state (ids + report) in a single query. Returns a
+ *  Set for O(1) `ids` membership, or null when no content script could answer
+ *  (unsupported tab) so callers fall back to the full list. An empty Set (page
+ *  pins none) is distinct from null. */
+export async function fetchMatchState(): Promise<MatchState> {
   const res = await queryActiveTab<MatchedIds>({ type: "GET_MATCHED_IDS" });
-  return res ? new Set(res.ids) : null;
+  return { ids: res ? new Set(res.ids) : null, report: res?.report ?? null };
+}
+
+/** Page-level match health derived from a `report`: totals per match tier plus
+ *  the orphaned count. `needsReview` is a distinct axis (a matched-but-low-
+ *  confidence spec); today the MVP matcher only marks unmatched specs for review,
+ *  so it stays 0 until the weighted scorer lands. Pure, DOM-free, unit-tested. */
+export interface PageHealth {
+  total: number;
+  exact: number;
+  fuzzy: number;
+  needsReview: number;
+  orphaned: number;
+}
+
+export function pageHealth(report: MatchReportEntry[]): PageHealth {
+  let exact = 0;
+  let fuzzy = 0;
+  let needsReview = 0;
+  let orphaned = 0;
+  for (const e of report) {
+    if (!e.matched) {
+      orphaned += 1;
+      continue;
+    }
+    if (e.needsReview) needsReview += 1;
+    if (e.strategy === "exact") exact += 1;
+    else if (e.strategy === "css") fuzzy += 1;
+  }
+  return { total: report.length, exact, fuzzy, needsReview, orphaned };
+}
+
+/** The orphaned specs: report entries whose fingerprint matched no element on the
+ *  current page. The report is already page-scoped upstream (content.ts gates it
+ *  by `pageScopeAllows`), so a spec that fails only because it targets another
+ *  route never enters the report — no extra url/visibility argument is needed. */
+export function orphanedSpecs(report: MatchReportEntry[]): MatchReportEntry[] {
+  return report.filter((e) => !e.matched);
 }
 
 /** Scope a spec list to the current page. "all" (or an unknown match set, i.e.

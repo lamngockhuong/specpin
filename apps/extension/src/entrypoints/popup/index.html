@@ -101,6 +101,10 @@
       .filter-marker { font: 600 9px/1 var(--sp-font-mono); text-transform: uppercase; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--sp-border); color: var(--sp-text-3); }
       .filter-marker-you { color: var(--sp-accent); border-color: var(--sp-accent); }
 
+      /* Page match-health + fragile-scan CSS is shared via shared/surface-health.css
+         (imported in main.ts); only the surface-specific top margin lives here. */
+      .health { margin-top: 12px; }
+
       /* Spec search box: client-side filter over the loaded list. */
       #search {
         width: 100%; margin-top: 12px; padding: 8px 10px;
@@ -229,6 +233,9 @@
     <hr id="list-divider" class="list-divider" />
     <div id="filters" class="filters" hidden></div>
     <div id="scope" hidden></div>
+    <div id="health" class="health" hidden></div>
+    <button type="button" id="scan" class="link" hidden data-i18n="helper.scanButton">Scan for fragile specs</button>
+    <div id="scan-results"></div>
     <input type="search" id="search" data-i18n-placeholder="common.searchPlaceholder" data-i18n-aria="common.searchAria" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
     <script type="module" src="./main.ts"></script>

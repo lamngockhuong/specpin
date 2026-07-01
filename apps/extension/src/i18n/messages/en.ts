@@ -120,6 +120,33 @@ const en = {
   "spec.deleteConflict": "The spec changed elsewhere; the view was refreshed. Nothing was deleted.",
   "spec.deleteFailed": "Could not delete spec: {error}",
 
+  // Match-confidence badge + "why matched" (in-page renderers + side-panel cards).
+  // The exact tier renders no badge (good state = silent), so there is no
+  // match.exact key. `whyPrefix` + a `by*` anchor name form "Matched by …".
+  "match.fuzzy": "Selector match",
+  "match.whyPrefix": "Matched by",
+  "match.byTestId": "data-spec-id",
+  "match.byAria": "aria-label",
+  "match.byId": "id",
+  "match.byCss": "CSS selector",
+
+  // Page match-health summary + orphaned list (popup + side panel).
+  "health.summary": "{total} specs · {exact} exact · {fuzzy} fuzzy · {orphaned} orphaned",
+  "health.orphanedTitle": "Orphaned ({count})",
+  "health.orphanedHint": "These specs target this page but their element wasn't found.",
+  "health.orphanedNotFound": "Not found on this page",
+  "health.fuzzy": "fuzzy",
+
+  // data-spec-id helper: weak-anchor capture hint + fragile-spec page scan.
+  "helper.weakAnchorTitle": "Fragile anchor",
+  "helper.weakAnchorHint":
+    "This element has no stable anchor. Add this attribute to its source to make the match exact and stable:",
+  "helper.copySnippet": "Copy",
+  "helper.copied": "Copied!",
+  "helper.scanButton": "Scan for fragile specs",
+  "helper.scanEmpty": "No fragile specs on this page.",
+  "helper.scanTitle": "Fragile specs",
+
   // Capture / edit form.
   "capture.titleCapture": "Capture spec",
   "capture.titleEdit": "Edit spec",

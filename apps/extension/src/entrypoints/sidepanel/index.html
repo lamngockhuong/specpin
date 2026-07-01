@@ -155,6 +155,35 @@
       }
       .src-sidecar { color: var(--sp-accent); border-color: var(--sp-accent); }
 
+      /* Page match-health + fragile-scan CSS is shared via shared/surface-health.css
+         (imported in main.ts); only the surface-specific rules (health margin,
+         orphaned section, per-card tier badge) live here. */
+      .health { margin-top: 14px; }
+      #orphaned { margin-top: 14px; }
+      #orphaned[hidden] { display: none; }
+      #orphaned .orphaned-title {
+        font: 600 11px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--sp-warning);
+      }
+      #orphaned .orphaned-hint { color: var(--sp-text-3); font-size: 11px; margin-top: 4px; }
+      #orphaned ul { list-style: none; margin: 8px 0 0; padding: 0; }
+      #orphaned li {
+        border: 1px dashed var(--sp-border); border-radius: var(--sp-radius-card);
+        padding: 10px 12px; margin-bottom: 8px; opacity: 0.85;
+      }
+      #orphaned .t { font-weight: 700; font-size: 13px; color: var(--sp-text-2); }
+      #orphaned .muted { color: var(--sp-text-3); font-size: 11px; margin-top: 3px; }
+
+      /* Per-card match-tier badge (fuzzy only; exact is silent). */
+      #specs .tier {
+        flex: none;
+        font: 600 9px/1 var(--sp-font-mono);
+        text-transform: uppercase; letter-spacing: 0.04em;
+        padding: 2px 5px; border-radius: 4px;
+        border: 1px solid var(--sp-border); color: var(--sp-text-3);
+      }
+      #specs .tier-fuzzy { color: var(--sp-warning); border-color: var(--sp-warning-border); }
+
       /* Spec search box: client-side filter over the loaded list. */
       #search {
         width: 100%; margin-top: 12px; padding: 8px 10px;
@@ -260,8 +289,12 @@
     <hr id="list-divider" class="list-divider" />
     <div id="filters" class="filters" hidden></div>
     <div id="scope" hidden></div>
+    <div id="health" class="health" hidden></div>
+    <button type="button" id="scan" class="link" hidden data-i18n="helper.scanButton">Scan for fragile specs</button>
+    <div id="scan-results"></div>
     <input type="search" id="search" data-i18n-placeholder="common.searchPlaceholder" data-i18n-aria="common.searchAria" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
+    <div id="orphaned" hidden></div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

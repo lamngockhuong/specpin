@@ -122,6 +122,32 @@ const ja: Record<keyof Messages, string> = {
     "specが他の場所で変更されたため、表示を更新しました。削除は行われていません。",
   "spec.deleteFailed": "specを削除できませんでした: {error}",
 
+  // Match-confidence badge + "why matched".
+  "match.fuzzy": "セレクタ一致",
+  "match.whyPrefix": "一致方法:",
+  "match.byTestId": "data-spec-id",
+  "match.byAria": "aria-label",
+  "match.byId": "id",
+  "match.byCss": "CSS セレクタ",
+
+  // Page match-health summary + orphaned list.
+  "health.summary": "{total} 件 · 正確 {exact} · あいまい {fuzzy} · 孤立 {orphaned}",
+  "health.orphanedTitle": "孤立 ({count})",
+  "health.orphanedHint":
+    "これらの spec はこのページを対象にしていますが、要素が見つかりませんでした。",
+  "health.orphanedNotFound": "このページに見つかりません",
+  "health.fuzzy": "あいまい",
+
+  // data-spec-id helper.
+  "helper.weakAnchorTitle": "壊れやすいアンカー",
+  "helper.weakAnchorHint":
+    "この要素には安定したアンカーがありません。次の属性をソースに追加すると、一致が正確で安定します:",
+  "helper.copySnippet": "コピー",
+  "helper.copied": "コピーしました！",
+  "helper.scanButton": "壊れやすい spec をスキャン",
+  "helper.scanEmpty": "このページに壊れやすい spec はありません。",
+  "helper.scanTitle": "壊れやすい spec",
+
   // Capture / edit form.
   "capture.titleCapture": "specを記録",
   "capture.titleEdit": "specを編集",

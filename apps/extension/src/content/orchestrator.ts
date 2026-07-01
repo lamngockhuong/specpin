@@ -117,6 +117,8 @@ export function renderSession(
     renderer.render(spec, match.el, {
       confidence: match.confidence,
       needsReview: match.needsReview,
+      strategy: match.strategy,
+      anchor: match.anchor,
       locale: activeLocale,
       defaultLocale,
       availableLocales,

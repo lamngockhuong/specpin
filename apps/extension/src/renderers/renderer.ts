@@ -1,3 +1,4 @@
+import type { MatchAnchor, MatchResult } from "@specpin/fingerprint-core";
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import type { LauncherPosition } from "../shared/config.js";
 import { escapeHtml } from "../shared/html.js";
@@ -11,6 +12,11 @@ import type { Theme } from "../shared/theme.js";
 export interface RenderMeta {
   confidence: number;
   needsReview: boolean;
+  /** Match tier from the matcher, so a renderer can show a confidence badge for
+   *  the cautionary tiers (an exact match stays silent). */
+  strategy?: MatchResult["strategy"];
+  /** Which signal resolved the match, for the "why matched" hint. */
+  anchor?: MatchAnchor;
   locale?: string;
   defaultLocale?: string;
   /** Locales offered by the in-renderer language selector (sidebar only). When

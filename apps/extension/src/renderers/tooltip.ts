@@ -7,6 +7,7 @@ import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 import { BADGE_SIZE, type BadgeBox, resolveBadgePosition } from "./badge-position.js";
+import { CONFIDENCE_BADGE_CSS, confidenceBadge } from "./confidence-badge.js";
 import type { RenderMeta, SpecRenderer } from "./renderer.js";
 import { MARKDOWN_BODY_CSS, rulesListHtml } from "./renderer.js";
 
@@ -18,6 +19,9 @@ interface Pin {
   tags: string[];
   project: string;
   editable: boolean;
+  /** Precomputed confidence-badge HTML (fuzzy tier only; "" when silent), shown
+   *  in the tip beside the title. Built once at render from the match meta. */
+  confHtml: string;
   /** Host page origin, so same-origin links in the tip open in the current tab. */
   pageOrigin?: string;
 }
@@ -62,6 +66,7 @@ ${SHADOW_PREAMBLE}
 .tip.dragging { box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45); }
 .tip .project { display: block; margin: 0 0 4px; font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sp-text-3); }
 .tip h4 { margin: 0 0 4px; padding-right: 18px; font-size: 13px; font-weight: 700; color: var(--sp-text); }
+.tip .sp-conf { margin: 0 0 6px; }
 .tip .d { color: var(--sp-text-2); margin: 0 0 6px; }
 .tip ul { margin: 4px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .tip ol { margin: 4px 0 0; padding-left: 16px; color: var(--sp-text-3); }
@@ -93,6 +98,7 @@ ${MARKDOWN_BODY_CSS}
   border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
 }
 .tip.show { display: block; }
+${CONFIDENCE_BADGE_CSS}
 `;
 
 /**
@@ -188,6 +194,7 @@ export class TooltipRenderer implements SpecRenderer {
       tags: spec.tags ?? [],
       project,
       editable: meta?.editable ?? true,
+      confHtml: confidenceBadge(meta),
       pageOrigin: meta?.pageOrigin,
     };
     this.pins.push(pin);
@@ -270,6 +277,7 @@ export class TooltipRenderer implements SpecRenderer {
         : "") +
       (pin.project ? `<span class="project">${escapeHtml(pin.project)}</span>` : "") +
       `<h4>${escapeHtml(pin.text.title)}</h4>` +
+      pin.confHtml +
       // Description renders its Markdown subset (block: paragraphs + lists). The
       // renderer escapes every leaf and emits only allowlisted tags, so this
       // trusted fragment is safe via innerHTML.

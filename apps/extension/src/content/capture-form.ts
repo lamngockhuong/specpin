@@ -1,6 +1,9 @@
+import { anchorStrength } from "@specpin/fingerprint-core";
 import type { DisplayMode, ElementFingerprint, LocalizedString, Spec } from "@specpin/spec-schema";
 import { formatErrors, validateSpec } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
+import { copyText } from "../shared/clipboard.js";
+import { dataSpecIdSnippet } from "../shared/data-spec-id.js";
 import { anyDialogOpen, promptDialog } from "../shared/dialog.js";
 import { escapeAttr, escapeHtml } from "../shared/html.js";
 import { insertLink, prefixLines, toggleWrap } from "../shared/markdown-input.js";
@@ -262,6 +265,24 @@ button.primary:hover { background: var(--sp-accent-hover); border-color: var(--s
   display: none; margin-top: 8px; font-size: 11px; color: var(--sp-text-3);
 }
 .relink-note.show { display: block; }
+.weak-hint {
+  margin-top: 14px; padding: 12px;
+  background: var(--sp-warning-bg);
+  border: 1px solid var(--sp-warning-border);
+  border-radius: var(--sp-radius-control);
+  color: var(--sp-text-2);
+}
+.weak-hint[hidden] { display: none; }
+.weak-hint strong { display: block; color: var(--sp-warning); font-size: 12px; }
+.weak-hint p { margin: 6px 0; font-size: 12px; }
+.weak-hint .weak-snippet {
+  display: block; margin: 6px 0; padding: 8px 10px;
+  font: 500 12px/1.4 var(--sp-font-mono);
+  color: var(--sp-text); background: var(--sp-elevated);
+  border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
+  word-break: break-all;
+}
+.weak-hint .weak-copy { margin-top: 4px; width: auto; padding: 6px 12px; }
 `;
 
 const ADD_LOCALE_VALUE = "__add__";
@@ -439,6 +460,38 @@ export class CaptureForm {
     wireToolbar(".md-toolbar.desc", descEl);
     wireToolbar(".md-toolbar.rules", rulesEl);
 
+    // Weak-anchor hint: when the stored fingerprint has no stable anchor
+    // (no testId/aria/non-generated id), surface a copyable data-spec-id snippet
+    // so the dev can harden the match to exact. Purely advisory — saving is
+    // unaffected, and nothing writes the page's source. The snippet id tracks the
+    // title field live; a re-link recomputes it against the new element.
+    const weakHint = q<HTMLElement>(".weak-hint");
+    const weakSnippet = q<HTMLElement>(".weak-snippet");
+    const weakCopy = q<HTMLButtonElement>(".weak-copy");
+    const refreshSnippet = (): void => {
+      weakSnippet.textContent = dataSpecIdSnippet(titleEl.value.trim()).snippet;
+    };
+    const updateWeakHint = (): void => {
+      const weak = anchorStrength(activeFingerprint) === "weak";
+      weakHint.hidden = !weak;
+      if (weak) refreshSnippet();
+    };
+    titleEl.addEventListener("input", () => {
+      if (!weakHint.hidden) refreshSnippet();
+    });
+    weakCopy.addEventListener("click", async () => {
+      // Clipboard blocked (permissions/insecure context) leaves the snippet
+      // visible for a manual copy; only confirm on a successful write.
+      if (await copyText(weakSnippet.textContent ?? "")) {
+        const original = weakCopy.textContent;
+        weakCopy.textContent = t("helper.copied");
+        setTimeout(() => {
+          weakCopy.textContent = original;
+        }, 1500);
+      }
+    });
+    updateWeakHint();
+
     // Re-link: hide the form (not close, so field edits survive), run the page
     // picker via onRelink, then restore. A returned fingerprint repoints the spec.
     if (options.onRelink) {
@@ -452,6 +505,8 @@ export class CaptureForm {
           // Re-link recaptures on the (possibly new) page: refresh the scope glob
           // to the new element's path so it reflects where the spec now points.
           pageUrlEl.value = fp.pageUrl ?? "";
+          // The new element may have a stronger/weaker anchor: re-evaluate the hint.
+          updateWeakHint();
           shadow.querySelector(".relink-note")?.classList.add("show");
         }
       });
@@ -612,6 +667,12 @@ export class CaptureForm {
         <label>${escapeHtml(t("capture.pageScopeField"))} <span class="hint">${escapeHtml(t("capture.pageScopeHint"))}</span></label><input id="sp-pageurl" placeholder="${escapeAttr(t("capture.pageScopePlaceholder"))}" />
         ${fileField}
         ${relinkField}
+        <div class="weak-hint" hidden>
+          <strong>${escapeHtml(t("helper.weakAnchorTitle"))}</strong>
+          <p>${escapeHtml(t("helper.weakAnchorHint"))}</p>
+          <code class="weak-snippet"></code>
+          <button type="button" class="weak-copy">${escapeHtml(t("helper.copySnippet"))}</button>
+        </div>
         <div class="errors"><strong>${escapeHtml(t("capture.couldNotSave"))}</strong><ul></ul></div>
         <div class="actions">
           <button id="sp-cancel">${escapeHtml(t("common.cancel"))}</button>

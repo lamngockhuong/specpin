@@ -22,9 +22,11 @@ import "../../shared/surface-toast.css";
 import "../../shared/guide-section.css";
 import "../../shared/guide-editor.css";
 import "../../shared/scope-toggle.css";
+import "../../shared/surface-health.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
 import { mountGuideSection } from "../../shared/guide-section.js";
 import {
+  type MatchReportEntry,
   type Message,
   type SpecsForOrigin,
   sendToActiveTab,
@@ -34,8 +36,10 @@ import { wireProjectActions } from "../../shared/project-actions.js";
 import {
   buildExportTargets,
   buildFilterModel,
-  fetchMatchedIds,
+  fetchMatchState,
   fetchSurfaceState,
+  orphanedSpecs,
+  pageHealth,
   type SpecScope,
   scopeSpecs,
   specMatchesQuery,
@@ -43,14 +47,17 @@ import {
 } from "../../shared/surface-data.js";
 import {
   byId,
+  mountFragileScan,
   mountScopeToggle,
   mutedRow,
   renderFilterSection,
+  renderHealthSummary,
   renderLocalePicker,
   renderProjects,
   renderStatus,
   setListControlsHidden,
   sourceBadge,
+  tierBadge,
 } from "../../shared/surface-renderers.js";
 import { isVisible, setSpecVisibility, type VisibilityState } from "../../shared/visibility.js";
 
@@ -71,6 +78,10 @@ let currentState: VisibilityState = { teamHidden: [], personal: { forceHide: [],
 // the page's match set, or null when no content script could report it.
 let scope: SpecScope = "page";
 let matchedIds: Set<string> | null = null;
+// The page match report + a by-id index, for the health summary, per-card tier
+// badges, and the orphaned section. Null when no content script could report it.
+let lastReport: MatchReportEntry[] | null = null;
+let reportById: Map<string, MatchReportEntry> = new Map();
 
 // Per-spec eye toggle: a hard per-spec override that wins across axes (a spec
 // hidden by a tag can still be re-shown here). Persists then re-fetches.
@@ -182,6 +193,10 @@ function renderSpecs(res: SpecsForOrigin): void {
       document.createTextNode(resolveLocalized(spec.title, activeLocale, defaultLocale)),
       sourceBadge(spec),
     );
+    // Match-tier badge (fuzzy only; exact is silent), aligned with the in-page
+    // renderers' confidence badge. Absent when the report is unknown.
+    const tier = tierBadge(reportById.get(spec.id));
+    if (tier) title.appendChild(tier);
     li.appendChild(title);
 
     const description = resolveLocalized(spec.description, activeLocale, defaultLocale);
@@ -220,6 +235,62 @@ function renderSpecs(res: SpecsForOrigin): void {
   }
 }
 
+/** Render the orphaned section: page-scoped specs whose fingerprint matched no
+ *  element on the current page (a doc exists but its anchor is gone). Hidden when
+ *  off, the report is unknown, or nothing is orphaned. Each row shows the spec
+ *  title + a muted "not found on this page" label. DOM-built (no innerHTML). */
+function renderOrphaned(res: SpecsForOrigin): void {
+  const box = byId("orphaned");
+  box.replaceChildren();
+  if (!res.enabled || !lastReport) {
+    box.hidden = true;
+    return;
+  }
+  const orphans = orphanedSpecs(lastReport);
+  if (orphans.length === 0) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  const defaultLocale = res.manifest?.settings?.defaultLocale;
+  const specById = new Map(res.specs.map((s) => [s.id, s]));
+
+  const head = document.createElement("div");
+  head.className = "orphaned-title";
+  head.textContent = t("health.orphanedTitle", { count: orphans.length });
+  const hint = document.createElement("div");
+  hint.className = "orphaned-hint";
+  hint.textContent = t("health.orphanedHint");
+  box.append(head, hint);
+
+  const ul = document.createElement("ul");
+  for (const entry of orphans) {
+    const spec = specById.get(entry.id);
+    const li = document.createElement("li");
+    const title = document.createElement("div");
+    title.className = "t";
+    title.textContent = spec ? resolveLocalized(spec.title, activeLocale, defaultLocale) : entry.id;
+    const label = document.createElement("div");
+    label.className = "muted";
+    label.textContent = t("health.orphanedNotFound");
+    li.append(title, label);
+    ul.appendChild(li);
+  }
+  box.appendChild(ul);
+}
+
+// The fragile-spec scan (shared wiring; see the popup). Reads module state on each
+// render and lists weak-anchored, currently-failing specs with a copyable snippet.
+const fragileScan = mountFragileScan(byId("scan"), byId("scan-results"), {
+  getState: () => ({
+    enabled: lastSpecs?.enabled ?? false,
+    report: lastReport,
+    specs: lastSpecs?.specs ?? [],
+    locale: activeLocale,
+    defaultLocale: lastSpecs?.manifest?.settings?.defaultLocale,
+  }),
+});
+
 // The "This page | All" scope toggle above the search box (shared wiring; see the
 // popup for the rationale). Reads module state on each render and, on click,
 // re-renders itself + the list.
@@ -239,18 +310,22 @@ const scopeToggle = mountScopeToggle(byId("scope"), {
 });
 
 async function refresh(): Promise<void> {
-  // Query the page's match set concurrently with the background status/specs
-  // fetch (independent round trips); gate the assignment on `enabled` after.
-  const matchedPromise = fetchMatchedIds();
+  // Query the page's match state (ids + report) concurrently with the background
+  // status/specs fetch (independent round trips); gate the assignment on `enabled`.
+  const matchPromise = fetchMatchState();
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
   currentPath = path;
   currentOrigin = origin;
   currentState = visibilityOf(specs);
-  // Skip the match set when off (the in-flight query resolves to null, discarded).
-  matchedIds = specs.enabled ? await matchedPromise : null;
+  // Skip the match state when off (the in-flight query resolves to null, discarded).
+  const match = specs.enabled ? await matchPromise : { ids: null, report: null };
+  matchedIds = match.ids;
+  lastReport = match.report;
+  reportById = new Map((lastReport ?? []).map((e) => [e.id, e]));
   renderStatus(status, origin, specs.specs.length);
+  renderHealthSummary(byId("health"), lastReport ? pageHealth(lastReport) : null, specs.enabled);
   renderProjects(status, origin);
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The side panel has the room for per-spec rows in addition to group filters.
@@ -259,6 +334,7 @@ async function refresh(): Promise<void> {
   // act on the (now-hidden) spec list, plus the create affordance + its panel.
   setListControlsHidden(!specs.enabled);
   scopeToggle.render();
+  fragileScan.render();
   // Export is per project serving THIS page (one click exports one project); the
   // shared builder lists the local + sidecar export targets.
   projectActions.update(specs.enabled, buildExportTargets(status, origin));
@@ -269,6 +345,7 @@ async function refresh(): Promise<void> {
     defaultLocale: specs.manifest?.settings?.defaultLocale,
   });
   renderSpecs(specs);
+  renderOrphaned(specs);
 }
 
 // The Guides launch section. The side panel is persistent, so launching a tour
@@ -309,7 +386,10 @@ byId("locale").addEventListener("change", async (e) => {
   activeLocale = (e.target as HTMLSelectElement).value;
   await setLocale(activeLocale);
   await sendToActiveTab({ type: "SET_LOCALE", locale: activeLocale });
-  if (lastSpecs) renderSpecs(lastSpecs);
+  if (lastSpecs) {
+    renderSpecs(lastSpecs);
+    renderOrphaned(lastSpecs);
+  }
 });
 byId("search").addEventListener("input", (e) => {
   searchQuery = (e.target as HTMLInputElement).value;

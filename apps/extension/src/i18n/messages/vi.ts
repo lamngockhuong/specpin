@@ -116,6 +116,31 @@ const vi: Record<keyof Messages, string> = {
   "spec.deleteConflict": "Spec đã thay đổi ở nơi khác; giao diện đã được làm mới. Chưa xoá gì cả.",
   "spec.deleteFailed": "Không thể xoá spec: {error}",
 
+  // Match-confidence badge + "why matched".
+  "match.fuzzy": "Khớp theo selector",
+  "match.whyPrefix": "Khớp bằng",
+  "match.byTestId": "data-spec-id",
+  "match.byAria": "aria-label",
+  "match.byId": "id",
+  "match.byCss": "CSS selector",
+
+  // Page match-health summary + orphaned list.
+  "health.summary": "{total} spec · {exact} chính xác · {fuzzy} mờ · {orphaned} mồ côi",
+  "health.orphanedTitle": "Mồ côi ({count})",
+  "health.orphanedHint": "Các spec này nhắm tới trang này nhưng không tìm thấy phần tử.",
+  "health.orphanedNotFound": "Không tìm thấy trên trang này",
+  "health.fuzzy": "mờ",
+
+  // data-spec-id helper.
+  "helper.weakAnchorTitle": "Neo yếu",
+  "helper.weakAnchorHint":
+    "Phần tử này không có neo ổn định. Thêm thuộc tính này vào mã nguồn để khớp chính xác và ổn định:",
+  "helper.copySnippet": "Sao chép",
+  "helper.copied": "Đã sao chép!",
+  "helper.scanButton": "Quét spec dễ vỡ",
+  "helper.scanEmpty": "Không có spec dễ vỡ trên trang này.",
+  "helper.scanTitle": "Spec dễ vỡ",
+
   // Capture / edit form.
   "capture.titleCapture": "Ghi spec",
   "capture.titleEdit": "Sửa spec",

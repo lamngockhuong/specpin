@@ -1,5 +1,6 @@
 import type { ElementFingerprint } from "@specpin/spec-schema";
 import { afterEach, describe, expect, it } from "vitest";
+import { anchorStrength } from "../src/anchor-strength.js";
 import { matchElement } from "../src/match.js";
 
 afterEach(() => {
@@ -85,12 +86,72 @@ describe("matchElement no match", () => {
   it("returns needsReview when nothing matches", () => {
     document.body.innerHTML = `<div>nothing here</div>`;
     const r = matchElement(baseFp({ cssSelector: "button.absent" }), document);
-    expect(r).toEqual({ el: null, confidence: 0, strategy: "none", needsReview: true });
+    expect(r).toEqual({
+      el: null,
+      confidence: 0,
+      strategy: "none",
+      needsReview: true,
+      anchor: null,
+    });
   });
 
   it("tolerates a malformed cssSelector", () => {
     document.body.innerHTML = `<div></div>`;
     const r = matchElement(baseFp({ cssSelector: "::::bad((" }), document);
     expect(r.strategy).toBe("none");
+  });
+});
+
+describe("matchElement anchor reporting", () => {
+  it("reports the testId anchor for a test-id match", () => {
+    document.body.innerHTML = `<button data-testid="login">Login</button>`;
+    expect(matchElement(baseFp({ testId: "login" }), document).anchor).toBe("testId");
+  });
+
+  it("reports the aria anchor for an aria-label match", () => {
+    document.body.innerHTML = `<button aria-label="Close">x</button>`;
+    expect(matchElement(baseFp({ ariaLabel: "Close" }), document).anchor).toBe("aria");
+  });
+
+  it("reports the id anchor for a non-generated id match", () => {
+    document.body.innerHTML = `<button id="save-btn">Save</button>`;
+    expect(matchElement(baseFp({ id: "save-btn" }), document).anchor).toBe("id");
+  });
+
+  it("reports the css anchor for a selector-only match", () => {
+    document.body.innerHTML = `<form class="login"><button type="submit">Login</button></form>`;
+    expect(
+      matchElement(baseFp({ cssSelector: "form.login button[type=submit]" }), document).anchor,
+    ).toBe("css");
+  });
+
+  it("reports a null anchor when nothing matches", () => {
+    document.body.innerHTML = `<div>nothing</div>`;
+    expect(matchElement(baseFp({ cssSelector: "button.absent" }), document).anchor).toBeNull();
+  });
+});
+
+describe("anchorStrength", () => {
+  it("classifies a test-id fingerprint as strong", () => {
+    expect(anchorStrength(baseFp({ testId: "login" }))).toBe("strong");
+  });
+
+  it("classifies an aria-only fingerprint as medium", () => {
+    expect(anchorStrength(baseFp({ ariaLabel: "Close dialog" }))).toBe("medium");
+  });
+
+  it("classifies a non-generated-id fingerprint as medium", () => {
+    expect(anchorStrength(baseFp({ id: "save-btn" }))).toBe("medium");
+  });
+
+  it("classifies a generated-id-only fingerprint as weak", () => {
+    // A generated id is not a stable anchor, so it does not lift the tier.
+    expect(anchorStrength(baseFp({ id: ":r1:" }))).toBe("weak");
+  });
+
+  it("classifies a css/xpath-only fingerprint as weak", () => {
+    expect(anchorStrength(baseFp({ cssSelector: "form.login button", xpath: "//button" }))).toBe(
+      "weak",
+    );
   });
 });

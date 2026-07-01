@@ -1,4 +1,5 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
+import type { AnchorStrength, MatchAnchor, MatchResult } from "@specpin/fingerprint-core";
 import type { DisplayMode, GuideDef, Manifest, Spec } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import type { UiLocale } from "../i18n/locales.js";
@@ -330,10 +331,34 @@ export interface GuideMutationResult {
   error?: string;
 }
 
+/** The match tier a spec resolved at, mirroring `MatchResult.strategy`. */
+export type MatchTier = MatchResult["strategy"];
+export type { AnchorStrength, MatchAnchor } from "@specpin/fingerprint-core";
+
+/** Per-spec match metadata for one page-scoped spec, carried by GET_MATCHED_IDS
+ *  so the popup / side panel can render match health (badges, orphaned list,
+ *  fragile-anchor scan) without re-running the matcher. Ids + small scalars only,
+ *  never spec bodies, so the message stays cheap. */
+export interface MatchReportEntry {
+  id: string;
+  /** True when the fingerprint resolved to an element on the current page. */
+  matched: boolean;
+  strategy: MatchTier;
+  confidence: number;
+  /** Which signal resolved the match (null when unmatched). */
+  anchor: MatchAnchor;
+  needsReview: boolean;
+  /** Stored-fingerprint anchor resilience (Phase 1 `anchorStrength`). */
+  strength: AnchorStrength;
+}
+
 /** The spec ids that resolved to an element on the current page (the content
- *  script's live render match set), returned by GET_MATCHED_IDS. */
+ *  script's live render match set) plus a per-spec `report` for match health,
+ *  returned by GET_MATCHED_IDS. `ids` is the matched subset (unchanged meaning);
+ *  `report` covers every page-scoped spec (matched or not). */
 export interface MatchedIds {
   ids: string[];
+  report: MatchReportEntry[];
 }
 
 /** Send a message to the background service worker. */
