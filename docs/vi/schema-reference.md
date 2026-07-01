@@ -84,9 +84,11 @@ Bộ render không phụ thuộc thư viện và an toàn CSP: nó escape mọi 
 ## ElementFingerprint
 
 Required: `cssSelector`, `xpath`, `domPath`, `tagName`, `attributes`, `positionHint`.
-Optional: `testId`, `ariaLabel`, `id` (đều nullable), `textContent` (nullable), `nearbyLabels`, `frameworkHint`.
+Optional: `testId`, `ariaLabel`, `id` (đều nullable), `textContent` (nullable), `nearbyLabels`, `frameworkHint`, `pageUrl` (nullable).
 
 `positionHint` = `{ index: int >= 0, siblingCount: int >= 0 }`.
+
+`pageUrl` là một path glob giới hạn spec vào một page/route (`*` khớp một segment đường dẫn, `**` khớp qua nhiều segment; query và hash được bỏ qua). Nó được tự động điền bằng path lúc capture và có thể chỉnh trong capture form. Vắng mặt/null thì khớp trên mọi trang (tương thích ngược). Điều này ngăn một spec được pin ở màn hình này render sang màn hình khác có layout tạo ra `cssSelector`/`xpath` trùng nhau.
 
 ## SpecMeta
 

@@ -7,6 +7,7 @@ import {
   matchPathGlob,
   type PersonalVisibility,
   pageHidden,
+  pageScopeAllows,
   setSpecVisibility,
   specFacets,
   toggleFacet,
@@ -142,6 +143,27 @@ describe("matchPathGlob", () => {
   it("normalizes trailing slashes", () => {
     expect(matchPathGlob("/admin/users/", "/admin/users")).toBe(true);
     expect(matchPathGlob("/admin/users", "/admin/users/")).toBe(true);
+  });
+});
+
+describe("pageScopeAllows", () => {
+  const cur = "https://app.acme.io/service-admin/business-offices?page=1#top";
+
+  it("legacy: a spec with no pageUrl matches on any page", () => {
+    expect(pageScopeAllows(undefined, cur)).toBe(true);
+    expect(pageScopeAllows(null, cur)).toBe(true);
+    expect(pageScopeAllows("", cur)).toBe(true);
+  });
+
+  it("keeps a spec whose glob covers the current path (ignoring query/hash)", () => {
+    expect(pageScopeAllows("/service-admin/business-offices", cur)).toBe(true);
+    expect(pageScopeAllows("/service-admin/**", cur)).toBe(true);
+    expect(pageScopeAllows("/service-admin/*", cur)).toBe(true);
+  });
+
+  it("drops a spec pinned on a different screen (the cross-page collision bug)", () => {
+    expect(pageScopeAllows("/service-admin/users", cur)).toBe(false);
+    expect(pageScopeAllows("/orders/**", cur)).toBe(false);
   });
 });
 

@@ -33,7 +33,8 @@
         "attributes": { "type": "submit" },
         "nearbyLabels": ["Email", "Password"],
         "positionHint": { "index": 3, "siblingCount": 4 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/login"
       },
       "meta": {
         "createdBy": "demo",
@@ -67,7 +68,8 @@
         "attributes": { "type": "email" },
         "nearbyLabels": ["Email"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/login"
       },
       "meta": {
         "createdBy": "demo",
@@ -104,7 +106,8 @@
         "attributes": { "type": "password" },
         "nearbyLabels": ["Password"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/login"
       },
       "meta": {
         "createdBy": "demo",
@@ -144,7 +147,8 @@
         "attributes": { "href": "#reset" },
         "nearbyLabels": ["Log in"],
         "positionHint": { "index": 4, "siblingCount": 5 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/login"
       },
       "meta": {
         "createdBy": "demo",

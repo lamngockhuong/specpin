@@ -65,12 +65,16 @@ A locale-keyed object, NOT a flat string:
 
 Required: `cssSelector`, `xpath`, `domPath`, `tagName`, `attributes`, `positionHint`.
 Optional (all nullable where noted): `testId`, `ariaLabel`, `id`, `textContent`,
-`nearbyLabels`, `frameworkHint`.
+`nearbyLabels`, `frameworkHint`, `pageUrl`.
 
 - `domPath`: tag chain array, e.g. `["form", "button"]`.
 - `attributes`: object of whitelisted attrs (role, type, name, placeholder, href), string values.
 - `positionHint`: `{ "index": int >= 0, "siblingCount": int >= 0 }` (both required).
 - `frameworkHint`: `"react" | "vue" | "angular" | "vanilla"`.
+- `pageUrl`: path glob scoping the spec to a page/route (`*` = one path segment,
+  `**` = across segments; query and hash ignored). Absent/null matches on any
+  page. Set it on multi-screen apps so a spec does not render on another screen
+  whose layout yields a colliding selector. See `fingerprint-strategy.md`.
 
 See `fingerprint-strategy.md` for how to fill these from source.
 
@@ -130,7 +134,8 @@ Git-diffable.
         "attributes": { "type": "button" },
         "nearbyLabels": ["Settings"],
         "positionHint": { "index": 5, "siblingCount": 6 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": null
       },
       "meta": {
         "createdBy": "agent",

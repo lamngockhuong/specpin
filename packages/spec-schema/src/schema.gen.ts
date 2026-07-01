@@ -149,6 +149,13 @@ export const schemaV1: Record<string, unknown> = {
         },
         "frameworkHint": {
           "$ref": "#/$defs/FrameworkHint"
+        },
+        "pageUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Optional path glob scoping this spec to a page/route. '*' matches one path segment, '**' matches across segments. Auto-filled with the capture path and user-editable. Absent/null matches on any page (backward compatible)."
         }
       }
     },

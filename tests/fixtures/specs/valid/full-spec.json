@@ -17,7 +17,8 @@
     "attributes": { "type": "submit", "role": "button" },
     "nearbyLabels": ["Email", "Password"],
     "positionHint": { "index": 0, "siblingCount": 1 },
-    "frameworkHint": "react"
+    "frameworkHint": "react",
+    "pageUrl": "/auth/login"
   },
   "meta": {
     "createdBy": "khuong",

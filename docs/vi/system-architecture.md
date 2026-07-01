@@ -45,6 +45,8 @@ i18n cho UI-chrome: một runtime `t(key, params)` tùy chỉnh trong `apps/exte
 
 Một fingerprint nắm bắt nhiều signal cho mỗi element (test-id anchors, aria, non-generated id, optimized cssSelector, xpath, domPath, text, whitelisted attributes, nearby labels, position, framework hint). Matching (MVP) thử exact anchors trước (confidence 1.0), rồi đến một unique cssSelector (0.7), nếu không thì gắn cờ `needsReview`. Một attribute `data-spec-id` trên các element quan trọng giúp việc matching trở nên chính xác một cách hết sức đơn giản.
 
+Trước khi matching, render loop áp dụng `pageUrl` path glob (tùy chọn) của fingerprint (tự động điền lúc capture, có thể chỉnh): một spec chỉ render trên các route mà glob của nó bao phủ, nên một spec được pin ở màn hình này không bao giờ khớp sang màn hình khác có layout tạo ra selector trùng. Một spec không có `pageUrl` khớp trên mọi trang (tương thích ngược). Cùng phạm vi đó chặn danh sách "trang này" của popup / side panel (`GET_MATCHED_IDS`), giữ danh sách khớp với những gì thực sự render.
+
 Signature của matcher và shape của `MatchResult` được giữ ổn định để hybrid weighted scorer (đang được hoãn lại) có thể được lắp vào sau mà không phá vỡ caller.
 
 ## Multi-project registry

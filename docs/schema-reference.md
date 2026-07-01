@@ -82,9 +82,11 @@ The renderer is dependency-free and CSP-safe: it escapes every leaf of user text
 ## ElementFingerprint
 
 Required: `cssSelector`, `xpath`, `domPath`, `tagName`, `attributes`, `positionHint`.
-Optional: `testId`, `ariaLabel`, `id` (all nullable), `textContent` (nullable), `nearbyLabels`, `frameworkHint`.
+Optional: `testId`, `ariaLabel`, `id` (all nullable), `textContent` (nullable), `nearbyLabels`, `frameworkHint`, `pageUrl` (nullable).
 
 `positionHint` = `{ index: int >= 0, siblingCount: int >= 0 }`.
+
+`pageUrl` is a path glob that scopes the spec to a page/route (`*` matches one path segment, `**` matches across segments; query and hash are ignored). It is auto-filled with the capture path and editable in the capture form. Absent/null matches on any page (backward compatible). This stops a spec pinned on one screen from rendering on another screen whose layout yields a colliding `cssSelector`/`xpath`.
 
 ## SpecMeta
 

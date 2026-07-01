@@ -39,7 +39,7 @@ import { createShadowHost } from "../shared/shadow.js";
 import { slugify } from "../shared/slug.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
-import { EMPTY_VISIBILITY, type VisibilityState } from "../shared/visibility.js";
+import { EMPTY_VISIBILITY, pageScopeAllows, type VisibilityState } from "../shared/visibility.js";
 
 function defaultFileName(): string {
   const seg = location.pathname.split("/").filter(Boolean)[0] ?? location.hostname.split(".")[0];
@@ -619,9 +619,18 @@ export default defineContentScript({
           // against the current DOM also keeps this correct mid-SPA-nav (no reliance
           // on `session` being rebuilt). Returning a value (a Promise) makes this the
           // sendMessage response; other cases return undefined (fire-and-forget).
+          // Page scope is spec IDENTITY, not the visibility cascade: a spec pinned
+          // on another route does not belong on this page, so exclude it here too
+          // (keeps the "this page" list in step with what actually renders).
           return Promise.resolve({
             ids: enabled
-              ? specs.filter((s) => matchElement(s.fingerprint, document).el).map((s) => s.id)
+              ? specs
+                  .filter(
+                    (s) =>
+                      pageScopeAllows(s.fingerprint.pageUrl, location.href) &&
+                      matchElement(s.fingerprint, document).el,
+                  )
+                  .map((s) => s.id)
               : [],
           });
       }

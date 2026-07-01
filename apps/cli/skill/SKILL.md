@@ -133,7 +133,8 @@ Compare `npm view @specpin/cli version` against your installed
 - `references/schema-authoring.md`: the full v1 shape (Manifest, SpecFile, Spec,
   LocalizedString, fingerprint, meta), a complete minimal valid example, and the
   Markdown subset.
-- `references/fingerprint-strategy.md`: the test-id-first decision tree and how
-  to derive each fingerprint field from source.
+- `references/fingerprint-strategy.md`: the test-id-first decision tree, how to
+  derive each fingerprint field from source, and page scoping (`pageUrl`) for
+  multi-screen apps.
 - `references/cli-commands.md`: every command, its flags, and exit-code
   semantics.

@@ -30,7 +30,8 @@
         "attributes": { "type": "text" },
         "nearbyLabels": ["Display name"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/settings"
       },
       "meta": {
         "createdBy": "demo",
@@ -66,7 +67,8 @@
         "attributes": { "type": "checkbox" },
         "nearbyLabels": ["Email notifications"],
         "positionHint": { "index": 0, "siblingCount": 2 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/settings"
       },
       "meta": {
         "createdBy": "demo",
@@ -102,7 +104,8 @@
         "attributes": { "type": "submit" },
         "nearbyLabels": ["Save changes"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/settings"
       },
       "meta": {
         "createdBy": "demo",
@@ -142,7 +145,8 @@
         "attributes": { "type": "button" },
         "nearbyLabels": ["Danger zone", "Delete account"],
         "positionHint": { "index": 0, "siblingCount": 1 },
-        "frameworkHint": "react"
+        "frameworkHint": "react",
+        "pageUrl": "/settings"
       },
       "meta": {
         "createdBy": "demo",

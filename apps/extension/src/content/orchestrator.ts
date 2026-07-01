@@ -8,6 +8,7 @@ import type { Theme } from "../shared/theme.js";
 import {
   EMPTY_VISIBILITY,
   makeVisibilityFilter,
+  pageScopeAllows,
   type VisibilityState,
 } from "../shared/visibility.js";
 
@@ -72,9 +73,14 @@ export function renderSession(
   // Visibility cascade: hide specs the team/personal filter disabled before any
   // matching or rendering. Empty state keeps every spec (today's behavior). The
   // filter precomputes the disabled set + page gate once for the whole list.
+  // Page scope: drop specs whose fingerprint `pageUrl` glob does not cover this
+  // page, so a spec pinned on another route (same layout, colliding selector)
+  // never renders here. A spec with no `pageUrl` matches anywhere (legacy).
   const visible = makeVisibilityFilter(url, state);
-  const visibleSpecs = specs.filter((spec) =>
-    visible({ id: spec.id, tags: spec.tags, file: (spec as Partial<TaggedSpec>)._file }),
+  const visibleSpecs = specs.filter(
+    (spec) =>
+      pageScopeAllows(spec.fingerprint.pageUrl, url) &&
+      visible({ id: spec.id, tags: spec.tags, file: (spec as Partial<TaggedSpec>)._file }),
   );
   // Show project labels only when more than one project contributes specs to the
   // page, so single-project pages stay uncluttered.
