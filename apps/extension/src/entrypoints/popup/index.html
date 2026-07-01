@@ -165,13 +165,6 @@
         color: var(--sp-text);
         cursor: pointer;
       }
-      .footer {
-        margin-top: 14px; padding-top: 12px;
-        border-top: 1px solid var(--sp-border);
-        display: flex; justify-content: center; gap: 16px;
-      }
-      /* .link (shared link-button style) lives in shared/link.css. */
-      .footer .link[hidden] { display: none; }
     </style>
   </head>
   <body>
@@ -190,6 +183,12 @@
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="7 10 12 15 17 10"/>
           <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+      <button type="button" id="open-sidepanel" class="icon-btn" hidden data-i18n-title="popup.openSidepanel" data-i18n-aria="popup.openSidepanel" title="Open as side panel" aria-label="Open as side panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="15" y1="3" x2="15" y2="21"/>
         </svg>
       </button>
       <button type="button" id="open-options" class="icon-btn" data-i18n-title="common.connectionSettings" data-i18n-aria="common.connectionSettings" title="Connection settings" aria-label="Connection settings">
@@ -228,9 +227,6 @@
     <div id="scope" hidden></div>
     <input type="search" id="search" data-i18n-placeholder="common.searchPlaceholder" data-i18n-aria="common.searchAria" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
-    <div class="footer">
-      <button type="button" id="open-sidepanel" class="link" hidden data-i18n="popup.openSidepanel">Open as side panel &#x21e5;</button>
-    </div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>
