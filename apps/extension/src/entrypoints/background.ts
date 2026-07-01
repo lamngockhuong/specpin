@@ -35,6 +35,7 @@ import {
   type ManualBatch,
   normalizeLocalSpecsState,
   removeLocalGuide,
+  removeLocalSpecById,
   renameLocalBatch,
   SURFACE_KEY,
   setConfig,
@@ -309,6 +310,8 @@ export default defineBackground(() => {
         return handleSaveSpec(message.file, message.spec, originOf(sender), message.connectionId);
       case "UPDATE_SPEC":
         return handleUpdateSpec(message.id, message.spec, originOf(sender), message.connectionId);
+      case "DELETE_SPEC":
+        return handleDeleteSpec(message.id, originOf(sender), message.connectionId);
       case "ADD_LOCAL_BATCH":
         return handleAddLocalBatch(message);
       case "REMOVE_LOCAL_BATCH":
@@ -759,6 +762,47 @@ export default defineBackground(() => {
         : await registry.updateSpec(origin, id, spec, connectionId);
     if (result.ok || result.conflict) await broadcastSpecsChanged();
     return result;
+  }
+
+  async function handleDeleteSpec(
+    id: string,
+    origin: string,
+    connectionId?: string,
+  ): Promise<SaveSpecResult> {
+    const result =
+      connectionId && isLocalConnectionId(connectionId)
+        ? await deleteLocalSpec(origin, connectionId, id)
+        : await registry.deleteSpec(origin, id, connectionId);
+    if (result.ok || result.conflict) await broadcastSpecsChanged();
+    return result;
+  }
+
+  // Delete a spec from a local batch. Origin-bounded exactly like writeLocalSpec
+  // (RT-SA7): the batch must serve the page origin. Runs under the serialized
+  // mutate() chain, reading storage truth and persisting the mutator's RETURNED
+  // state BEFORE syncing the registry (storage is truth).
+  function deleteLocalSpec(
+    origin: string,
+    connectionId: string,
+    id: string,
+  ): Promise<SaveSpecResult> {
+    return mutate(async () => {
+      const batchId = localBatchId(connectionId);
+      if (!batchId) return { ok: false, errors: ["invalid local project"] };
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const batch = state.batches.find((b) => b.id === batchId);
+      if (!batch) return { ok: false, errors: ["unknown local project"] };
+      if (!batchServesOrigin(batch, origin)) {
+        return { ok: false, errors: ["no local project serves this page"] };
+      }
+      const result = removeLocalSpecById(state, batchId, id);
+      if (!result.ok || !result.state) {
+        return { ok: false, errors: [result.error ?? "local delete failed"] };
+      }
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      return { ok: true };
+    });
   }
 
   // Write a spec (capture or edit) into a local batch. Origin-bounded exactly like

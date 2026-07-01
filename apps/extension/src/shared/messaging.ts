@@ -57,9 +57,17 @@ export type Message =
   // SAVE_SPEC: from the page content script, routed by origin to the owning
   // connection. `connectionId` pins the owning project (the spec's source).
   | { type: "UPDATE_SPEC"; id: string; spec: Spec; connectionId?: string }
+  // Delete a spec in place (id-addressed). Same trust model as UPDATE_SPEC: from
+  // the page content script, routed by origin to the owning connection.
+  // `connectionId` pins the owning project (manual:<batchId> for local).
+  | { type: "DELETE_SPEC"; id: string; connectionId?: string }
   // Side panel -> active tab content script: open the in-page edit form for this
   // spec id (the form + capture picker only run in the page context).
   | { type: "EDIT_SPEC"; specId: string }
+  // Side panel -> active tab content script: run the in-page delete flow (confirm
+  // + DELETE_SPEC) for this spec id, so the confirm + origin routing happen where
+  // the spec's page context is. Sibling of EDIT_SPEC / SHOW_SPEC_HERE.
+  | { type: "DELETE_SPEC_HERE"; specId: string }
   // Manual-import batches pushed from the Options page (extension-page origin
   // only). Each ADD appends a new batch (never overwrites); REMOVE drops one by
   // id; CLEAR empties the whole list.

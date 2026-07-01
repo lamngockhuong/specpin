@@ -121,6 +121,8 @@ Open a spec for editing from either surface: click a tooltip badge to pin it and
 
 To point a spec at a different element, click **Re-link element** in the edit form, then click the new element on the page; the form reopens with your edits intact and the new fingerprint applied on save. Local (Manual) specs are now editable the same way; the edit writes back to `browser.storage.local` instead of a sidecar. (Side panel Edit drives the in-page form, so keep the panel docked next to the page it describes.)
 
+To delete a writable spec, use **Delete spec** on the pinned tooltip or **Delete** on a side-panel card, then confirm. A sidecar spec is removed from its `.spec.json` on disk (recover it from Git if needed); a local spec is removed from `browser.storage.local`. Deletion is origin-bounded exactly like editing (a page can only delete specs on a project that serves it), and the page re-renders without the spec via SSE. Side panel Delete drives the same in-page confirm, so keep the panel docked next to the page.
+
 ## 12. Guided tours (guide mode)
 
 A **guide** is a step-by-step walkthrough over the specs already on a page: it spotlights each element in turn and shows that spec's content in a popover with **Back / Skip / Next** (the last step is **Done**), a step counter, and `←` / `→` / `Esc` keyboard control. It is launched on demand and does not replace the normal tooltip/sidebar/modal rendering.

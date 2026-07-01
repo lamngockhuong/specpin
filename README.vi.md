@@ -109,6 +109,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 - **Ghim đặc tả lên phần tử đang chạy** - khớp fingerprint bền bỉ (test-id, aria, selector, xpath, text, vị trí)
 - **Ba chế độ hiển thị** - tooltip, sidebar, và modal kéo thả được
 - **Capture thủ công** - click vào một phần tử và soạn đặc tả ngay tại chỗ, không cần rời trang
+- **Xoá spec tại chỗ** - xoá một spec ghi được từ tooltip hoặc side panel sau một hộp xác nhận nguy hiểm (spec sidecar khôi phục từ Git; spec cục bộ từ storage)
 - **Dự án cục bộ ghi được** - sửa, capture, tạo mới, và export nhóm dạng zip mà không cần sidecar đang chạy
 - **Kết nối nhiều dự án** - một extension phục vụ nhiều dự án cùng lúc, định tuyến tới từng trang theo origin
 - **Bật/tắt theo từng dự án** - đóng/mở từng kết nối độc lập với công tắc bật/tắt toàn cục

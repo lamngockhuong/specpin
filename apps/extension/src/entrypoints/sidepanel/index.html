@@ -117,6 +117,13 @@
         color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui);
       }
       #specs .spec-edit:hover { color: var(--sp-accent); }
+      /* Per-spec Delete button, sat left of Edit (same 42px rhythm as eye->edit). */
+      #specs .spec-delete {
+        position: absolute; top: 10px; right: 94px;
+        background: transparent; border: none; cursor: pointer; padding: 2px;
+        color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui);
+      }
+      #specs .spec-delete:hover { color: var(--sp-error-text); }
       #specs > li.spec.spec-hidden { opacity: 0.55; }
 
       /* Spec list: full-height, each spec a card with inline detail. */

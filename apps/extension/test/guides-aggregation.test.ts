@@ -39,6 +39,7 @@ function guideSource(specs: SpecsResponse, guides: GuidesConfig): SpecSource {
     loadSpecs: async () => specs,
     saveSpec: async () => {},
     updateSpec: async () => {},
+    deleteSpec: async () => {},
     loadGuides: async () => guides,
     saveGuides: async () => {},
   };
@@ -114,6 +115,7 @@ describe("registry.guidesForOrigin (team aggregation)", () => {
       loadSpecs: async () => resp("A", ["a.test"]),
       saveSpec: async () => {},
       updateSpec: async () => {},
+      deleteSpec: async () => {},
       loadGuides: async () => guides,
       saveGuides: async () => {},
     };
@@ -140,6 +142,7 @@ describe("registry.guidesForOrigin (team aggregation)", () => {
             loadSpecs: async () => resp("A", ["a.test"]),
             saveSpec: async () => {},
             updateSpec: async () => {},
+            deleteSpec: async () => {},
           },
         }),
     });

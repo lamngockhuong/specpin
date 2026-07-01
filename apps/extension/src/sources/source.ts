@@ -14,6 +14,9 @@ export interface SpecSource {
    *  store locates the spec across files, so no file argument is needed. Read-only
    *  sources (Manual) reject this. */
   updateSpec(id: string, spec: Spec): Promise<void>;
+  /** Delete an existing spec, addressed by its stable `id`. The backing store
+   *  locates the spec across files. Read-only sources (Manual) reject this. */
+  deleteSpec(id: string): Promise<void>;
   /** Optional team-default visibility config (sidecar /views). Sources that do
    *  not support it (FileSystem/Manual) omit these; the registry treats a missing
    *  loadViews as "no team default". */
