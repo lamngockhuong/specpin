@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.3...extension-v0.0.4) (2026-07-01)
+
+
+### Features
+
+* **extension:** delete a single spec from tooltip and side panel ([#83](https://github.com/lamngockhuong/specpin/issues/83)) ([c013f8d](https://github.com/lamngockhuong/specpin/commit/c013f8db7ae853b260e6f231cbbede4cb5d3cbdb))
+
 ## [0.0.3](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.2...extension-v0.0.3) (2026-07-01)
 
 
