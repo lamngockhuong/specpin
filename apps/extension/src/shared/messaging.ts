@@ -138,6 +138,12 @@ export type Message =
   // popup / side panel -> active tab's content script: scroll to and highlight
   // the matched element on the page for this spec id.
   | { type: "HIGHLIGHT_ELEMENT"; specId: string }
+  // popup / side panel -> active tab's content script: report which specs actually
+  // resolved to an element on the current page (the live render's match set), so a
+  // surface can scope its list to "this page". No content script (chrome://, the
+  // store, the extension's own pages) rejects the send, which the caller reads as
+  // "unknown" and falls back to the full origin list.
+  | { type: "GET_MATCHED_IDS" }
   // Personal visibility override change: popup/side panel -> background, which
   // persists it to storage.sync (debounced) and broadcasts SPECS_CHANGED.
   | { type: "SET_PERSONAL_VISIBILITY"; visibility: PersonalVisibility }
@@ -316,6 +322,12 @@ export interface GuideMutationResult {
   error?: string;
 }
 
+/** The spec ids that resolved to an element on the current page (the content
+ *  script's live render match set), returned by GET_MATCHED_IDS. */
+export interface MatchedIds {
+  ids: string[];
+}
+
 /** Send a message to the background service worker. */
 export function sendToBackground<T = unknown>(message: Message): Promise<T> {
   return browser.runtime.sendMessage(message) as Promise<T>;
@@ -334,6 +346,20 @@ export async function sendToActiveTab(message: Message): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+/** Send a message to the active tab's content script and return its response
+ *  (popup / side panel -> content, request/response). Resolves null when no
+ *  content script received it (the extension's own pages, chrome://, the store)
+ *  or the send errored, so the caller can fall back rather than fail. */
+export async function queryActiveTab<T>(message: Message): Promise<T | null> {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id === undefined) return null;
+  try {
+    return ((await browser.tabs.sendMessage(tab.id, message)) as T) ?? null;
+  } catch {
+    return null;
   }
 }
 

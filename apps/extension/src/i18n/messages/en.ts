@@ -62,6 +62,10 @@ const en = {
   "common.filterSpecs": "Specs",
   "common.filterThisPage": "This page",
   "common.filterHidePage": "Hide specs on this page",
+  // Spec-list scope toggle (This page | All), above the search box.
+  "common.scopeThisPage": "This page",
+  "common.scopeAll": "All",
+  "common.scopeAria": "Show specs for this page or all specs",
   "common.markerTeam": "team",
   "common.markerTeamTitle": "Hidden by the team default",
   "common.markerYou": "you",

@@ -6,7 +6,13 @@ import { getLocale } from "./config.js";
 import type { TaggedSpec } from "./connection-types.js";
 import { localConnId } from "./local-id.js";
 import { stripMarkdown } from "./markdown.js";
-import { type SpecsForOrigin, type StatusResult, sendToBackground } from "./messaging.js";
+import {
+  type MatchedIds,
+  queryActiveTab,
+  type SpecsForOrigin,
+  type StatusResult,
+  sendToBackground,
+} from "./messaging.js";
 import { connectionServesOrigin, manualSummaryServesOrigin } from "./origin-match.js";
 import type { ExportTarget } from "./project-actions.js";
 import {
@@ -60,6 +66,32 @@ export async function fetchSurfaceState(): Promise<SurfaceState> {
   const specs = await sendToBackground<SpecsForOrigin>({ type: "GET_SPECS_FOR_ORIGIN", origin });
   const activeLocale = pickLocale(await getLocale(), specs.manifest?.settings?.defaultLocale);
   return { status, specs, origin, path, activeLocale };
+}
+
+/** The spec-list scope: only the specs pinned to the current page, or the full
+ *  origin set. Both surfaces default to "page"; the toggle switches to "all". */
+export type SpecScope = "page" | "all";
+
+/** Ask the active tab's content script which specs resolved to an element on the
+ *  current page. Returns a Set for O(1) membership, or null when no content
+ *  script could answer (unsupported tab) so the caller falls back to the full
+ *  list. An empty Set (page pins none) is distinct from null. */
+export async function fetchMatchedIds(): Promise<Set<string> | null> {
+  const res = await queryActiveTab<MatchedIds>({ type: "GET_MATCHED_IDS" });
+  return res ? new Set(res.ids) : null;
+}
+
+/** Scope a spec list to the current page. "all" (or an unknown match set, i.e.
+ *  `matchedIds === null`) returns the input untouched; "page" keeps only specs
+ *  whose id is in the current render's match set. Pure, so both surfaces share
+ *  one tested implementation and it runs before the search filter. */
+export function scopeSpecs<T extends { id: string }>(
+  specs: T[],
+  scope: SpecScope,
+  matchedIds: Set<string> | null,
+): T[] {
+  if (scope === "all" || matchedIds === null) return specs;
+  return specs.filter((s) => matchedIds.has(s.id));
 }
 
 /** Case-insensitive match of a search query against a spec's localized title,

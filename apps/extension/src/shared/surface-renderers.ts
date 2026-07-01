@@ -3,7 +3,13 @@ import type { ManualBatchSummary, TaggedSpec } from "./connection-types.js";
 import { isLocalConnectionId } from "./local-id.js";
 import type { StatusResult } from "./messaging.js";
 import { connectionServesOrigin, manualSummaryServesOrigin } from "./origin-match.js";
-import { applyFacetToggle, type FilterModel, resetPersonalVisibility } from "./surface-data.js";
+import {
+  applyFacetToggle,
+  type FilterModel,
+  resetPersonalVisibility,
+  type SpecScope,
+  scopeSpecs,
+} from "./surface-data.js";
 import type { FacetInventory, FacetItem, FacetKey } from "./visibility.js";
 
 // DOM renderers shared verbatim by the popup and the side panel. Both surfaces
@@ -333,6 +339,72 @@ function pageGroup(
   row.append(box, name);
   group.appendChild(row);
   return group;
+}
+
+export interface ScopeToggleDeps {
+  /** Latest surface state the toggle reads on each (re)render. `enabled` is
+   *  Specpin's master on/off; `matchedIds` null means no content script could
+   *  report matches (unsupported tab); `specs` is the full origin set. */
+  getState: () => {
+    enabled: boolean;
+    scope: SpecScope;
+    matchedIds: Set<string> | null;
+    specs: Array<{ id: string }>;
+  };
+  /** Record the chosen scope in the surface's module state. */
+  setScope: (scope: SpecScope) => void;
+  /** Re-render the spec list after a scope change (no network refetch). */
+  renderList: () => void;
+}
+
+/** Mount the "This page | All" segmented control above the spec list. Returns a
+ *  `render()` the surface calls from its refresh; on click the toggle re-renders
+ *  itself and the list, so the popup and side panel share one wiring instead of
+ *  duplicating it. Built with DOM nodes (no innerHTML). Owns its own visibility:
+ *  hidden when Specpin is off or the match set is unknown (the list then falls
+ *  back to all, so a toggle would mislead), and derives the per-scope counts
+ *  itself so callers don't recompute them. */
+export function mountScopeToggle(
+  container: HTMLElement,
+  deps: ScopeToggleDeps,
+): { render: () => void } {
+  const render = (): void => {
+    const { enabled, scope, matchedIds, specs } = deps.getState();
+    container.replaceChildren();
+    if (!enabled || matchedIds === null) {
+      container.hidden = true;
+      return;
+    }
+    container.hidden = false;
+    container.className = "scope-toggle";
+    container.setAttribute("role", "group");
+    container.setAttribute("aria-label", t("common.scopeAria"));
+    const make = (target: SpecScope, label: string, count: number): HTMLElement => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "scope-btn";
+      const active = scope === target;
+      btn.setAttribute("aria-pressed", String(active));
+      const name = document.createElement("span");
+      name.textContent = label;
+      const c = document.createElement("span");
+      c.className = "c";
+      c.textContent = `${count}`;
+      btn.append(name, c);
+      if (!active)
+        btn.addEventListener("click", () => {
+          deps.setScope(target);
+          render();
+          deps.renderList();
+        });
+      return btn;
+    };
+    container.append(
+      make("page", t("common.scopeThisPage"), scopeSpecs(specs, "page", matchedIds).length),
+      make("all", t("common.scopeAll"), specs.length),
+    );
+  };
+  return { render };
 }
 
 export function renderLocalePicker(locales: string[], activeLocale: string, enabled = true): void {

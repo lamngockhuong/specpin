@@ -21,6 +21,7 @@ import "../../shared/project-menu.css";
 import "../../shared/surface-toast.css";
 import "../../shared/guide-section.css";
 import "../../shared/guide-editor.css";
+import "../../shared/scope-toggle.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
 import { clearDraft, loadDraft, saveDraft } from "../../shared/draft-store.js";
 import { mountGuideSection } from "../../shared/guide-section.js";
@@ -29,11 +30,15 @@ import { wireProjectActions } from "../../shared/project-actions.js";
 import {
   buildExportTargets,
   buildFilterModel,
+  fetchMatchedIds,
   fetchSurfaceState,
+  type SpecScope,
+  scopeSpecs,
   specMatchesQuery,
 } from "../../shared/surface-data.js";
 import {
   byId,
+  mountScopeToggle,
   mutedRow,
   renderFilterSection,
   renderLocalePicker,
@@ -49,6 +54,12 @@ import {
 let activeLocale = "en";
 let lastSpecs: SpecsForOrigin | null = null;
 let searchQuery = "";
+// Spec-list scope: default to the specs pinned on the current page, switchable to
+// the full origin set via the "This page | All" toggle. Resets to "page" on each
+// popup open (module reload). `matchedIds` is the current page's match set, or
+// null when no content script could report it (fall back to the full list).
+let scope: SpecScope = "page";
+let matchedIds: Set<string> | null = null;
 
 function renderSpecs(res: SpecsForOrigin): void {
   const list = byId("specs");
@@ -58,7 +69,13 @@ function renderSpecs(res: SpecsForOrigin): void {
     return;
   }
   const defaultLocale = res.manifest?.settings?.defaultLocale;
-  const matches = res.specs.filter((spec) =>
+  // Scope to the current page first (the toggle), then apply the search filter.
+  const scoped = scopeSpecs(res.specs, scope, matchedIds);
+  if (scoped.length === 0) {
+    list.appendChild(mutedRow(t("common.noSpecsForPage")));
+    return;
+  }
+  const matches = scoped.filter((spec) =>
     specMatchesQuery(spec, searchQuery, activeLocale, defaultLocale),
   );
   if (matches.length === 0) {
@@ -98,10 +115,34 @@ const guideSection = mountGuideSection(byId("guides"), {
     void actOnActiveTab({ type: "START_GUIDE", steps, name }, () => window.close()),
 });
 
+// The "This page | All" scope toggle above the search box (shared wiring). It
+// reads module state (lastSpecs, scope, matchedIds) on each render and, on click,
+// re-renders itself + the list.
+const scopeToggle = mountScopeToggle(byId("scope"), {
+  getState: () => ({
+    enabled: lastSpecs?.enabled ?? false,
+    scope,
+    matchedIds,
+    specs: lastSpecs?.specs ?? [],
+  }),
+  setScope: (s) => {
+    scope = s;
+  },
+  renderList: () => {
+    if (lastSpecs) renderSpecs(lastSpecs);
+  },
+});
+
 async function refresh(): Promise<void> {
+  // Query the page's match set concurrently with the background status/specs
+  // fetch (independent round trips); gate the assignment on `enabled` after.
+  const matchedPromise = fetchMatchedIds();
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
+  // Skip the match set when off: the list collapses to the "off" message and the
+  // toggle hides anyway (the in-flight query resolves to null and is discarded).
+  matchedIds = specs.enabled ? await matchedPromise : null;
   renderStatus(status, origin, specs.specs.length);
   renderProjects(status, origin);
   await guideSection.refresh({
@@ -116,6 +157,7 @@ async function refresh(): Promise<void> {
   // When off, the list collapses to the "off" message: hide controls that only
   // act on the (now-hidden) spec list, plus the create affordance + its panel.
   setListControlsHidden(!specs.enabled);
+  scopeToggle.render();
   // Export is per project serving THIS page (one click exports one project); the
   // shared builder lists the local + sidecar export targets.
   projectActions.update(specs.enabled, buildExportTargets(status, origin));
