@@ -52,6 +52,10 @@ function lines(s) {
   return s.split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
+function addLines(set, text) {
+  for (const p of lines(text)) set.add(p);
+}
+
 function ext(path) {
   const i = path.lastIndexOf(".");
   return i < 0 ? "" : path.slice(i);
@@ -95,11 +99,11 @@ function changedFiles() {
       break;
     }
   }
-  if (base) lines(git(`diff --name-only ${base} HEAD`)).forEach((p) => changed.add(p));
+  if (base) addLines(changed, git(`diff --name-only ${base} HEAD`));
 
   // Uncommitted: tracked modifications (staged + unstaged) and untracked files.
-  lines(git("diff --name-only HEAD")).forEach((p) => changed.add(p));
-  lines(git("ls-files --others --exclude-standard")).forEach((p) => changed.add(p));
+  addLines(changed, git("diff --name-only HEAD"));
+  addLines(changed, git("ls-files --others --exclude-standard"));
 
   return changed;
 }
@@ -109,7 +113,7 @@ function findGaps(changed) {
   const gaps = [];
   for (const path of changed) {
     const c = classify(path);
-    if (!c || c.locale !== "en") continue; // only source files drive the check
+    if (c?.locale !== "en") continue; // only source files drive the check
     const missing = [];
     for (const locale of c.cfg.locales) {
       const mp = mirrorPath(c.cfg, locale, c.logical);
