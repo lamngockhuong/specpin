@@ -135,15 +135,6 @@ Một **guide** là một walkthrough theo từng bước đi qua các spec đã
 
 Một guide được dựng cho một trang phản ánh bất kỳ spec nào khớp với nó lúc khởi chạy; nếu một đồng đội thay đổi các spec giữa chừng tour, tour dừng lại gọn gàng và việc render thông thường trở lại.
 
-## Phím tắt
-
-| Phím tắt | Hành động |
-|----------|-----------|
-| `Alt+Shift+S` | toggle Specpin on/off |
-| `Alt+Shift+M` | cycle display mode |
-| `Alt+Shift+C` | toggle capture mode (`Esc` để hủy) |
-| `Alt+Shift+G` | start / stop tour hướng dẫn mặc định (trong tour: `←` / `→` để chuyển bước, `Esc` để thoát) |
-
 ## Kết nối nhiều project cùng lúc
 
 Một extension có thể phục vụ nhiều project. Chạy một sidecar per project trên port riêng của nó (mỗi cái in token riêng), và add từng cái trong Options:
@@ -156,6 +147,102 @@ cd /path/to/project-b && /path/to/bin/specpin serve --port 51002
 ```
 
 Để demo điều này với một demo app duy nhất, chạy hai sidecar trên hai thư mục `.specs/` khác nhau trên các port khác nhau; mỗi page chỉ hiển thị các spec của project(s) mà `domains` của nó khớp origin của nó.
+
+## Phục vụ trên máy từ xa
+
+Theo mặc định sidecar là công cụ localhost một người dùng. Để chia sẻ một `.specs/` cho cả nhóm, hãy chạy nó trên một máy chung và kết nối extension tới nó qua **HTTPS**. Binary Go chỉ nói HTTP thuần; **TLS do một reverse proxy đứng trước đảm nhiệm**. Remote *bắt buộc* dùng HTTPS: request của extension chạy trong secure context, nên một remote `http://` thuần sẽ bị chặn vì mixed content và extension từ chối nó.
+
+### Khuyến nghị: bind loopback + proxy đặt chung máy
+
+Giữ sidecar trên `127.0.0.1` và chạy proxy trên **cùng máy**. Ghim port và token để restart không làm đổi URL hay de-authenticate cả nhóm:
+
+```bash
+specpin serve --port 51234 --token "$(openssl rand -hex 24)"
+```
+
+**Caddy** (HTTPS tự động):
+
+```
+specs.example.com {
+  reverse_proxy 127.0.0.1:51234
+}
+```
+
+**nginx** — phải tắt buffering (cho SSE) và forward `OPTIONS` + `Authorization` (cho CORS preflight khi ghi), không chỉ mỗi `proxy_pass`:
+
+```nginx
+location / {
+  proxy_pass http://127.0.0.1:51234;
+  proxy_set_header Host $host;
+  proxy_pass_request_headers on;   # giữ Authorization + If-Match + Access-Control-*
+  proxy_buffering off;             # SSE: stream event ngay khi tới
+  proxy_read_timeout 1h;           # SSE idle (heartbeat ~20s của server giữ kết nối ấm)
+}
+```
+
+Server gửi một SSE heartbeat (~20s) để proxy có idle-timeout vẫn giữ `/events` mở. Nếu `OPTIONS` hoặc `Authorization`/`If-Match` không được forward, các thao tác ghi vào `/specs`, `/views`, và `/guides` sẽ hỏng ở bước preflight.
+
+### Nâng cao: bind ngoài loopback (proxy trên máy khác)
+
+`specpin serve --host <addr>` bind một địa chỉ không phải loopback. **Điều này không tự đưa proxy vào đường đi** — nó phơi bày trực tiếp cổng thô, **plaintext, chỉ-token**, ra mạng. Chỉ dùng khi proxy chạy trên một máy *khác*, và **firewall cổng thô** để chỉ proxy chạm tới được. Luôn ghim `--port` (một port tự chọn sẽ đổi khi restart và làm hỏng cấu hình proxy). Lệnh serve in một cảnh báo rõ ràng mỗi khi bind ngoài loopback.
+
+> Lưu ý: extension chỉ coi `localhost` và `127.0.0.1` là local cho `http://` thuần. Nếu bạn bind IPv6 loopback (`--host ::1`) hoặc một IP loopback khác, hãy kết nối extension qua `https://` (hoặc dùng `127.0.0.1`), vì một URL `http://` thuần không phải `127.0.0.1`/`localhost` sẽ bị từ chối như remote.
+
+### Không có domain? Phục vụ qua IP
+
+Server nội bộ thường chỉ có IP mà không có domain công khai, nên HTTPS *tự động* của Caddy ở trên (vốn cần domain cho ACME challenge) không áp dụng được. Bạn vẫn không thể kết nối qua `http://<ip>` thuần: **trình duyệt** — không phải Specpin — chặn request plaintext từ secure-context service worker của extension tới bất kỳ host nào khác `localhost`/`127.0.0.1`. Extension chấp nhận `https://<ip>` nguyên trạng (không cần domain), nên việc cần làm là đặt HTTPS lên IP, hoặc làm cho remote trông giống localhost. Hai hướng, đều chạy được hôm nay trên mọi trình duyệt:
+
+**Hướng A — HTTPS trên IP qua một CA nội bộ (hợp cho nhóm).** Subject Alternative Name (SAN) của chứng chỉ có thể là một IP trần, nên không cần domain; sự tin cậy đến từ một CA nội bộ mà bạn phân phối vào trình duyệt của nhóm một lần. Áp dụng cho cả IP LAN nội bộ **lẫn** IP public.
+
+- *Caddy* (`tls internal` cấp chứng chỉ CA-nội-bộ cho IP):
+
+  ```
+  192.168.1.50 {
+    tls internal
+    reverse_proxy 127.0.0.1:51234
+  }
+  ```
+
+  Sau đó tin cậy root CA của Caddy trên từng máy: chạy `caddy trust`, hoặc import `pki/authorities/local/root.crt` (trong thư mục data của Caddy) vào trust store của từng trình duyệt/OS.
+
+- *nginx / không có Caddy* — tự tạo một chứng chỉ IP-SAN và tái dùng khối nginx ở mục **Khuyến nghị** phía trên (phần `proxy_buffering off` + forward `Authorization`/`If-Match` vẫn quan trọng):
+
+  ```bash
+  mkcert 192.168.1.50            # dễ nhất; cũng cài root CA của nó vào máy
+  # hoặc với openssl, điểm mấu chốt là SAN:
+  #   openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem \
+  #     -days 365 -subj "/CN=192.168.1.50" -addext "subjectAltName=IP:192.168.1.50"
+  ```
+
+  Phân phối **root CA** (`rootCA.pem` của mkcert, hoặc CA openssl của bạn) tới trình duyệt của nhóm; một chứng chỉ leaf tự-ký trần không có root được tin cậy vẫn sẽ báo lỗi.
+
+Sau đó kết nối extension tới `https://192.168.1.50` và chấp nhận prompt xin quyền (xem mục **Kết nối extension** bên dưới).
+
+**Hướng B — SSH tunnel về localhost (không chứng chỉ, theo từng người dùng).** Cho một người dùng, hoặc khi không được phép cài root CA, forward một port cục bộ tới sidecar loopback của server — `localhost` được miễn mixed-content ở mọi nơi, nên không cần chứng chỉ và không cần proxy:
+
+```bash
+# Trên server, giữ sidecar trên loopback (mặc định) với port + token đã ghim:
+specpin serve --port 51234 --token "$(openssl rand -hex 24)"
+# Trên máy của bạn, tunnel một port cục bộ tới nó:
+ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50
+# Kết nối extension tới:  http://localhost:9123
+```
+
+SSH lo phần mã hóa và xác thực. Nó theo từng người dùng (mỗi thành viên chạy tunnel riêng) và tunnel phải luôn bật trong khi bạn làm việc.
+
+> **Tại sao không dùng thẳng `http://192.168.1.50`?** Một IP public không bao giờ được phép — remote plaintext bị chặn, chấm hết. Một IP LAN nội bộ *chỉ* được phép trên Chrome 142+ qua [Local Network Access](https://developer.chrome.com/blog/local-network-access), và ngay cả ở đó prompt xin quyền cũng không thể hiện ra từ background service worker của extension, còn [Firefox không có cơ chế tương đương](https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Local_network_access). Nên Specpin cố ý từ chối remote plaintext thay vì cung cấp một kết nối hay chết tùy trình duyệt và phiên bản.
+
+### Kết nối extension
+
+Trong popup hoặc side panel, **+ New project → Sidecar** (hoặc form add ở mục **Connected projects** của trang Options): dán `https://specs.example.com` và token, rồi **chấp nhận prompt xin quyền** cho host đó. Extension xin quyền truy cập host theo từng remote origin ở lúc kết nối và thu hồi khi bạn xóa kết nối, nên bản cài mặc định không mang theo quyền host rộng nào.
+
+### Mô hình mối đe dọa (đọc trước khi phơi bày nó)
+
+- **Bearer token là ranh giới ủy quyền duy nhất cho client mạng.** CORS từ chối request trình duyệt từ origin không phải extension, nhưng nó **không** ràng buộc `curl` hay bất kỳ client không-trình-duyệt nào (một request không có `Origin` sẽ đi qua). Bất kỳ ai có token đều đọc/ghi được toàn bộ. Hãy coi nó như mật khẩu; phân phối ngoài luồng. Ghim nó bằng `--token`/`SPECPIN_TOKEN` — nếu không mỗi lần restart sẽ tạo token mới và mọi client phải cập nhật lại.
+- **Cổng thô ngoài loopback là plaintext và chỉ-token.** Firewall nó; đừng bao giờ phơi ra internet công khai mà không có proxy đứng trước.
+- **SSE liveness cần `.specs/` trên đĩa cục bộ.** Sự kiện thay đổi file dựa vào inotify; filesystem qua mạng/mount (NFS, một số Docker volume) có thể không phát ra chúng, khiến spec cũ dưới trạng thái "connected" màu xanh. Giữ `.specs/` trên đĩa cục bộ.
+- **Chỉnh sửa đồng thời an toàn nhưng thô.** Các thao tác ghi được tuần tự hóa phía server, và một thao tác ghi dựa trên bản đọc cũ bị từ chối với `409` (extension tải lại và yêu cầu bạn lưu lại) thay vì âm thầm đè lên thay đổi của đồng đội.
+- **Một chứng chỉ CA-nội-bộ / tự-ký chỉ an toàn ngang mức root mà bạn tin cậy.** Bất kỳ máy nào tin cậy root đó đều chấp nhận mọi chứng chỉ nó ký, nên hãy giữ khóa riêng của CA an toàn và giới hạn tin cậy cho các máy được quản lý. Trên client không tin cậy, hãy ưu tiên hướng SSH tunnel, vốn không cần thêm tin cậy nào.
 
 ## Phím tắt
 
