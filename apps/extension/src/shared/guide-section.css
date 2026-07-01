@@ -1,7 +1,9 @@
 /* The Guides launch section shared by the popup + side panel. Uses the shared
    --sp-* tokens so it tracks the active theme. */
 .guides {
-  margin: 8px 0;
+  /* Extra top gap so Guides reads as its own section rather than stuck to the
+     Capture spec button above. */
+  margin: 18px 0 8px;
 }
 .guides[hidden] {
   display: none;
@@ -19,6 +21,8 @@
   text-transform: uppercase;
   color: var(--sp-text-3);
 }
+/* Secondary (outline) button: Capture spec is the sole teal primary in the
+   popup / side panel, so the tour launcher stays neutral to keep one clear CTA. */
 .guides-default {
   width: 100%;
   box-sizing: border-box;
@@ -26,14 +30,13 @@
   margin-bottom: 6px;
   cursor: pointer;
   font: 600 13px / 1 var(--sp-font-ui);
-  color: var(--sp-accent-on);
-  background: var(--sp-accent);
-  border: 1px solid var(--sp-accent);
+  color: var(--sp-text);
+  background: var(--sp-control);
+  border: 1px solid var(--sp-border);
   border-radius: var(--sp-radius-control);
 }
 .guides-default:hover {
-  background: var(--sp-accent-hover);
-  border-color: var(--sp-accent-hover);
+  background: var(--sp-elevated);
 }
 .guides-list {
   list-style: none;
