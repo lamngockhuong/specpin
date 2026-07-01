@@ -273,6 +273,28 @@ describe("TooltipRenderer", () => {
     renderer.destroy();
   });
 
+  it("a second badge dodges the first when their corners would overlap", () => {
+    document.body.innerHTML = `<button>a</button><span>b</span>`;
+    const button = must(document.querySelector("button")) as HTMLElement;
+    const span = must(document.querySelector("span")) as HTMLElement;
+    // jsdom returns a zero rect for everything; stub two overlapping targets so
+    // the solver has real corners to work with.
+    const rect = (r: Partial<DOMRect>) => () =>
+      ({ left: 0, top: 0, right: 0, bottom: 0, ...r }) as DOMRect;
+    button.getBoundingClientRect = rect({ left: 100, top: 100, right: 200, bottom: 140 });
+    span.getBoundingClientRect = rect({ left: 100, top: 100, right: 200, bottom: 140 });
+
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, button);
+    renderer.render({ ...spec, id: "second" }, span);
+    const [first, second] = [...shadowOf().querySelectorAll(".badge")] as HTMLElement[];
+    // Same target rect, but the second badge must not stamp the exact same spot.
+    expect(second.style.left !== first.style.left || second.style.top !== first.style.top).toBe(
+      true,
+    );
+    renderer.destroy();
+  });
+
   it("renders the Markdown subset in description and rules", () => {
     document.body.innerHTML = `<button>x</button>`;
     const md: Spec = {
