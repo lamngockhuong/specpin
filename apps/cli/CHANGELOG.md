@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.3...cli-v0.0.4) (2026-07-01)
+
+
+### Features
+
+* **extension:** scope specs to their page via fingerprint pageUrl glob ([#85](https://github.com/lamngockhuong/specpin/issues/85)) ([0e563d1](https://github.com/lamngockhuong/specpin/commit/0e563d1d0c58056bf6b48cecc003895781944ace))
+
 ## [0.0.3](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.2...cli-v0.0.3) (2026-07-01)
 
 
