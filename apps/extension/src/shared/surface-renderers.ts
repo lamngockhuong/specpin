@@ -267,8 +267,9 @@ function facetGroup(
   const group = document.createElement("details");
   group.className = "filter-group";
   group.dataset.group = groupKey;
-  // Default to open on first render; otherwise honor the user's prior choice.
-  group.open = filterGroupOpenState.get(groupKey) ?? true;
+  // Collapsed on first render (these facet lists can be long); otherwise honor
+  // the user's prior choice. The summary keeps the title + count visible.
+  group.open = filterGroupOpenState.get(groupKey) ?? false;
   const summary = document.createElement("summary");
   summary.textContent = `${title} (${items.length})`;
   group.appendChild(summary);
