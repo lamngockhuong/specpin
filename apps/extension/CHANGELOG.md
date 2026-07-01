@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.6](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.5...extension-v0.0.6) (2026-07-01)
+
+
+### Features
+
+* **extension:** surface match confidence, page health, and a data-spec-id helper ([#88](https://github.com/lamngockhuong/specpin/issues/88)) ([627dc91](https://github.com/lamngockhuong/specpin/commit/627dc91f5208a328bfc8e5da56c19918b1d49236))
+
 ## [0.0.5](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.4...extension-v0.0.5) (2026-07-01)
 
 
