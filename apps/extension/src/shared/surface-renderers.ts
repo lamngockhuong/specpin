@@ -430,10 +430,16 @@ export function renderLocalePicker(locales: string[], activeLocale: string, enab
   }
 }
 
-/** Toggle the spec-list controls (search box + capture/mode actions) that are
- *  meaningless when Specpin is off and the list collapses to the "off" message.
- *  Shared by the popup and side panel, which use the same element ids. */
+/** Toggle the spec-list controls (search box, capture action, display-mode row,
+ *  and the browse-zone divider) that are meaningless when Specpin is off and the
+ *  list collapses to the "off" message. Shared by the popup and side panel, which
+ *  use the same element ids. */
 export function setListControlsHidden(hidden: boolean): void {
   byId("search").hidden = hidden;
   byId("actions").hidden = hidden;
+  // Display mode moved out of #actions into its own labeled row, so hide it here
+  // too when Specpin is off (nothing renders, so the mode picker is meaningless).
+  byId("mode-row").hidden = hidden;
+  // The browse-zone divider only makes sense alongside those controls.
+  byId("list-divider").hidden = hidden;
 }
