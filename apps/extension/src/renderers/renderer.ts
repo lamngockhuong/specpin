@@ -33,8 +33,11 @@ export interface RenderMeta {
   /** Callback a renderer invokes to open the in-place edit form for this spec.
    *  Threaded from the content script like onOpenInPanel; renderers stay DOM-pure. */
   onEdit?: (specId: string) => void;
-  /** False for read-only specs (Manual import); renderers hide the Edit
-   *  affordance when false. Defaults to editable when omitted. */
+  /** Callback a renderer invokes to delete this spec (runs a confirm first).
+   *  Threaded from the content script like onEdit; renderers stay DOM-pure. */
+  onDelete?: (specId: string) => void;
+  /** False for read-only specs (Manual import); renderers hide the Edit + Delete
+   *  affordances when false. Defaults to editable when omitted. */
   editable?: boolean;
   /** True when this display mode is currently dismissed. Aggregate renderers
    *  (sidebar, modal) show the floating relaunch pill instead of their panel. */

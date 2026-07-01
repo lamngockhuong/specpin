@@ -44,7 +44,7 @@ function resp(project: string, domains: string[], specId = "spec"): SpecsRespons
 function fakeSource(
   data: SpecsResponse | Error,
   watch: { n: number },
-  rec?: { updated: string[] },
+  rec?: { updated: string[]; deleted?: string[] },
 ): SpecSource {
   return {
     id: "sidecar",
@@ -56,6 +56,9 @@ function fakeSource(
     saveSpec: async () => {},
     updateSpec: async (id) => {
       rec?.updated.push(id);
+    },
+    deleteSpec: async (id) => {
+      rec?.deleted?.push(id);
     },
     watch: () => {
       watch.n++;
@@ -413,6 +416,7 @@ describe("SidecarConnection.status while disconnected", () => {
       },
       saveSpec: async () => {},
       updateSpec: async () => {},
+      deleteSpec: async () => {},
     };
   }
 
@@ -490,6 +494,9 @@ describe("SidecarRegistry.updateSpec routing", () => {
             updateSpec: async () => {
               throw new Error("boom");
             },
+            deleteSpec: async () => {
+              throw new Error("boom");
+            },
             watch: () => () => {},
           },
         }),
@@ -499,6 +506,47 @@ describe("SidecarRegistry.updateSpec routing", () => {
     const res = await r.updateSpec("https://a.test", "spec", editedSpec("spec"));
     expect(res.ok).toBe(false);
     expect(res.errors?.[0]).toContain("boom");
+  });
+});
+
+describe("SidecarRegistry.deleteSpec routing", () => {
+  it("routes a delete to the connection serving the origin", async () => {
+    const recA = { updated: [] as string[], deleted: [] as string[] };
+    const recB = { updated: [] as string[], deleted: [] as string[] };
+    const r = registryWith({
+      a: fakeSource(resp("A", ["a.test"], "a-spec"), { n: 0 }, recA),
+      b: fakeSource(resp("B", ["b.test"], "b-spec"), { n: 0 }, recB),
+    });
+    await r.reestablish([conn("a"), conn("b")], false);
+
+    const res = await r.deleteSpec("https://a.test", "a-spec");
+    expect(res.ok).toBe(true);
+    expect(recA.deleted).toEqual(["a-spec"]);
+    expect(recB.deleted).toEqual([]);
+  });
+
+  it("selects the connection by connectionId when several serve the origin", async () => {
+    const recA = { updated: [] as string[], deleted: [] as string[] };
+    const recB = { updated: [] as string[], deleted: [] as string[] };
+    const r = registryWith({
+      a: fakeSource(resp("A", [], "spec"), { n: 0 }, recA),
+      b: fakeSource(resp("B", [], "spec"), { n: 0 }, recB),
+    });
+    await r.reestablish([conn("a", true), conn("b", true)], false);
+
+    const res = await r.deleteSpec("https://any.test", "spec", "b");
+    expect(res.ok).toBe(true);
+    expect(recA.deleted).toEqual([]);
+    expect(recB.deleted).toEqual(["spec"]);
+  });
+
+  it("rejects when no connected project serves the origin", async () => {
+    const r = registryWith({ a: fakeSource(resp("A", ["a.test"]), { n: 0 }) });
+    await r.reestablish([conn("a")], false);
+
+    const res = await r.deleteSpec("https://evil.test", "spec");
+    expect(res.ok).toBe(false);
+    expect(res.errors).toEqual(["no connected project serves this page"]);
   });
 });
 

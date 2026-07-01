@@ -153,6 +153,20 @@ function renderSpecs(res: SpecsForOrigin): void {
         void actOnActiveTab({ type: "EDIT_SPEC", specId: spec.id });
       });
       li.appendChild(edit);
+
+      // Delete delegates to the active tab's content script (DELETE_SPEC_HERE),
+      // which runs the destructive confirm + DELETE_SPEC in the page context, so
+      // the write is origin-routed exactly like Edit.
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "spec-delete";
+      del.textContent = t("common.delete");
+      del.title = t("sidepanel.deleteThisSpec");
+      del.addEventListener("click", (e) => {
+        e.stopPropagation();
+        void actOnActiveTab({ type: "DELETE_SPEC_HERE", specId: spec.id });
+      });
+      li.appendChild(del);
     }
 
     if (multiProject && spec.project) {

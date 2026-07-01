@@ -30,4 +30,8 @@ export class ManualSource implements SpecSource {
   async updateSpec(): Promise<void> {
     throw new Error("Manual source is read-only; use the sidecar for capture.");
   }
+
+  async deleteSpec(): Promise<void> {
+    throw new Error("Manual source is read-only; use the sidecar for capture.");
+  }
 }

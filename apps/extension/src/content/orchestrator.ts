@@ -60,6 +60,7 @@ export function renderSession(
     /** Persist a user-dragged pill position (owned by the content script). */
     onMove?: (pos: LauncherPosition) => void;
   },
+  onDelete?: (specId: string) => void,
 ): RenderSession {
   const byMode = new Map<DisplayMode, SpecRenderer>();
   const matches = new Map<string, Element>();
@@ -118,6 +119,7 @@ export function renderSession(
       onOpenInPanel,
       onHighlight,
       onEdit,
+      onDelete,
       // Editable only when this origin can write the spec back to its source
       // (sidecar serving the page, or a local batch serving it under the
       // applyToAllSites gate). The background sets `writable`; gating on it avoids

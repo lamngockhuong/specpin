@@ -212,6 +212,37 @@ describe("TooltipRenderer", () => {
     renderer.destroy();
   });
 
+  it("renders a delete control when editable + onDelete and invokes it with the spec id", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const onDelete = vi.fn();
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+      editable: true,
+      onDelete,
+    });
+    fire(must(shadowOf().querySelector(".badge")), "click");
+    const del = must(shadowOf().querySelector(".pin-delete"));
+    fire(del, "click");
+    expect(onDelete).toHaveBeenCalledWith("login");
+    renderer.destroy();
+  });
+
+  it("hides the delete control for a read-only (non-editable) spec", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+      editable: false,
+      onDelete: vi.fn(),
+    });
+    fire(must(shadowOf().querySelector(".badge")), "click");
+    expect(shadowOf().querySelector(".pin-delete")).toBeNull();
+    renderer.destroy();
+  });
+
   it("revealSpec pins the matching spec's tip and returns true", () => {
     document.body.innerHTML = `<button>Login</button>`;
     const renderer = new TooltipRenderer(document);

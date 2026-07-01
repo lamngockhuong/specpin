@@ -119,6 +119,8 @@ Mở một spec để sửa từ một trong hai nơi: click badge tooltip để
 
 Để trỏ một spec sang element khác, click **Re-link element** trong form sửa, rồi click element mới trên trang; form mở lại với các chỉnh sửa của bạn còn nguyên và fingerprint mới được áp dụng khi save. Các spec cục bộ (Manual) giờ cũng sửa được theo cách tương tự; bản sửa ghi vào `browser.storage.local` thay vì một sidecar. (Side panel Edit điều khiển form trong trang, nên giữ panel gắn cạnh trang mà nó mô tả.)
 
+Để xoá một spec ghi được, dùng **Delete spec** trên tooltip đã ghim hoặc **Delete** trên spec card trong side panel, rồi xác nhận. Spec sidecar sẽ bị xoá khỏi file `.spec.json` trên đĩa (khôi phục từ Git nếu cần); spec cục bộ bị xoá khỏi `browser.storage.local`. Việc xoá bị giới hạn theo origin giống hệt khi sửa (một trang chỉ xoá được spec của project phục vụ nó), và trang sẽ render lại không còn spec đó qua SSE. Side panel Delete điều khiển cùng một hộp xác nhận trong trang, nên giữ panel gắn cạnh trang.
+
 ## 12. Tour hướng dẫn (guide mode)
 
 Một **guide** là một walkthrough theo từng bước đi qua các spec đã có sẵn trên một trang: nó lần lượt làm nổi bật (spotlight) từng element và hiện nội dung của spec đó trong một popover với **Back / Skip / Next** (bước cuối là **Done**), một bộ đếm bước, và điều khiển bàn phím `←` / `→` / `Esc`. Nó được khởi chạy theo yêu cầu và không thay thế việc render tooltip/sidebar/modal thông thường.

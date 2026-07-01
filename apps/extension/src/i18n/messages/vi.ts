@@ -23,6 +23,7 @@ const vi: Record<keyof Messages, string> = {
   "common.connectionSettings": "Cài đặt kết nối",
   "common.captureSpec": "+ Ghi spec",
   "common.edit": "Sửa",
+  "common.delete": "Xoá",
   "common.cancel": "Hủy",
   "common.ok": "OK",
   "common.close": "Đóng",
@@ -102,10 +103,17 @@ const vi: Record<keyof Messages, string> = {
   "sidepanel.hideThisSpec": "Ẩn spec này",
   "sidepanel.showThisSpec": "Hiện spec này",
   "sidepanel.editThisSpec": "Sửa spec này",
+  "sidepanel.deleteThisSpec": "Xoá spec này",
 
   // Tooltip renderer.
   "tooltip.editSpec": "Sửa spec",
+  "tooltip.deleteSpec": "Xoá spec",
   "tooltip.openInPanel": "Mở trong thanh bên",
+
+  // Spec delete flow (shared by tooltip + side panel).
+  "spec.deleteConfirm": "Xoá spec này? Có thể khôi phục spec sidecar từ Git nếu cần.",
+  "spec.deleteConflict": "Spec đã thay đổi ở nơi khác; giao diện đã được làm mới. Chưa xoá gì cả.",
+  "spec.deleteFailed": "Không thể xoá spec: {error}",
 
   // Capture / edit form.
   "capture.titleCapture": "Ghi spec",

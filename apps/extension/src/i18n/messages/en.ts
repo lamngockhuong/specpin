@@ -25,6 +25,7 @@ const en = {
   "common.connectionSettings": "Connection settings",
   "common.captureSpec": "+ Capture spec",
   "common.edit": "Edit",
+  "common.delete": "Delete",
   "common.cancel": "Cancel",
   "common.ok": "OK",
   "common.close": "Close",
@@ -106,10 +107,17 @@ const en = {
   "sidepanel.hideThisSpec": "Hide this spec",
   "sidepanel.showThisSpec": "Show this spec",
   "sidepanel.editThisSpec": "Edit this spec",
+  "sidepanel.deleteThisSpec": "Delete this spec",
 
   // Tooltip renderer.
   "tooltip.editSpec": "Edit spec",
+  "tooltip.deleteSpec": "Delete spec",
   "tooltip.openInPanel": "Open in side panel",
+
+  // Spec delete flow (shared by tooltip + side panel).
+  "spec.deleteConfirm": "Delete this spec? Recover sidecar specs from Git if needed.",
+  "spec.deleteConflict": "The spec changed elsewhere; the view was refreshed. Nothing was deleted.",
+  "spec.deleteFailed": "Could not delete spec: {error}",
 
   // Capture / edit form.
   "capture.titleCapture": "Capture spec",

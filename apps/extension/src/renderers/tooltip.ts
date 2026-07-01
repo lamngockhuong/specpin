@@ -81,6 +81,12 @@ ${MARKDOWN_BODY_CSS}
   border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
 }
 .tip .pin-edit:hover { filter: brightness(0.97); }
+.tip .pin-delete {
+  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
+  background: var(--sp-error-bg); color: var(--sp-error-text); border: 1px solid var(--sp-error-border);
+  border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
+}
+.tip .pin-delete:hover { filter: brightness(0.97); }
 .tip .pin-open {
   margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
   background: var(--sp-accent); color: var(--sp-accent-on); border: none;
@@ -109,6 +115,7 @@ export class TooltipRenderer implements SpecRenderer {
   private pinnedAnchor: Element | null = null;
   private onOpenInPanel?: (specId: string) => void;
   private onEdit?: (specId: string) => void;
+  private onDelete?: (specId: string) => void;
   private readonly doc: Document;
   private reposition = () => this.positionAll();
   private readonly hostId: string;
@@ -165,6 +172,7 @@ export class TooltipRenderer implements SpecRenderer {
     const layer = this.ensureRoot(meta?.theme);
     if (meta?.onOpenInPanel) this.onOpenInPanel = meta.onOpenInPanel;
     if (meta?.onEdit) this.onEdit = meta.onEdit;
+    if (meta?.onDelete) this.onDelete = meta.onDelete;
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     const badge = this.doc.createElement("div");
     badge.className = "badge";
@@ -255,6 +263,7 @@ export class TooltipRenderer implements SpecRenderer {
       ? `<div class="tags">${escapeHtml(pin.tags.join(", "))}</div>`
       : "";
     const canEdit = pin.editable && !!this.onEdit;
+    const canDelete = pin.editable && !!this.onDelete;
     tip.innerHTML =
       (pinned
         ? `<button type="button" class="pin-close" aria-label="${escapeHtml(t("common.close"))}">×</button>`
@@ -270,6 +279,9 @@ export class TooltipRenderer implements SpecRenderer {
       (pinned && canEdit
         ? `<button type="button" class="pin-edit">${escapeHtml(t("tooltip.editSpec"))}</button>`
         : "") +
+      (pinned && canDelete
+        ? `<button type="button" class="pin-delete">${escapeHtml(t("tooltip.deleteSpec"))}</button>`
+        : "") +
       (pinned
         ? `<button type="button" class="pin-open">${escapeHtml(t("tooltip.openInPanel"))}</button>`
         : "");
@@ -279,6 +291,9 @@ export class TooltipRenderer implements SpecRenderer {
       tip.querySelector(".pin-close")?.addEventListener("click", () => this.unpin());
       tip.querySelector(".pin-edit")?.addEventListener("click", () => {
         this.onEdit?.(pin.specId);
+      });
+      tip.querySelector(".pin-delete")?.addEventListener("click", () => {
+        this.onDelete?.(pin.specId);
       });
       tip.querySelector(".pin-open")?.addEventListener("click", () => {
         this.onOpenInPanel?.(pin.specId);

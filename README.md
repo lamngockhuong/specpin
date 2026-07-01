@@ -109,6 +109,7 @@ Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachabl
 - **Pin specs onto live elements** - resilient fingerprint matching (test-id, aria, selector, xpath, text, position)
 - **Three display modes** - tooltip, sidebar, and draggable modal renderers
 - **Manual capture** - click an element and author a spec in place, no leaving the page
+- **Delete specs in place** - remove a writable spec from the tooltip or side panel behind a destructive confirm (sidecar specs recover from Git; local specs from storage)
 - **Writable local projects** - edit, capture, create, and group-zip export specs without a running sidecar
 - **Multi-project connections** - one extension serves many projects at once, routed to each page by origin
 - **Per-project enable/disable** - toggle individual connections independently of the global on/off

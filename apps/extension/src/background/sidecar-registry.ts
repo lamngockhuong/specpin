@@ -451,6 +451,25 @@ export class SidecarRegistry {
     }
   }
 
+  /** Delete a spec (by id) from a connection serving the origin. Same routing +
+   *  origin boundary as updateSpec; delete is id-addressed (the sidecar locates
+   *  the spec across .spec.json files). */
+  async deleteSpec(
+    origin: string,
+    id: string,
+    connectionId?: string,
+  ): Promise<{ ok: boolean; errors?: string[]; conflict?: boolean }> {
+    const target = this.writeTarget(origin, connectionId);
+    if (!target) return { ok: false, errors: ["no connected project serves this page"] };
+    try {
+      await target.deleteSpec(id);
+      await target.reload();
+      return { ok: true };
+    } catch (e) {
+      return this.writeError(target, e);
+    }
+  }
+
   statuses(): ConnectionStatus[] {
     return [...this.connections.values()].map((c) => c.status());
   }

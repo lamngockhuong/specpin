@@ -36,6 +36,10 @@ export class SidecarSource implements SpecSource {
     return this.client.updateSpec(id, spec);
   }
 
+  deleteSpec(id: string): Promise<void> {
+    return this.client.deleteSpec(id);
+  }
+
   loadViews(): Promise<ViewsConfig> {
     return this.client.getViews();
   }

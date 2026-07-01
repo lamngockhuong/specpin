@@ -25,6 +25,7 @@ const ja: Record<keyof Messages, string> = {
   "common.connectionSettings": "接続設定",
   "common.captureSpec": "+ specを記録",
   "common.edit": "編集",
+  "common.delete": "削除",
   "common.cancel": "キャンセル",
   "common.ok": "OK",
   "common.close": "閉じる",
@@ -107,10 +108,18 @@ const ja: Record<keyof Messages, string> = {
   "sidepanel.hideThisSpec": "このspecを隠す",
   "sidepanel.showThisSpec": "このspecを表示",
   "sidepanel.editThisSpec": "このspecを編集",
+  "sidepanel.deleteThisSpec": "このspecを削除",
 
   // Tooltip renderer.
   "tooltip.editSpec": "specを編集",
+  "tooltip.deleteSpec": "specを削除",
   "tooltip.openInPanel": "サイドパネルで開く",
+
+  // Spec delete flow (shared by tooltip + side panel).
+  "spec.deleteConfirm": "このspecを削除しますか？sidecarのspecは必要ならGitから復元できます。",
+  "spec.deleteConflict":
+    "specが他の場所で変更されたため、表示を更新しました。削除は行われていません。",
+  "spec.deleteFailed": "specを削除できませんでした: {error}",
 
   // Capture / edit form.
   "capture.titleCapture": "specを記録",

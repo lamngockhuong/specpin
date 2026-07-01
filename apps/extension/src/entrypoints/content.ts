@@ -26,6 +26,7 @@ import {
   setLocale,
 } from "../shared/config.js";
 import type { TaggedSpec } from "../shared/connection-types.js";
+import { confirmDialog } from "../shared/dialog.js";
 import {
   type Message,
   type SaveSpecResult,
@@ -33,8 +34,10 @@ import {
   sendToBackground,
   type WriteTarget,
 } from "../shared/messaging.js";
+import { createShadowHost } from "../shared/shadow.js";
 import { slugify } from "../shared/slug.js";
 import type { Theme } from "../shared/theme.js";
+import { SHADOW_PREAMBLE } from "../shared/tokens.js";
 import { EMPTY_VISIBILITY, type VisibilityState } from "../shared/visibility.js";
 
 function defaultFileName(): string {
@@ -143,6 +146,7 @@ export default defineContentScript({
                 position: launcherPosition,
                 onMove: moveLauncher,
               },
+              deleteSpecFlow,
             )
           : null;
     };
@@ -395,6 +399,7 @@ export default defineContentScript({
         showProject: multiProject,
         onOpenInPanel: openInPanel,
         onEdit: openEditForm,
+        onDelete: deleteSpecFlow,
         editable: Boolean(spec.writable),
         theme,
       });
@@ -447,6 +452,52 @@ export default defineContentScript({
         },
         onCancel: endCapture,
       });
+    }
+
+    // Delete a spec, addressed by id. Runs a destructive confirm in the page (in
+    // its own token-bearing shadow host so the modal matches the theme), then
+    // routes DELETE_SPEC by the spec's connectionId (manual:<batchId> for local).
+    // Both the tooltip Delete button (via the render session) and the side panel
+    // (via DELETE_SPEC_HERE) route here, so the confirm + origin routing happen in
+    // the page context. On success the background broadcasts SPECS_CHANGED, which
+    // refreshes + rerenders (tearing down the pinned tooltip for the removed spec).
+    async function deleteSpecFlow(specId: string): Promise<void> {
+      // One authoring flow at a time: skip while a capture/edit form is open, so a
+      // confirm cannot race the form (mirror openEditForm).
+      if (captureActive) return;
+      const spec = specs.find((s) => s.id === specId);
+      if (!spec) return;
+      const { host, shadow } = createShadowHost(
+        document,
+        "specpin-confirm-host",
+        SHADOW_PREAMBLE,
+        theme,
+      );
+      let ok: boolean;
+      try {
+        ok = await confirmDialog({
+          message: t("spec.deleteConfirm"),
+          okLabel: t("common.delete"),
+          danger: true,
+          root: shadow,
+        });
+      } finally {
+        host.remove();
+      }
+      if (!ok) return;
+      const result = await sendToBackground<SaveSpecResult>({
+        type: "DELETE_SPEC",
+        id: spec.id,
+        connectionId: spec.connectionId,
+      });
+      if (!result.ok) {
+        // A conflict already reloaded + broadcast SPECS_CHANGED (the view refreshes
+        // itself); tell the user why nothing was deleted rather than a raw error.
+        const msg = result.conflict
+          ? t("spec.deleteConflict")
+          : t("spec.deleteFailed", { error: result.errors?.[0] ?? "" });
+        showToast(msg, document, theme);
+      }
     }
 
     async function toggleEnabled(): Promise<void> {
@@ -518,6 +569,9 @@ export default defineContentScript({
           break;
         case "EDIT_SPEC":
           openEditForm(message.specId);
+          break;
+        case "DELETE_SPEC_HERE":
+          void deleteSpecFlow(message.specId);
           break;
         case "SET_DISPLAY_MODE":
           forcedMode = message.mode;

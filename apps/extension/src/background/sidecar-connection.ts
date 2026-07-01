@@ -175,6 +175,10 @@ export class SidecarConnection {
     return this.source.updateSpec(id, spec);
   }
 
+  deleteSpec(id: string): Promise<void> {
+    return this.source.deleteSpec(id);
+  }
+
   /** Does this connection's project serve the given origin? Empty `domains` does
    *  NOT silently match every site (RT-SA1): it matches only with opt-in. Shares
    *  the rule with the popup via `statusServesOrigin`. */
