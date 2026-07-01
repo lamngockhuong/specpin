@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.3](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.2...extension-v0.0.3) (2026-07-01)
+
+
+### Features
+
+* **extension:** collapse filter groups by default and move panel button to header ([#81](https://github.com/lamngockhuong/specpin/issues/81)) ([1da0a44](https://github.com/lamngockhuong/specpin/commit/1da0a4418640443c4e8837a9f319daabcc999b27))
+* **extension:** default spec list to current-page scope with toggle ([#80](https://github.com/lamngockhuong/specpin/issues/80)) ([126d224](https://github.com/lamngockhuong/specpin/commit/126d224de3d98e4f0b8a85c4389e25413c85c91b))
+* **extension:** flexible spec-pin placement to avoid edge clipping and overlap ([#79](https://github.com/lamngockhuong/specpin/issues/79)) ([ddba9d6](https://github.com/lamngockhuong/specpin/commit/ddba9d6bdac9b787750664849cc85dd696a8105e))
+* **i18n:** add Japanese (ja) UI language across extension, web, and docs ([#74](https://github.com/lamngockhuong/specpin/issues/74)) ([88bb32d](https://github.com/lamngockhuong/specpin/commit/88bb32d5918e4634d4045cadd097a17bac54ea1f))
+* remote sidecar serve + extension remote connect ([#76](https://github.com/lamngockhuong/specpin/issues/76)) ([135020e](https://github.com/lamngockhuong/specpin/commit/135020e5b56cbc10ab9b3693f302cc0d11562321))
+
 ## [0.0.2](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.1...extension-v0.0.2) (2026-06-30)
 
 
