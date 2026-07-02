@@ -137,14 +137,13 @@ const en = {
   "health.orphanedNotFound": "Not found on this page",
   "health.fuzzy": "fuzzy",
 
-  // data-spec-id helper: weak-anchor capture hint + fragile-spec page scan.
+  // data-spec-id helper: weak-anchor capture hint + fragile-spec list. The list is
+  // a collapsible group titled "helper.scanTitle (N)", hidden when the count is 0.
   "helper.weakAnchorTitle": "Fragile anchor",
   "helper.weakAnchorHint":
     "This element has no stable anchor. Add this attribute to its source to make the match exact and stable:",
   "helper.copySnippet": "Copy",
   "helper.copied": "Copied!",
-  "helper.scanButton": "Scan for fragile specs",
-  "helper.scanEmpty": "No fragile specs on this page.",
   "helper.scanTitle": "Fragile specs",
 
   // Capture / edit form.

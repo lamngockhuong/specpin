@@ -11,30 +11,15 @@
   font: 500 12px / 1.4 var(--sp-font-ui);
 }
 
-/* Fragile-spec page scan: a link-styled toggle + its result list. */
-#scan {
-  margin-top: 8px;
+/* Fragile-spec list: a collapsible group (`<details class="filter-group scan">`,
+   summary "Fragile specs (N)") whose body lists one copyable snippet per spec.
+   The group's margin + summary styling come from the shared `.filter-group`
+   rules; only the list body sizing and row styling are scan-specific. */
+.scan {
   font-size: 12px;
-}
-#scan[hidden] {
-  display: none;
 }
 #scan-results {
-  margin-top: 8px;
-}
-#scan-results:empty {
-  display: none;
-}
-.scan-title {
-  font: 600 11px / 1 var(--sp-font-ui);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--sp-text-3);
-  margin-bottom: 6px;
-}
-.scan-empty {
-  color: var(--sp-text-3);
-  font-size: 12px;
+  margin-top: 4px;
 }
 .scan-row {
   padding: 8px 0;
