@@ -71,6 +71,7 @@ const en = {
   "common.markerTeamTitle": "Hidden by the team default",
   "common.markerYou": "you",
   "common.markerYouTitle": "Your personal override",
+  "common.viewChangelog": "View changelog",
 
   // Popup-only.
   "popup.openSidepanel": "Open as side panel ⇥",
@@ -308,6 +309,7 @@ const en = {
   "options.supportLead": "Found a bug or have a question? Reach the project on GitHub.",
   "options.reportIssue": "Report an Issue",
   "options.askQuestion": "Ask a Question",
+  "options.changelog": "What's New",
 
   // Guide-mode tour chrome (the in-page walkthrough controls).
   "guide.defaultName": "Guided tour",

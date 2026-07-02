@@ -69,6 +69,7 @@ const vi: Record<keyof Messages, string> = {
   "common.markerTeamTitle": "Bị ẩn bởi mặc định của nhóm",
   "common.markerYou": "bạn",
   "common.markerYouTitle": "Tùy chỉnh cá nhân của bạn",
+  "common.viewChangelog": "Xem changelog",
 
   // Popup-only.
   "popup.openSidepanel": "Mở dạng thanh bên ⇥",
@@ -302,6 +303,7 @@ const vi: Record<keyof Messages, string> = {
   "options.supportLead": "Gặp lỗi hoặc có câu hỏi? Liên hệ dự án trên GitHub.",
   "options.reportIssue": "Báo lỗi",
   "options.askQuestion": "Đặt câu hỏi",
+  "options.changelog": "Có gì mới",
 
   // Guide-mode tour chrome (the in-page walkthrough controls).
   "guide.defaultName": "Hướng dẫn",

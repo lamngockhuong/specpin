@@ -10,6 +10,9 @@ on:
     paths:
       - "apps/web/**"
       - "packages/spec-schema/schema/**"
+      # The /changelog page renders this file at build time, so a release
+      # (release-please edits it) must redeploy the site.
+      - "apps/extension/CHANGELOG.md"
       - ".github/workflows/web-deploy.yml"
   workflow_dispatch:
 

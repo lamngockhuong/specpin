@@ -13,10 +13,17 @@ to `https://specpin.ohnice.app` via GitHub Pages.
 ### How it deploys
 
 `.github/workflows/web-deploy.yml` builds and deploys on every push to `main`
-that touches `apps/web/**`, `packages/spec-schema/schema/**`, or the workflow
-file, plus manual `workflow_dispatch` runs. It uses the official Pages actions
+that touches `apps/web/**`, `packages/spec-schema/schema/**`,
+`apps/extension/CHANGELOG.md`, or the workflow file, plus manual
+`workflow_dispatch` runs. It uses the official Pages actions
 (`configure-pages`, `upload-pages-artifact`, `deploy-pages`), so there is no
 `gh-pages` branch and no secret beyond the built-in `GITHUB_TOKEN`.
+
+The `/changelog` page (`apps/web/src/pages/changelog.astro`) reads
+`apps/extension/CHANGELOG.md` at build time and renders it as HTML, so an
+extension release (release-please edits that file) redeploys the site with the
+new notes. That is why the changelog path is in the `paths:` filter above; drop
+it and the hosted changelog would silently lag every release.
 
 The site also serves the schema at `https://specpin.ohnice.app/schema/v1.json`
 (the value of every spec file's `$id`/`$schema`): `apps/web/scripts/sync-schema.mjs`

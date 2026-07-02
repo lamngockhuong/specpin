@@ -71,6 +71,7 @@ const ja: Record<keyof Messages, string> = {
   "common.markerTeamTitle": "チームのデフォルトで非表示",
   "common.markerYou": "あなた",
   "common.markerYouTitle": "あなたの個人設定",
+  "common.viewChangelog": "変更履歴を見る",
 
   // Popup-only.
   "popup.openSidepanel": "サイドパネルで開く ⇥",
@@ -312,6 +313,7 @@ const ja: Record<keyof Messages, string> = {
     "バグを見つけた、または質問がありますか？GitHubでプロジェクトに連絡してください。",
   "options.reportIssue": "問題を報告",
   "options.askQuestion": "質問する",
+  "options.changelog": "新着情報",
 
   // Guide-mode tour chrome (the in-page walkthrough controls).
   "guide.defaultName": "ガイドツアー",

@@ -32,6 +32,8 @@
         border-radius: 999px;
         padding: 4px 8px;
       }
+      a.pill { text-decoration: none; cursor: pointer; }
+      a.pill:hover { color: var(--sp-text-2); border-color: var(--sp-accent); }
       .row { display: flex; align-items: center; justify-content: space-between; }
       .status { margin-top: 14px; }
       .status > span { display: inline-flex; align-items: center; gap: 8px; }
@@ -239,7 +241,7 @@
     <div class="header">
       <img class="logo" src="/icon/128.png" alt="" />
       <h1 data-i18n="common.specpin">Specpin</h1>
-      <span class="pill" id="version"></span>
+      <a class="pill" id="version" href="https://specpin.ohnice.app/changelog" target="_blank" rel="noopener noreferrer" data-i18n-title="common.viewChangelog" data-i18n-aria="common.viewChangelog" title="View changelog" aria-label="View changelog"></a>
       <div class="header-actions">
       <button type="button" id="new-project" class="icon-btn" hidden data-i18n-title="popup.newProject" data-i18n-aria="popup.newProject" title="New project" aria-label="New project">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
