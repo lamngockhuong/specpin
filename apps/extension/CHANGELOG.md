@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.7](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.6...extension-v0.0.7) (2026-07-02)
+
+
+### Features
+
+* hosted changelog page linked from the extension ([#100](https://github.com/lamngockhuong/specpin/issues/100)) ([f1f8d1d](https://github.com/lamngockhuong/specpin/commit/f1f8d1dc2d6eebfe5a14e36bb63a0b6f8daa650e))
+
+
+### Bug Fixes
+
+* **extension:** show real manifest version in popup and side panel ([#98](https://github.com/lamngockhuong/specpin/issues/98)) ([3b22805](https://github.com/lamngockhuong/specpin/commit/3b228051655fe5cad63467a55065c6209ec9ace8))
+
 ## [0.0.6](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.5...extension-v0.0.6) (2026-07-02)
 
 
