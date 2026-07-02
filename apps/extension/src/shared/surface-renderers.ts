@@ -8,9 +8,12 @@ import type { MatchReportEntry, StatusResult } from "./messaging.js";
 import { connectionServesOrigin, manualSummaryServesOrigin } from "./origin-match.js";
 import {
   applyFacetToggle,
+  computeSeenDigest,
   type FilterModel,
+  markAllSeen,
   type PageHealth,
   resetPersonalVisibility,
+  type SeenDiff,
   type SpecScope,
   scopeSpecs,
 } from "./surface-data.js";
@@ -554,4 +557,95 @@ export function setListControlsHidden(hidden: boolean): void {
   byId("mode-row").hidden = hidden;
   // The browse-zone divider only makes sense alongside those controls.
   byId("list-divider").hidden = hidden;
+}
+
+/** Render the "what changed since last visit" digest: a count + a "Mark all seen"
+ *  control + a list of new/edited spec titles, each tagged new/edited. Hidden when
+ *  the diff is null (unknown/off/first-visit) or empty. Shared by the popup and
+ *  side panel; built with DOM nodes (no innerHTML) so spec titles are never an
+ *  injection sink. */
+export function renderDigest(
+  container: HTMLElement,
+  diff: SeenDiff | null,
+  locale: string,
+  defaultLocale: string | undefined,
+  onMarkSeen: () => void,
+): void {
+  container.replaceChildren();
+  const changed = diff ? diff.added.length + diff.edited.length : 0;
+  if (!diff || changed === 0) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
+
+  const head = document.createElement("div");
+  head.className = "digest-head";
+  const title = document.createElement("span");
+  title.className = "digest-title";
+  title.textContent = t("digest.changedSince", { count: changed });
+  const seen = document.createElement("button");
+  seen.type = "button";
+  seen.className = "digest-seen link";
+  seen.textContent = t("digest.markSeen");
+  seen.addEventListener("click", () => onMarkSeen());
+  head.append(title, seen);
+  container.appendChild(head);
+
+  const ul = document.createElement("ul");
+  // Render each bucket in its own pass so the new/edited tag comes from the bucket,
+  // not a positional index into a concatenation.
+  const addRow = (spec: TaggedSpec, kind: "new" | "edited"): void => {
+    const li = document.createElement("li");
+    const tag = document.createElement("span");
+    tag.className = `tag tag-${kind}`;
+    tag.textContent = kind === "new" ? t("digest.tagNew") : t("digest.tagEdited");
+    const name = document.createElement("span");
+    name.className = "digest-name";
+    name.textContent = resolveLocalized(spec.title, locale, defaultLocale);
+    li.append(tag, name);
+    ul.appendChild(li);
+  };
+  for (const spec of diff.added) addRow(spec, "new");
+  for (const spec of diff.edited) addRow(spec, "edited");
+  container.appendChild(ul);
+}
+
+export interface DigestDeps {
+  /** Latest surface state the digest reads on each render. */
+  getState: () => {
+    specs: TaggedSpec[];
+    enabled: boolean;
+    locale: string;
+    defaultLocale: string | undefined;
+  };
+  /** Re-render the surface after "Mark all seen" clears the snapshot. */
+  refresh: () => Promise<void> | void;
+}
+
+/** Mount the what-changed digest, shared by the popup and side panel. Returns a
+ *  `render()` the surface calls from its refresh: it reads the latest state,
+ *  computes the diff (seeding a first-seen project silently), and renders the
+ *  block; "Mark all seen" persists the baseline then refreshes. `render()` returns
+ *  a promise, so a surface can start it early (before its synchronous renders) to
+ *  overlap the storage read, then await it before the refresh completes. */
+export function mountDigest(
+  container: HTMLElement,
+  deps: DigestDeps,
+): { render: () => Promise<void> } {
+  const markSeen = async (): Promise<void> => {
+    await markAllSeen(deps.getState().specs);
+    await deps.refresh();
+  };
+  const render = async (): Promise<void> => {
+    const { specs, enabled, locale, defaultLocale } = deps.getState();
+    renderDigest(
+      container,
+      await computeSeenDigest(specs, enabled),
+      locale,
+      defaultLocale,
+      markSeen,
+    );
+  };
+  return { render };
 }

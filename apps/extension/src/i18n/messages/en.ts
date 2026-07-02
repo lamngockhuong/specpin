@@ -33,6 +33,10 @@ const en = {
   "common.reopenPanel": "Show Specpin specs",
   "common.and": "and",
   "common.clickToHighlight": "Click to highlight on the page",
+  // Deep-link "Copy link" affordance (side-panel card + tooltip pin).
+  "common.copyLink": "Copy link",
+  "common.copyLinkTitle": "Copy a shareable link to this spec",
+  "common.linkCopied": "Link copied",
   "common.cannotActOnPage": "Can't do that on this page. Switch to the website tab first.",
   "common.specsOnThisPage": "Specs on this page",
   "common.needsReview": "Needs review",
@@ -120,6 +124,15 @@ const en = {
   "spec.deleteConfirmLocal": "Delete this spec? This can't be undone.",
   "spec.deleteConflict": "The spec changed elsewhere; the view was refreshed. Nothing was deleted.",
   "spec.deleteFailed": "Could not delete spec: {error}",
+  // Deep-link resolver: the target spec exists but its element is not on the page.
+  "spec.linkElementMissing": "This spec's element isn't on this page.",
+
+  // What-changed digest (popup + side panel): a count of new/edited specs since
+  // the last visit, with a per-project content-hash snapshot in storage.local.
+  "digest.changedSince": "{count} changed since last visit",
+  "digest.markSeen": "Mark all seen",
+  "digest.tagNew": "new",
+  "digest.tagEdited": "edited",
 
   // Match-confidence badge + "why matched" (in-page renderers + side-panel cards).
   // The exact tier renders no badge (good state = silent), so there is no

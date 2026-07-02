@@ -1,6 +1,9 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { type LocalizedSpecText, localizeSpec } from "../content/localize-spec.js";
+import { showToast } from "../content/toast.js";
 import { t } from "../i18n/index.js";
+import { copyText } from "../shared/clipboard.js";
+import { buildSpecLink } from "../shared/deep-link.js";
 import { escapeHtml } from "../shared/html.js";
 import { renderMarkdownBlock } from "../shared/markdown.js";
 import { createShadowHost } from "../shared/shadow.js";
@@ -24,6 +27,8 @@ interface Pin {
   confHtml: string;
   /** Host page origin, so same-origin links in the tip open in the current tab. */
   pageOrigin?: string;
+  /** Forced UI theme, so the copy-link confirmation toast matches the host theme. */
+  theme?: Theme;
 }
 
 const HOST_ID = "specpin-tooltip-host";
@@ -86,6 +91,12 @@ ${MARKDOWN_BODY_CSS}
   border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
 }
 .tip .pin-edit:hover { filter: brightness(0.97); }
+.tip .pin-copy {
+  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
+  background: var(--sp-control); color: var(--sp-text); border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
+}
+.tip .pin-copy:hover { filter: brightness(0.97); }
 .tip .pin-delete {
   margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
   background: var(--sp-error-bg); color: var(--sp-error-text); border: 1px solid var(--sp-error-border);
@@ -196,6 +207,7 @@ export class TooltipRenderer implements SpecRenderer {
       editable: meta?.editable ?? true,
       confHtml: confidenceBadge(meta),
       pageOrigin: meta?.pageOrigin,
+      theme: meta?.theme,
     };
     this.pins.push(pin);
     // The reveal tooltip (showBadges=false) skips the badge entirely: no hover
@@ -291,6 +303,9 @@ export class TooltipRenderer implements SpecRenderer {
         ? `<button type="button" class="pin-delete">${escapeHtml(t("tooltip.deleteSpec"))}</button>`
         : "") +
       (pinned
+        ? `<button type="button" class="pin-copy">${escapeHtml(t("common.copyLink"))}</button>`
+        : "") +
+      (pinned
         ? `<button type="button" class="pin-open">${escapeHtml(t("tooltip.openInPanel"))}</button>`
         : "");
     tip.classList.toggle("pinned", pinned);
@@ -303,6 +318,9 @@ export class TooltipRenderer implements SpecRenderer {
       tip.querySelector(".pin-delete")?.addEventListener("click", () => {
         this.onDelete?.(pin.specId);
       });
+      tip.querySelector(".pin-copy")?.addEventListener("click", () => {
+        void this.copyLink(pin);
+      });
       tip.querySelector(".pin-open")?.addEventListener("click", () => {
         this.onOpenInPanel?.(pin.specId);
       });
@@ -313,6 +331,17 @@ export class TooltipRenderer implements SpecRenderer {
 
   private hideTip(): void {
     this.tip?.classList.remove("show", "pinned");
+  }
+
+  // Copy a shareable deep link to this spec. The tooltip runs in the host page, so
+  // it builds from the live `location.href` (full URL, app fragment preserved) and
+  // confirms via the in-page toast in the pin's theme.
+  private async copyLink(pin: Pin): Promise<void> {
+    const view = this.doc.defaultView;
+    const href = view?.location.href;
+    if (!href) return;
+    if (await copyText(buildSpecLink(href, pin.specId)))
+      showToast(t("common.linkCopied"), this.doc, pin.theme);
   }
 
   private positionTip(anchor: Element): void {

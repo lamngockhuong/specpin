@@ -31,6 +31,9 @@ const vi: Record<keyof Messages, string> = {
   "common.reopenPanel": "Hiện spec Specpin",
   "common.and": "và",
   "common.clickToHighlight": "Nhấp để làm nổi bật trên trang",
+  "common.copyLink": "Sao chép liên kết",
+  "common.copyLinkTitle": "Sao chép liên kết chia sẻ tới spec này",
+  "common.linkCopied": "Đã sao chép liên kết",
   "common.cannotActOnPage":
     "Không thể thao tác trên trang này. Hãy chuyển sang tab trang web trước.",
   "common.specsOnThisPage": "Spec trên trang này",
@@ -116,6 +119,12 @@ const vi: Record<keyof Messages, string> = {
   "spec.deleteConfirmLocal": "Xoá spec này? Không thể hoàn tác.",
   "spec.deleteConflict": "Spec đã thay đổi ở nơi khác; giao diện đã được làm mới. Chưa xoá gì cả.",
   "spec.deleteFailed": "Không thể xoá spec: {error}",
+  "spec.linkElementMissing": "Phần tử của spec này không có trên trang.",
+
+  "digest.changedSince": "{count} thay đổi kể từ lần xem trước",
+  "digest.markSeen": "Đánh dấu đã xem",
+  "digest.tagNew": "mới",
+  "digest.tagEdited": "đã sửa",
 
   // Match-confidence badge + "why matched".
   "match.fuzzy": "Khớp theo selector",
