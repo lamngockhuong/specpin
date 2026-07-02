@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.8](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.7...extension-v0.0.8) (2026-07-02)
+
+
+### Features
+
+* **extension:** reader discovery & navigation (deep-link, cycle, what-changed digest) ([#102](https://github.com/lamngockhuong/specpin/issues/102)) ([dfb9be7](https://github.com/lamngockhuong/specpin/commit/dfb9be70ae193b1dd7c594f93ed39b1f05758da8))
+
 ## [0.0.7](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.6...extension-v0.0.7) (2026-07-02)
 
 
