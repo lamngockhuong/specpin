@@ -100,6 +100,10 @@ export const GUIDES_KEY = "specpin:guides";
 /** Where the user dragged the floating relaunch pill, or null for the default
  *  bottom-right corner. */
 export const LAUNCHER_POSITION_KEY = "specpin:launcherPosition";
+/** The extension version last seen by the background on an install/update event.
+ *  Used to decide whether to open the changelog when `onInstalled` fires without a
+ *  `previousVersion`, and to avoid re-opening on a dev reload (see whats-new.ts). */
+export const LAST_VERSION_KEY = "specpin:lastVersion";
 
 /** A relaunch-pill position, as viewport pixels from the top-left. Clamped to the
  *  current viewport when applied, so a smaller window still keeps the pill visible. */
@@ -293,6 +297,17 @@ export async function setLauncherPosition(pos: LauncherPosition | null): Promise
     return;
   }
   await browser.storage.local.set({ [LAUNCHER_POSITION_KEY]: pos });
+}
+
+/** The extension version last recorded on an install/update event, or null when
+ *  none has been stored yet (a profile that predates this feature). */
+export async function getLastVersion(): Promise<string | null> {
+  const stored = await browser.storage.local.get(LAST_VERSION_KEY);
+  return (stored[LAST_VERSION_KEY] as string | undefined) ?? null;
+}
+
+export async function setLastVersion(version: string): Promise<void> {
+  await browser.storage.local.set({ [LAST_VERSION_KEY]: version });
 }
 
 export async function getLocalSpecs(): Promise<LocalSpecsState | null> {

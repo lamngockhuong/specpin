@@ -308,6 +308,7 @@ const en = {
   "options.supportLead": "Found a bug or have a question? Reach the project on GitHub.",
   "options.reportIssue": "Report an Issue",
   "options.askQuestion": "Ask a Question",
+  "options.changelog": "What's New",
 
   // Guide-mode tour chrome (the in-page walkthrough controls).
   "guide.defaultName": "Guided tour",

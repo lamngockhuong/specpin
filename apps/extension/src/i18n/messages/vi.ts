@@ -302,6 +302,7 @@ const vi: Record<keyof Messages, string> = {
   "options.supportLead": "Gặp lỗi hoặc có câu hỏi? Liên hệ dự án trên GitHub.",
   "options.reportIssue": "Báo lỗi",
   "options.askQuestion": "Đặt câu hỏi",
+  "options.changelog": "Có gì mới",
 
   // Guide-mode tour chrome (the in-page walkthrough controls).
   "guide.defaultName": "Hướng dẫn",

@@ -26,6 +26,7 @@ import {
   getConnections,
   getDefaultSurface,
   getEnabled,
+  getLastVersion,
   getLocalSpecs,
   getPersonalGuides,
   getPersonalVisibility,
@@ -41,6 +42,7 @@ import {
   setConfig,
   setConnections,
   setEnabled,
+  setLastVersion,
   setLocalBatchEnabled,
   setLocalSpecs,
   setPersonalGuides,
@@ -73,6 +75,7 @@ import {
 import { connectionServesOrigin, trustedReadOrigin } from "../shared/origin-match.js";
 import { slugify } from "../shared/slug.js";
 import { buildVisibilityState, type PersonalVisibility } from "../shared/visibility.js";
+import { CHANGELOG_URL, shouldOpenChangelog } from "../shared/whats-new.js";
 
 const KEEPALIVE_ALARM = "specpin-keepalive";
 
@@ -233,9 +236,41 @@ export default defineBackground(() => {
     void initContextMenu();
   }
 
+  // Open the hosted changelog once after a significant update, and keep the
+  // last-seen version in sync. Deliberately SEPARATE from initWorker (which runs
+  // on every SW wake and must stay idempotent): this reads the install `details`
+  // and fires at most once per real install event, so a dev reload or a routine
+  // wake never spawns a tab. All best-effort; a failure here must not break init.
+  async function handleInstalled(details: {
+    reason: string;
+    previousVersion?: string;
+  }): Promise<void> {
+    try {
+      const current = browser.runtime.getManifest().version;
+      if (details.reason === "install") {
+        // First install: record the baseline, never open the changelog (nothing
+        // to compare against).
+        await setLastVersion(current);
+      } else if (details.reason === "update") {
+        // Prefer the browser-supplied previousVersion; fall back to our stored
+        // baseline. With neither (fresh profile), stay silent rather than guess.
+        const prev = details.previousVersion ?? (await getLastVersion());
+        if (prev && shouldOpenChangelog(prev, current)) {
+          await browser.tabs.create({ url: CHANGELOG_URL });
+        }
+        await setLastVersion(current);
+      }
+      // Other reasons (browser_update, shared_module_update) leave the extension
+      // version unchanged: nothing to record or open.
+    } catch {
+      // Non-fatal: a tab-open or storage error must never break worker init.
+    }
+  }
+
   initWorker();
   browser.runtime.onStartup?.addListener(initWorker);
   browser.runtime.onInstalled?.addListener(initWorker);
+  browser.runtime.onInstalled?.addListener((details) => void handleInstalled(details));
   browser.runtime.onSuspend?.addListener(flushVisibilityWrite);
   // Re-apply when the Settings page changes the preference so the toolbar
   // behavior switches without a reload.
