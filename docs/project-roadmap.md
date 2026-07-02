@@ -120,6 +120,11 @@ Planned, pending a real corpus / usage feedback: the hybrid weighted scorer (nee
 - The extension links to it: a "What's New" link in the Options Support & Feedback card (`options.changelog`, EN/VI/JA), plus an auto-open in a new tab on a significant update. The open decision lives in `apps/extension/src/shared/whats-new.ts` (`shouldOpenChangelog`): pre-1.0 any forward version bump opens (release-please emits `0.0.x` patches for real features); 1.0+ opens only on a minor/major bump. Wired via a dedicated `runtime.onInstalled` listener (separate from the idempotent `initWorker`) that reads `previousVersion` and stores `specpin:lastVersion`. First install never opens.
 - Source scope: extension changelog only (the CLI + spec-schema changelogs are not on the page). No localized `/vi/` or `/ja/` changelog variants (the changelog body is English, generated from conventional commits).
 
+**Reader-navigation features shipped (2026-07-02)** on branch `feat/reader-discovery-navigation`:
+- Deep-link shareable specs: each spec gains a "Copy link" action (side-panel card + tooltip pin) that copies `<pageUrl>#specpin=<specId>`. Visiting that URL scrolls to + flashes the element and opens the side panel with the spec card highlighted. Graceful fallback: unknown id is a no-op; orphaned spec (exists but element is gone) opens the card + shows "element isn't on this page" toast. Same-page app fragments are preserved.
+- Keyboard cycle navigation: `Alt+Shift+N` cycles focus through matched-and-visible specs on the page, flashing each element and wrapping around. Reduced-motion honored. Joins existing chords `Alt+Shift+S/M/C/G`.
+- What-changed digest: popup + side panel show "N changed since last visit" plus a list of new/edited spec titles, with a "Mark all seen" button. Digest computed from per-project content-hash snapshot in `storage.local` (title + description + business rules across all locales). First-ever visit or newly-connected project seeds silently (no "everything new" noise).
+
 ### Planned Features
 
 **Hybrid Weighted Fingerprint Scoring:**

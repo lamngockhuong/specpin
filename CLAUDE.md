@@ -111,7 +111,7 @@ Shipped:
 - **Single-spec deletion**: remove a writable spec (sidecar or local) from the tooltip or side panel behind a destructive confirm.
 - **Spec content**: multi-language (locale-keyed strings, in-browser toggle, tabbed per-locale editor) plus a safe Markdown subset (bold, italic, links, lists) authored via a toolbar and rendered on every surface.
 - **Guide mode**: spec-driven onboarding tours in two scopes, team (committed to `.specs/` or a local project) and personal (per-origin in `storage.sync`), with a spotlight overlay and anchored popover.
-- **Surfaces and UX**: side panel (Chrome `side_panel` / Firefox `sidebar_action`), client-side spec search, source badges (sidecar vs local), user-selectable theme (System / Light / Dark), UI-chrome i18n (EN + VI + JA), and popup draft persistence.
+- **Surfaces and UX**: side panel (Chrome `side_panel` / Firefox `sidebar_action`), client-side spec search, source badges (sidecar vs local), user-selectable theme (System / Light / Dark), UI-chrome i18n (EN + VI + JA), popup draft persistence, and reader-navigation (deep-link specs, keyboard-cycle specs, change digest).
 - **Tooling**: offline `specpin validate` + CI spec-lint; `@specpin/cli` published to npm.
 
 Planned / under consideration: FileSystem Access source, hybrid fingerprint scoring, overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI-assisted capture).
