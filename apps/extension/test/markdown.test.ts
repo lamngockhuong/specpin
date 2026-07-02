@@ -14,6 +14,18 @@ describe("renderInlineMarkdown", () => {
     expect(renderInlineMarkdown("*i*")).toBe("<em>i</em>");
   });
 
+  it("renders inline code and keeps its content literal", () => {
+    expect(renderInlineMarkdown("call `foo()` now")).toBe("call <code>foo()</code> now");
+    // Marks and brackets inside a code span stay literal (no nested parsing).
+    expect(renderInlineMarkdown("`a *b* [c](d)`")).toBe("<code>a *b* [c](d)</code>");
+    // Content is escaped, so a code span can never inject a tag.
+    expect(renderInlineMarkdown("`<img src=x onerror=alert(1)>`")).toBe(
+      "<code>&lt;img src=x onerror=alert(1)&gt;</code>",
+    );
+    // Unbalanced backtick stays literal.
+    expect(renderInlineMarkdown("a ` b")).toBe("a ` b");
+  });
+
   it("renders a safe http link with rel + target", () => {
     expect(renderInlineMarkdown("[docs](https://x.com)")).toBe(
       '<a href="https://x.com" rel="noopener noreferrer" target="_blank">docs</a>',
@@ -117,6 +129,10 @@ describe("stripMarkdown", () => {
 
   it("leaves plain text unchanged", () => {
     expect(stripMarkdown("plain words")).toBe("plain words");
+  });
+
+  it("strips inline code backticks, keeps the code text", () => {
+    expect(stripMarkdown("run `npm test` first")).toBe("run npm test first");
   });
 });
 
