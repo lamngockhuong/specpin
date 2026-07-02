@@ -1,0 +1,63 @@
+---
+/*
+ * Site-wide footer override.
+ *
+ * Wraps Starlight's default Footer so the built-in page nav (prev/next,
+ * edit link, last-updated) is preserved, then appends a branded Specpin
+ * footer below it. Content is localized to match the trilingual site
+ * (EN root, /vi/, /ja/); internal links are locale-prefixed so the
+ * language stays consistent when a reader clicks through.
+ */
+import Default from "@astrojs/starlight/components/Footer.astro";
+
+const CHROME_STORE =
+  "https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn";
+const GITHUB = "https://github.com/lamngockhuong/specpin";
+const LICENSE = `${GITHUB}/blob/main/LICENSE`;
+const STUDIO = "https://ohlab.dev/";
+
+// locale is undefined for the English root, "vi", or "ja".
+const { locale } = Astro.locals.starlightRoute;
+// Path prefix for internal links: "" for root, "/vi" or "/ja" otherwise.
+const prefix = locale ? `/${locale}` : "";
+// Build year reflects the last site build; avoids a hard-coded stale year.
+const year = new Date().getFullYear();
+// Locale-independent, so kept out of the per-locale string map.
+const copyright = `© ${year} Specpin`;
+
+const strings = {
+  en: { docs: "Documentation", privacy: "Privacy", madeBy: "Made by" },
+  vi: {
+    docs: "Tài liệu",
+    privacy: "Chính sách bảo mật",
+    madeBy: "Được phát triển bởi",
+  },
+  ja: { docs: "ドキュメント", privacy: "プライバシーポリシー", madeBy: "制作:" },
+};
+
+// Root locale is undefined; any unmapped locale falls back to English.
+const t = strings[locale as keyof typeof strings] ?? strings.en;
+---
+
+<Default><slot /></Default>
+
+<footer class="specpin-footer" not-content>
+  <nav class="specpin-footer-links" aria-label="Footer">
+    <a href={`${prefix}/guide/introduction/`}>{t.docs}</a>
+    <a href={GITHUB} rel="noopener noreferrer" target="_blank">GitHub</a>
+    <a href={CHROME_STORE} rel="noopener noreferrer" target="_blank">
+      Chrome Web Store
+    </a>
+    <a href={`${prefix}/help/privacy-policy/`}>{t.privacy}</a>
+  </nav>
+  <p class="specpin-footer-meta">
+    <span>{copyright}</span>
+    <span class="specpin-footer-dot" aria-hidden="true">&middot;</span>
+    <a href={LICENSE} rel="noopener noreferrer" target="_blank">Apache-2.0</a>
+    <span class="specpin-footer-dot" aria-hidden="true">&middot;</span>
+    <span>
+      {t.madeBy}{" "}
+      <a href={STUDIO} rel="noopener noreferrer" target="_blank">OhLab</a>
+    </span>
+  </p>
+</footer>

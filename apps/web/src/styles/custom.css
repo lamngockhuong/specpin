@@ -189,3 +189,39 @@ a.browser-cta-item:hover {
   opacity: 0.55;
   cursor: default;
 }
+
+/* Branded site footer appended below Starlight's built-in page footer. */
+.specpin-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--sl-color-gray-5);
+  color: var(--sl-color-gray-3);
+  font-size: var(--sl-text-sm);
+}
+.specpin-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.specpin-footer-links a {
+  color: var(--sl-color-gray-2);
+  text-decoration: none;
+}
+.specpin-footer-links a:hover {
+  color: var(--specpin-accent);
+  text-decoration: underline;
+}
+.specpin-footer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+.specpin-footer-meta a {
+  color: var(--sl-color-gray-2);
+}
+.specpin-footer-dot {
+  color: var(--sl-color-gray-4);
+}
