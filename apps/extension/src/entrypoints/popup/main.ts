@@ -246,6 +246,9 @@ if (sidePanel?.open) {
 void applyStoredTheme();
 watchThemeChanges();
 
+// Show the actual extension version from the manifest, not a hardcoded string.
+byId("version").textContent = `v${browser.runtime.getManifest().version}`;
+
 // Resolve the UI-chrome language, hydrate the static HTML, then render. initI18n
 // runs before the first refresh so every t() call uses the chosen language.
 async function init(): Promise<void> {
