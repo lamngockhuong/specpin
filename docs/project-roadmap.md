@@ -2,11 +2,11 @@
 
 > Tiếng Việt: [`vi/project-roadmap.md`](./vi/project-roadmap.md). English is the source of truth.
 
-Specpin development follows a phased approach: deliver demoable MVP first, defer polish and advanced features to 1.1+.
+Specpin is released and under active development. This roadmap records what has shipped and what is planned or under consideration next.
 
-## Phase 1 MVP (Completed 2026-06-25)
+## Initial release (2026-06-25)
 
-Status: **DONE**. All 8 phases implemented, tested, and code-reviewed. CI green. Independent review identified 7 issues (1 High, 4 Medium, 2 Low), all High/Medium resolved before completion.
+Status: **DONE**. The first end-to-end build: implemented, tested, and code-reviewed. CI green. Independent review identified 7 issues (1 High, 4 Medium, 2 Low), all High/Medium resolved before completion.
 
 ### Delivered Features
 
@@ -64,7 +64,7 @@ Status: **DONE**. All 8 phases implemented, tested, and code-reviewed. CI green.
 
 ### Code Review Findings (all High/Medium resolved)
 
-Independent review (`plans/reports/from-code-reviewer-to-orchestrator-specpin-mvp-review-report.md`):
+Independent review findings:
 - **0 Critical**
 - **1 High** - H1: origin-match too loose (spec leak to look-alike subdomains). Fixed: host-exact or label-boundary subdomain only, regression test added.
 - **4 Medium** - M1: capture crash on framework-generated ids (fixed: escaped + guarded label lookup). M2: SaveSpec could overwrite manifest.json (fixed: `.spec.json` suffix required). M3: SSE backoff reset on flaky connect (fixed: reset only after 5s stable). M4: config mutation from content script (fixed: rejected unless from extension page).
@@ -78,26 +78,26 @@ Independent review (`plans/reports/from-code-reviewer-to-orchestrator-specpin-mv
 - **Bundle size**: extension content script ~450 KB uncompressed (ajv validator included, under 500 KB target)
 - **Performance**: fingerprint match < 10ms (exact anchors), render latency < 100ms
 
-## Phase 1.1 (In progress)
+## Since the initial release
 
 Goal: robustness, flexibility, polish. No timeline committed.
 
-**Website shipped (2026-06-29)**: public marketing landing + a fresh end-user documentation set (EN + VI + JA), built as an Astro Starlight app in `apps/web`, targeting `specpin.ohnice.app` via GitHub Pages (plan: `plans/260629-1348-specpin-landing-docs-site/`). The repo `docs/` set stays developer/contributor docs and is unrelated to the website's end-user content.
+**Website shipped (2026-06-29)**: public marketing landing + a fresh end-user documentation set (EN + VI + JA), built as an Astro Starlight app in `apps/web`, targeting `specpin.ohnice.app` via GitHub Pages. The repo `docs/` set stays developer/contributor docs and is unrelated to the website's end-user content.
 
-**Lean first slice shipped (2026-06-26)** on branch `feat/spec-validate-cli-and-ci` (plan: `plans/260626-1415-specpin-phase-1-1/`):
+**First follow-up shipped (2026-06-26)** on branch `feat/spec-validate-cli-and-ci`:
 - `specpin validate`: offline schema check of `.specs/` (exit 0 valid / 1 invalid / 2 cannot-run), symlink guard in the store, manifest-drift warning.
 - CI spec-lint: in-repo step over the demo specs + a reusable composite action that builds the validator from a pinned ref (not the caller's PR).
 - Manual spec source: render specs with no sidecar by pasting a validated `{ manifest, files }` bundle in Options; read-only, size-capped, prototype-pollution-guarded; controller now selects sidecar -> manual by availability.
 - Modal renderer: centered focus-trapped dialog listing page specs (third display mode), AbortController teardown.
 
-**Second slice shipped (2026-06-26)** on branch `feat/i18n-specs-multi-project` (plan: `plans/260626-1555-i18n-specs-multi-project/`):
+**Second slice shipped (2026-06-26)** on branch `feat/i18n-specs-multi-project`:
 - Multi-language specs: `title`/`description`/`businessRules` are object-only `LocalizedString` (locale-keyed; flat strings rejected by both validators). Runtime language toggle in the popup (mirrored in the sidebar) with `defaultLocale` -> first-present fallback; translations authored per locale in the capture form. `description` values are now non-empty.
 - Multi-project display: one extension connects to many sidecars at once via a `SidecarRegistry`; specs route to each page by the project's `domains`, tagged by project. Empty-`domains` projects need an explicit `applyToAllSites` opt-in (no silent every-site match). Per-connection token isolation, error isolation, jittered reconnect, and a general SW-wake watch re-establish (also fixes the latent single-connection case). Options page is now a connection manager (add/remove/reconnect, per-tab popup view, project labels on specs).
 
-**Side panel surface shipped (2026-06-27)** on branch `feat/extension-sidepanel-surface` (plan: `plans/260627-1119-extension-sidepanel-surface/`):
+**Side panel surface shipped (2026-06-27)** on branch `feat/extension-sidepanel-surface`:
 - Side panel (`entrypoints/sidepanel/`) as a persistent docked alternative to the popup: wider full-height layout, spec description + business rules shown inline, auto-refresh on tab activation / URL change / `SPECS_CHANGED`. Popup and side panel share one `fetchSurfaceState()` helper. WXT maps the single entrypoint to Chrome `side_panel` + Firefox `sidebar_action`. A stored `defaultSurface` preference (Options) chooses the toolbar-click surface on Chrome; Firefox keeps the popup on the toolbar button and opens the sidebar from its native toggle.
 
-**Spec visibility toggle + tooltip UX shipped (2026-06-27)** on branch `feat/spec-visibility-toggle` (plan: `plans/260627-1348-spec-visibility-toggle-tooltip-ux/`):
+**Spec visibility toggle + tooltip UX shipped (2026-06-27)** on branch `feat/spec-visibility-toggle`:
 - Tooltip renderer enhancements: full-width fix (`min(360px, 90vw)`); click badge to pin tip open (one at a time, close button); "Open in side panel" action highlights matching side-panel card (best-effort auto-open on Chrome, Firefox degrades to highlight-only). New messages `OPEN_SPEC_IN_PANEL` (content to background) and `HIGHLIGHT_SPEC` (background to side panel).
 - Unified facet model for spec visibility: each spec gets facet keys `tag:<t>`, `file:<file>`, `spec:<id>`; `url:<glob>` is a page-level gate. One predicate `isVisible(spec, url, state)` in `apps/extension/src/shared/visibility.ts` decides rendering. Path glob matcher: `*` = one segment, `**` = across segments.
 - Two-layer sync cascade: `effectiveDisabled = (teamHidden union personalForceHide) minus personalForceShow`. Team default from `.specs/views.json` (Git-committed, shared, authored via Options page, written via sidecar `PUT /views`). Personal override in `chrome.storage.sync` (cross-machine, personal wins). `spec:<id>` force-show is a hard per-spec rescue (wins over tag/file hide); `url:` page gate wins over everything. Empty state = all visible (backward compatible).
@@ -107,9 +107,9 @@ Goal: robustness, flexibility, polish. No timeline committed.
 - api-client: `SidecarClient.getViews()` / `putViews()`, exported `ViewsConfig` type.
 - New privileged messages: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (added to `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` is non-privileged (read-only, from content script).
 
-Deferred from these slices pending a real corpus / usage feedback: the hybrid weighted scorer (needs a before/after DOM corpus to tune), the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
+Planned, pending a real corpus / usage feedback: the hybrid weighted scorer (needs a before/after DOM corpus to tune), the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
 
-**User-selectable theme shipped (2026-06-28)** on branch `feat/extension-theme-and-i18n` (plan: `plans/260628-0028-extension-theme-and-i18n/`):
+**User-selectable theme shipped (2026-06-28)** on branch `feat/extension-theme-and-i18n`:
 - Theme preference (System / Light / Dark) via Options page. Previously dark existed only behind `@media (prefers-color-scheme: dark)` (auto, no toggle). Now the user can force a theme. Generator emits four selector blocks in `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), and `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, applies only when no override). `tokens.ts` `scopeTokensToShadow()` rewrites all four forms to `:host(...)` for Shadow DOM renderers. `src/shared/theme.ts` exports `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` gained `getTheme`/`setTheme` (storage.local key `specpin:theme`, default `system`). Live propagation: `SET_THEME` message + `broadcastToTabs()` helper; Options broadcasts to all tabs, pages react via `storage.onChanged`. `theme` is threaded into `renderSession` and each renderer applies it to its shadow host. Forced themes may flash the System default for one frame on load (async storage read, accepted).
 
 **UI-chrome i18n (EN + VI + JA) shipped (2026-06-28)** on same branch `feat/extension-theme-and-i18n`:
@@ -125,12 +125,12 @@ Deferred from these slices pending a real corpus / usage feedback: the hybrid we
 
 **Additional Spec Sources:**
 - Manual import source - **delivered** (read-only `{ manifest, files }` bundle in Options)
-- FileSystem Access API source (browser prompt for `.specs/` directory access, no sidecar needed) - still deferred
+- FileSystem Access API source (browser prompt for `.specs/` directory access, no sidecar needed) - planned
 - Source registry already pluggable (`SpecSource` interface)
 
 **Additional Renderers:**
 - Modal (centered dialog, for focused review) - **delivered**
-- Overlay (fullscreen modal with backdrop) and inline badge (marker next to element) - still deferred
+- Overlay (fullscreen modal with backdrop) and inline badge (marker next to element) - planned
 - Renderer registry already pluggable (`SpecRenderer` interface): tooltip + sidebar + modal implemented
 
 **Safari Support:**
@@ -139,7 +139,7 @@ Deferred from these slices pending a real corpus / usage feedback: the hybrid we
 
 **AI-Assisted Authoring:**
 - Shipped (host-agent path): a portable skill bundled in `@specpin/cli` (`apps/cli/skill/`, reachable via unpkg) teaches a coding agent (Claude Code, Cursor, etc.) to author schema-valid specs and drive the CLI. The host agent is the author; no LLM is added to the CLI. See `docs/ai-authoring.md`. `apps/cli/cmd/generate.go` now points users at this skill.
-- Deferred (CLI-side LLM `specpin generate`): a built-in generator that screenshots an element and infers title/description/rules. Model choice, prompt design, local vs cloud, and key management remain unresolved; the command stays a stub.
+- Planned (CLI-side LLM `specpin generate`): a built-in generator that screenshots an element and infers title/description/rules. Model choice, prompt design, local vs cloud, and key management remain unresolved; the command stays a stub.
 
 **Performance Optimization:**
 - Move pre-POST spec validation from content script to background SW (drops ajv ~100 KB from content bundle, defers parse cost to SW thread)
@@ -156,7 +156,7 @@ Deferred from these slices pending a real corpus / usage feedback: the hybrid we
 - GitHub Action for spec linting in PRs (validate all `.specs/*.json` against schema)
 - CLI command `specpin validate` (offline schema check without serve)
 
-## Future Exploration (Beyond 1.1, no commitment)
+## Future Exploration (no commitment)
 
 **Multi-repo spec aggregation:**
 - Aggregate specs from multiple repos (microservices, monorepos with separate .specs/)
@@ -194,8 +194,8 @@ Deferred from these slices pending a real corpus / usage feedback: the hybrid we
 - **Code generation from specs** - Specpin is a knowledge layer, not a code generator. It attaches docs to existing UIs, does not produce app code.
 - **SaaS backend** - local-first, Git-native, no vendor lock-in. Sidecar runs on localhost only.
 - **Real-time multi-user collaboration** - no CRDT, no WebSocket sync beyond SSE reload. Collaboration via Git PRs.
-- **Mobile app support** (phase 1.1) - browser extension only, mobile deferred to future exploration.
-- **Hosted/cloud sidecar** - localhost-only in MVP and 1.1, cloud deployment deferred to future exploration.
+- **Mobile app support** - browser extension only; mobile is future exploration.
+- **Hosted/cloud sidecar** - localhost by default (remote is opt-in over an HTTPS reverse proxy); a managed cloud offering is future exploration.
 - **Telemetry or usage tracking** - no analytics, no phone-home, no data collection (local analytics in future exploration, opt-in only).
 
 ## Versioning Strategy
@@ -203,9 +203,9 @@ Deferred from these slices pending a real corpus / usage feedback: the hybrid we
 **Current**: v0.0.0 (pre-release, internal dogfooding).
 
 **Pre-1.0 (planned):**
-- v0.1.0: Phase 1 MVP release (first public)
-- v0.2.0: Phase 1.1 features (hybrid scorer, FileSystem source, Safari)
-- v0.3.0+: additional 1.1 features, polish, bugfixes
+- v0.1.0: first public release
+- v0.2.0: planned features (hybrid scorer, FileSystem source, Safari)
+- v0.3.0+: additional features, polish, bugfixes
 
 **1.0 criteria (not yet defined):**
 - Hybrid fingerprint scorer validated in production
@@ -235,7 +235,7 @@ Planned after public release:
 
 **Fingerprint brittleness:**
 - Risk: refactors break matches, specs become orphaned
-- Mitigation: hybrid weighted scorer in 1.1, `data-spec-id` attribute recommended for critical elements, `needsReview` flag surfaces ambiguous matches.
+- Mitigation: planned hybrid weighted scorer, `data-spec-id` attribute recommended for critical elements, `needsReview` flag surfaces ambiguous matches.
 
 **Extension API changes:**
 - Risk: Chrome/Firefox manifest v3/v2 API shifts break extension
@@ -251,34 +251,30 @@ Planned after public release:
 
 **Bundle size bloat:**
 - Risk: content script exceeds browser extension size limits
-- Mitigation: current 450 KB under 500 KB target, 1.1 optimization moves ajv to SW (saves ~100 KB).
+- Mitigation: current 450 KB under 500 KB target, a planned optimization moves ajv to SW (saves ~100 KB).
 
 ## Decision Log
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| 2026-06-25 | Trimmed MVP scope (defer FS/Manual sources, modal/overlay/badge, hybrid scorer, Safari, AI) | Deliver demoable end-to-end faster, validate core value prop before polish |
+| 2026-06-25 | Trimmed the initial release scope (defer FS/Manual sources, modal/overlay/badge, hybrid scorer, Safari, AI) | Deliver demoable end-to-end faster, validate core value prop before polish |
 | 2026-06-25 | CLI language: Go (not Node) | Single static binary, no runtime deps, better fit for localhost server than Bun/Deno |
-| 2026-06-25 | Fingerprint: exact anchors + cssSelector now, weighted scorer deferred | MVP sufficient for demo, hybrid scorer needs real-world corpus for tuning |
+| 2026-06-25 | Fingerprint: exact anchors + cssSelector now, weighted scorer deferred | Initial release sufficient for demo, hybrid scorer needs real-world corpus for tuning |
 | 2026-06-25 | Extension build: WXT | Cross-browser abstraction (Chrome MV3 + Firefox MV2), hot-reload, modern DX |
 | 2026-06-25 | Test runner: Vitest (not node:test or Jest) | Vite-native, pairs with WXT, strong jsdom story for fingerprint-core |
 | 2026-06-25 | Sidecar port: auto-pick free port (not fixed default) | Avoids first-run port conflicts, extension already reads pasted URL |
-| 2026-06-25 | Capture mode: manual-only (no AI assist in MVP) | Keeps all LLM work out of MVP, no model dep or key management |
-| 2026-06-25 | License: Apache-2.0 | Decided during Phase 1 completion (was deferred gate in plan) |
+| 2026-06-25 | Capture mode: manual-only (no AI assist at launch) | Keeps all LLM work out of the initial release, no model dep or key management |
+| 2026-06-25 | License: Apache-2.0 | Decided at the initial release (was a deferred gate in the plan) |
 | 2026-06-26 | Localized spec content is object-only (`LocalizedString`), flat strings invalid | Pre-release, no external corpus and no compat promise; the schema is revised in place (still `v1.json`, no `v2.json` fork, no manifest version bump). One resolver reads all localized fields |
 | 2026-06-26 | Empty-`domains` project needs explicit `applyToAllSites` opt-in | A silent every-site wildcard would leak a project's specs onto unrelated/attacker pages; the user opts in per connection |
 | 2026-06-26 | SW-suspend watch loss fixed generally (shared `reestablish()` for 1 and N connections) | Same path serves the single-connection case too, fixing a latent MV3 bug rather than only the new multi-connection one |
 
 ## References
 
-- Plan: `plans/260625-1504-specpin-phase1-mvp/plan.md`
-- Phase files: `plans/260625-1504-specpin-phase1-mvp/phase-*.md` (8 files)
-- Code review: `plans/reports/from-code-reviewer-to-orchestrator-specpin-mvp-review-report.md`
 - Architecture: `docs/system-architecture.md`
 - Run guide: `docs/run-guide.md`
 - Schema: `docs/schema-reference.md`
 - Design system: `docs/design-system.md`
-- Journal: `docs/journals/260625-specpin-phase1-mvp.md`
 - Codebase summary: `docs/codebase-summary.md`
 - Code standards: `docs/code-standards.md`
 - PDR: `docs/project-overview-pdr.md`

@@ -12,6 +12,10 @@ hero:
       link: /vi/guide/getting-started/
       icon: right-arrow
       variant: primary
+    - text: Cài từ Chrome Web Store
+      link: https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn
+      icon: external
+      variant: secondary
     - text: Xem trên GitHub
       link: https://github.com/lamngockhuong/specpin
       icon: external
@@ -19,6 +23,19 @@ hero:
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<div class="browser-cta" not-content>
+  <a class="browser-cta-item" href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="/chrome-logo.svg" alt="" width="40" height="40" />
+    <span class="browser-cta-name">Chrome Web Store</span>
+    <span class="browser-cta-status">Đã có</span>
+  </a>
+  <div class="browser-cta-item is-soon" aria-disabled="true" title="Sắp có">
+    <img src="/firefox-logo.svg" alt="" width="40" height="40" />
+    <span class="browser-cta-name">Firefox Add-ons</span>
+    <span class="browser-cta-status">Sắp có</span>
+  </div>
+</div>
 
 ## Specpin làm gì
 
@@ -50,7 +67,7 @@ liệu sống động, được quản lý phiên bản bằng Git, lên chính 
   <Card title="An toàn mặc định" icon="approve-check">
     Sidecar mặc định chỉ lắng nghe trên localhost, xác thực mọi yêu cầu bằng
     bearer token, và chỉ chấp nhận origin của extension. Chọn dùng sidecar từ xa
-    qua HTTPS khi cả nhóm cần — nó vẫn là máy chủ do bạn vận hành.
+    qua HTTPS khi cả nhóm cần, nó vẫn là máy chủ do bạn vận hành.
   </Card>
 </CardGrid>
 
@@ -84,23 +101,19 @@ liệu sống động, được quản lý phiên bản bằng Git, lên chính 
 ## Bắt đầu nhanh
 
 ```bash
-# 1. Cài deps workspace và build mọi thứ
-pnpm install
-pnpm build
+# 1. Cài CLI
+npm install -g @specpin/cli    # hoặc: pnpm add -g @specpin/cli
 
-# 2. Build sidecar Go (trong apps/cli)
-cd apps/cli && make build      # -> bin/specpin
-
-# 3. Trong repo dự án của bạn: khởi tạo và phục vụ đặc tả
+# 2. Trong repo dự án của bạn: khởi tạo và phục vụ đặc tả
 specpin init                   # tạo .specs/manifest.json
 specpin serve                  # in ra URL localhost + bearer token
 
-# 4. Build extension (unpacked) và kết nối
-#    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
-#    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
+# 3. Cài extension và kết nối
+#    Chrome:  Chrome Web Store (link bên dưới)
+#    Firefox: build từ mã nguồn (AMO sắp có)
 ```
 
-Dán URL và token vừa in vào extension, mở ứng dụng của bạn, và đặc tả sẽ hiển
+Cài Specpin cho Chrome từ [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn), dán URL và token vừa in vào extension, mở ứng dụng của bạn, và đặc tả sẽ hiển
 thị trên đúng phần tử của nó.
 
 <CardGrid>

@@ -63,7 +63,13 @@ Edit a `.spec.json` file on disk and the page live-updates via SSE.
 
 ## Option B: Connect to your own project
 
-### 1. Initialize a `.specs/` directory in your project
+### 1. Install the CLI
+
+```bash
+npm install -g @specpin/cli    # or: pnpm add -g @specpin/cli
+```
+
+### 2. Initialize a `.specs/` directory in your project
 
 From your project root:
 
@@ -73,7 +79,7 @@ specpin init --project "My App" --domains localhost:3000
 
 This creates `.specs/manifest.json`.
 
-### 2. Serve your specs
+### 3. Serve your specs
 
 ```bash
 specpin serve
@@ -81,7 +87,7 @@ specpin serve
 
 The sidecar prints a URL and token.
 
-### 3. Connect in the extension
+### 4. Connect in the extension
 
 Follow steps 4-6 from Option A, pasting your own sidecar URL and token.
 

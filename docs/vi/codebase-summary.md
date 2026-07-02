@@ -356,6 +356,4 @@ Hai job (JS, Go):
 
 **Docs**: `docs/` (architecture, run-guide, schema-reference, design-system, file này).
 
-**Plans**: `plans/260625-1504-specpin-phase1-mvp/` (8 phase files), `plans/reports/` (code review, brainstorm).
-
 **CI**: `.github/workflows/ci.yml` (JS + Go jobs).

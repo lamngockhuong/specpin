@@ -12,6 +12,15 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/chrome-web-store/v/kkfmoieoahdjneagognaoedggkiiolkn?label=chrome&style=flat-square&logo=googlechrome&logoColor=white&color=4285F4" alt="Chrome Web Store Version">
+  </a>
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/chrome-web-store/users/kkfmoieoahdjneagognaoedggkiiolkn?style=flat-square&color=2DD4BF" alt="Chrome Web Store Users">
+  </a>
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/chrome-web-store/rating/kkfmoieoahdjneagognaoedggkiiolkn?style=flat-square&color=facc15" alt="Chrome Web Store Rating">
+  </a>
   <a href="https://github.com/lamngockhuong/specpin/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/lamngockhuong/specpin/ci.yml?style=flat-square&label=CI&color=2DD4BF&logo=githubactions&logoColor=white" alt="CI">
   </a>
@@ -24,6 +33,13 @@
   <img src="https://img.shields.io/badge/Node-%E2%89%A520-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node >= 20">
   <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go 1.26">
   <img src="https://img.shields.io/badge/MV3-Chrome%20%2B%20Firefox-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome + Firefox">
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/badge/Install_from-Chrome_Web_Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Install from Chrome Web Store">
+  </a>
+  <img src="https://img.shields.io/badge/Firefox_Add--ons-Coming_soon-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Firefox Add-ons - Coming soon">
 </p>
 
 <p align="center">
@@ -62,6 +78,12 @@ It is **not** a spec-driven code generator (unrelated to GitHub Spec Kit / OpenS
 2. `specpin serve` exposes `.specs/` over a token-authenticated localhost HTTP API with live-reload (SSE).
 3. The browser extension connects to the sidecar, matches each spec's fingerprint against the live DOM, and renders it on its element.
 
+## Install the extension
+
+Install Specpin for Chrome from the **[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)**. Pin it to your toolbar for quick access.
+
+Firefox Add-ons is coming soon. Until then, Firefox users can build from source and load it unpacked (see the [run guide](./docs/run-guide.md)).
+
 ## Install the CLI
 
 The sidecar ships as a single self-contained binary. Easiest is via npm, which
@@ -89,9 +111,9 @@ npm install -g @specpin/cli
 specpin init                   # creates .specs/manifest.json
 specpin serve                  # prints a localhost URL + bearer token
 
-# 3. Load the extension (unpacked) and connect
-#    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
-#    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
+# 3. Install the extension and connect
+#    Chrome:  install from the Chrome Web Store (link above)
+#    Firefox: build unpacked (AMO coming soon) -> pnpm --filter @specpin/extension build:firefox
 ```
 
 Paste the printed URL + token into the extension's connection settings, open your app, and specs render on their elements. See **[`docs/run-guide.md`](./docs/run-guide.md)** for the full init -> serve -> load -> connect -> render -> capture loop, or try it against the bundled **[demo app](./examples/demo-react-app)**:
@@ -186,7 +208,7 @@ go test ./...
 - [`docs/code-standards.md`](./docs/code-standards.md) - TS/Go conventions, tooling config, schema management
 - [`docs/design-system.md`](./docs/design-system.md) - extension UI mockups + shared color/font token workflow
 - [`docs/deployment-guide.md`](./docs/deployment-guide.md) - website Pages deploy + extension/CLI release pipeline
-- [`docs/project-roadmap.md`](./docs/project-roadmap.md) - Phase 1 MVP completion + 1.1 planned features
+- [`docs/project-roadmap.md`](./docs/project-roadmap.md) - shipped capabilities + planned features
 
 ## Releases
 
@@ -208,7 +230,11 @@ cd apps/cli && make check-schema && go test ./...
 
 ## Status
 
-Phase 1 MVP shipped, plus 1.1 slices: the Go sidecar serves `.specs/`, and the WXT extension matches fingerprints and renders specs (tooltip + sidebar + modal) with manual capture. Specs are multi-language with an in-browser language toggle and a tabbed per-locale editor; descriptions and business rules carry a safe Markdown subset authored via a toolbar; the extension connects to multiple projects at once, routed by origin. Also delivered: offline `specpin validate` + CI spec-lint, writable local projects (edit, capture, create, group-zip export), client-side spec search, source badges, per-project enable/disable, a side panel surface, user-selectable theme (System / Light / Dark), and UI-chrome i18n (EN + VI). Still deferred: the FileSystem Access source, hybrid fingerprint scoring, the overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI).
+Specpin is released and live on the [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn); Firefox Add-ons is coming soon. Active development continues.
+
+Shipped: the Go sidecar serves `.specs/`, and the WXT extension matches fingerprints and renders specs (tooltip + sidebar + modal) with manual capture. Specs are multi-language (in-browser language toggle + tabbed per-locale editor) and carry a safe Markdown subset authored via a toolbar; the extension connects to multiple projects at once, routed by origin. Also: writable local projects (edit, capture, create, group-zip export), single-spec deletion, guide mode (spec-driven onboarding tours), offline `specpin validate` + CI spec-lint, client-side spec search, source badges, per-project enable/disable, a side panel surface, user-selectable theme (System / Light / Dark), and UI-chrome i18n (EN + VI + JA).
+
+Planned / under consideration: the FileSystem Access source, hybrid fingerprint scoring, the overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI-assisted capture).
 
 ## Sponsor
 
