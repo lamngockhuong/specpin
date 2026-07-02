@@ -103,33 +103,24 @@
       .filter-marker { font: 600 9px/1 var(--sp-font-mono); text-transform: uppercase; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--sp-border); color: var(--sp-text-3); }
       .filter-marker-you { color: var(--sp-accent); border-color: var(--sp-accent); }
 
-      /* Per-spec visibility eye toggle on each card (side panel only). */
-      #specs .spec-vis {
-        position: absolute; top: 10px; right: 10px;
+      /* Card header: title flexes + wraps, action cluster stays flush-right. Flex
+         siblings (not overlapping layers) so a long title can't run under the
+         actions. Actions align to the top so they stay put as the title wraps. */
+      #specs .spec-head { display: flex; align-items: flex-start; gap: 8px; }
+      #specs .spec-actions { flex: none; display: flex; gap: 8px; }
+      /* Per-spec action buttons: Delete / Edit / Hide (eye) on each card. */
+      #specs .spec-delete, #specs .spec-edit, #specs .spec-vis {
         background: transparent; border: none; cursor: pointer; padding: 2px;
-        color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui);
+        color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui); white-space: nowrap;
       }
       #specs .spec-vis:hover { color: var(--sp-text); }
-      /* Per-spec Edit button, sat left of the eye toggle. */
-      #specs .spec-edit {
-        position: absolute; top: 10px; right: 52px;
-        background: transparent; border: none; cursor: pointer; padding: 2px;
-        color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui);
-      }
       #specs .spec-edit:hover { color: var(--sp-accent); }
-      /* Per-spec Delete button, sat left of Edit (same 42px rhythm as eye->edit). */
-      #specs .spec-delete {
-        position: absolute; top: 10px; right: 94px;
-        background: transparent; border: none; cursor: pointer; padding: 2px;
-        color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui);
-      }
       #specs .spec-delete:hover { color: var(--sp-error-text); }
       #specs > li.spec.spec-hidden { opacity: 0.55; }
 
       /* Spec list: full-height, each spec a card with inline detail. */
       #specs { list-style: none; margin: 12px 0; padding: 0; }
       #specs > li.spec {
-        position: relative;
         background: var(--sp-surface);
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-card);
@@ -142,7 +133,12 @@
         font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
         color: var(--sp-text-3);
       }
-      #specs .t { font-weight: 700; font-size: 14px; color: var(--sp-text); display: flex; align-items: center; gap: 6px; }
+      #specs .t {
+        flex: 1; min-width: 0;
+        font-weight: 700; font-size: 14px; color: var(--sp-text);
+        display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+        overflow-wrap: anywhere;
+      }
       /* Provenance badge: which source a spec came from (sidecar vs manual).
          Global (not #specs-scoped) so the shared guide section's personal badge,
          which mounts under #guides, is styled too - matching the popup. */
@@ -290,8 +286,10 @@
     <div id="filters" class="filters" hidden></div>
     <div id="scope" hidden></div>
     <div id="health" class="health" hidden></div>
-    <button type="button" id="scan" class="link" hidden data-i18n="helper.scanButton">Scan for fragile specs</button>
-    <div id="scan-results"></div>
+    <details id="scan" class="filter-group scan" hidden>
+      <summary></summary>
+      <div id="scan-results"></div>
+    </details>
     <input type="search" id="search" data-i18n-placeholder="common.searchPlaceholder" data-i18n-aria="common.searchAria" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
     <div id="orphaned" hidden></div>

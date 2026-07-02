@@ -101,7 +101,7 @@ The same controls are also available as a **side panel** that stays open while y
 
 Each rendered spec shows how confidently it matched its element. An exact match (resolved by a `data-spec-id`/test-id, `aria-label`, or a stable `id`) is silent - the good case stays quiet. A lower-confidence match (resolved only by a CSS selector) gets a **Selector match** badge with a "why matched" hint, in the tooltip/sidebar/modal and on the side-panel card. The popup and side panel also show a one-line **page health summary** (`N specs · X exact · Y fuzzy · Z orphaned`), and the side panel lists any **orphaned** specs - specs pinned to this page (by their `pageUrl` scope) whose element is no longer on the page, so you know a doc exists but its anchor is gone.
 
-To harden a fragile spec, click **Scan for fragile specs** in the popup or side panel: it lists every spec on the page with a weak anchor that is currently failing, each with a copyable `data-spec-id="…"` snippet. Add that attribute to the element in your source and the next match resolves exactly. Specpin only suggests the snippet - it never edits your source.
+To harden a fragile spec, expand the **Fragile specs (N)** group in the popup or side panel (it appears only when the page has such specs): it lists every spec on the page with a weak anchor that is currently failing, each with a copyable `data-spec-id="…"` snippet. Add that attribute to the element in your source and the next match resolves exactly. Specpin only suggests the snippet - it never edits your source.
 
 ## 8. Switch language
 

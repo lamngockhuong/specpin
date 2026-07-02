@@ -144,8 +144,6 @@ const ja: Record<keyof Messages, string> = {
     "この要素には安定したアンカーがありません。次の属性をソースに追加すると、一致が正確で安定します:",
   "helper.copySnippet": "コピー",
   "helper.copied": "コピーしました！",
-  "helper.scanButton": "壊れやすい spec をスキャン",
-  "helper.scanEmpty": "このページに壊れやすい spec はありません。",
   "helper.scanTitle": "壊れやすい spec",
 
   // Capture / edit form.

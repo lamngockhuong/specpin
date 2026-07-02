@@ -234,8 +234,10 @@
     <div id="filters" class="filters" hidden></div>
     <div id="scope" hidden></div>
     <div id="health" class="health" hidden></div>
-    <button type="button" id="scan" class="link" hidden data-i18n="helper.scanButton">Scan for fragile specs</button>
-    <div id="scan-results"></div>
+    <details id="scan" class="filter-group scan" hidden>
+      <summary></summary>
+      <div id="scan-results"></div>
+    </details>
     <input type="search" id="search" data-i18n-placeholder="common.searchPlaceholder" data-i18n-aria="common.searchAria" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
     <script type="module" src="./main.ts"></script>

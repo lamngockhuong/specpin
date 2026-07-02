@@ -127,8 +127,8 @@ const guideSection = mountGuideSection(byId("guides"), {
     void actOnActiveTab({ type: "START_GUIDE", steps, name }, () => window.close()),
 });
 
-// The fragile-spec scan (shared wiring): a link toggle above the search box that
-// lists weak-anchored, currently-failing specs with a copyable data-spec-id
+// The fragile-spec list (shared wiring): a collapsible group above the search box
+// that lists weak-anchored, currently-failing specs with a copyable data-spec-id
 // snippet. Reads module state (enabled, lastReport, specs, locale) on each render.
 const fragileScan = mountFragileScan(byId("scan"), byId("scan-results"), {
   getState: () => ({

@@ -99,7 +99,7 @@ Các điều khiển tương tự cũng có ở dạng **side panel** luôn mở
 
 Mỗi spec được render cho thấy nó đã match element với độ tin cậy ra sao. Match chính xác (được giải bằng `data-spec-id`/test-id, `aria-label`, hoặc một `id` ổn định) thì im lặng - trường hợp tốt giữ yên tĩnh. Match độ tin cậy thấp hơn (chỉ giải được bằng CSS selector) nhận một badge **Selector match** kèm gợi ý "vì sao match", trong tooltip/sidebar/modal và trên spec card của side panel. Popup và side panel cũng hiển thị một dòng **tóm tắt sức khỏe trang** (`N specs · X exact · Y fuzzy · Z orphaned`), và side panel liệt kê mọi spec **mồ côi** - spec được ghim vào trang này (theo phạm vi `pageUrl` của nó) nhưng element không còn trên trang, để bạn biết tài liệu vẫn tồn tại nhưng neo của nó đã mất.
 
-Để làm một spec dễ vỡ trở nên bền hơn, click **Scan for fragile specs** trong popup hoặc side panel: nó liệt kê mọi spec trên trang có neo yếu và hiện đang thất bại, mỗi spec kèm một đoạn `data-spec-id="…"` sao chép được. Thêm thuộc tính đó vào element trong mã nguồn của bạn và lần match sau sẽ giải chính xác. Specpin chỉ gợi ý đoạn mã - nó không bao giờ sửa mã nguồn của bạn.
+Để làm một spec dễ vỡ trở nên bền hơn, mở rộng nhóm **Fragile specs (N)** trong popup hoặc side panel (nhóm này chỉ xuất hiện khi trang có spec như vậy): nó liệt kê mọi spec trên trang có neo yếu và hiện đang thất bại, mỗi spec kèm một đoạn `data-spec-id="…"` sao chép được. Thêm thuộc tính đó vào element trong mã nguồn của bạn và lần match sau sẽ giải chính xác. Specpin chỉ gợi ý đoạn mã - nó không bao giờ sửa mã nguồn của bạn.
 
 ## 8. Chuyển ngôn ngữ
 

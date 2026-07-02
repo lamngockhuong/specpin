@@ -94,6 +94,27 @@ async function toggleSpec(
   await refresh();
 }
 
+/** Build a spec-card action button (Delete / Edit / Hide). The click stops
+ *  propagation so it never bubbles to the card's highlight handler, then runs
+ *  `onClick` - single-sourcing that contract across the three buttons. */
+function actionButton(
+  className: string,
+  label: string,
+  tip: string,
+  onClick: () => void,
+): HTMLButtonElement {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = className;
+  b.textContent = label;
+  b.title = tip;
+  b.addEventListener("click", (e) => {
+    e.stopPropagation();
+    onClick();
+  });
+  return b;
+}
+
 /** Each spec is a card with title, description, file, and (when present) the
  *  business rules inline. Text goes through DOM nodes (never innerHTML) so spec
  *  content is never an HTML-injection sink. */
@@ -137,55 +158,19 @@ function renderSpecs(res: SpecsForOrigin): void {
     const visible = isVisible(facets, currentPath, state);
     if (!visible) li.classList.add("spec-hidden");
 
-    // Per-spec eye toggle (side panel only): show/hide this exact spec.
-    const eye = document.createElement("button");
-    eye.type = "button";
-    eye.className = "spec-vis";
-    eye.textContent = visible ? t("sidepanel.hide") : t("sidepanel.show");
-    eye.title = visible ? t("sidepanel.hideThisSpec") : t("sidepanel.showThisSpec");
-    // Don't let the eye's click bubble to the card's highlight handler.
-    eye.addEventListener("click", (e) => {
-      e.stopPropagation();
-      void toggleSpec(facets, !visible);
-    });
-    li.appendChild(eye);
-
-    // Edit button when this origin can write the spec back (sidecar + local that
-    // serves the page). Delegates to the active tab's content script, which opens
-    // the in-page edit form (the form + capture picker must run in the page context).
-    if (spec.writable) {
-      const edit = document.createElement("button");
-      edit.type = "button";
-      edit.className = "spec-edit";
-      edit.textContent = t("common.edit");
-      edit.title = t("sidepanel.editThisSpec");
-      edit.addEventListener("click", (e) => {
-        e.stopPropagation();
-        void actOnActiveTab({ type: "EDIT_SPEC", specId: spec.id });
-      });
-      li.appendChild(edit);
-
-      // Delete delegates to the active tab's content script (DELETE_SPEC_HERE),
-      // which runs the destructive confirm + DELETE_SPEC in the page context, so
-      // the write is origin-routed exactly like Edit.
-      const del = document.createElement("button");
-      del.type = "button";
-      del.className = "spec-delete";
-      del.textContent = t("common.delete");
-      del.title = t("sidepanel.deleteThisSpec");
-      del.addEventListener("click", (e) => {
-        e.stopPropagation();
-        void actOnActiveTab({ type: "DELETE_SPEC_HERE", specId: spec.id });
-      });
-      li.appendChild(del);
-    }
-
     if (multiProject && spec.project) {
       const project = document.createElement("span");
       project.className = "project";
       project.textContent = spec.project;
       li.appendChild(project);
     }
+
+    // Header row: the title (with source + match-tier badges) flexes to fill and
+    // wraps when long; the action cluster stays flush-right. They are flex
+    // siblings, not overlapping layers, so a long title can never run under the
+    // actions (the fixed-offset overlap bug).
+    const head = document.createElement("div");
+    head.className = "spec-head";
 
     const title = document.createElement("div");
     title.className = "t";
@@ -197,7 +182,41 @@ function renderSpecs(res: SpecsForOrigin): void {
     // renderers' confidence badge. Absent when the report is unknown.
     const tier = tierBadge(reportById.get(spec.id));
     if (tier) title.appendChild(tier);
-    li.appendChild(title);
+    head.appendChild(title);
+
+    // Actions, ordered Delete / Edit / Hide left-to-right. Delete + Edit only
+    // when this origin can write the spec back; the eye toggle is always present.
+    const actions = document.createElement("div");
+    actions.className = "spec-actions";
+
+    if (spec.writable) {
+      // Both Delete and Edit delegate to the active tab's content script so the
+      // write (and Delete's destructive confirm) runs origin-routed in the page
+      // context, where the edit form + capture picker also live.
+      actions.append(
+        actionButton("spec-delete", t("common.delete"), t("sidepanel.deleteThisSpec"), () => {
+          void actOnActiveTab({ type: "DELETE_SPEC_HERE", specId: spec.id });
+        }),
+        actionButton("spec-edit", t("common.edit"), t("sidepanel.editThisSpec"), () => {
+          void actOnActiveTab({ type: "EDIT_SPEC", specId: spec.id });
+        }),
+      );
+    }
+
+    // Per-spec eye toggle (side panel only): show/hide this exact spec.
+    actions.appendChild(
+      actionButton(
+        "spec-vis",
+        visible ? t("sidepanel.hide") : t("sidepanel.show"),
+        visible ? t("sidepanel.hideThisSpec") : t("sidepanel.showThisSpec"),
+        () => {
+          void toggleSpec(facets, !visible);
+        },
+      ),
+    );
+
+    head.appendChild(actions);
+    li.appendChild(head);
 
     const description = resolveLocalized(spec.description, activeLocale, defaultLocale);
     if (description) {
@@ -279,7 +298,7 @@ function renderOrphaned(res: SpecsForOrigin): void {
   box.appendChild(ul);
 }
 
-// The fragile-spec scan (shared wiring; see the popup). Reads module state on each
+// The fragile-spec list (shared wiring; see the popup). Reads module state on each
 // render and lists weak-anchored, currently-failing specs with a copyable snippet.
 const fragileScan = mountFragileScan(byId("scan"), byId("scan-results"), {
   getState: () => ({

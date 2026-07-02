@@ -101,40 +101,32 @@ export interface FragileScanDeps {
   };
 }
 
-/** Mount the "Scan for fragile specs" control + its result list, shared by the
- *  popup and side panel. Clicking the button toggles a list of the page's fragile
- *  specs (weak anchor AND currently failing) each with a copyable `data-spec-id`
- *  snippet; Copy writes to the clipboard and confirms via the surface toast.
- *  Nothing edits source. Built with DOM nodes (no innerHTML). Owns its own
- *  visibility: the button hides when Specpin is off or the report is unknown.
- *  Returns a `render()` the surface calls from its refresh. */
+/** Mount the fragile-spec list, shared by the popup and side panel. It is a
+ *  collapsible group (native `<details>`, mirroring the facet filter groups): the
+ *  `<summary>` reads "Fragile specs (N)" and expands to a list of the page's
+ *  fragile specs (weak anchor AND currently failing), each with a copyable
+ *  `data-spec-id` snippet; Copy writes to the clipboard and confirms via the
+ *  surface toast. Nothing edits source. Built with DOM nodes (no innerHTML). Owns
+ *  its own visibility: the whole group hides when Specpin is off, the report is
+ *  unknown, or there are no fragile specs (count 0) - no empty state to nag. The
+ *  expand/collapse state lives on the stable `<details>` element, so it survives
+ *  refreshes without a separate open flag. Returns a `render()` the surface calls
+ *  from its refresh. */
 export function mountFragileScan(
-  button: HTMLElement,
+  details: HTMLElement,
   container: HTMLElement,
   deps: FragileScanDeps,
 ): { render: () => void } {
-  let open = false;
+  // The `<summary>` is a static child of the `<details>` in both surfaces' HTML.
+  const summary = details.querySelector("summary") as HTMLElement;
 
-  const renderResults = (): void => {
+  const render = (): void => {
+    const { enabled, report, specs, locale, defaultLocale } = deps.getState();
+    const fragile = enabled && report ? fragileEntries(report) : [];
     container.replaceChildren();
-    const { report, specs, locale, defaultLocale } = deps.getState();
-    if (!open || !report) {
-      container.hidden = true;
-      return;
-    }
-    container.hidden = false;
-    const fragile = fragileEntries(report);
-    if (fragile.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "scan-empty";
-      empty.textContent = t("helper.scanEmpty");
-      container.appendChild(empty);
-      return;
-    }
-    const head = document.createElement("div");
-    head.className = "scan-title";
-    head.textContent = t("helper.scanTitle");
-    container.appendChild(head);
+    details.hidden = fragile.length === 0;
+    if (details.hidden) return;
+    summary.textContent = `${t("helper.scanTitle")} (${fragile.length})`;
     const specById = new Map(specs.map((s) => [s.id, s]));
     // A shared "taken" set so duplicate titles get distinct ids across the list.
     const taken = new Set<string>();
@@ -162,24 +154,6 @@ export function mountFragileScan(
       container.appendChild(row);
     }
   };
-
-  const render = (): void => {
-    const { enabled, report } = deps.getState();
-    const show = enabled && report !== null;
-    button.hidden = !show;
-    if (!show) {
-      open = false;
-      container.replaceChildren();
-      container.hidden = true;
-      return;
-    }
-    renderResults();
-  };
-
-  button.addEventListener("click", () => {
-    open = !open;
-    renderResults();
-  });
 
   return { render };
 }

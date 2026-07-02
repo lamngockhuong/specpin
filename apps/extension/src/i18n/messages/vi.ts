@@ -137,8 +137,6 @@ const vi: Record<keyof Messages, string> = {
     "Phần tử này không có neo ổn định. Thêm thuộc tính này vào mã nguồn để khớp chính xác và ổn định:",
   "helper.copySnippet": "Sao chép",
   "helper.copied": "Đã sao chép!",
-  "helper.scanButton": "Quét spec dễ vỡ",
-  "helper.scanEmpty": "Không có spec dễ vỡ trên trang này.",
   "helper.scanTitle": "Spec dễ vỡ",
 
   // Capture / edit form.
