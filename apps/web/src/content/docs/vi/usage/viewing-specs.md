@@ -21,6 +21,10 @@ Chuyển chế độ bằng menu thả xuống **Chế độ hiển thị** tron
 
 Mỗi spec có thể ghi đè mặc định bằng `preferredDisplayMode` riêng của nó. Menu thả xuống hiển thị **Theo từng spec** khi không có chế độ nào bị ép buộc.
 
+## Xoay vòng qua các spec đã khớp
+
+Nhấn `Alt+Shift+N` để di chuyển giữa các spec khớp trên trang hiện tại: mỗi lần nhấn sẽ cuộn tới và nháy sáng ngắn phần tử của spec tiếp theo, rồi quay lại spec đầu tiên sau spec cuối. Nó tôn trọng thiết lập giảm chuyển động của bạn.
+
 ## Side panel (Chrome và Firefox)
 
 **Side panel** là một bề mặt neo cố định luôn mở khi bạn duyệt. Nó hiển thị các điều khiển giống như popup, cộng với mô tả đầy đủ và quy tắc nghiệp vụ của mỗi spec. Hộp tìm kiếm cũng lọc theo mô tả trong side panel.
@@ -33,6 +37,18 @@ Side panel tự động làm mới khi bạn chuyển tab hoặc điều hướn
 ## Tìm kiếm spec
 
 Hộp tìm kiếm trong popup và side panel lọc spec theo thời gian thực theo tiêu đề, file và tag. Trong side panel, nó cũng tìm kiếm văn bản mô tả. Không có kết quả hiển thị thông báo "Không có spec khớp với tìm kiếm".
+
+## Chia sẻ một spec (deep link)
+
+Mỗi thẻ spec trong side panel và mỗi tooltip đã ghim có hành động **Sao chép liên kết**. Nó sao chép một URL dạng `<url-trang>#specpin=<spec-id>`. Mở liên kết đó sẽ cuộn tới và nháy sáng phần tử của spec, đồng thời mở side panel với thẻ của nó được làm nổi bật — tiện để chỉ cho đồng đội một spec cụ thể trong ngữ cảnh.
+
+Nếu phần tử render muộn, Specpin sẽ thử lại một lúc trước khi bỏ cuộc. Nếu spec tồn tại nhưng phần tử của nó không còn trên trang, thẻ trong side panel vẫn mở và hiện thông báo ngắn "không có trên trang này". Mọi fragment mà ứng dụng của bạn đã dùng trong URL đều được giữ nguyên.
+
+## Thay đổi kể từ lần xem trước
+
+Popup và side panel hiển thị bản tóm tắt **"N thay đổi kể từ lần xem trước"**: một con số cùng tiêu đề của các spec được thêm hoặc chỉnh sửa kể từ lần bạn xem gần nhất, theo từng dự án. Nhấp **Đánh dấu đã xem** để xóa nó và đặt mốc mới.
+
+Việc phát hiện so sánh hash nội dung của tiêu đề, mô tả và quy tắc nghiệp vụ của mỗi spec (trên mọi ngôn ngữ), lưu cục bộ trong trình duyệt của bạn — không mạng, không telemetry. Chuyển ngôn ngữ spec không bao giờ được tính là thay đổi. Lần đầu một dự án xuất hiện, các spec của nó được seed âm thầm nên không có gì hiện ra là "mới".
 
 ## Huy hiệu nguồn
 

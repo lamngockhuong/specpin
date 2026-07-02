@@ -106,6 +106,8 @@ Follow steps 4-6 from Option A, pasting your own sidecar URL and token.
 | `Alt+Shift+S` | Toggle Specpin on/off |
 | `Alt+Shift+M` | Cycle display mode |
 | `Alt+Shift+C` | Toggle capture mode (`Esc` cancels) |
+| `Alt+Shift+N` | Cycle focus through matched specs |
+| `Alt+Shift+G` | Start / stop the default guided tour |
 
 ## Next steps
 

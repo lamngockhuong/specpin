@@ -106,6 +106,8 @@ Làm theo các bước 4-6 từ Lựa chọn A, dán URL và token sidecar của
 | `Alt+Shift+S` | Bật/tắt Specpin |
 | `Alt+Shift+M` | Chuyển chế độ hiển thị |
 | `Alt+Shift+C` | Bật/tắt chế độ ghi (`Esc` để hủy) |
+| `Alt+Shift+N` | Xoay vòng qua các spec đã khớp |
+| `Alt+Shift+G` | Bắt đầu / dừng tour hướng dẫn mặc định |
 
 ## Bước tiếp theo
 

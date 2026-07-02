@@ -21,6 +21,10 @@ Switch modes with the **Display mode** dropdown in the popup or side panel, or p
 
 Each spec can override the default with its own `preferredDisplayMode`. The dropdown shows **Per-spec mode** when no mode is forced.
 
+## Cycle through matched specs
+
+Press `Alt+Shift+N` to move between the specs matched on the current page: each press scrolls to and briefly flashes the next spec's element, wrapping back to the first after the last. It respects your reduced-motion setting.
+
 ## Side panel (Chrome and Firefox)
 
 The **side panel** is a docked surface that stays open while you browse. It shows the same controls as the popup, plus each spec's full description and business rules inline. The search box also filters by description in the side panel.
@@ -33,6 +37,18 @@ The side panel auto-refreshes as you switch tabs or navigate.
 ## Search specs
 
 The search box in the popup and side panel filters specs live by title, file, and tags. In the side panel, it also searches description text. No results show a "No specs match your search" message.
+
+## Share a spec (deep link)
+
+Each side-panel spec card and each pinned tooltip has a **Copy link** action. It copies a URL of the form `<page-url>#specpin=<spec-id>`. Opening that link scrolls to and flashes the spec's element and opens the side panel with its card highlighted — handy for pointing a teammate at one spec in context.
+
+If the element renders late, Specpin retries briefly before giving up. If the spec exists but its element is gone from the page, the side-panel card still opens and a short "not on this page" message appears. Any fragment your app already uses in the URL is preserved.
+
+## What changed since last visit
+
+The popup and side panel show a **"N changed since last visit"** digest: a count plus the titles of specs added or edited since you last looked, per project. Click **Mark all seen** to clear it and set the new baseline.
+
+Detection compares a content hash of each spec's title, description, and business rules (across all languages), stored locally in your browser — no network, no telemetry. Switching the spec language never counts as a change. The first time a project appears, its specs are seeded silently, so nothing shows up as "new".
 
 ## Source badges
 
