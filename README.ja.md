@@ -12,6 +12,15 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/chrome-web-store/v/kkfmoieoahdjneagognaoedggkiiolkn?label=chrome&style=flat-square&logo=googlechrome&logoColor=white&color=4285F4" alt="Chrome Web Store Version">
+  </a>
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/chrome-web-store/users/kkfmoieoahdjneagognaoedggkiiolkn?style=flat-square&color=2DD4BF" alt="Chrome Web Store Users">
+  </a>
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/chrome-web-store/rating/kkfmoieoahdjneagognaoedggkiiolkn?style=flat-square&color=facc15" alt="Chrome Web Store Rating">
+  </a>
   <a href="https://github.com/lamngockhuong/specpin/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/lamngockhuong/specpin/ci.yml?style=flat-square&label=CI&color=2DD4BF&logo=githubactions&logoColor=white" alt="CI">
   </a>
@@ -24,6 +33,13 @@
   <img src="https://img.shields.io/badge/Node-%E2%89%A520-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node >= 20">
   <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go 1.26">
   <img src="https://img.shields.io/badge/MV3-Chrome%20%2B%20Firefox-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome + Firefox">
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/badge/Chrome_Web_Store-からインストール-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Storeからインストール">
+  </a>
+  <img src="https://img.shields.io/badge/Firefox_Add--ons-近日公開-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Firefox Add-ons - 近日公開">
 </p>
 
 <p align="center">
@@ -62,6 +78,12 @@ Specpinは**仕様駆動のコードジェネレーター**ではありません
 2. `specpin serve`でトークン認証されたlocalhost HTTP APIを通じて`.specs/`を公開し、ライブリロード（SSE）を提供します。
 3. ブラウザ拡張機能がsidecarに接続し、各specのfingerprintをライブDOMと照合して、要素の上にレンダリングします。
 
+## extensionのインストール
+
+Chrome版Specpinは**[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)**からインストールできます。素早くアクセスできるようツールバーにピン留めしておきましょう。
+
+Firefox Add-onsは近日公開予定です。それまでの間、Firefoxユーザーはソースからビルドしてunpackedで読み込めます（[実行ガイド](./docs/run-guide.md)を参照）。
+
 ## CLIのインストール
 
 sidecarは単一の自己完結型バイナリとして提供されます。最も簡単な方法はnpm経由で、OSとCPUに合ったビルド済みバイナリを自動でダウンロードします：
@@ -86,9 +108,9 @@ npm install -g @specpin/cli
 specpin init                   # .specs/manifest.json を作成
 specpin serve                  # localhost URL + bearer tokenを表示
 
-# 3. 拡張機能をロード（unpacked）して接続
-#    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
-#    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
+# 3. 拡張機能をインストールして接続
+#    Chrome:  Chrome Web Store からインストール（上記リンク）
+#    Firefox: unpacked でビルド（AMO は近日公開）-> pnpm --filter @specpin/extension build:firefox
 ```
 
 表示されたURL + tokenを拡張機能の接続設定にペーストし、アプリを開くとspecが各要素にレンダリングされます。全体のフロー（init -> serve -> ロード -> 接続 -> レンダリング -> capture）については**[`docs/run-guide.md`](./docs/run-guide.md)**を参照してください。または同梱の**[デモアプリ](./examples/demo-react-app)**で試せます：
@@ -183,7 +205,7 @@ go test ./...
 - [`docs/code-standards.md`](./docs/code-standards.md) - TS/Go規約、ツール設定、スキーマ管理
 - [`docs/design-system.md`](./docs/design-system.md) - 拡張機能UIモックアップ + 共有カラー/フォントトークンのワークフロー
 - [`docs/deployment-guide.md`](./docs/deployment-guide.md) - ウェブサイトPagesデプロイ + 拡張機能/CLIリリースパイプライン
-- [`docs/project-roadmap.md`](./docs/project-roadmap.md) - Phase 1 MVP完了 + 1.1予定機能
+- [`docs/project-roadmap.md`](./docs/project-roadmap.md) - 出荷済み機能 + 予定機能
 
 ## リリース
 
@@ -200,7 +222,11 @@ cd apps/cli && make check-schema && go test ./...
 
 ## ステータス
 
-Phase 1 MVPと1.1のスライスを出荷済み：GoのsidecarがI`.specs/`を提供し、WXT拡張機能はfingerprintをマッチングして手動captureとともにspec（tooltip + sidebar + modal）をレンダリングします。specは多言語対応でブラウザ内言語切り替えとタブ形式のロケール別エディターを備え、説明とビジネスルールはツールバーで作成する安全なMarkdownサブセットをサポートし、拡張機能はoriginでルーティングして複数のプロジェクトに同時に接続します。追加済み: オフライン`specpin validate` + CI spec-lint、書き込み可能なローカルプロジェクト（編集、capture、作成、グループzipエクスポート）、クライアントサイドspec検索、ソースバッジ、プロジェクト単位の有効/無効、サイドパネルサーフェス、ユーザー選択可能なテーマ（システム / ライト / ダーク）、UIクロームi18n（EN + VI）。まだ保留中: FileSystem Accessソース、ハイブリッドfingerprint採点、overlay + inline-badgeレンダラー、Safariパッケージング、`specpin generate`（AI）。
+Specpinはリリース済みで、[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)で公開中です。Firefox Add-onsは近日公開予定。開発は継続中です。
+
+出荷済み: Goのsidecarが`.specs/`を提供し、WXT拡張機能はfingerprintをマッチングして手動captureとともにspec（tooltip + sidebar + modal）をレンダリングします。specは多言語対応（ブラウザ内言語切り替え + タブ形式のロケール別エディター）で、ツールバーで作成する安全なMarkdownサブセットをサポートし、拡張機能はoriginでルーティングして複数のプロジェクトに同時に接続します。ほかに: 書き込み可能なローカルプロジェクト（編集、capture、作成、グループzipエクスポート）、単一spec削除、guide mode（spec駆動のオンボーディングツアー）、オフライン`specpin validate` + CI spec-lint、クライアントサイドspec検索、ソースバッジ、プロジェクト単位の有効/無効、サイドパネルサーフェス、ユーザー選択可能なテーマ（システム / ライト / ダーク）、UIクロームi18n（EN + VI + JA）。
+
+予定 / 検討中: FileSystem Accessソース、ハイブリッドfingerprint採点、overlay + inline-badgeレンダラー、Safariパッケージング、`specpin generate`（AI支援capture）。
 
 ## スポンサー
 

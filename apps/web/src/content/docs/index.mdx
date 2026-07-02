@@ -12,6 +12,10 @@ hero:
       link: /guide/getting-started/
       icon: right-arrow
       variant: primary
+    - text: Install from Chrome Web Store
+      link: https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn
+      icon: external
+      variant: secondary
     - text: View on GitHub
       link: https://github.com/lamngockhuong/specpin
       icon: external
@@ -19,6 +23,19 @@ hero:
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<div class="browser-cta" not-content>
+  <a class="browser-cta-item" href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="/chrome-logo.svg" alt="" width="40" height="40" />
+    <span class="browser-cta-name">Chrome Web Store</span>
+    <span class="browser-cta-status">Available now</span>
+  </a>
+  <div class="browser-cta-item is-soon" aria-disabled="true" title="Coming soon">
+    <img src="/firefox-logo.svg" alt="" width="40" height="40" />
+    <span class="browser-cta-name">Firefox Add-ons</span>
+    <span class="browser-cta-status">Coming soon</span>
+  </div>
+</div>
 
 ## What Specpin does
 
@@ -51,7 +68,7 @@ living, Git-versioned documentation onto the interface you already have.
   <Card title="Secure by default" icon="approve-check">
     The sidecar binds localhost by default, authenticates every request with a
     bearer token, and accepts only extension origins. Opt into a remote sidecar
-    over HTTPS when a team needs it — it stays a server you run.
+    over HTTPS when a team needs it, it stays a server you run.
   </Card>
 </CardGrid>
 
@@ -85,23 +102,19 @@ living, Git-versioned documentation onto the interface you already have.
 ## Quick start
 
 ```bash
-# 1. Install workspace deps and build everything
-pnpm install
-pnpm build
+# 1. Install the CLI
+npm install -g @specpin/cli    # or: pnpm add -g @specpin/cli
 
-# 2. Build the Go sidecar (from apps/cli)
-cd apps/cli && make build      # -> bin/specpin
-
-# 3. In your project repo: scaffold and serve specs
+# 2. In your project repo: scaffold and serve specs
 specpin init                   # creates .specs/manifest.json
 specpin serve                  # prints a localhost URL + bearer token
 
-# 4. Build the extension (unpacked) and connect
-#    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
-#    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
+# 3. Install the extension and connect
+#    Chrome:  Chrome Web Store (link below)
+#    Firefox: build from source (AMO coming soon)
 ```
 
-Paste the printed URL and token into the extension, open your app, and specs
+Install Specpin for Chrome from the [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn), paste the printed URL and token into the extension, open your app, and specs
 render on their elements.
 
 <CardGrid>

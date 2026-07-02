@@ -12,6 +12,10 @@ hero:
       link: /ja/guide/getting-started/
       icon: right-arrow
       variant: primary
+    - text: Chrome Web Storeからインストール
+      link: https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn
+      icon: external
+      variant: secondary
     - text: GitHubで見る
       link: https://github.com/lamngockhuong/specpin
       icon: external
@@ -19,6 +23,19 @@ hero:
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<div class="browser-cta" not-content>
+  <a class="browser-cta-item" href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="/chrome-logo.svg" alt="" width="40" height="40" />
+    <span class="browser-cta-name">Chrome Web Store</span>
+    <span class="browser-cta-status">公開中</span>
+  </a>
+  <div class="browser-cta-item is-soon" aria-disabled="true" title="近日公開">
+    <img src="/firefox-logo.svg" alt="" width="40" height="40" />
+    <span class="browser-cta-name">Firefox Add-ons</span>
+    <span class="browser-cta-status">近日公開</span>
+  </div>
+</div>
 
 ## Specpinができること
 
@@ -49,7 +66,7 @@ Specpinはビジネス仕様（ルール、説明、受け入れ基準）を*動
   <Card title="デフォルトでセキュア" icon="approve-check">
     sidecarはデフォルトでlocalhostにバインドし、すべてのリクエストをbearerトークンで認証し、
     extensionのoriginのみを受け付けます。チームに必要なときはHTTPS経由のリモートsidecarを
-    オプトインできます — それはあなたが運用するサーバーのままです。
+    オプトインできます。それはあなたが運用するサーバーのままです。
   </Card>
 </CardGrid>
 
@@ -82,23 +99,19 @@ Specpinはビジネス仕様（ルール、説明、受け入れ基準）を*動
 ## クイックスタート
 
 ```bash
-# 1. ワークスペースの依存関係をインストールしてすべてをビルド
-pnpm install
-pnpm build
+# 1. CLIをインストール
+npm install -g @specpin/cli    # または: pnpm add -g @specpin/cli
 
-# 2. GoのsidecarをビルドInApps/cliから
-cd apps/cli && make build      # -> bin/specpin
-
-# 3. プロジェクトリポジトリで：specのスキャフォールドと配信
+# 2. プロジェクトリポジトリで：specのスキャフォールドと配信
 specpin init                   # .specs/manifest.jsonを作成
 specpin serve                  # localhost URL + bearerトークンを表示
 
-# 4. extensionをビルド（unpacked）して接続
-#    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
-#    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
+# 3. extensionをインストールして接続
+#    Chrome:  Chrome Web Store（下記リンク）
+#    Firefox: ソースからビルド（AMOは近日公開）
 ```
 
-表示されたURLとトークンをextensionに貼り付け、アプリを開くと各要素にspecがレンダリングされます。
+Chrome版Specpinを[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)からインストールし、表示されたURLとトークンをextensionに貼り付け、アプリを開くと各要素にspecがレンダリングされます。
 
 <CardGrid>
   <Card title="Specpinを初めて使う方へ" icon="rocket">

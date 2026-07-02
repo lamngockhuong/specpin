@@ -7,14 +7,22 @@ description: specpin CLI sidecarをビルド・実行して、ブラウザextens
 
 ## インストール
 
-現在、CLIはソースからビルドします。Go 1.26が必要です。
+CLIはnpmからインストールします。OSとCPUに合ったビルド済みバイナリを自動でダウンロードします：
+
+```bash
+npm install -g @specpin/cli    # または: pnpm add -g @specpin/cli
+specpin --version
+
+# またはインストールせずに実行:
+npx @specpin/cli serve
+```
+
+バイナリを直接入手したい場合は、[最新のCLIリリース](https://github.com/lamngockhuong/specpin/releases?q=cli)から`specpin-<os>-<arch>`をダウンロードするか、ソースからビルド（Go 1.26が必要）：
 
 ```bash
 cd apps/cli
-make build
+make build      # -> bin/specpin
 ```
-
-`bin/specpin`が生成されます。バイナリをPATHに追加するか、直接呼び出すことができます。
 
 ## プロジェクトの初期化
 
@@ -64,7 +72,7 @@ specpin serve --port 5173 --token "$(openssl rand -hex 24)"
 
 ## リモートマシンで配信する
 
-デフォルトでは、Specpinは単一ユーザーのlocalhostツールです。1つの`.specs/`をチームで共有するには、共有ホストでsidecarを実行し、extensionを**HTTPS**経由で接続します。Goバイナリはプレーンなhttpのみを話します。**TLSは前段のリバースプロキシ**が終端します。リモートはHTTPSが*必須*です — extensionのリクエストはsecure contextで実行されるため、プレーンな`http://`のリモートはmixed contentとしてブロックされます。
+デフォルトでは、Specpinは単一ユーザーのlocalhostツールです。1つの`.specs/`をチームで共有するには、共有ホストでsidecarを実行し、extensionを**HTTPS**経由で接続します。Goバイナリはプレーンなhttpのみを話します。**TLSは前段のリバースプロキシ**が終端します。リモートはHTTPSが*必須*です。extensionのリクエストはsecure contextで実行されるため、プレーンな`http://`のリモートはmixed contentとしてブロックされます。
 
 推奨：sidecarをloopbackに保ち、プロキシ（Caddy、nginx、Cloudflare Tunnel）を**同じホスト**で実行し、ポートとトークンを固定します：
 
@@ -83,15 +91,15 @@ specs.example.com {
 
 ### ドメインがない場合：IPで配信する
 
-IPのみでドメインのない社内サーバーはCaddyの*自動*HTTPSを使えませんが、extensionは`https://<ip>`をそのまま受け付けます — 証明書のSANには素のIPを指定できるため、ドメインは不要です。2つの方法があり、どちらもすべてのブラウザで動作します。
+IPのみでドメインのない社内サーバーはCaddyの*自動*HTTPSを使えませんが、extensionは`https://<ip>`をそのまま受け付けます。証明書のSANには素のIPを指定できるため、ドメインは不要です。2つの方法があり、どちらもすべてのブラウザで動作します。
 
 - **内部CAによるHTTPS。** Caddyのサイトアドレスに素のIPを指定し`tls internal`を付けるか（`192.168.1.50 { tls internal; reverse_proxy 127.0.0.1:51234 }`）、nginx向けに`mkcert 192.168.1.50` / opensslでIP-SAN証明書を発行します。**ルートCA**をチームのブラウザに一度配布してから、`https://192.168.1.50`へ接続します。プライベートLANのIPでもパブリックIPでも使えます。
-- **localhostへのSSHトンネル。** `ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50`でsidecarをloopbackに保ったまま、`http://localhost:9123`へ接続します — `localhost`は常に免除されるため証明書は不要です。
+- **localhostへのSSHトンネル。** `ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50`でsidecarをloopbackに保ったまま、`http://localhost:9123`へ接続します。`localhost`は常に免除されるため証明書は不要です。
 
 素の`http://<ip>`は使えません。ブラウザがプレーンテキストのリモートをブロックするためです（プライベートLANのIPはChrome 142+のLocal Network Access経由でのみ動作しますが、extensionのservice workerからは許可プロンプトを出せず、Firefoxには同等の仕組みがありません）。詳しいレシピはrun guideの「No domain? Serve over IP」セクションを参照してください。
 
 :::caution
-bearerトークンは、ブラウザ以外のネットワーククライアントに対する唯一の認可境界です（CORSはブラウザのみを制約します）。パスワードのように扱い、帯域外（out-of-band）で配布してください。非loopbackの生ポートはプレーンテキストです — HTTPSプロキシを前段に置かずにインターネットへ公開しないでください。
+bearerトークンは、ブラウザ以外のネットワーククライアントに対する唯一の認可境界です（CORSはブラウザのみを制約します）。パスワードのように扱い、帯域外（out-of-band）で配布してください。非loopbackの生ポートはプレーンテキストです。HTTPSプロキシを前段に置かずにインターネットへ公開しないでください。
 :::
 
 動作するCaddy + nginxの例（SSEバッファリング、CORSプリフライト）と完全な脅威モデルについては、実行ガイドの「Serve on a remote machine」セクションを参照してください。

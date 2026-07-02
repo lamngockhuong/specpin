@@ -12,6 +12,15 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/chrome-web-store/v/kkfmoieoahdjneagognaoedggkiiolkn?label=chrome&style=flat-square&logo=googlechrome&logoColor=white&color=4285F4" alt="Chrome Web Store Version">
+  </a>
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/chrome-web-store/users/kkfmoieoahdjneagognaoedggkiiolkn?style=flat-square&color=2DD4BF" alt="Chrome Web Store Users">
+  </a>
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/chrome-web-store/rating/kkfmoieoahdjneagognaoedggkiiolkn?style=flat-square&color=facc15" alt="Chrome Web Store Rating">
+  </a>
   <a href="https://github.com/lamngockhuong/specpin/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/lamngockhuong/specpin/ci.yml?style=flat-square&label=CI&color=2DD4BF&logo=githubactions&logoColor=white" alt="CI">
   </a>
@@ -24,6 +33,13 @@
   <img src="https://img.shields.io/badge/Node-%E2%89%A520-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node >= 20">
   <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go 1.26">
   <img src="https://img.shields.io/badge/MV3-Chrome%20%2B%20Firefox-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome + Firefox">
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
+    <img src="https://img.shields.io/badge/Cài_từ-Chrome_Web_Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Cài từ Chrome Web Store">
+  </a>
+  <img src="https://img.shields.io/badge/Firefox_Add--ons-Sắp_có-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Firefox Add-ons - Sắp có">
 </p>
 
 <p align="center">
@@ -62,6 +78,12 @@ Specpin **không phải** công cụ sinh code từ đặc tả (không liên qu
 2. `specpin serve` mở `.specs/` qua API HTTP localhost có xác thực token kèm live-reload (SSE).
 3. Extension trình duyệt kết nối tới sidecar, khớp fingerprint của từng đặc tả với DOM đang chạy, rồi hiển thị đặc tả lên đúng phần tử.
 
+## Cài đặt extension
+
+Cài Specpin cho Chrome từ **[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)**. Ghim nó lên thanh công cụ để truy cập nhanh.
+
+Firefox Add-ons sắp có. Trong lúc chờ, người dùng Firefox có thể build từ mã nguồn và nạp dạng unpacked (xem [hướng dẫn chạy](./docs/vi/run-guide.md)).
+
 ## Cài đặt CLI
 
 Sidecar là một file binary độc lập. Cách dễ nhất là qua npm, nó tự tải binary
@@ -89,9 +111,9 @@ npm install -g @specpin/cli
 specpin init                   # tạo .specs/manifest.json
 specpin serve                  # in ra URL localhost + bearer token
 
-# 3. Nạp extension (unpacked) và kết nối
-#    Chrome:  pnpm --filter @specpin/extension build         -> .output/chrome-mv3
-#    Firefox: pnpm --filter @specpin/extension build:firefox -> .output/firefox-mv2
+# 3. Cài extension và kết nối
+#    Chrome:  cài từ Chrome Web Store (link ở trên)
+#    Firefox: build unpacked (AMO sắp có) -> pnpm --filter @specpin/extension build:firefox
 ```
 
 Dán URL + token vừa in vào phần cài đặt kết nối của extension, mở ứng dụng của bạn, và đặc tả sẽ hiển thị trên đúng phần tử. Xem **[`docs/vi/run-guide.md`](./docs/vi/run-guide.md)** để biết toàn bộ vòng lặp init -> serve -> nạp -> kết nối -> hiển thị -> capture, hoặc thử ngay với **[ứng dụng demo](./examples/demo-react-app)** đi kèm:
@@ -185,7 +207,7 @@ go test ./...
 - [`docs/vi/schema-reference.md`](./docs/vi/schema-reference.md) - định dạng đặc tả v1
 - [`docs/vi/code-standards.md`](./docs/vi/code-standards.md) - quy ước TS/Go, cấu hình công cụ, quản lý schema
 - [`docs/vi/design-system.md`](./docs/vi/design-system.md) - mockup giao diện extension + quy trình token màu/font dùng chung
-- [`docs/vi/project-roadmap.md`](./docs/vi/project-roadmap.md) - hoàn thành Phase 1 MVP + tính năng dự kiến 1.1
+- [`docs/vi/project-roadmap.md`](./docs/vi/project-roadmap.md) - các tính năng đã có + tính năng dự kiến
 
 ## Đóng góp
 
@@ -198,7 +220,11 @@ cd apps/cli && make check-schema && go test ./...
 
 ## Trạng thái
 
-Phase 1 MVP đã ra mắt, kèm các phần của 1.1: sidecar Go phục vụ `.specs/`, và extension WXT khớp fingerprint rồi hiển thị đặc tả (tooltip + sidebar + modal) với capture thủ công. Đặc tả đa ngôn ngữ với công tắc đổi ngôn ngữ ngay trong trình duyệt và trình soạn thảo theo từng locale dạng tab; mô tả và quy tắc nghiệp vụ mang một tập con Markdown an toàn soạn qua thanh công cụ và hiển thị trên mọi bề mặt; extension kết nối nhiều dự án cùng lúc, định tuyến theo origin. Đã có thêm: `specpin validate` offline + spec-lint trong CI, dự án cục bộ ghi được (sửa, capture, tạo mới, export nhóm dạng zip), tìm kiếm đặc tả phía client, huy hiệu nguồn, bật/tắt theo từng dự án, bề mặt side panel, tự chọn giao diện (System / Light / Dark), và i18n cho giao diện (EN + VI). Vẫn còn hoãn lại: nguồn FileSystem Access, chấm điểm fingerprint kiểu hybrid, renderer overlay + inline-badge, đóng gói Safari, và `specpin generate` (AI).
+Specpin đã phát hành và có mặt trên [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn); Firefox Add-ons sắp có. Đang tiếp tục phát triển.
+
+Đã có: sidecar Go phục vụ `.specs/`, và extension WXT khớp fingerprint rồi hiển thị đặc tả (tooltip + sidebar + modal) với capture thủ công. Đặc tả đa ngôn ngữ (công tắc đổi ngôn ngữ trong trình duyệt + trình soạn thảo theo từng locale dạng tab) và mang một tập con Markdown an toàn soạn qua thanh công cụ; extension kết nối nhiều dự án cùng lúc, định tuyến theo origin. Ngoài ra: dự án cục bộ ghi được (sửa, capture, tạo mới, export nhóm dạng zip), xoá spec đơn lẻ, guide mode (tour onboarding theo spec), `specpin validate` offline + spec-lint trong CI, tìm kiếm đặc tả phía client, huy hiệu nguồn, bật/tắt theo từng dự án, bề mặt side panel, tự chọn giao diện (System / Light / Dark), và i18n cho giao diện (EN + VI + JA).
+
+Dự kiến / đang cân nhắc: nguồn FileSystem Access, chấm điểm fingerprint kiểu hybrid, renderer overlay + inline-badge, đóng gói Safari, và `specpin generate` (capture có AI hỗ trợ).
 
 ## Tài trợ
 

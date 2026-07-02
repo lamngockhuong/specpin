@@ -63,7 +63,13 @@ Sửa một tệp `.spec.json` trên đĩa và trang sẽ cập nhật trực ti
 
 ## Lựa chọn B: Kết nối với dự án của riêng bạn
 
-### 1. Khởi tạo thư mục `.specs/` trong dự án của bạn
+### 1. Cài CLI
+
+```bash
+npm install -g @specpin/cli    # hoặc: pnpm add -g @specpin/cli
+```
+
+### 2. Khởi tạo thư mục `.specs/` trong dự án của bạn
 
 Từ thư mục gốc dự án của bạn:
 
@@ -73,7 +79,7 @@ specpin init --project "My App" --domains localhost:3000
 
 Lệnh này tạo ra `.specs/manifest.json`.
 
-### 2. Phục vụ specs của bạn
+### 3. Phục vụ specs của bạn
 
 ```bash
 specpin serve
@@ -81,7 +87,7 @@ specpin serve
 
 Sidecar in ra một URL và token.
 
-### 3. Kết nối trong tiện ích mở rộng
+### 4. Kết nối trong tiện ích mở rộng
 
 Làm theo các bước 4-6 từ Lựa chọn A, dán URL và token sidecar của riêng bạn.
 

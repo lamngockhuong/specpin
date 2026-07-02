@@ -148,3 +148,44 @@
   color: var(--sl-color-gray-2);
   font-size: var(--sl-text-sm);
 }
+
+/* "Available on" browser install cards under the hero. */
+.browser-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-block: 0 2.5rem;
+}
+.browser-cta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 11rem;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 16px;
+  background: var(--sl-color-gray-6);
+  text-decoration: none;
+  color: var(--sl-color-white);
+  transition: border-color 0.2s, transform 0.2s;
+}
+a.browser-cta-item:hover {
+  border-color: var(--specpin-accent);
+  transform: translateY(-2px);
+}
+.browser-cta-item img {
+  width: 40px;
+  height: 40px;
+}
+.browser-cta-name {
+  font-weight: 600;
+}
+.browser-cta-status {
+  font-size: var(--sl-text-sm);
+  color: var(--sl-color-gray-3);
+}
+.browser-cta-item.is-soon {
+  opacity: 0.55;
+  cursor: default;
+}

@@ -7,14 +7,22 @@ The `specpin` CLI is a Go sidecar that serves your `.specs/` directory over a se
 
 ## Install
 
-Today, you build the CLI from source. Go 1.26 is required.
+Install the CLI from npm. It downloads the prebuilt binary matching your OS and CPU:
+
+```bash
+npm install -g @specpin/cli    # or: pnpm add -g @specpin/cli
+specpin --version
+
+# or run without installing:
+npx @specpin/cli serve
+```
+
+Prefer a raw binary? Grab `specpin-<os>-<arch>` from the [latest CLI release](https://github.com/lamngockhuong/specpin/releases?q=cli), or build from source (Go 1.26 required):
 
 ```bash
 cd apps/cli
-make build
+make build      # -> bin/specpin
 ```
-
-This produces `bin/specpin`. You can add the binary to your PATH or invoke it directly.
 
 ## Initialize a project
 
@@ -64,7 +72,7 @@ If the extension loses connection after a restart with a random token, run `serv
 
 ## Serve on a remote machine
 
-By default Specpin is a single-user localhost tool. To share one `.specs/` with a team, run the sidecar on a shared host and connect the extension to it over **HTTPS**. The Go binary speaks plain HTTP only; **TLS is terminated by a reverse proxy** in front of it. Remote *requires* HTTPS — the extension's requests run from a secure context, so a plaintext `http://` remote is blocked as mixed content.
+By default Specpin is a single-user localhost tool. To share one `.specs/` with a team, run the sidecar on a shared host and connect the extension to it over **HTTPS**. The Go binary speaks plain HTTP only; **TLS is terminated by a reverse proxy** in front of it. Remote *requires* HTTPS: the extension's requests run from a secure context, so a plaintext `http://` remote is blocked as mixed content.
 
 Recommended: keep the sidecar on loopback and run the proxy (Caddy, nginx, Cloudflare Tunnel) on the **same host**, pinning the port and token:
 
@@ -79,19 +87,19 @@ specs.example.com {
 }
 ```
 
-`--host <addr>` binds a non-loopback address for the advanced "proxy on another host" case. This does **not** put a proxy in the path — it exposes the raw, **plaintext, token-only** port directly, so firewall it and always pin `--port`. The serve command prints a blunt warning whenever it binds off-loopback.
+`--host <addr>` binds a non-loopback address for the advanced "proxy on another host" case. This does **not** put a proxy in the path, it exposes the raw, **plaintext, token-only** port directly, so firewall it and always pin `--port`. The serve command prints a blunt warning whenever it binds off-loopback.
 
 ### No domain? Serve over IP
 
-Internal servers with only an IP (no domain) can't use Caddy's *automatic* HTTPS, but the extension still accepts `https://<ip>` — a certificate's SAN can be a bare IP, so no domain is needed. Two paths, both work in every browser:
+Internal servers with only an IP (no domain) can't use Caddy's *automatic* HTTPS, but the extension still accepts `https://<ip>`, a certificate's SAN can be a bare IP, so no domain is needed. Two paths, both work in every browser:
 
 - **HTTPS via an internal CA.** Give Caddy the bare IP as its site address with `tls internal` (`192.168.1.50 { tls internal; reverse_proxy 127.0.0.1:51234 }`), or mint an IP-SAN cert with `mkcert 192.168.1.50` / openssl for nginx. Distribute the **root CA** to your team's browsers once, then connect to `https://192.168.1.50`. Works for private LAN and public IPs alike.
-- **SSH tunnel to localhost.** `ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50`, keep the sidecar on loopback, and connect to `http://localhost:9123` — no cert needed, since `localhost` is always exempt.
+- **SSH tunnel to localhost.** `ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50`, keep the sidecar on loopback, and connect to `http://localhost:9123`, no cert needed, since `localhost` is always exempt.
 
 Plain `http://<ip>` is **not** an option: the browser blocks plaintext remote (a private LAN IP works only on Chrome 142+ via Local Network Access, which can't prompt from the extension's service worker, and Firefox has no equivalent). See the run guide's "No domain? Serve over IP" section for full recipes.
 
 :::caution
-The bearer token is the only authorization boundary for non-browser network clients (CORS only constrains browsers). Treat it like a password and distribute it out-of-band. The non-loopback raw port is plaintext — never expose it to the internet without the HTTPS proxy in front.
+The bearer token is the only authorization boundary for non-browser network clients (CORS only constrains browsers). Treat it like a password and distribute it out-of-band. The non-loopback raw port is plaintext: never expose it to the internet without the HTTPS proxy in front.
 :::
 
 See the run guide's "Serve on a remote machine" section for working Caddy + nginx examples (SSE buffering, CORS preflight) and the full threat model.
@@ -147,7 +155,7 @@ Because specs are JSON files committed to your repo, they follow the same review
 4. Commit, push, and open a PR.
 5. Teammates review the spec changes alongside code changes.
 
-By default specs never leave your machine: the sidecar binds localhost and there is no cloud service or telemetry. If you opt into a remote sidecar, specs are sent only to that sidecar — a server **you** run and control — never to any Specpin-operated service.
+By default specs never leave your machine: the sidecar binds localhost and there is no cloud service or telemetry. If you opt into a remote sidecar, specs are sent only to that sidecar, a server **you** run and control, never to any Specpin-operated service.
 
 ## Multiple projects
 

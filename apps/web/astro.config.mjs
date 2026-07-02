@@ -4,7 +4,6 @@ import { defineConfig, passthroughImageService } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
 
 // Custom domain serves at the apex path, so base stays "/".
-// See plans/260629-1348-specpin-landing-docs-site for the full site plan.
 export default defineConfig({
   site: "https://specpin.ohnice.app",
   base: "/",

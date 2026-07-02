@@ -1,16 +1,24 @@
 ---
 title: Cài đặt tiện ích mở rộng
-description: Cách build và tải tiện ích mở rộng Specpin từ mã nguồn.
+description: Cài Specpin cho Chrome từ Chrome Web Store, hoặc build từ mã nguồn.
 ---
 
-Tiện ích mở rộng Specpin chưa được phát hành lên các cửa hàng trình duyệt. Bạn phải build nó từ mã nguồn và tải dưới dạng tiện ích không đóng gói.
+Specpin cho Chrome đã có trên Chrome Web Store. Người dùng Firefox tạm thời build từ mã nguồn.
 
-## Yêu cầu trước
+## Cài từ Chrome Web Store
+
+Cài Specpin trực tiếp từ [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn). Tiện ích mở rộng xuất hiện trên thanh công cụ. Ghim nó để truy cập nhanh, rồi [bắt đầu với kết nối đầu tiên](/vi/guide/getting-started/).
+
+## Build từ mã nguồn (Firefox, hoặc phát triển)
+
+Với Firefox, hoặc để phát triển tiện ích, hãy build từ mã nguồn và tải dưới dạng tiện ích không đóng gói.
+
+### Yêu cầu trước
 
 - Node >= 20
 - pnpm 10
 
-## Build tiện ích mở rộng
+### Build tiện ích mở rộng
 
 Từ thư mục gốc của repository Specpin:
 
@@ -32,7 +40,7 @@ pnpm --filter @specpin/extension build:firefox
 Output cho Chrome nằm trong `apps/extension/.output/chrome-mv3`.  
 Output cho Firefox nằm trong `apps/extension/.output/firefox-mv2`.
 
-## Tải vào Chrome
+### Tải vào Chrome
 
 1. Mở `chrome://extensions`
 2. Bật **Developer mode** (công tắc góc trên bên phải)
@@ -41,7 +49,7 @@ Output cho Firefox nằm trong `apps/extension/.output/firefox-mv2`.
 
 Tiện ích mở rộng xuất hiện trên thanh công cụ của bạn. Ghim nó để truy cập nhanh.
 
-## Tải vào Firefox
+### Tải vào Firefox
 
 1. Mở `about:debugging`
 2. Nhấp **This Firefox**
@@ -51,7 +59,7 @@ Tiện ích mở rộng xuất hiện trên thanh công cụ của bạn. Ghim n
 Tiện ích mở rộng tải tạm thời và sẽ biến mất khi bạn khởi động lại Firefox. Tải lại nó từ `about:debugging` khi cần.
 
 :::note
-Liên kết cửa hàng (Chrome Web Store, Firefox Add-ons) sẽ được thêm vào đây sau khi Specpin được phát hành.
+Bản phát hành Firefox Add-ons sắp có. Trong lúc chờ, tiện ích tạm thời ở trên là cách chạy Specpin trên Firefox.
 :::
 
 ## Bước tiếp theo

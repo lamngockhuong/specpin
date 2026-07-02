@@ -26,28 +26,27 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 
 1. **Zero-drift spec layer**: specs live in the same repo as code, version together, review together via PR.
 2. **Interface-first authoring**: capture specs by clicking the target element in the running UI, not by guessing CSS selectors or writing abstract docs.
-3. **Pluggable rendering**: tooltip (peek), sidebar (focused read), overlay/modal (full-screen edit), inline badge (visual marker). Ships with tooltip + sidebar in MVP.
+3. **Pluggable rendering**: tooltip (peek), sidebar (focused read), overlay/modal (full-screen edit), inline badge (visual marker). Ships tooltip, sidebar, and a draggable modal today.
 4. **Resilient matching**: fingerprints survive refactors. Exact anchors (test-id, aria, data-spec-id) match first; hybrid weighted scoring falls back when layout changes.
 5. **Local-first, Git-native**: no SaaS backend, no auth wall, no vendor lock-in. Sidecar runs on localhost, specs diff cleanly in Git.
 
-## Key Features (MVP - Phase 1)
+## Key Features
 
 - **Go sidecar CLI**: `specpin init` scaffolds `.specs/manifest.json`, `specpin serve` exposes the spec store over token-authenticated localhost HTTP + SSE for live-reload.
 - **Browser extension (WXT, MV3)**: Chrome + Firefox support. Background SW connects to sidecar, content script matches fingerprints and renders specs.
-- **Two renderers**: tooltip (hover to peek) and sidebar (persistent read/write panel).
+- **Renderers**: tooltip (hover to peek), sidebar (persistent read/write panel), and a draggable modal.
 - **Manual capture mode**: click an element, fill form (title, description, rules), save to `.specs/`.
 - **Exact-match fingerprinting**: tries test-id anchors, aria, non-generated id, unique cssSelector, xpath. Flags `needsReview` when ambiguous. `data-spec-id` attribute guarantees exact match.
 - **JSON Schema v1**: single source of truth for spec format. Validated client-side (ajv) and server-side (Go jsonschema). CI cross-validates both.
 - **Demo app**: React 19 + Vite example with seeded `.specs/` for instant tryout.
 
-## Non-Goals (Deferred to 1.1+)
+## Non-Goals (planned / under consideration)
 
-- AI-assisted capture (`specpin generate`) - no LLM dependency in MVP.
-- FileSystem Access API source adapter - sidecar-only for MVP.
-- Hybrid weighted fingerprint scoring - exact anchors sufficient for MVP.
-- Safari packaging - Chrome + Firefox only in MVP.
-- Overlay, modal, inline-badge renderers - tooltip + sidebar sufficient for MVP.
-- Manual CSV/JSON import source - write via extension only.
+- AI-assisted capture (`specpin generate`) - keeps LLM work out of the extension and CLI.
+- FileSystem Access API source adapter - sidecar + writable local projects cover authoring today.
+- Hybrid weighted fingerprint scoring - exact anchors + unique selector suffice today; the `MatchResult` interface stays stable for a future scorer.
+- Safari packaging - Chrome shipped, Firefox coming soon.
+- Overlay and inline-badge renderers - tooltip, sidebar, and modal ship today.
 
 ## Scope Boundaries
 
@@ -59,14 +58,14 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 
 **Out of scope:**
 - Multi-user real-time collaboration (no CRDT, no WebSocket sync beyond SSE reload).
-- Hosted/cloud sidecar (localhost-only in MVP).
+- Hosted/cloud sidecar (localhost by default; remote is opt-in over an HTTPS reverse proxy).
 - Spec analytics, usage tracking, or telemetry.
 - Integration with external tools (Jira, Linear, Notion) - pure Git workflow.
 - Mobile app support (browser extension only).
 
 ## Success Criteria
 
-**Phase 1 MVP (achieved):**
+**Achieved:**
 - [ ] End-to-end demoable: serve demo app, load extension, see seeded specs render (tooltip + sidebar).
 - [ ] Capture new spec via manual form, save to `.specs/`, verify write + SSE reload.
 - [ ] Schema validated both client (ajv) and server (Go), CI cross-validates fixtures.
@@ -74,8 +73,8 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 - [ ] Sidecar security: 127.0.0.1 bind, token auth, CORS restricted to extension origins, path-traversal guard, no web origin access.
 - [ ] CI green: lint, typecheck, test (TS + Go), build (workspace + sidecar), schema drift check.
 
-**Phase 1.1 (planned):**
-- FileSystem + Manual sources for importing existing specs.
+**Planned / under consideration:**
+- FileSystem Access source for importing existing specs.
 - Hybrid weighted fingerprint scoring for robustness under refactors.
 - Overlay/modal/inline-badge renderers.
 - Safari packaging.
@@ -102,34 +101,32 @@ One schema, two validators: `packages/spec-schema/schema/v1.json` is the SSOT. T
 
 ## Non-Functional Requirements
 
-- **Performance**: extension content script bundle < 500 KB uncompressed (MVP: ~450 KB with ajv). Fingerprint match < 50ms per element (MVP: < 10ms for exact anchors). Render latency < 100ms after match.
+- **Performance**: extension content script bundle < 500 KB uncompressed (currently ~450 KB with ajv). Fingerprint match < 50ms per element (currently < 10ms for exact anchors). Render latency < 100ms after match.
 - **Security**: sidecar binds 127.0.0.1 only, auto-picks free port, requires Bearer token on every request, CORS accepts only extension origins (`chrome-extension://`, `moz-extension://`), rejects web origins, path-traversal guard on writes, no external network access.
 - **Compatibility**: Node >= 20, pnpm 10, Go 1.26, Chrome 120+ (MV3), Firefox 115+ (MV2 compat). Fingerprinting pure DOM (no framework coupling).
 - **Maintainability**: TypeScript strict mode + noUncheckedIndexedAccess. Biome (lint + format). Generated files (`*.gen.*`) never hand-edited. Monorepo Turborepo orchestration. Vitest for all TS packages, Go stdlib testing for CLI.
-- **Licensing**: Apache-2.0 (decided Phase 1 completion).
+- **Licensing**: Apache-2.0.
 
 ## Risks & Mitigations
 
 | Risk | Impact | Mitigation | Status |
 |------|--------|------------|--------|
 | Go/TS schema drift (two validators) | Critical | CI `make check-schema` + cross-validate fixtures through both | Implemented |
-| Fingerprint brittleness on refactors | High | Exact anchors (test-id, aria, data-spec-id) preferred; hybrid scorer deferred but interface stable | Deferred (1.1) |
-| Extension content-script bundle bloat | Medium | Ajv validator (~100 KB) in content script; consider moving validation to SW in 1.1 | Accepted (MVP) |
+| Fingerprint brittleness on refactors | High | Exact anchors (test-id, aria, data-spec-id) preferred; hybrid scorer planned but interface stable | Planned |
+| Extension content-script bundle bloat | Medium | Ajv validator (~100 KB) in content script; consider moving validation to the SW later | Accepted |
 | Port conflicts on multi-project devs | Low | Auto-pick free port unless --port override | Implemented |
-| Cross-origin spec leak to look-alike subdomains | High | Host-exact or label-boundary subdomain match only; regression test | Fixed (Phase 1) |
+| Cross-origin spec leak to look-alike subdomains | High | Host-exact or label-boundary subdomain match only; regression test | Fixed |
 
 ## Unresolved Questions
 
-1. **Hybrid fingerprint scorer design**: what signals, what weights, what confidence threshold triggers `needsReview`? Deferred to 1.1; placeholder interface exists (`MatchResult` shape stable).
-2. **FileSystem Access API permissions UX**: how to prompt user for `.specs/` directory access without breaking capture flow? Deferred to 1.1.
+1. **Hybrid fingerprint scorer design**: what signals, what weights, what confidence threshold triggers `needsReview`? Planned; placeholder interface exists (`MatchResult` shape stable).
+2. **FileSystem Access API permissions UX**: how to prompt user for `.specs/` directory access without breaking capture flow? Planned.
 3. **Safari packaging timeline**: MV3 parity unclear as of 2026-06. Await Apple clarity.
-4. **AI-assisted capture (`specpin generate`)**: what model, what prompt shape, local vs cloud, key management? Deferred to 1.1; no decision sealed.
+4. **AI-assisted capture (`specpin generate`)**: what model, what prompt shape, local vs cloud, key management? Planned; no decision sealed.
 
 ## References
 
-- Plan: `plans/260625-1504-specpin-phase1-mvp/plan.md`
 - Architecture: `docs/system-architecture.md`
 - Run guide: `docs/run-guide.md`
 - Schema: `docs/schema-reference.md`
 - Design system: `docs/design-system.md`
-- Phase 1 journal: `docs/journals/260625-specpin-phase1-mvp.md`

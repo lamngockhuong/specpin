@@ -4,11 +4,11 @@
 > nếu hai bản lệch nhau, ưu tiên bản tiếng Anh. Các thuật ngữ kỹ thuật, lệnh,
 > đường dẫn và tên file được giữ nguyên tiếng Anh.
 
-Quá trình phát triển Specpin đi theo cách tiếp cận phân kỳ (phased): giao MVP có thể demo được trước, hoãn việc đánh bóng và các tính năng nâng cao sang 1.1+.
+Specpin đã phát hành và đang được phát triển tích cực. Roadmap này ghi lại những gì đã ship và những gì dự kiến / đang cân nhắc làm tiếp.
 
-## Phase 1 MVP (Hoàn thành 2026-06-25)
+## Bản phát hành đầu (2026-06-25)
 
-Status: **DONE**. Cả 8 phase đã được implement, test và code-review. CI xanh. Bản review độc lập phát hiện 7 vấn đề (1 High, 4 Medium, 2 Low), tất cả High/Medium đã được giải quyết trước khi hoàn thành.
+Status: **DONE**. Bản end-to-end đầu tiên: đã implement, test và code-review. CI xanh. Bản review độc lập phát hiện 7 vấn đề (1 High, 4 Medium, 2 Low), tất cả High/Medium đã được giải quyết trước khi hoàn thành.
 
 ### Tính năng đã giao (Delivered Features)
 
@@ -66,7 +66,7 @@ Status: **DONE**. Cả 8 phase đã được implement, test và code-review. CI
 
 ### Phát hiện từ Code Review (tất cả High/Medium đã giải quyết)
 
-Review độc lập (`plans/reports/from-code-reviewer-to-orchestrator-specpin-mvp-review-report.md`):
+Phát hiện từ review độc lập:
 - **0 Critical**
 - **1 High** - H1: origin-match quá lỏng (spec rò rỉ sang các subdomain trông giống). Đã sửa: chỉ chấp nhận host khớp chính xác hoặc subdomain theo ranh giới label, đã thêm regression test.
 - **4 Medium** - M1: capture crash trên các id do framework sinh ra (đã sửa: escape + guard việc tra cứu label). M2: SaveSpec có thể ghi đè manifest.json (đã sửa: bắt buộc hậu tố `.spec.json`). M3: SSE backoff reset khi kết nối chập chờn (đã sửa: chỉ reset sau 5s ổn định). M4: mutate config từ content script (đã sửa: từ chối trừ khi đến từ trang extension).
@@ -80,26 +80,26 @@ Review độc lập (`plans/reports/from-code-reviewer-to-orchestrator-specpin-m
 - **Bundle size**: content script của extension ~450 KB chưa nén (đã gồm ajv validator, dưới mục tiêu 500 KB)
 - **Performance**: fingerprint match < 10ms (exact anchors), độ trễ render < 100ms
 
-## Phase 1.1 (Đang thực hiện)
+## Sau bản phát hành đầu
 
 Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa cam kết timeline.
 
-**Đã ship website (2026-06-29)**: trang landing marketing công khai cùng một bộ tài liệu dành cho người dùng cuối viết mới (EN + VI + JA), dựng bằng Astro Starlight trong `apps/web`, hướng tới `specpin.ohnice.app` qua GitHub Pages (plan: `plans/260629-1348-specpin-landing-docs-site/`). Bộ `docs/` trong repo vẫn là tài liệu cho lập trình viên/người đóng góp, tách biệt với nội dung người dùng cuối của website.
+**Đã ship website (2026-06-29)**: trang landing marketing công khai cùng một bộ tài liệu dành cho người dùng cuối viết mới (EN + VI + JA), dựng bằng Astro Starlight trong `apps/web`, hướng tới `specpin.ohnice.app` qua GitHub Pages. Bộ `docs/` trong repo vẫn là tài liệu cho lập trình viên/người đóng góp, tách biệt với nội dung người dùng cuối của website.
 
-**Đã ship lát cắt đầu tiên (2026-06-26)** trên nhánh `feat/spec-validate-cli-and-ci` (plan: `plans/260626-1415-specpin-phase-1-1/`):
+**Đã ship bản follow-up đầu tiên (2026-06-26)** trên nhánh `feat/spec-validate-cli-and-ci`:
 - `specpin validate`: kiểm tra schema offline cho `.specs/` (exit 0 hợp lệ / 1 không hợp lệ / 2 không chạy được), chặn symlink trong store, cảnh báo drift của manifest.
 - CI spec-lint: bước trong repo chạy trên demo specs + một composite action tái sử dụng, build validator từ ref đã pin (không phải PR của bên gọi).
 - Manual spec source: hiển thị spec không cần sidecar bằng cách dán bundle `{ manifest, files }` đã validate trong Options; read-only, giới hạn kích thước, chặn prototype-pollution; controller chọn sidecar -> manual theo tính khả dụng.
 - Modal renderer: hộp thoại giữa màn hình có bẫy focus liệt kê spec trên trang (chế độ hiển thị thứ ba), dọn dẹp bằng AbortController.
 
-**Đã ship lát cắt thứ hai (2026-06-26)** trên nhánh `feat/i18n-specs-multi-project` (plan: `plans/260626-1555-i18n-specs-multi-project/`):
+**Đã ship lát cắt thứ hai (2026-06-26)** trên nhánh `feat/i18n-specs-multi-project`:
 - Multi-language specs: `title`/`description`/`businessRules` là `LocalizedString` chỉ dạng object (đánh key theo locale; string phẳng bị từ chối bởi cả hai validator). Runtime language toggle trong popup (được phản chiếu trong sidebar) với fallback `defaultLocale` -> first-present; các bản dịch được soạn per locale trong form capture. Các giá trị `description` bây giờ không rỗng.
 - Multi-project display: một extension kết nối tới nhiều sidecar cùng lúc qua một `SidecarRegistry`; spec định tuyến tới từng page theo `domains` của project, được tag theo project. Các project empty-`domains` cần một opt-in `applyToAllSites` rõ ràng (không match mọi site một cách im lặng). Cô lập token per-connection, cô lập lỗi, reconnect được jitter, và một tổng quát SW-wake watch re-establish (cũng sửa trường hợp latent single-connection). Trang Options bây giờ là một connection manager (add/remove/reconnect, view per-tab popup, project labels trên spec).
 
-**Đã ship bề mặt side panel (2026-06-27)** trên nhánh `feat/extension-sidepanel-surface` (plan: `plans/260627-1119-extension-sidepanel-surface/`):
+**Đã ship bề mặt side panel (2026-06-27)** trên nhánh `feat/extension-sidepanel-surface`:
 - Side panel (`entrypoints/sidepanel/`) là lựa chọn gắn cố định thay cho popup: layout rộng full-height, hiển thị description + business rules của spec ngay inline, tự refresh khi activate tab / đổi URL / `SPECS_CHANGED`. Popup và side panel dùng chung một helper `fetchSurfaceState()`. WXT map một entrypoint duy nhất sang Chrome `side_panel` + Firefox `sidebar_action`. Một tùy chọn `defaultSurface` được lưu (Options) chọn bề mặt mở khi click icon trên Chrome; Firefox giữ popup trên nút thanh công cụ và mở sidebar từ nút gốc của nó.
 
-**Đã ship spec visibility toggle + tooltip UX (2026-06-27)** trên nhánh `feat/spec-visibility-toggle` (plan: `plans/260627-1348-spec-visibility-toggle-tooltip-ux/`):
+**Đã ship spec visibility toggle + tooltip UX (2026-06-27)** trên nhánh `feat/spec-visibility-toggle`:
 - Cải tiến tooltip renderer: sửa full-width (`min(360px, 90vw)`); click badge để ghim tip mở (mỗi lần một cái, nút đóng); hành động "Open in side panel" highlight card side-panel tương ứng (best-effort auto-open trên Chrome, Firefox giảm xuống chỉ highlight). Các message mới `OPEN_SPEC_IN_PANEL` (content sang background) và `HIGHLIGHT_SPEC` (background sang side panel).
 - Mô hình facet thống nhất cho spec visibility: mỗi spec được các facet key `tag:<t>`, `file:<file>`, `spec:<id>`; `url:<glob>` là cổng cấp page. Một predicate `isVisible(spec, url, state)` trong `apps/extension/src/shared/visibility.ts` quyết định render. Path glob matcher: `*` = một segment, `**` = qua nhiều segment.
 - Chuỗi đồng bộ hai lớp: `effectiveDisabled = (teamHidden union personalForceHide) minus personalForceShow`. Mặc định team từ `.specs/views.json` (commit vào Git, chia sẻ, soạn qua trang Options, ghi qua sidecar `PUT /views`). Ghi đè cá nhân trong `chrome.storage.sync` (cross-machine, personal thắng). `spec:<id>` force-show là một rescue cứng theo per-spec (thắng trên tag/file hide); `url:` page gate thắng trên tất cả. Trạng thái rỗng = tất cả hiển thị (tương thích ngược).
@@ -109,9 +109,9 @@ Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa ca
 - api-client: `SidecarClient.getViews()` / `putViews()`, type `ViewsConfig` được export.
 - Message privileged mới: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (thêm vào `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` là non-privileged (read-only, từ content script).
 
-Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi sử dụng: hybrid weighted scorer (cần corpus DOM trước/sau để tinh chỉnh), nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
+Dự kiến, chờ corpus thực tế / phản hồi sử dụng: hybrid weighted scorer (cần corpus DOM trước/sau để tinh chỉnh), nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
 
-**Đã ship theme có thể chọn bởi người dùng (2026-06-28)** trên nhánh `feat/extension-theme-and-i18n` (plan: `plans/260628-0028-extension-theme-and-i18n/`):
+**Đã ship theme có thể chọn bởi người dùng (2026-06-28)** trên nhánh `feat/extension-theme-and-i18n`:
 - Tùy chọn theme (System / Light / Dark) qua trang Options. Trước đây dark chỉ tồn tại đằng sau `@media (prefers-color-scheme: dark)` (tự động, không có toggle). Giờ người dùng có thể force một theme. Generator phát ra bốn block selector trong `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), và `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, chỉ áp dụng khi không có override). `tokens.ts` `scopeTokensToShadow()` đổi tất cả bốn dạng sang `:host(...)` cho Shadow DOM renderer. `src/shared/theme.ts` export `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` có thêm `getTheme`/`setTheme` (key storage.local `specpin:theme`, mặc định `system`). Lan truyền trực tiếp: message `SET_THEME` + helper `broadcastToTabs()`; Options broadcast sang tất cả tab, các page phản ứng qua `storage.onChanged`. `theme` được thread vào `renderSession` và mỗi renderer áp dụng nó lên shadow host của nó. Forced theme có thể nhấp nháy System default trong một frame khi load (đọc storage bất đồng bộ, được chấp nhận).
 
 **Đã ship i18n cho UI-chrome (EN + VI + JA) (2026-06-28)** trên cùng nhánh `feat/extension-theme-and-i18n`:
@@ -127,12 +127,12 @@ Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi s
 
 **Các nguồn Spec bổ sung:**
 - Manual import source (đã giao) (bundle `{ manifest, files }` read-only trong Options)
-- Nguồn FileSystem Access API (browser hỏi quyền truy cập thư mục `.specs/`, không cần sidecar) (vẫn hoãn lại)
+- Nguồn FileSystem Access API (browser hỏi quyền truy cập thư mục `.specs/`, không cần sidecar) (dự kiến)
 - Source registry đã pluggable (interface `SpecSource`)
 
 **Các Renderer bổ sung:**
 - Modal (đã giao) (centered dialog, dùng cho review tập trung)
-- Overlay (modal toàn màn hình có backdrop) và inline badge (đánh dấu trực quan cạnh element) (vẫn hoãn lại)
+- Overlay (modal toàn màn hình có backdrop) và inline badge (đánh dấu trực quan cạnh element) (dự kiến)
 - Renderer registry đã pluggable (interface `SpecRenderer`): tooltip + sidebar + modal đã hiện thực
 
 **Hỗ trợ Safari:**
@@ -141,7 +141,7 @@ Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi s
 
 **Soạn spec có hỗ trợ AI:**
 - Đã ship (đường host-agent): một skill di động đóng gói trong `@specpin/cli` (`apps/cli/skill/`, truy cập qua unpkg) dạy một coding agent (Claude Code, Cursor, v.v.) soạn spec hợp lệ schema và điều khiển CLI. Host agent là người soạn; không thêm LLM vào CLI. Xem `docs/ai-authoring.md`. `apps/cli/cmd/generate.go` nay trỏ người dùng tới skill này.
-- Hoãn lại (LLM `specpin generate` phía CLI): một bộ sinh tích hợp chụp ảnh element và suy ra title/description/rules. Lựa chọn model, thiết kế prompt, local vs cloud, quản lý key vẫn chưa chốt; lệnh vẫn là stub.
+- Dự kiến (LLM `specpin generate` phía CLI): một bộ sinh tích hợp chụp ảnh element và suy ra title/description/rules. Lựa chọn model, thiết kế prompt, local vs cloud, quản lý key vẫn chưa chốt; lệnh vẫn là stub.
 
 **Tối ưu hiệu năng:**
 - Chuyển việc validate spec trước khi POST từ content script sang background SW (bỏ ~100 KB ajv khỏi content bundle, dời chi phí parse sang thread SW)
@@ -158,7 +158,7 @@ Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi s
 - GitHub Action lint spec trong PR (validate tất cả `.specs/*.json` theo schema)
 - Lệnh CLI `specpin validate` (kiểm tra schema offline, không cần serve)
 
-## Khám phá Tương lai (Beyond 1.1, chưa cam kết)
+## Khám phá Tương lai (chưa cam kết)
 
 **Tổng hợp spec đa repo (Multi-repo):**
 - Tổng hợp spec từ nhiều repo (microservice, monorepo với các .specs/ riêng)
@@ -196,8 +196,8 @@ Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi s
 - **Sinh code từ spec** - Specpin là một lớp tri thức (knowledge layer), không phải code generator. Nó gắn doc vào các UI sẵn có, không tạo ra code ứng dụng.
 - **SaaS backend** - local-first, Git-native, không khóa vào nhà cung cấp (no vendor lock-in). Sidecar chỉ chạy trên localhost.
 - **Cộng tác đa người dùng thời gian thực** - không CRDT, không đồng bộ WebSocket ngoài việc reload qua SSE. Cộng tác thông qua Git PR.
-- **Hỗ trợ ứng dụng mobile** (phase 1.1) - chỉ browser extension, mobile hoãn sang phần khám phá tương lai.
-- **Sidecar hosted/cloud** - chỉ localhost trong MVP và 1.1, triển khai cloud hoãn sang phần khám phá tương lai.
+- **Hỗ trợ ứng dụng mobile** - chỉ browser extension; mobile là phần khám phá tương lai.
+- **Sidecar hosted/cloud** - mặc định chỉ localhost (remote là tùy chọn qua reverse proxy HTTPS); dịch vụ cloud quản lý là phần khám phá tương lai.
 - **Telemetry hoặc theo dõi sử dụng** - không analytics, không phone-home, không thu thập dữ liệu (local analytics trong phần khám phá tương lai, chỉ opt-in).
 
 ## Chiến lược Versioning
@@ -205,9 +205,9 @@ Hoãn lại từ các lát cắt này, chờ corpus thực tế / phản hồi s
 **Hiện tại**: v0.0.0 (pre-release, dogfooding nội bộ).
 
 **Trước 1.0 (đã lên kế hoạch):**
-- v0.1.0: bản release Phase 1 MVP (public lần đầu)
-- v0.2.0: tính năng Phase 1.1 (hybrid scorer, nguồn FileSystem, Safari)
-- v0.3.0+: thêm tính năng 1.1, đánh bóng, bugfix
+- v0.1.0: bản release công khai đầu tiên
+- v0.2.0: các tính năng dự kiến (hybrid scorer, nguồn FileSystem, Safari)
+- v0.3.0+: thêm tính năng, đánh bóng, bugfix
 
 **Tiêu chí 1.0 (chưa định nghĩa):**
 - Hybrid fingerprint scorer được kiểm chứng trong production
@@ -237,7 +237,7 @@ Dự kiến sau khi release public:
 
 **Tính dễ vỡ của fingerprint:**
 - Rủi ro: refactor phá vỡ match, spec trở thành mồ côi (orphaned)
-- Giảm thiểu: hybrid weighted scorer ở 1.1, khuyến nghị thuộc tính `data-spec-id` cho các element quan trọng, cờ `needsReview` làm nổi các match mơ hồ.
+- Giảm thiểu: hybrid weighted scorer dự kiến, khuyến nghị thuộc tính `data-spec-id` cho các element quan trọng, cờ `needsReview` làm nổi các match mơ hồ.
 
 **Thay đổi API của Extension:**
 - Rủi ro: các thay đổi API manifest v3/v2 của Chrome/Firefox phá vỡ extension
@@ -253,34 +253,30 @@ Dự kiến sau khi release public:
 
 **Phình bundle size:**
 - Rủi ro: content script vượt giới hạn kích thước của browser extension
-- Giảm thiểu: hiện 450 KB dưới mục tiêu 500 KB, tối ưu 1.1 chuyển ajv sang SW (tiết kiệm ~100 KB).
+- Giảm thiểu: hiện 450 KB dưới mục tiêu 500 KB, một tối ưu dự kiến chuyển ajv sang SW (tiết kiệm ~100 KB).
 
 ## Nhật ký Quyết định (Decision Log)
 
 | Ngày | Quyết định | Lý do |
 |------|----------|-------|
-| 2026-06-25 | Thu hẹp phạm vi MVP (hoãn nguồn FS/Manual, modal/overlay/badge, hybrid scorer, Safari, AI) | Giao end-to-end demo được nhanh hơn, kiểm chứng giá trị cốt lõi trước khi đánh bóng |
+| 2026-06-25 | Thu hẹp phạm vi bản phát hành đầu (hoãn nguồn FS/Manual, modal/overlay/badge, hybrid scorer, Safari, AI) | Giao end-to-end demo được nhanh hơn, kiểm chứng giá trị cốt lõi trước khi đánh bóng |
 | 2026-06-25 | Ngôn ngữ CLI: Go (không phải Node) | Một binary tĩnh duy nhất, không phụ thuộc runtime, phù hợp cho localhost server hơn Bun/Deno |
-| 2026-06-25 | Fingerprint: exact anchors + cssSelector trước, weighted scorer hoãn lại | MVP đủ cho demo, hybrid scorer cần corpus thực tế để tinh chỉnh |
+| 2026-06-25 | Fingerprint: exact anchors + cssSelector trước, weighted scorer hoãn lại | Bản phát hành đầu đủ cho demo, hybrid scorer cần corpus thực tế để tinh chỉnh |
 | 2026-06-25 | Build extension: WXT | Trừu tượng hóa cross-browser (Chrome MV3 + Firefox MV2), hot-reload, DX hiện đại |
 | 2026-06-25 | Test runner: Vitest (không phải node:test hay Jest) | Native với Vite, ghép tốt với WXT, story jsdom mạnh cho fingerprint-core |
 | 2026-06-25 | Port sidecar: tự chọn port trống (không phải default cố định) | Tránh xung đột port lần chạy đầu, extension vốn đã đọc URL được dán |
-| 2026-06-25 | Chế độ capture: chỉ thủ công (không AI assist trong MVP) | Giữ mọi công việc LLM ra khỏi MVP, không phụ thuộc model hay quản lý key |
-| 2026-06-25 | License: Apache-2.0 | Quyết định khi hoàn thành Phase 1 (vốn là gate hoãn lại trong plan) |
+| 2026-06-25 | Chế độ capture: chỉ thủ công (không AI assist lúc ra mắt) | Giữ mọi công việc LLM ra khỏi bản phát hành đầu, không phụ thuộc model hay quản lý key |
+| 2026-06-25 | License: Apache-2.0 | Quyết định tại bản phát hành đầu (vốn là gate hoãn lại trong plan) |
 | 2026-06-26 | Nội dung spec được localize là chỉ dạng object (`LocalizedString`), string phẳng không hợp lệ | Pre-release, không có corpus bên ngoài và không có cam kết tương thích; schema được sửa tại chỗ (vẫn `v1.json`, không fork `v2.json`, không bump version manifest). Một resolver đọc tất cả trường được localize |
 | 2026-06-26 | Project empty-`domains` cần opt-in `applyToAllSites` rõ ràng | Một wildcard every-site im lặng sẽ rò rỉ spec của project vào các page không liên quan/kẻ tấn công; người dùng opt in per connection |
 | 2026-06-26 | SW-suspend watch loss được sửa tổng quát (chia sẻ `reestablish()` cho 1 và N connection) | Cùng path phục vụ trường hợp single-connection, sửa một bug MV3 latent thay vì chỉ cái multi-connection mới |
 
 ## Tham chiếu (References)
 
-- Plan: `plans/260625-1504-specpin-phase1-mvp/plan.md`
-- Phase files: `plans/260625-1504-specpin-phase1-mvp/phase-*.md` (8 file)
-- Code review: `plans/reports/from-code-reviewer-to-orchestrator-specpin-mvp-review-report.md`
 - Architecture: `docs/system-architecture.md`
 - Run guide: `docs/run-guide.md`
 - Schema: `docs/schema-reference.md`
 - Design system: `docs/design-system.md`
-- Journal: `docs/journals/260625-specpin-phase1-mvp.md`
 - Codebase summary: `docs/codebase-summary.md`
 - Code standards: `docs/code-standards.md`
 - PDR: `docs/project-overview-pdr.md`
