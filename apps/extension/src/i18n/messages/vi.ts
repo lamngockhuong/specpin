@@ -69,6 +69,7 @@ const vi: Record<keyof Messages, string> = {
   "common.markerTeamTitle": "Bị ẩn bởi mặc định của nhóm",
   "common.markerYou": "bạn",
   "common.markerYouTitle": "Tùy chỉnh cá nhân của bạn",
+  "common.viewChangelog": "Xem changelog",
 
   // Popup-only.
   "popup.openSidepanel": "Mở dạng thanh bên ⇥",

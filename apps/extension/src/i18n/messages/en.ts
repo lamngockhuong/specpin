@@ -71,6 +71,7 @@ const en = {
   "common.markerTeamTitle": "Hidden by the team default",
   "common.markerYou": "you",
   "common.markerYouTitle": "Your personal override",
+  "common.viewChangelog": "View changelog",
 
   // Popup-only.
   "popup.openSidepanel": "Open as side panel ⇥",

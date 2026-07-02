@@ -247,6 +247,7 @@ void applyStoredTheme();
 watchThemeChanges();
 
 // Show the actual extension version from the manifest, not a hardcoded string.
+// The pill links to the hosted changelog (href is static in index.html).
 byId("version").textContent = `v${browser.runtime.getManifest().version}`;
 
 // Resolve the UI-chrome language, hydrate the static HTML, then render. initI18n

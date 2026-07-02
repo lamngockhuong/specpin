@@ -71,6 +71,7 @@ const ja: Record<keyof Messages, string> = {
   "common.markerTeamTitle": "チームのデフォルトで非表示",
   "common.markerYou": "あなた",
   "common.markerYouTitle": "あなたの個人設定",
+  "common.viewChangelog": "変更履歴を見る",
 
   // Popup-only.
   "popup.openSidepanel": "サイドパネルで開く ⇥",
