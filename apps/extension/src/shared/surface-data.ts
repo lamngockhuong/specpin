@@ -2,7 +2,7 @@ import { resolveLocalized } from "@specpin/spec-schema";
 import { browser } from "#imports";
 import { pickLocale } from "../content/localize-spec.js";
 import { t } from "../i18n/index.js";
-import { getLocale } from "./config.js";
+import { getLocale, getSeen, setSeen } from "./config.js";
 import type { TaggedSpec } from "./connection-types.js";
 import { localConnId } from "./local-id.js";
 import { stripMarkdown } from "./markdown.js";
@@ -42,12 +42,20 @@ export interface SurfaceState {
   activeLocale: string;
 }
 
+/** The active tab's full URL in the current window, or "" when unresolvable. The
+ *  single active-tab lookup that `activeLocation`/`activeOrigin`/`activeTabUrl`
+ *  share, so the `tabs.query` shape lives in one place. */
+async function activeTabHref(): Promise<string> {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  return tab?.url ?? "";
+}
+
 /** Origin + path of the active tab in the current window. */
 export async function activeLocation(): Promise<{ origin: string; path: string }> {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  const href = await activeTabHref();
   try {
-    if (!tab?.url) return { origin: "", path: "/" };
-    const url = new URL(tab.url);
+    if (!href) return { origin: "", path: "/" };
+    const url = new URL(href);
     return { origin: url.origin, path: url.pathname };
   } catch {
     return { origin: "", path: "/" };
@@ -57,6 +65,13 @@ export async function activeLocation(): Promise<{ origin: string; path: string }
 /** Origin of the active tab in the current window, or "" if not resolvable. */
 export async function activeOrigin(): Promise<string> {
   return (await activeLocation()).origin;
+}
+
+/** Full URL of the active tab in the current window, or "" when unresolvable. A
+ *  deep link needs the whole URL (query + any app fragment), not just the
+ *  origin + path `activeLocation` returns, so `buildSpecLink` preserves them. */
+export async function activeTabUrl(): Promise<string> {
+  return activeTabHref();
 }
 
 /** Fetch the full surface state in one call. Both the popup and the side panel
@@ -245,4 +260,149 @@ export async function resetPersonalVisibility(): Promise<void> {
     type: "SET_PERSONAL_VISIBILITY",
     visibility: { forceHide: [], forceShow: [] },
   });
+}
+
+// ---------------------------------------------------------------------------
+// What-changed digest: pure, DOM-free content hashing + diff over a per-project
+// snapshot kept in storage.local (getSeen/setSeen in config.ts). Unit-tested.
+// ---------------------------------------------------------------------------
+
+/** The stored snapshot: `<project>\0<specId>` -> content hash. Keyed by project
+ *  so one project's edits never blur another's. */
+export type SeenSnapshot = Record<string, string>;
+
+/** The added / edited / removed buckets from comparing the current specs to a
+ *  snapshot. `removed` is scoped to projects present on the page (a snapshot key
+ *  for a project not currently loaded is just off-page, not a removal). */
+export interface SeenDiff {
+  added: TaggedSpec[];
+  edited: TaggedSpec[];
+  removed: string[];
+}
+
+const SEEN_KEY_SEP = "\u0000";
+
+/** The snapshot key for a spec: project + id (NUL-separated). */
+export function seenKey(spec: Pick<TaggedSpec, "project" | "id">): string {
+  return `${spec.project}${SEEN_KEY_SEP}${spec.id}`;
+}
+
+/** The project portion of a snapshot key. */
+function seenKeyProject(key: string): string {
+  return key.slice(0, key.indexOf(SEEN_KEY_SEP));
+}
+
+/** Deterministic JSON with recursively sorted object keys, so an incidental key
+ *  reorder in a LocalizedString never fabricates a change. Arrays keep their
+ *  order (reordering business rules IS a content change). */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  const obj = value as Record<string, unknown>;
+  const body = Object.keys(obj)
+    .sort()
+    .map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`)
+    .join(",");
+  return `{${body}}`;
+}
+
+/** FNV-1a (32-bit) over a string, as an 8-char hex digest. Non-crypto: this is
+ *  change detection, not security, so a fast, dependency-free hash is enough. */
+function fnv1a(str: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i += 1) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+/** Content hash of a spec over `title` + `description` + `businessRules` only,
+ *  hashed as the raw `LocalizedString` objects across ALL locales (a translation
+ *  edit in any locale counts as changed). Locale-agnostic — no locale param — so
+ *  switching the viewer language never fabricates a diff. `_file`, tags, and
+ *  metadata are excluded to avoid churn noise. */
+export function specContentHash(
+  spec: Pick<TaggedSpec, "title" | "description" | "businessRules">,
+): string {
+  return fnv1a(
+    stableStringify({
+      title: spec.title,
+      description: spec.description,
+      businessRules: spec.businessRules ?? [],
+    }),
+  );
+}
+
+/** Compare the current specs to a snapshot: a spec absent from the snapshot is
+ *  `added`, a spec whose hash differs is `edited`, and a snapshot key whose spec
+ *  is gone (for a project present on the page) is `removed`. Pure. */
+export function diffSeen(specs: TaggedSpec[], snapshot: SeenSnapshot): SeenDiff {
+  const added: TaggedSpec[] = [];
+  const edited: TaggedSpec[] = [];
+  const present = new Set<string>();
+  const projectsOnPage = new Set<string>();
+  for (const spec of specs) {
+    const key = seenKey(spec);
+    present.add(key);
+    projectsOnPage.add(spec.project);
+    const prev = snapshot[key];
+    if (prev === undefined) added.push(spec);
+    else if (prev !== specContentHash(spec)) edited.push(spec);
+  }
+  const removed = Object.keys(snapshot).filter(
+    (k) => !present.has(k) && projectsOnPage.has(seenKeyProject(k)),
+  );
+  return { added, edited, removed };
+}
+
+/** Merge the current specs' hashes into a prior snapshot: refresh/insert every
+ *  current spec and drop stale keys for projects present on the page (true
+ *  removals), while leaving other projects' entries untouched. Used both to seed
+ *  a first-seen project silently and to persist "Mark all seen". Pure. */
+export function mergeSeen(prev: SeenSnapshot, specs: TaggedSpec[]): SeenSnapshot {
+  const projectsOnPage = new Set(specs.map((s) => s.project));
+  const next: SeenSnapshot = {};
+  for (const [k, v] of Object.entries(prev)) {
+    if (!projectsOnPage.has(seenKeyProject(k))) next[k] = v;
+  }
+  for (const spec of specs) next[seenKey(spec)] = specContentHash(spec);
+  return next;
+}
+
+/** The set of projects that already have at least one entry in the snapshot, so a
+ *  surface can silently seed a first-seen project instead of flagging all its
+ *  specs as new. */
+export function knownProjects(snapshot: SeenSnapshot): Set<string> {
+  const projects = new Set<string>();
+  for (const key of Object.keys(snapshot)) projects.add(seenKeyProject(key));
+  return projects;
+}
+
+/** Compute the digest for the current specs against the stored snapshot, silently
+ *  seeding any first-seen project (so a newly-connected project never reads as
+ *  "everything new", including the first-ever visit with an empty snapshot).
+ *  Returns null when there is nothing to show (Specpin off, or no specs). Persists
+ *  the seed when it seeds. The seed-then-diff sequence lives here so both surfaces
+ *  share it. */
+export async function computeSeenDigest(
+  specs: TaggedSpec[],
+  enabled: boolean,
+): Promise<SeenDiff | null> {
+  if (!enabled || specs.length === 0) return null;
+  const seen = await getSeen();
+  const known = knownProjects(seen);
+  const fresh = specs.filter((s) => !known.has(s.project));
+  let effective = seen;
+  if (fresh.length) {
+    effective = mergeSeen(seen, fresh);
+    await setSeen(effective);
+  }
+  return diffSeen(specs, effective);
+}
+
+/** Persist the current specs as the seen baseline (the "Mark all seen" action),
+ *  merged so other projects' snapshot entries survive. */
+export async function markAllSeen(specs: TaggedSpec[]): Promise<void> {
+  await setSeen(mergeSeen(await getSeen(), specs));
 }

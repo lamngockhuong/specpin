@@ -106,6 +106,8 @@ sidecarがURLとトークンを表示します。
 | `Alt+Shift+S` | Specpinのオン/オフ |
 | `Alt+Shift+M` | 表示モードの切り替え |
 | `Alt+Shift+C` | キャプチャモードのオン/オフ（`Esc`でキャンセル） |
+| `Alt+Shift+N` | 一致したspec間を巡回する |
+| `Alt+Shift+G` | デフォルトのガイドツアーを開始 / 停止 |
 
 ## 次のステップ
 

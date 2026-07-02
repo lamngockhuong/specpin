@@ -33,6 +33,9 @@ const ja: Record<keyof Messages, string> = {
   "common.reopenPanel": "Specpin specを表示",
   "common.and": "と",
   "common.clickToHighlight": "クリックでページ上をハイライト",
+  "common.copyLink": "リンクをコピー",
+  "common.copyLinkTitle": "このspecへの共有リンクをコピー",
+  "common.linkCopied": "リンクをコピーしました",
   "common.cannotActOnPage":
     "このページでは実行できません。先にウェブサイトのタブに切り替えてください。",
   "common.specsOnThisPage": "このページのspec",
@@ -122,6 +125,12 @@ const ja: Record<keyof Messages, string> = {
   "spec.deleteConflict":
     "specが他の場所で変更されたため、表示を更新しました。削除は行われていません。",
   "spec.deleteFailed": "specを削除できませんでした: {error}",
+  "spec.linkElementMissing": "このspecの要素はこのページにありません。",
+
+  "digest.changedSince": "前回の訪問から{count}件が変更されました",
+  "digest.markSeen": "すべて既読にする",
+  "digest.tagNew": "新規",
+  "digest.tagEdited": "編集",
 
   // Match-confidence badge + "why matched".
   "match.fuzzy": "セレクタ一致",

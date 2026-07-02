@@ -23,6 +23,7 @@ import "../../shared/guide-section.css";
 import "../../shared/guide-editor.css";
 import "../../shared/scope-toggle.css";
 import "../../shared/surface-health.css";
+import "../../shared/surface-digest.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
 import { clearDraft, loadDraft, saveDraft } from "../../shared/draft-store.js";
 import { mountGuideSection } from "../../shared/guide-section.js";
@@ -45,6 +46,7 @@ import {
 } from "../../shared/surface-data.js";
 import {
   byId,
+  mountDigest,
   mountFragileScan,
   mountScopeToggle,
   mutedRow,
@@ -140,6 +142,18 @@ const fragileScan = mountFragileScan(byId("scan"), byId("scan-results"), {
   }),
 });
 
+// The "what changed since last visit" digest (shared wiring). Reads module state
+// on each render; "Mark all seen" persists the baseline then refreshes.
+const digest = mountDigest(byId("digest"), {
+  getState: () => ({
+    specs: lastSpecs?.specs ?? [],
+    enabled: lastSpecs?.enabled ?? false,
+    locale: activeLocale,
+    defaultLocale: lastSpecs?.manifest?.settings?.defaultLocale,
+  }),
+  refresh,
+});
+
 // The "This page | All" scope toggle above the search box (shared wiring). It
 // reads module state (lastSpecs, scope, matchedIds) on each render and, on click,
 // re-renders itself + the list.
@@ -165,6 +179,9 @@ async function refresh(): Promise<void> {
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
+  // Start the digest now (reads module state just set) so its storage read overlaps
+  // the renders below; awaited before this refresh returns.
+  const digestReady = digest.render();
   // Skip the match state when off: the list collapses to the "off" message and the
   // toggle hides anyway (the in-flight query resolves to null and is discarded).
   const match = specs.enabled ? await matchPromise : { ids: null, report: null };
@@ -191,6 +208,7 @@ async function refresh(): Promise<void> {
   // shared builder lists the local + sidecar export targets.
   projectActions.update(specs.enabled, buildExportTargets(status, origin));
   renderSpecs(specs);
+  await digestReady;
 }
 
 // Shared header controls: "+ New project" (inline form) + "Export" (zip the local

@@ -4,6 +4,7 @@ import { browser } from "#imports";
 import type { UiLocale } from "../i18n/locales.js";
 import type { Connection } from "./connection-types.js";
 import { connectionServesOrigin } from "./origin-match.js";
+import type { SeenSnapshot } from "./surface-data.js";
 import type { Theme } from "./theme.js";
 import type { PersonalVisibility } from "./visibility.js";
 
@@ -104,6 +105,9 @@ export const LAUNCHER_POSITION_KEY = "specpin:launcherPosition";
  *  Used to decide whether to open the changelog when `onInstalled` fires without a
  *  `previousVersion`, and to avoid re-opening on a dev reload (see whats-new.ts). */
 export const LAST_VERSION_KEY = "specpin:lastVersion";
+/** The "what changed since last visit" snapshot: a per-project map of spec
+ *  content hashes (see `surface-data.ts`). Local-only, no telemetry. */
+export const SEEN_KEY = "specpin:seenSpecs";
 
 /** A relaunch-pill position, as viewport pixels from the top-left. Clamped to the
  *  current viewport when applied, so a smaller window still keeps the pill visible. */
@@ -308,6 +312,24 @@ export async function getLastVersion(): Promise<string | null> {
 
 export async function setLastVersion(version: string): Promise<void> {
   await browser.storage.local.set({ [LAST_VERSION_KEY]: version });
+}
+
+/** The "what changed since last visit" snapshot, or an empty map when unset (the
+ *  first-ever visit, which the surface seeds silently). */
+export async function getSeen(): Promise<SeenSnapshot> {
+  const stored = await browser.storage.local.get(SEEN_KEY);
+  const value = stored[SEEN_KEY] as SeenSnapshot | undefined;
+  return value && typeof value === "object" ? value : {};
+}
+
+/** Persist the seen-snapshot. An empty map drops the key so a default profile
+ *  carries nothing. */
+export async function setSeen(snapshot: SeenSnapshot): Promise<void> {
+  if (Object.keys(snapshot).length === 0) {
+    await browser.storage.local.remove(SEEN_KEY);
+    return;
+  }
+  await browser.storage.local.set({ [SEEN_KEY]: snapshot });
 }
 
 export async function getLocalSpecs(): Promise<LocalSpecsState | null> {

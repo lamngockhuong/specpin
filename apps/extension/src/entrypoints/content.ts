@@ -26,6 +26,7 @@ import {
   setLocale,
 } from "../shared/config.js";
 import type { TaggedSpec } from "../shared/connection-types.js";
+import { parseSpecLink } from "../shared/deep-link.js";
 import { confirmDialog } from "../shared/dialog.js";
 import { isLocalConnectionId } from "../shared/local-id.js";
 import {
@@ -73,6 +74,12 @@ export default defineContentScript({
     // Forced UI theme for the renderers' shadow hosts; read at startup and updated
     // by SET_THEME broadcasts from the Options page. "system" leaves hosts on the OS default.
     let theme: Theme = "system";
+    // Alt+Shift+N cursor over the matched-and-visible specs. The rendered
+    // `session.matches` keys ARE that set (renderSession already applied the
+    // visibility cascade + page scope), so no second filter is needed. -1 so the
+    // first press flashes the first spec; reset on nav / spec-set change below so it
+    // never points past the end.
+    let cycleIndex = -1;
 
     // Tooltip pin "open in side panel": ask the background to open the panel
     // (best-effort) and highlight the spec card. Defined once and threaded into
@@ -185,6 +192,9 @@ export default defineContentScript({
     const onNavigate = () => {
       if (location.href === lastRenderedUrl) return;
       lastRenderedUrl = location.href;
+      // The matched set changes across routes; reset the cycle cursor so it never
+      // points past the end of the new route's specs.
+      cycleIndex = -1;
       // A route change can unmount the tour's target element. Hard-stop the guide
       // (it restores the session via onExit) before re-rendering the new route.
       if (guideActive) guide?.stop();
@@ -225,6 +235,9 @@ export default defineContentScript({
       enabled = res.enabled;
       manifest = res.manifest;
       specs = res.specs;
+      // A SPECS_CHANGED refresh can add/remove specs; reset the cycle cursor so it
+      // never points past the end of the new matched set.
+      cycleIndex = -1;
       visibility = res.visibility ?? EMPTY_VISIBILITY;
       // Prefer the background's cross-project locale union for this origin; fall
       // back to deriving from the single manifest.
@@ -232,6 +245,71 @@ export default defineContentScript({
       // Re-resolve the active locale: stored choice, else the project default.
       locale = pickLocale(await getLocale(), manifest?.settings?.defaultLocale);
       rerender();
+    }
+
+    // Alt+Shift+N: flash the next matched-and-visible spec's element, wrapping to
+    // the first after the last. No-op when the page has no matched specs. Flash
+    // only (no tooltip pin); reduced-motion is honored by highlightElement itself.
+    function cycleSpec(): void {
+      const ids = session ? [...session.matches.keys()] : [];
+      if (ids.length === 0) return;
+      cycleIndex = (cycleIndex + 1) % ids.length;
+      const el = session?.matches.get(ids[cycleIndex] as string);
+      if (el) highlight(el);
+    }
+
+    // How long the deep-link resolver keeps retrying for a late-rendering element
+    // before it gives up (bounded so it never spins on a truly-absent element).
+    const DEEP_LINK_MAX_ATTEMPTS = 20;
+    const DEEP_LINK_RETRY_MS = 150;
+    // Bumped on each resolve so a newer hashchange supersedes an in-flight retry.
+    let deepLinkToken = 0;
+    // The last spec id we resolved, so a hashchange that leaves `specpin=<id>`
+    // untouched (a hash-routed SPA mutating an unrelated fragment part) does not
+    // re-flash the element or re-open the panel. Cleared when the hash no longer
+    // carries a specpin, so navigating away from then back to a shared link
+    // resolves again.
+    let lastResolvedDeepLink: string | null = null;
+
+    // Resolve a `#specpin=<id>` deep link: scroll+flash the target element AND open
+    // its side-panel card. Called after the first render and on hashchange.
+    function resolveDeepLink(): void {
+      const id = parseSpecLink(location.href);
+      if (!id) {
+        lastResolvedDeepLink = null;
+        return;
+      }
+      // Already handled this id on a prior hashchange: skip so an app-driven
+      // fragment change doesn't re-trigger the flash / panel open.
+      if (id === lastResolvedDeepLink) return;
+      lastResolvedDeepLink = id;
+      attemptDeepLink(id, 0, ++deepLinkToken);
+    }
+
+    // One resolution attempt. Specs fetch async and the element can render late, so
+    // resolve against the live render's matches first, then a fresh match against
+    // the current DOM (session may be mid-rebuild after a hash change), and retry
+    // within a bounded window before giving up. Orphaned target (known spec, no
+    // element) opens the card + a not-found toast (Validation S1); an unknown id is
+    // a graceful no-op.
+    function attemptDeepLink(id: string, attempt: number, token: number): void {
+      if (token !== deepLinkToken) return; // superseded by a newer hashchange
+      const spec = specs.find((s) => s.id === id);
+      const el =
+        session?.matches.get(id) ?? (spec ? matchElement(spec.fingerprint, document).el : null);
+      if (el) {
+        highlight(el);
+        openInPanel(id);
+        return;
+      }
+      if (attempt < DEEP_LINK_MAX_ATTEMPTS) {
+        window.setTimeout(() => attemptDeepLink(id, attempt + 1, token), DEEP_LINK_RETRY_MS);
+        return;
+      }
+      if (spec) {
+        openInPanel(id);
+        showToast(t("spec.linkElementMissing"), document, theme);
+      }
     }
 
     function cycleMode(): void {
@@ -517,6 +595,7 @@ export default defineContentScript({
       onCycleMode: cycleMode,
       onToggleCapture: () => void startCapture(),
       onToggleGuide: toggleGuide,
+      onCycleSpec: cycleSpec,
     });
 
     // Record the right-clicked element for the context-menu actions. Capture phase
@@ -540,6 +619,10 @@ export default defineContentScript({
     // string compare, so the only re-render trigger is an actual URL change.
     window.addEventListener("popstate", onNavigate);
     window.addEventListener("hashchange", onNavigate);
+    // A hashchange can also be a new `#specpin=<id>` deep link (shared or navigated
+    // to in-app): resolve it to a flash + panel open. onNavigate's re-render and
+    // this resolver both fire; the resolver's bounded retry rides out the re-render.
+    window.addEventListener("hashchange", resolveDeepLink);
     new MutationObserver(onNavigate).observe(document.body ?? document.documentElement, {
       childList: true,
       subtree: true,
@@ -670,5 +753,8 @@ export default defineContentScript({
     // Seed after the first render so a stray early mutation doesn't trigger a
     // redundant re-render for the URL we just rendered.
     lastRenderedUrl = location.href;
+    // Resolve a `#specpin=<id>` deep link present on initial load (a shared link
+    // opened cold). The bounded retry inside covers a late-rendering element.
+    resolveDeepLink();
   },
 });

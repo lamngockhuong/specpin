@@ -23,7 +23,10 @@ import "../../shared/guide-section.css";
 import "../../shared/guide-editor.css";
 import "../../shared/scope-toggle.css";
 import "../../shared/surface-health.css";
+import "../../shared/surface-digest.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
+import { copyText } from "../../shared/clipboard.js";
+import { buildSpecLink } from "../../shared/deep-link.js";
 import { mountGuideSection } from "../../shared/guide-section.js";
 import {
   type MatchReportEntry,
@@ -34,6 +37,7 @@ import {
 } from "../../shared/messaging.js";
 import { wireProjectActions } from "../../shared/project-actions.js";
 import {
+  activeTabUrl,
   buildExportTargets,
   buildFilterModel,
   fetchMatchState,
@@ -47,6 +51,7 @@ import {
 } from "../../shared/surface-data.js";
 import {
   byId,
+  mountDigest,
   mountFragileScan,
   mountScopeToggle,
   mutedRow,
@@ -59,6 +64,7 @@ import {
   sourceBadge,
   tierBadge,
 } from "../../shared/surface-renderers.js";
+import { showSurfaceToast } from "../../shared/surface-toast.js";
 import { isVisible, setSpecVisibility, type VisibilityState } from "../../shared/visibility.js";
 
 // The side panel is a persistent surface (unlike the ephemeral popup): it stays
@@ -82,6 +88,15 @@ let matchedIds: Set<string> | null = null;
 // badges, and the orphaned section. Null when no content script could report it.
 let lastReport: MatchReportEntry[] | null = null;
 let reportById: Map<string, MatchReportEntry> = new Map();
+
+// Copy a shareable deep link (`<pageUrl>#specpin=<id>`) to this spec. Builds from
+// the active tab's full URL (query + app fragment preserved), so the panel — an
+// extension page — links to the web page, not itself.
+async function copyLink(specId: string): Promise<void> {
+  const url = await activeTabUrl();
+  if (!url) return;
+  if (await copyText(buildSpecLink(url, specId))) showSurfaceToast(t("common.linkCopied"));
+}
 
 // Per-spec eye toggle: a hard per-spec override that wins across axes (a spec
 // hidden by a tag can still be re-shown here). Persists then re-fetches.
@@ -184,10 +199,17 @@ function renderSpecs(res: SpecsForOrigin): void {
     if (tier) title.appendChild(tier);
     head.appendChild(title);
 
-    // Actions, ordered Delete / Edit / Hide left-to-right. Delete + Edit only
-    // when this origin can write the spec back; the eye toggle is always present.
+    // Actions, ordered Copy link / Delete / Edit / Hide left-to-right. Copy link
+    // is always present (any reader can share); Delete + Edit only when this origin
+    // can write the spec back; the eye toggle is always present.
     const actions = document.createElement("div");
     actions.className = "spec-actions";
+
+    actions.appendChild(
+      actionButton("spec-copy", t("common.copyLink"), t("common.copyLinkTitle"), () => {
+        void copyLink(spec.id);
+      }),
+    );
 
     if (spec.writable) {
       // Both Delete and Edit delegate to the active tab's content script so the
@@ -310,6 +332,19 @@ const fragileScan = mountFragileScan(byId("scan"), byId("scan-results"), {
   }),
 });
 
+// The "what changed since last visit" digest (shared wiring; see the popup).
+// Reads module state on each render; "Mark all seen" persists the baseline and
+// refreshes.
+const digest = mountDigest(byId("digest"), {
+  getState: () => ({
+    specs: lastSpecs?.specs ?? [],
+    enabled: lastSpecs?.enabled ?? false,
+    locale: activeLocale,
+    defaultLocale: lastSpecs?.manifest?.settings?.defaultLocale,
+  }),
+  refresh,
+});
+
 // The "This page | All" scope toggle above the search box (shared wiring; see the
 // popup for the rationale). Reads module state on each render and, on click,
 // re-renders itself + the list.
@@ -338,6 +373,9 @@ async function refresh(): Promise<void> {
   currentPath = path;
   currentOrigin = origin;
   currentState = visibilityOf(specs);
+  // Start the digest now (reads module state just set) so its storage read overlaps
+  // the renders below; awaited before this refresh returns.
+  const digestReady = digest.render();
   // Skip the match state when off (the in-flight query resolves to null, discarded).
   const match = specs.enabled ? await matchPromise : { ids: null, report: null };
   matchedIds = match.ids;
@@ -365,6 +403,7 @@ async function refresh(): Promise<void> {
   });
   renderSpecs(specs);
   renderOrphaned(specs);
+  await digestReady;
 }
 
 // The Guides launch section. The side panel is persistent, so launching a tour

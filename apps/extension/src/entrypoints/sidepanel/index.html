@@ -110,11 +110,12 @@
          actions. Actions align to the top so they stay put as the title wraps. */
       #specs .spec-head { display: flex; align-items: flex-start; gap: 8px; }
       #specs .spec-actions { flex: none; display: flex; gap: 8px; }
-      /* Per-spec action buttons: Delete / Edit / Hide (eye) on each card. */
-      #specs .spec-delete, #specs .spec-edit, #specs .spec-vis {
+      /* Per-spec action buttons: Copy link / Delete / Edit / Hide (eye) on each card. */
+      #specs .spec-copy, #specs .spec-delete, #specs .spec-edit, #specs .spec-vis {
         background: transparent; border: none; cursor: pointer; padding: 2px;
         color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui); white-space: nowrap;
       }
+      #specs .spec-copy:hover { color: var(--sp-accent); }
       #specs .spec-vis:hover { color: var(--sp-text); }
       #specs .spec-edit:hover { color: var(--sp-accent); }
       #specs .spec-delete:hover { color: var(--sp-error-text); }
@@ -272,6 +273,7 @@
     </div>
     <div class="row meta"><span id="count" class="pill"></span></div>
     <ul id="projects"></ul>
+    <div id="digest" class="digest" hidden></div>
     <div class="row locale-row" id="locale-row" hidden>
       <label for="locale" data-i18n="common.languageLabel">Language</label>
       <select id="locale" data-i18n-title="common.specLanguageTitle" title="Spec language"></select>

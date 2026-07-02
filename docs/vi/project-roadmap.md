@@ -122,6 +122,11 @@ Dự kiến, chờ corpus thực tế / phản hồi sử dụng: hybrid weighte
 - Extension liên kết tới nó: một link "What's New" trong thẻ Support & Feedback của trang Options (`options.changelog`, EN/VI/JA), cùng với tự động mở một tab mới khi có bản cập nhật đáng kể. Quyết định mở nằm trong `apps/extension/src/shared/whats-new.ts` (`shouldOpenChangelog`): trước 1.0 mọi bước tăng version đều mở (release-please phát ra các patch `0.0.x` cho tính năng thật); từ 1.0 trở đi chỉ mở khi bump minor/major. Được nối qua một listener `runtime.onInstalled` riêng (tách khỏi `initWorker` idempotent) đọc `previousVersion` và lưu `specpin:lastVersion`. Lần cài đầu không bao giờ mở.
 - Phạm vi nguồn: chỉ changelog của extension (không có changelog CLI + spec-schema trên trang). Không có biến thể changelog địa phương hóa `/vi/` hay `/ja/` (nội dung changelog là tiếng Anh, sinh từ conventional commits).
 
+**Đã ship các tính năng điều hướng cho người đọc (2026-07-02)** trên nhánh `feat/reader-discovery-navigation`:
+- Deep-link chia sẻ spec: mỗi spec có thêm hành động "Copy link" (thẻ side-panel + tooltip đã ghim) sao chép `<pageUrl>#specpin=<specId>`. Mở URL đó sẽ cuộn tới + nháy sáng element và mở side panel với thẻ spec được làm nổi bật. Dự phòng nhẹ nhàng: id không xác định thì bỏ qua; spec mồ côi (tồn tại nhưng element đã mất) sẽ mở thẻ + hiện thông báo "element không có trên trang này". Fragment ứng dụng cùng trang được giữ nguyên.
+- Điều hướng xoay vòng bằng bàn phím: `Alt+Shift+N` xoay vòng focus qua các spec đã match và đang hiển thị trên trang, nháy sáng từng element và quay lại từ đầu. Tôn trọng reduced-motion. Bổ sung cho các tổ hợp phím hiện có `Alt+Shift+S/M/C/G`.
+- Bản tóm tắt thay đổi: popup + side panel hiển thị "N thay đổi kể từ lần xem trước" kèm danh sách tiêu đề spec mới/đã sửa, với nút "Đánh dấu đã xem". Bản tóm tắt được tính từ snapshot hash nội dung theo từng dự án trong `storage.local` (title + description + business rules trên mọi locale). Lần xem đầu tiên hoặc dự án vừa kết nối được seed âm thầm (không gây nhiễu "tất cả đều mới").
+
 ### Tính năng đã lên kế hoạch
 
 **Hybrid Weighted Fingerprint Scoring:**

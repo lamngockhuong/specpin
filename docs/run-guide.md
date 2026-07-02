@@ -322,6 +322,7 @@ connection, so the default install carries no broad-host permission.
 | `Alt+Shift+S` | toggle Specpin on/off |
 | `Alt+Shift+M` | cycle display mode |
 | `Alt+Shift+C` | toggle capture mode (`Esc` cancels) |
+| `Alt+Shift+N` | cycle focus through matched specs (flash each, wrap around) |
 | `Alt+Shift+G` | start / stop the default guided tour (in-tour: `←` / `→` step, `Esc` exits) |
 
 ## Display modes
