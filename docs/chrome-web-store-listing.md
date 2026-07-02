@@ -18,15 +18,19 @@ It is NOT a spec-driven code generator: it generates no application code. It is 
 
 Features:
 
-- Pin specs onto live elements: resilient multi-signal fingerprint matching (test-id, aria, selector, xpath, text, position) so specs survive refactors.
+- Pin specs onto live elements: resilient multi-signal fingerprint matching (test-id, aria, selector, xpath, text, position) so specs survive refactors, scoped to their page by a URL glob.
+
+- Match confidence and page health: see how each spec matched (exact anchor vs. selector), review fragile matches, and drop in a data-spec-id attribute for exact matching.
 
 - Three display modes: tooltip, side panel, and a draggable modal renderer. Switch with one click or Alt+Shift+M.
 
 - Manual capture: click an element and author a spec in place, no leaving the page. Toggle capture with Alt+Shift+C.
 
-- Writable local projects: edit, capture, create, and group-zip export specs, even without a running sidecar.
+- Writable local projects: edit, capture, create, delete, and group-zip export specs, even without a running sidecar.
 
-- Multi-project connections: one extension serves many projects at once, routed to each page by origin, with per-project enable/disable.
+- Multi-project connections: one extension serves many projects at once, routed to each page by origin, with per-project enable/disable and source badges (sidecar vs local).
+
+- Guide mode: spec-driven onboarding tours in two scopes (team, committed to your repo; personal, per-origin), with a spotlight overlay and an anchored popover.
 
 - Side panel surface: open Specpin in Chrome's side panel with inline spec detail and live auto-refresh.
 
@@ -34,11 +38,11 @@ Features:
 
 - Multi-language spec content: locale-keyed strings with an in-browser language toggle and a tabbed per-locale editor.
 
-- Markdown-formatted specs: descriptions and business rules carry a safe Markdown subset (bold, italic, links, lists), authored via a toolbar and rendered across every surface.
+- Markdown-formatted specs: descriptions and business rules carry a safe Markdown subset (bold, italic, inline code, links, lists), authored via a toolbar and rendered across every surface.
 
 - User-selectable theme: System / Light / Dark, with dual-theme design tokens.
 
-- Bilingual interface (EN + VI), independent from the spec content language.
+- Trilingual interface (EN + VI + JA), independent from the spec content language.
 
 Secure by default: the sidecar binds 127.0.0.1 by default (remote use is opt-in over your own HTTPS reverse proxy), uses bearer-token auth, accepts only extension-origin CORS, and guards writes against path traversal. Open-source, built with Manifest V3. No data collection, no tracking, no remote code.
 
@@ -178,7 +182,7 @@ Open the Specpin surface in Chrome's side panel for an inline, persistent spec b
 Connect from the background service worker to the local Go sidecar over localhost HTTP + SSE to read `.specs/` and receive live-reload updates. By default Specpin makes no requests to any remote host.
 
 **optional_host_permissions - https://\*/\* (requested at runtime, not at install):**
-A user may run the same Go sidecar on their own remote machine (behind an HTTPS reverse proxy) and connect to it. When they add such a connection, the extension requests host access for that one origin within the user gesture, and revokes it when the connection is deleted. No remote access is granted at install; the default install carries no broad-host permission. The remote host is the user's own sidecar, chosen by them — not a Specpin-operated service.
+A user may run the same Go sidecar on their own remote machine (behind an HTTPS reverse proxy) and connect to it. When they add such a connection, the extension requests host access for that one origin within the user gesture, and revokes it when the connection is deleted. No remote access is granted at install; the default install carries no broad-host permission. The remote host is the user's own sidecar, chosen by them, not a Specpin-operated service.
 
 **Content script broad match (`http://*/*`, `https://*/*`):**
 Specpin is a developer tool that pins business specs onto the elements of the user's own running web UI. The content script must be able to run on any origin because the user configures at runtime which projects/origins to attach specs to (local dev servers on arbitrary ports and their deployed staging/production domains). On every page the content script only queries the background for specs matching that page's origin and renders nothing unless the user has explicitly connected a project for that origin. No page data is collected, transmitted, or sent to any remote host; the extension communicates only with a user-run sidecar on localhost.
@@ -187,9 +191,9 @@ Specpin is a developer tool that pins business specs onto the elements of the us
 
 ### Remote Code (Có phải bạn đang dùng mã từ xa không?)
 
-No. The extension executes no remote code and loads no remote scripts. It communicates only with a user-run sidecar — on localhost by default, or, if the user opts in, on their own remote host over HTTPS. Spec data is sent only to that user-operated sidecar; Specpin performs no telemetry and operates no server of its own. Because the destination is infrastructure the user runs and controls, this is not third-party data collection, so the AMO `data_collection` declaration stays `none`.
+No. The extension executes no remote code and loads no remote scripts. It communicates only with a user-run sidecar: on localhost by default, or, if the user opts in, on their own remote host over HTTPS. Spec data is sent only to that user-operated sidecar; Specpin performs no telemetry and operates no server of its own. Because the destination is infrastructure the user runs and controls, this is not third-party data collection, so the AMO `data_collection` declaration stays `none`.
 
-> AMO compliance note (verify before each Firefox submission): the `data_collection_permissions: { required: ["none"] }` declaration in `wxt.config.ts` rests on the reasoning above — specs travel only to the user's own sidecar, never to a Specpin-operated or third-party service. If AMO's current data-collection policy treats transmission to a user-operated remote host differently, update the declaration and this listing before submitting.
+> AMO compliance note (verify before each Firefox submission): the `data_collection_permissions: { required: ["none"] }` declaration in `wxt.config.ts` rests on the reasoning above: specs travel only to the user's own sidecar, never to a Specpin-operated or third-party service. If AMO's current data-collection policy treats transmission to a user-operated remote host differently, update the declaration and this listing before submitting.
 
 ### Data Usage (Sử dụng dữ liệu)
 
@@ -217,18 +221,18 @@ Check all 3 certifications:
 
 ---
 
-## What you need to prepare before submitting (Cần chuẩn bị trước khi nộp)
+## Publishing an update (Đăng bản cập nhật)
 
-Text fields above are ready to paste. The items below are NOT in this repo yet and you must prepare them manually:
+Specpin is live on the Chrome Web Store (extension ID `kkfmoieoahdjneagognaoedggkiiolkn`, <https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn>). The text fields above are the current listing copy: paste them into the "Store listing" + "Privacy practices" tabs when any of them change. To push a new extension version:
 
-- [ ] **Developer account**: a Chrome Web Store developer account (one-time 5 USD registration fee). Verify the publisher email.
-- [ ] **Packaged build**: `pnpm --filter @specpin/extension zip` (or `build` -> `.output/chrome-mv3`) to produce the upload ZIP. Bump the manifest `version` from `0.0.0` to `0.1.0` before zipping (the planned first release).
-- [ ] **Store icon**: 128x128 PNG (already have `apps/extension/public/icon/128.png`).
-- [ ] **Screenshots**: at least 1, ideally 5. Size **1280x800** or 640x400 PNG/JPEG (1280x800 recommended). See the [Screenshot shot list](#screenshot-shot-list) below. Shot 1 is prepared in `apps/extension/store-assets/` (`screenshot-1-tooltip-1280x800.png` + a 640x400 variant); shots 2-5 still to capture.
-- [ ] **Promo tile (optional but recommended)**: small 440x280 PNG. Prepared: `apps/extension/store-assets/promo-tile-440x280.png`.
-- [ ] **Privacy policy live**: deploy the website so <https://specpin.ohnice.app/help/privacy-policy/> resolves before submitting (the URL above must be reachable at review time).
-- [ ] **Single-purpose + permission justifications**: paste from the Privacy section above into the "Privacy practices" tab.
-- [ ] **Verify the publisher contact email** shown in the developer console.
+- [ ] **Bump the version**: raise the manifest `version` (currently `0.0.5` in `apps/extension/package.json`) before packaging. Chrome rejects an upload whose version is not higher than the published one.
+- [ ] **Packaged build**: `pnpm --filter @specpin/extension zip` (or `build` -> `.output/chrome-mv3`) to produce the upload ZIP.
+- [ ] **Refresh listing copy if features changed**: re-paste the Description / Summary blocks above and the Privacy justifications so the store matches the shipped feature set.
+- [ ] **Refresh screenshots if the UI changed**: 1280x800 or 640x400 PNG/JPEG. See the [Screenshot shot list](#screenshot-shot-list) below. Assets live in `apps/extension/store-assets/`.
+- [ ] **Store icon**: 128x128 PNG (`apps/extension/public/icon/128.png`).
+- [ ] **Promo tile (optional)**: 440x280 PNG (`apps/extension/store-assets/promo-tile-440x280.png`).
+- [ ] **Privacy policy reachable**: <https://specpin.ohnice.app/help/privacy-policy/> must resolve at review time.
+- [ ] **Review latency**: an update that touches the broad content-script match (see the Note below) can trigger an in-depth review and delayed publishing, not a rejection. Paste the justification if the reviewer asks.
 
 ---
 
