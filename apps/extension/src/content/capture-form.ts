@@ -181,7 +181,7 @@ ${SHADOW_PREAMBLE}
   display: flex; align-items: center; justify-content: center;
 }
 .card {
-  width: 440px; max-width: 92vw; max-height: 90vh; overflow: auto;
+  width: 560px; max-width: 92vw; max-height: 90vh; overflow: auto;
   background: var(--sp-surface); color: var(--sp-text);
   border: 1px solid var(--sp-border);
   border-radius: var(--sp-radius-card);
@@ -206,6 +206,8 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px var(--sp-accent-glow);
 }
 textarea { min-height: 64px; resize: vertical; }
+/* Business rules usually hold several lines, so give it more room by default. */
+#sp-rules { min-height: 140px; }
 .lang-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 .lang-tab {
   flex: 0 0 auto; width: auto; padding: 6px 12px;

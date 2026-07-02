@@ -1,5 +1,6 @@
 // Dependency-free, CSP-safe Markdown-subset renderer for spec text. It turns a
-// small, fixed Markdown subset (bold, italic, link, bullet + numbered lists)
+// small, fixed Markdown subset (bold, italic, inline code, link, bullet +
+// numbered lists)
 // into a trusted HTML string that is safe to assign via innerHTML, because this
 // module fully controls the markup: every leaf of user text is escaped BEFORE it
 // is wrapped, and the only attribute sink (`<a href>`) is guarded by classifyHref.
@@ -8,7 +9,8 @@
 // markup (that would double-escape our own tags). Instead each plain-text segment
 // is escaped as it is emitted, so a literal "<" from the user can never become a
 // tag. Output contains ONLY the allowlisted tags emitted here: <strong>, <em>,
-// <a>, <ul>, <ol>, <li>, <p>, <br>. No class/style/id/on* attributes are emitted;
+// <code>, <a>, <ul>, <ol>, <li>, <p>, <br>. No class/style/id/on* attributes are
+// emitted;
 // the only attribute beyond href/rel/target is the controlled, value-less
 // `data-specpin-internal` marker on same-origin links (see classifyHref).
 //
@@ -35,6 +37,7 @@ const STRIP_NEWLINES = /\r\n?|\n/g;
 const STRIP_LIST_MARKER = /(^|\s)(?:[-*]|\d+\.)\s+/g; // line-leading or inline
 const STRIP_BOLD = /\*\*/g;
 const STRIP_EMPHASIS = /[*_]/g;
+const STRIP_CODE = /`/g;
 const COLLAPSE_WS = /\s+/g;
 
 /** Validate a link URL for the `href` sink. Returns the URL when it carries an
@@ -112,7 +115,17 @@ export function renderInlineMarkdown(src: string, pageOrigin?: string): string {
   while (i < src.length) {
     const rest = src.slice(i);
 
-    // Links first, so "*" inside a URL is never treated as emphasis.
+    // Inline code first: a backtick span is literal, so "*", "_" or "[" inside it
+    // never becomes emphasis or a link. Its content is escaped, not re-parsed.
+    const code = matchDelimited(rest, "`");
+    if (code) {
+      flush();
+      out += `<code>${escapeHtml(code.content)}</code>`;
+      i += code.length;
+      continue;
+    }
+
+    // Links next, so "*" inside a URL is never treated as emphasis.
     const link = LINK_AT_START.exec(rest);
     if (link) {
       flush();
@@ -221,6 +234,7 @@ export function stripMarkdown(src: string): string {
     .replace(STRIP_LIST_MARKER, "$1")
     .replace(STRIP_BOLD, "")
     .replace(STRIP_EMPHASIS, "")
+    .replace(STRIP_CODE, "")
     .replace(COLLAPSE_WS, " ")
     .trim();
 }

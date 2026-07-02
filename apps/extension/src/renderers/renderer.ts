@@ -108,4 +108,12 @@ export const MARKDOWN_BODY_CSS = `
 .d p:first-child { margin-top: 0; }
 .d ul, .d ol { margin: 4px 0; padding-left: 18px; }
 a { color: var(--sp-accent); text-decoration: underline; }
+code {
+  font: 0.9em/1.4 var(--sp-font-mono);
+  padding: 1px 5px; border-radius: 4px;
+  /* --sp-control (teal tint) not --sp-elevated: elevated is pure white in the
+     light theme, so a code chip would vanish against the white surface. */
+  background: var(--sp-control); border: 1px solid var(--sp-border);
+  word-break: break-word;
+}
 `;
