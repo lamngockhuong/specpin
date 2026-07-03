@@ -2,3 +2,12 @@ packages:
   - "packages/*"
   - "apps/*"
   - "examples/*"
+
+# pnpm 11: build-dependency allowlist (replaces package.json#pnpm.onlyBuiltDependencies).
+# Only esbuild ran its build script under pnpm 10; keep that unchanged.
+# sharp (Astro optional, uses prebuilt binaries) and spawn-sync (fx-runner, unused on modern Node)
+# were never built before, so keep them denied to preserve behavior.
+allowBuilds:
+  esbuild: true
+  sharp: false
+  spawn-sync: false
