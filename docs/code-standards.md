@@ -87,6 +87,25 @@ One tool handles lint, format, and import organize. There is no ESLint or Pretti
 Quotes (double), semicolons (always), and trailing commas (all) use Biome defaults, which already
 match the old Prettier config.
 
+**`.specs/` JSON override:** an override forces `json.formatter.expand: "always"` for `**/.specs/**/*.json`:
+
+```jsonc
+"overrides": [
+  { "includes": ["**/.specs/**/*.json"], "json": { "formatter": { "expand": "always" } } }
+]
+```
+
+The Go sidecar and `specpin init` write spec files with `json.MarshalIndent` (every object/array
+element on its own line). Biome's default `expand: "auto"` would instead keep small objects/arrays
+compact, so a single-element edit through the sidecar reformatted the whole file. `expand: "always"`
+makes Biome and the Go writers emit byte-identical output, so sidecar edits produce minimal Git
+diffs. Seed `.specs/` files are kept in this expanded form.
+
+End-user repos (which do not have this Biome config) get the same result via the `specpin format`
+command: it rewrites `.specs/` JSON to the canonical form through the CLI's own marshaling, and
+`specpin format --check` gates drift in CI / pre-commit. Guidance: treat `.specs/` as a tool-owned
+artifact and exclude it from the repo's generic formatter. See the end-user CLI docs.
+
 **Ignores** (`files.includes` negations, plus `.gitignore` via `vcs.useIgnoreFile`):
 - `**/*.gen.*` (all generated files)
 - `apps/cli/**` (Go sidecar)

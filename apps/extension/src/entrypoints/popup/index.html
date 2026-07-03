@@ -55,11 +55,11 @@
       }
       #count:empty { display: none; }
 
-      /* Per-tab project list (distinct from the spec list: no pin marker). */
+      /* Per-tab project list (distinct from the spec list: no pin marker).
+         The `#projects li` / `li::before` overrides live after the base `li`
+         rules below so specificity ascends in source order. */
       #projects { margin: 8px 0 0; }
       #projects:empty { display: none; }
-      #projects li { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
-      #projects li::before { display: none; }
       #projects .pdot { width: 8px; height: 8px; border-radius: 50%; background: var(--sp-text-3); flex: none; }
       #projects .pdot.ok { background: var(--sp-success-dot); }
       #projects .pdot.err { background: var(--sp-error-text); }
@@ -134,6 +134,11 @@
       }
       li .t { grid-column: 2; min-width: 0; font-weight: 600; color: var(--sp-text); display: flex; align-items: center; gap: 6px; }
       li .muted { grid-column: 2; min-width: 0; color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+      /* Per-tab project rows override the base list item: flex row, no pin marker.
+         Placed after the base `li` rules so specificity ascends in source order. */
+      #projects li { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+      #projects li::before { display: none; }
 
       /* Provenance badge: which source a spec came from (sidecar vs manual). */
       .src {

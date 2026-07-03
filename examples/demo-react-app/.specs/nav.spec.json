@@ -4,7 +4,10 @@
   "specs": [
     {
       "id": "nav-logout",
-      "title": { "en": "Log out button", "vi": "Nút đăng xuất" },
+      "title": {
+        "en": "Log out button",
+        "vi": "Nút đăng xuất"
+      },
       "description": {
         "en": "Ends the current session and returns to the login screen.",
         "vi": "Kết thúc phiên hiện tại và quay lại màn hình đăng nhập."
@@ -15,7 +18,10 @@
           "vi": "Xoá token xác thực phía client trước khi chuyển đến /login"
         }
       ],
-      "tags": ["auth", "navigation"],
+      "tags": [
+        "auth",
+        "navigation"
+      ],
       "preferredDisplayMode": "tooltip",
       "fingerprint": {
         "testId": "nav-logout",
@@ -23,12 +29,22 @@
         "id": null,
         "cssSelector": "nav button[type=button]",
         "xpath": "//nav//button[@type='button']",
-        "domPath": ["nav", "button"],
+        "domPath": [
+          "nav",
+          "button"
+        ],
         "tagName": "button",
         "textContent": "Log out",
-        "attributes": { "type": "button" },
-        "nearbyLabels": ["Settings"],
-        "positionHint": { "index": 6, "siblingCount": 7 },
+        "attributes": {
+          "type": "button"
+        },
+        "nearbyLabels": [
+          "Settings"
+        ],
+        "positionHint": {
+          "index": 6,
+          "siblingCount": 7
+        },
         "frameworkHint": "react",
         "pageUrl": null
       },

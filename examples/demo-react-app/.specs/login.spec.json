@@ -4,7 +4,10 @@
   "specs": [
     {
       "id": "login-submit-btn",
-      "title": { "en": "Log in button", "vi": "Nút đăng nhập" },
+      "title": {
+        "en": "Log in button",
+        "vi": "Nút đăng nhập"
+      },
       "description": {
         "en": "Calls POST /auth/login. Disabled while loading; shows an inline error on bad credentials.",
         "vi": "Gọi POST /auth/login. Bị vô hiệu khi đang tải; hiển thị lỗi nội tuyến khi sai thông tin đăng nhập."
@@ -19,7 +22,10 @@
           "vi": "Chuyển đến /dashboard nếu role=admin, ngược lại /home"
         }
       ],
-      "tags": ["auth", "critical"],
+      "tags": [
+        "auth",
+        "critical"
+      ],
       "preferredDisplayMode": "tooltip",
       "fingerprint": {
         "testId": "login-submit",
@@ -27,12 +33,23 @@
         "id": null,
         "cssSelector": "form.login button[type=submit]",
         "xpath": "//form[@class='login']//button[@type='submit']",
-        "domPath": ["form", "button"],
+        "domPath": [
+          "form",
+          "button"
+        ],
         "tagName": "button",
         "textContent": "Log in",
-        "attributes": { "type": "submit" },
-        "nearbyLabels": ["Email", "Password"],
-        "positionHint": { "index": 3, "siblingCount": 4 },
+        "attributes": {
+          "type": "submit"
+        },
+        "nearbyLabels": [
+          "Email",
+          "Password"
+        ],
+        "positionHint": {
+          "index": 3,
+          "siblingCount": 4
+        },
         "frameworkHint": "react",
         "pageUrl": "/login"
       },
@@ -45,16 +62,27 @@
     },
     {
       "id": "login-email-field",
-      "title": { "en": "Email field", "vi": "Trường email" },
+      "title": {
+        "en": "Email field",
+        "vi": "Trường email"
+      },
       "description": {
         "en": "Primary identifier for login. Validated as an email; trimmed before submit.",
         "vi": "Định danh chính khi đăng nhập. Được kiểm tra dạng email; cắt khoảng trắng trước khi gửi."
       },
       "businessRules": [
-        { "en": "Must be a valid email address", "vi": "Phải là địa chỉ email hợp lệ" },
-        { "en": "Case-insensitive on the server", "vi": "Không phân biệt hoa thường trên máy chủ" }
+        {
+          "en": "Must be a valid email address",
+          "vi": "Phải là địa chỉ email hợp lệ"
+        },
+        {
+          "en": "Case-insensitive on the server",
+          "vi": "Không phân biệt hoa thường trên máy chủ"
+        }
       ],
-      "tags": ["auth"],
+      "tags": [
+        "auth"
+      ],
       "preferredDisplayMode": "sidebar",
       "fingerprint": {
         "testId": "login-email",
@@ -62,12 +90,23 @@
         "id": null,
         "cssSelector": "form.login input[type=email]",
         "xpath": "//form[@class='login']//input[@type='email']",
-        "domPath": ["form", "label", "input"],
+        "domPath": [
+          "form",
+          "label",
+          "input"
+        ],
         "tagName": "input",
         "textContent": null,
-        "attributes": { "type": "email" },
-        "nearbyLabels": ["Email"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "attributes": {
+          "type": "email"
+        },
+        "nearbyLabels": [
+          "Email"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/login"
       },
@@ -80,19 +119,28 @@
     },
     {
       "id": "login-password-field",
-      "title": { "en": "Password field", "vi": "Trường mật khẩu" },
+      "title": {
+        "en": "Password field",
+        "vi": "Trường mật khẩu"
+      },
       "description": {
         "en": "Secret credential for login. Never logged or echoed; sent only over HTTPS.",
         "vi": "Thông tin bí mật khi đăng nhập. Không ghi log hay hiển thị; chỉ gửi qua HTTPS."
       },
       "businessRules": [
-        { "en": "Minimum 8 characters", "vi": "Tối thiểu 8 ký tự" },
+        {
+          "en": "Minimum 8 characters",
+          "vi": "Tối thiểu 8 ký tự"
+        },
         {
           "en": "Compared server-side against an Argon2id hash",
           "vi": "So khớp phía máy chủ với mã băm Argon2id"
         }
       ],
-      "tags": ["auth", "security"],
+      "tags": [
+        "auth",
+        "security"
+      ],
       "preferredDisplayMode": "sidebar",
       "fingerprint": {
         "testId": "login-password",
@@ -100,12 +148,23 @@
         "id": null,
         "cssSelector": "form.login input[type=password]",
         "xpath": "//form[@class='login']//input[@type='password']",
-        "domPath": ["form", "label", "input"],
+        "domPath": [
+          "form",
+          "label",
+          "input"
+        ],
         "tagName": "input",
         "textContent": null,
-        "attributes": { "type": "password" },
-        "nearbyLabels": ["Password"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "attributes": {
+          "type": "password"
+        },
+        "nearbyLabels": [
+          "Password"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/login"
       },
@@ -118,7 +177,10 @@
     },
     {
       "id": "forgot-password-link",
-      "title": { "en": "Forgot password link", "vi": "Liên kết quên mật khẩu" },
+      "title": {
+        "en": "Forgot password link",
+        "vi": "Liên kết quên mật khẩu"
+      },
       "description": {
         "en": "Starts the password-reset flow by emailing a one-time link.",
         "vi": "Bắt đầu quy trình đặt lại mật khẩu bằng cách gửi liên kết dùng một lần qua email."
@@ -133,7 +195,9 @@
           "vi": "Luôn hiển thị xác nhận chung để tránh lộ email nào tồn tại"
         }
       ],
-      "tags": ["auth"],
+      "tags": [
+        "auth"
+      ],
       "preferredDisplayMode": "tooltip",
       "fingerprint": {
         "testId": "forgot-password",
@@ -141,12 +205,22 @@
         "id": null,
         "cssSelector": "form.login a[href='#reset']",
         "xpath": "//form[@class='login']//a[@href='#reset']",
-        "domPath": ["form", "a"],
+        "domPath": [
+          "form",
+          "a"
+        ],
         "tagName": "a",
         "textContent": "Forgot password?",
-        "attributes": { "href": "#reset" },
-        "nearbyLabels": ["Log in"],
-        "positionHint": { "index": 4, "siblingCount": 5 },
+        "attributes": {
+          "href": "#reset"
+        },
+        "nearbyLabels": [
+          "Log in"
+        ],
+        "positionHint": {
+          "index": 4,
+          "siblingCount": 5
+        },
         "frameworkHint": "react",
         "pageUrl": "/login"
       },
