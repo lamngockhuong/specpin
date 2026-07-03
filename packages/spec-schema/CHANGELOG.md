@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.5](https://github.com/lamngockhuong/specpin/compare/spec-schema-v0.0.4...spec-schema-v0.0.5) (2026-07-03)
+
+
+### Features
+
+* **cli:** specpin report governance gate + RequiredConfig schema ([#113](https://github.com/lamngockhuong/specpin/issues/113)) ([399e77e](https://github.com/lamngockhuong/specpin/commit/399e77e70f2537396208e769f6fd43fb29b92850))
+
 ## [0.0.4](https://github.com/lamngockhuong/specpin/compare/spec-schema-v0.0.3...spec-schema-v0.0.4) (2026-07-03)
 
 

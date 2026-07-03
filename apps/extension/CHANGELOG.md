@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.11](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.10...extension-v0.0.11) (2026-07-03)
+
+
+### Features
+
+* **extension:** opt-in ordinal numbering on spec badges ([#114](https://github.com/lamngockhuong/specpin/issues/114)) ([7535c90](https://github.com/lamngockhuong/specpin/commit/7535c90828ee51d9cd41909598137f108162e4b4))
+
 ## [0.0.10](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.9...extension-v0.0.10) (2026-07-03)
 
 
