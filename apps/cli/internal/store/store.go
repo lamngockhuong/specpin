@@ -125,6 +125,48 @@ func (s *Store) ReadRaw(name string) ([]byte, error) {
 
 func (s *Store) manifestPath() string { return filepath.Join(s.dir, "manifest.json") }
 
+// Canonicalize returns raw re-indented to the .specs/ on-disk canonical form:
+// 2-space indent, every object/array element on its own line, and a trailing
+// newline. It is a pure whitespace transform (json.Indent), so it never reorders
+// keys or mutates values, and is idempotent on files the sidecar already wrote.
+// It backs SaveViews/SaveGuides and the `specpin format` command.
+//
+// Note: the spec-file write path (writeSpecFile) marshals the specFile struct via
+// json.MarshalIndent, which HTML-escapes < > & where json.Indent leaves them
+// literal. The two agree byte-for-byte on spec bytes the sidecar itself produced
+// (already escaped), but diverge for hand-authored specs containing literal
+// < > &. Unifying writeSpecFile onto this recipe is a tracked follow-up.
+func Canonicalize(raw []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := json.Indent(&buf, raw, "", "  "); err != nil {
+		return nil, err
+	}
+	// json.Indent copies insignificant whitespace surrounding the top-level value
+	// verbatim (notably a trailing newline), so trim it and add exactly one back.
+	// Without this, canonicalizing an already-canonical file (which ends in \n)
+	// would append a second newline, breaking idempotence.
+	out := bytes.TrimSpace(buf.Bytes())
+	return append(out, '\n'), nil
+}
+
+// WriteCanonical canonicalizes raw and writes it to name inside .specs/,
+// atomically and behind the traversal + symlink guard. Callers outside this
+// package must go through here (not os.WriteFile) so the .specs/-confinement
+// guarantee holds. Used by the `specpin format` command.
+func (s *Store) WriteCanonical(name string, raw []byte) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	full, err := s.resolve(name)
+	if err != nil {
+		return err
+	}
+	out, err := Canonicalize(raw)
+	if err != nil {
+		return err
+	}
+	return atomicWrite(full, out)
+}
+
 // LoadViews reads the raw .specs/views.json (the team-default visibility config),
 // or returns the empty default when the file does not exist. The traversal +
 // symlink guard applies via resolve, like every other .specs/ read.
@@ -143,22 +185,11 @@ func (s *Store) LoadViews() ([]byte, error) {
 	return raw, nil
 }
 
-// SaveViews writes views.json atomically and pretty-printed (2-space) for clean
-// Git diffs, confined to .specs/. The caller validates the body against the
-// schema first; json.Indent preserves the client's key order.
+// SaveViews writes views.json atomically and canonically (2-space, expanded) for
+// clean Git diffs, confined to .specs/. The caller validates the body against the
+// schema first; Canonicalize preserves the client's key order.
 func (s *Store) SaveViews(raw json.RawMessage) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	full, err := s.resolve("views.json")
-	if err != nil {
-		return err
-	}
-	var buf bytes.Buffer
-	if err := json.Indent(&buf, raw, "", "  "); err != nil {
-		return err
-	}
-	out := append(buf.Bytes(), '\n')
-	return atomicWrite(full, out)
+	return s.WriteCanonical("views.json", raw)
 }
 
 // LoadGuides reads the raw .specs/guides.json (the named-guides config), or
@@ -180,22 +211,11 @@ func (s *Store) LoadGuides() ([]byte, error) {
 	return raw, nil
 }
 
-// SaveGuides writes guides.json atomically and pretty-printed (2-space) for clean
-// Git diffs, confined to .specs/. The caller validates the body against the
-// schema first; json.Indent preserves the client's key order.
+// SaveGuides writes guides.json atomically and canonically (2-space, expanded) for
+// clean Git diffs, confined to .specs/. The caller validates the body against the
+// schema first; Canonicalize preserves the client's key order.
 func (s *Store) SaveGuides(raw json.RawMessage) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	full, err := s.resolve("guides.json")
-	if err != nil {
-		return err
-	}
-	var buf bytes.Buffer
-	if err := json.Indent(&buf, raw, "", "  "); err != nil {
-		return err
-	}
-	out := append(buf.Bytes(), '\n')
-	return atomicWrite(full, out)
+	return s.WriteCanonical("guides.json", raw)
 }
 
 // LoadManifest reads and parses manifest.json.

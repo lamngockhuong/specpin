@@ -127,6 +127,52 @@ Theo mặc định, `validate` cảnh báo nếu `manifest.specFiles` và các f
 Sử dụng `specpin validate` trong CI để phát hiện spec không hợp lệ trước khi merge. Xem [GitHub Action có thể tái sử dụng](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint) để lấy ví dụ.
 :::
 
+## Format spec
+
+Sidecar, `specpin init`, và extension đều ghi JSON trong `.specs/` theo một dạng canonical duy nhất: thụt lề 2 khoảng trắng, expand hoàn toàn (mỗi phần tử object/array một dòng), có newline ở cuối. `specpin format` viết lại spec của bạn về dạng đó, nhờ vậy các chỉnh sửa qua extension chỉ tạo diff Git tối thiểu, dễ review.
+
+```bash
+specpin format --dir .specs          # viết lại tại chỗ
+specpin format --check --dir .specs  # báo cáo lệch, không ghi (cho CI / pre-commit)
+```
+
+Đây là phép biến đổi thuần khoảng trắng: không bao giờ đổi thứ tự key hay thay đổi giá trị, và chạy hai lần là no-op.
+
+Mã thoát:
+- `0` tất cả file đã canonical (hoặc format lại thành công)
+- `1` `--check` tìm thấy file cần format, hoặc một file không đọc được / không phải JSON hợp lệ
+- `2` không thể chạy (thiếu thư mục)
+
+### Coi `.specs/` là artifact do tool sở hữu
+
+`.specs/` được sinh ra và thuộc quyền sở hữu của specpin, giống như `package-lock.json` hay code được generate. Nếu bạn chạy một formatter cho cả repo (Prettier, Biome, dprint), hãy **loại trừ `.specs/`** để nó không xung đột với specpin. Nếu không, formatter của bạn sẽ collapse các array mà specpin expand, và mỗi lần sửa spec sẽ churn cả file.
+
+```text
+# .prettierignore
+.specs/
+```
+
+```jsonc
+// biome.json - hoặc bỏ qua .specs/ ...
+{ "files": { "includes": ["**", "!**/.specs/**"] } }
+// ... hoặc khớp format của specpin để cả hai đồng thuận:
+{ "overrides": [{ "includes": ["**/.specs/**/*.json"], "json": { "formatter": { "expand": "always" } } }] }
+```
+
+Sau đó chuẩn hóa bằng `specpin format` và gate nó trong CI hoặc pre-commit hook:
+
+```bash
+# .git/hooks/pre-commit (hoặc lint-staged / husky)
+specpin format --check || {
+  echo "spec cần được format - chạy: specpin format" >&2
+  exit 1
+}
+```
+
+:::tip
+Kết hợp `specpin format --check` với `specpin validate` trong CI để spec vừa hợp lệ vừa được format nhất quán.
+:::
+
 ## Thư mục `.specs/`
 
 Các spec của bạn nằm trong `.specs/` ở gốc của repo dự án:

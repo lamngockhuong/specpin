@@ -127,6 +127,52 @@ By default, `validate` warns if `manifest.specFiles` and the on-disk `*.spec.jso
 Use `specpin validate` in CI to catch invalid specs before they merge. See the [reusable GitHub Action](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint) for an example.
 :::
 
+## Format specs
+
+The sidecar, `specpin init`, and the extension all write `.specs/` JSON in one canonical shape: 2-space indent, fully expanded (one object/array element per line), with a trailing newline. `specpin format` rewrites your specs into that shape, so edits made through the extension produce minimal, reviewable Git diffs.
+
+```bash
+specpin format --dir .specs          # rewrite in place
+specpin format --check --dir .specs  # report drift, write nothing (for CI / pre-commit)
+```
+
+It is a pure whitespace transform: it never reorders keys or changes any value, and running it twice is a no-op.
+
+Exit codes:
+- `0` all files already canonical (or reformatted successfully)
+- `1` `--check` found files needing formatting, or a file was unreadable / not valid JSON
+- `2` could not run (directory missing)
+
+### Treat `.specs/` as a tool-owned artifact
+
+`.specs/` is generated and owned by specpin, like `package-lock.json` or generated code. If you run a repository formatter (Prettier, Biome, dprint), **exclude `.specs/`** so it does not fight specpin. Otherwise your formatter collapses the arrays specpin expands, and every spec edit churns the whole file.
+
+```text
+# .prettierignore
+.specs/
+```
+
+```jsonc
+// biome.json - either ignore .specs/ ...
+{ "files": { "includes": ["**", "!**/.specs/**"] } }
+// ... or match specpin's format so both agree:
+{ "overrides": [{ "includes": ["**/.specs/**/*.json"], "json": { "formatter": { "expand": "always" } } }] }
+```
+
+Then normalize with `specpin format` and gate it in CI or a pre-commit hook:
+
+```bash
+# .git/hooks/pre-commit (or lint-staged / husky)
+specpin format --check || {
+  echo "specs need formatting - run: specpin format" >&2
+  exit 1
+}
+```
+
+:::tip
+Pair `specpin format --check` with `specpin validate` in CI to keep specs both well-formed and consistently formatted.
+:::
+
 ## The `.specs/` folder
 
 Your specs live in `.specs/` at the root of your project repo:
