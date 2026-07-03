@@ -105,4 +105,4 @@ and their shared color/font tokens live in `apps/extension/designs/`. See
 
 ## Deferred (post-MVP)
 
-FileSystem Access source; overlay + inline-badge renderers; hybrid weighted fingerprint scoring; `specpin generate` (AI); Safari packaging. (Delivered since the MVP: Manual import source, a writable local-authoring path - in-extension create, capture, edit, and group-zip export - modal renderer, multi-language specs, and multi-project connections.)
+FileSystem Access source; hybrid weighted fingerprint scoring; `specpin generate` (AI); Safari packaging. (Delivered since the MVP: Manual import source, a writable local-authoring path - in-extension create, capture, edit, and group-zip export - modal renderer, multi-language specs, and multi-project connections. Dropped as redundant: the overlay + inline-badge renderers - overlay overlapped the modal + Guide spotlight, inline-badge overlapped the tooltip badge; enum values stay reserved.)

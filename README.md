@@ -129,6 +129,7 @@ Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachabl
 ## Features
 
 - **Pin specs onto live elements** - resilient fingerprint matching (test-id, aria, selector, xpath, text, position)
+- **Confidence-scored matching** - a hybrid weighted scorer falls back when exact anchors fail, with confidence tiers, a "why matched" hint, and a needs-review signal
 - **Three display modes** - tooltip, sidebar, and draggable modal renderers
 - **Manual capture** - click an element and author a spec in place, no leaving the page
 - **Delete specs in place** - remove a writable spec from the tooltip or side panel behind a destructive confirm (sidecar specs recover from Git; local specs from storage)
@@ -136,15 +137,20 @@ Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachabl
 - **Multi-project connections** - one extension serves many projects at once, routed to each page by origin
 - **Per-project enable/disable** - toggle individual connections independently of the global on/off
 - **Side panel surface** - open Specpin in Chrome's side panel / Firefox's sidebar, with inline spec detail
+- **Guide mode** - spec-driven onboarding tours in team + personal scopes, with a spotlight overlay, an anchored popover, and a keyboard shortcut
+- **Reader navigation** - shareable spec deep-links, keyboard cycle through a page's specs, and a "what changed since last visit" digest
 - **Spec search** - live client-side filter by title, file, tags, and description
+- **Spec filtering** - show/hide specs by tag, file, or page via facet checklists; team defaults (committed `views.json`) plus personal overrides
 - **Source badges** - see at a glance whether a spec comes from the sidecar or a local batch
 - **Multi-language spec content** - locale-keyed strings with an in-browser language toggle and a tabbed per-locale editor
 - **Markdown-formatted specs** - descriptions and business rules carry a safe Markdown subset (bold, italic, links, lists), authored via a toolbar and rendered across every surface
 - **User-selectable theme** - System / Light / Dark, dual-theme design tokens
-- **UI-chrome i18n** - English + Vietnamese interface, independent from spec content language
+- **UI-chrome i18n** - English + Vietnamese + Japanese interface, independent from spec content language
 - **Support & Feedback** - one-click links from Options to the project's GitHub Issues and Discussions
 - **Author with AI** - a portable skill bundled in `@specpin/cli` teaches your coding agent (Claude Code, Cursor, etc.) to write schema-valid specs and drive the CLI; no LLM in the CLI itself
+- **Provenance & trust** - optional spec status (draft / approved / deprecated), issue/PR links, linked tests (`verifiedBy`), and review freshness with staleness indicators
 - **Offline validation** - `specpin validate` + CI spec-lint to keep `.specs/` honest
+- **Spec health governance** - `specpin report` audits freshness, stats, and required specs, with `--fail-on` to gate CI
 - **Secure by default** - sidecar binds `127.0.0.1` by default (remote is opt-in over an HTTPS reverse proxy), bearer-token auth, extension-origin CORS, path-traversal guarded writes, serialized multi-writer writes
 
 ## Monorepo layout
@@ -230,11 +236,7 @@ cd apps/cli && make check-schema && go test ./...
 
 ## Status
 
-Specpin is released and live on the [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn); Firefox Add-ons is coming soon. Active development continues.
-
-Shipped: the Go sidecar serves `.specs/`, and the WXT extension matches fingerprints and renders specs (tooltip + sidebar + modal) with manual capture. Specs are multi-language (in-browser language toggle + tabbed per-locale editor) and carry a safe Markdown subset authored via a toolbar; the extension connects to multiple projects at once, routed by origin. Also: writable local projects (edit, capture, create, group-zip export), single-spec deletion, guide mode (spec-driven onboarding tours), offline `specpin validate` + CI spec-lint, client-side spec search, source badges, per-project enable/disable, a side panel surface, user-selectable theme (System / Light / Dark), and UI-chrome i18n (EN + VI + JA).
-
-Planned / under consideration: the FileSystem Access source, hybrid fingerprint scoring, the overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI-assisted capture).
+Specpin is released and live on the [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn); Firefox Add-ons is coming soon. Active development continues. See [`docs/project-roadmap.md`](./docs/project-roadmap.md) for shipped capabilities, planned work, and the decision log.
 
 ## Sponsor
 

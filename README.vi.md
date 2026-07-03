@@ -129,6 +129,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 ## Tính năng
 
 - **Ghim đặc tả lên phần tử đang chạy** - khớp fingerprint bền bỉ (test-id, aria, selector, xpath, text, vị trí)
+- **Khớp có chấm điểm tin cậy** - bộ chấm điểm hybrid có trọng số dự phòng khi anchor chính xác thất bại, với các mức tin cậy, gợi ý "vì sao khớp", và tín hiệu cần-review
 - **Ba chế độ hiển thị** - tooltip, sidebar, và modal kéo thả được
 - **Capture thủ công** - click vào một phần tử và soạn đặc tả ngay tại chỗ, không cần rời trang
 - **Xoá spec tại chỗ** - xoá một spec ghi được từ tooltip hoặc side panel sau một hộp xác nhận nguy hiểm (spec sidecar khôi phục từ Git; spec cục bộ từ storage)
@@ -136,15 +137,20 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 - **Kết nối nhiều dự án** - một extension phục vụ nhiều dự án cùng lúc, định tuyến tới từng trang theo origin
 - **Bật/tắt theo từng dự án** - đóng/mở từng kết nối độc lập với công tắc bật/tắt toàn cục
 - **Bề mặt side panel** - mở Specpin trong side panel của Chrome / sidebar của Firefox, kèm chi tiết đặc tả inline
+- **Guide mode** - tour onboarding theo spec ở hai phạm vi team + cá nhân, với spotlight overlay, popover được neo, và phím tắt
+- **Điều hướng người đọc** - deep-link chia sẻ spec, phím tắt duyệt vòng qua các spec trên trang, và digest "N thay đổi kể từ lần xem trước"
 - **Tìm kiếm đặc tả** - lọc phía client theo thời gian thực dựa trên tiêu đề, file, tag và mô tả
+- **Lọc spec** - ẩn/hiện spec theo tag, file, hoặc trang qua checklist facet; mặc định team (`views.json` commit vào repo) cùng override cá nhân
 - **Huy hiệu nguồn** - nhận biết nhanh đặc tả đến từ sidecar hay từ batch cục bộ
 - **Nội dung đặc tả đa ngôn ngữ** - chuỗi theo locale với công tắc đổi ngôn ngữ ngay trong trình duyệt và trình soạn thảo theo từng locale dạng tab
 - **Đặc tả định dạng Markdown** - mô tả và quy tắc nghiệp vụ mang một tập con Markdown an toàn (đậm, nghiêng, liên kết, danh sách), soạn qua thanh công cụ và hiển thị trên mọi bề mặt
 - **Tự chọn giao diện** - System / Light / Dark, design token hai chế độ
-- **i18n cho giao diện** - tiếng Anh + tiếng Việt, độc lập với ngôn ngữ nội dung đặc tả
+- **i18n cho giao diện** - tiếng Anh + tiếng Việt + tiếng Nhật, độc lập với ngôn ngữ nội dung đặc tả
 - **Hỗ trợ & Phản hồi** - liên kết một chạm từ trang Tùy chọn tới GitHub Issues và Discussions của dự án
 - **Soạn spec bằng AI** - một skill đóng gói trong `@specpin/cli` dạy coding agent (Claude Code, Cursor, v.v.) soạn spec hợp lệ schema và điều khiển CLI; bản thân CLI không có LLM
+- **Nguồn gốc & tin cậy** - status tùy chọn (draft / approved / deprecated), link issue/PR, test liên kết (`verifiedBy`), và độ tươi review kèm chỉ báo cũ (stale)
 - **Kiểm tra offline** - `specpin validate` + spec-lint trong CI để giữ `.specs/` luôn hợp lệ
+- **Quản trị sức khỏe spec** - `specpin report` kiểm tra độ tươi, thống kê, và spec bắt buộc, với `--fail-on` để gate CI
 - **An toàn mặc định** - sidecar mặc định bind `127.0.0.1` (remote là tùy chọn qua reverse proxy HTTPS), xác thực bearer-token, CORS chỉ chấp nhận origin của extension, ghi file có chặn path-traversal, ghi nhiều-người tuần tự hóa
 
 ## Cấu trúc monorepo
@@ -220,11 +226,7 @@ cd apps/cli && make check-schema && go test ./...
 
 ## Trạng thái
 
-Specpin đã phát hành và có mặt trên [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn); Firefox Add-ons sắp có. Đang tiếp tục phát triển.
-
-Đã có: sidecar Go phục vụ `.specs/`, và extension WXT khớp fingerprint rồi hiển thị đặc tả (tooltip + sidebar + modal) với capture thủ công. Đặc tả đa ngôn ngữ (công tắc đổi ngôn ngữ trong trình duyệt + trình soạn thảo theo từng locale dạng tab) và mang một tập con Markdown an toàn soạn qua thanh công cụ; extension kết nối nhiều dự án cùng lúc, định tuyến theo origin. Ngoài ra: dự án cục bộ ghi được (sửa, capture, tạo mới, export nhóm dạng zip), xoá spec đơn lẻ, guide mode (tour onboarding theo spec), `specpin validate` offline + spec-lint trong CI, tìm kiếm đặc tả phía client, huy hiệu nguồn, bật/tắt theo từng dự án, bề mặt side panel, tự chọn giao diện (System / Light / Dark), và i18n cho giao diện (EN + VI + JA).
-
-Dự kiến / đang cân nhắc: nguồn FileSystem Access, chấm điểm fingerprint kiểu hybrid, renderer overlay + inline-badge, đóng gói Safari, và `specpin generate` (capture có AI hỗ trợ).
+Specpin đã phát hành và có mặt trên [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn); Firefox Add-ons sắp có. Đang tiếp tục phát triển. Xem [`docs/vi/project-roadmap.md`](./docs/vi/project-roadmap.md) để biết năng lực đã ship, việc dự kiến, và nhật ký quyết định.
 
 ## Tài trợ
 

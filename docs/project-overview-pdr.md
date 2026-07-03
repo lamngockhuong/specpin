@@ -26,7 +26,7 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 
 1. **Zero-drift spec layer**: specs live in the same repo as code, version together, review together via PR.
 2. **Interface-first authoring**: capture specs by clicking the target element in the running UI, not by guessing CSS selectors or writing abstract docs.
-3. **Pluggable rendering**: tooltip (peek), sidebar (focused read), overlay/modal (full-screen edit), inline badge (visual marker). Ships tooltip, sidebar, and a draggable modal today.
+3. **Pluggable rendering**: tooltip (peek), sidebar (focused read), modal (focused review). Ships tooltip, sidebar, and a draggable modal today.
 4. **Resilient matching**: fingerprints survive refactors. Exact anchors (test-id, aria, data-spec-id) match first; hybrid weighted scoring falls back when layout changes.
 5. **Local-first, Git-native**: no SaaS backend, no auth wall, no vendor lock-in. Sidecar runs on localhost, specs diff cleanly in Git.
 
@@ -45,7 +45,7 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 - AI-assisted capture (`specpin generate`) - keeps LLM work out of the extension and CLI.
 - FileSystem Access API source adapter - sidecar + writable local projects cover authoring today.
 - Safari packaging - Chrome shipped, Firefox coming soon.
-- Overlay and inline-badge renderers - tooltip, sidebar, and modal ship today.
+- Overlay and inline-badge renderers - **dropped as redundant**: overlay duplicated the modal + the Guide-mode spotlight, inline-badge duplicated the tooltip badge. Enum values stay reserved; tooltip, sidebar, and modal ship today.
 
 ## Scope Boundaries
 
@@ -74,7 +74,6 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 
 **Planned / under consideration:**
 - FileSystem Access source for importing existing specs.
-- Overlay/modal/inline-badge renderers.
 - Safari packaging.
 - `specpin generate` (AI-assisted spec authoring).
 
