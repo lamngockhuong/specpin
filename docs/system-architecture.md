@@ -41,11 +41,15 @@ UI-chrome i18n: a custom runtime `t(key, params)` in `apps/extension/src/i18n/` 
 
 ## Element fingerprinting
 
-A fingerprint captures multiple signals per element (test-id anchors, aria, non-generated id, optimized cssSelector, xpath, domPath, text, whitelisted attributes, nearby labels, position, framework hint). Matching (MVP) tries exact anchors first (confidence 1.0), then a unique cssSelector (0.7), otherwise flags `needsReview`. A `data-spec-id` attribute on important elements makes matching trivially exact.
+A fingerprint captures multiple signals per element (test-id anchors, aria, non-generated id, optimized cssSelector, xpath, domPath, text, whitelisted attributes, nearby labels, position, framework hint). Matching tries exact anchors first (confidence 1.0), then a unique cssSelector (0.7); if those fail it runs a **hybrid weighted scorer** (`strategy:"scored"`) over the ambiguous selector hits or a bounded candidate pool from the live DOM, matching the best only when it clears a high threshold and beats the runner-up by a margin. The scorer is conservative by design (false-positive-averse): it never overrides an exact/css hit, abstains without an identifying content signal, and marks mid-confidence matches `needsReview`; below the mid tier it flags `needsReview` with no element. Weights and thresholds live in one table in `packages/fingerprint-core/src/score.ts`. A `data-spec-id` attribute on important elements makes matching trivially exact.
 
 Before matching, the render loop applies the fingerprint's optional `pageUrl` path glob (auto-filled at capture, editable): a spec renders only on routes its glob covers, so a spec pinned on one screen never resolves onto another screen whose layout produces a colliding selector. A spec with no `pageUrl` matches on any page (backward compatible). The same scope gates the popup / side-panel "this page" list (`GET_MATCHED_IDS`), keeping the list in step with what renders.
 
-The matcher's signature and `MatchResult` shape are stable so the deferred hybrid weighted scorer can slot in without breaking callers.
+The matcher's signature and `MatchResult` shape are stable across tiers; the scored tier only adds `strategy:"scored"` and an optional per-signal `signals` breakdown (the "why matched" hint), so existing callers are unaffected.
+
+### Matching drift corpus (local, opt-in)
+
+To tune the scorer against real drift, the extension can collect a local training corpus (`storage.local`, default **OFF**, capped ring-buffer, exportable + clearable from Options, never uploaded). Two sources: **supervised** — a re-pin records the `(old → new)` fingerprint pair (ground truth); and **passive** — when a spec goes orphaned or mid-scored at match time, it snapshots the candidate fingerprints the scorer weighed (a tentative `chosenByScorer` label, never treated as truth). Fingerprints only — no HTML — with `textContent` redacted (emails + long digit runs) at write time. Lives in `apps/extension/src/shared/drift-corpus.ts`.
 
 ## Multi-project registry
 

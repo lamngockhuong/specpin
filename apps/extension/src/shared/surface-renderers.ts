@@ -74,6 +74,7 @@ export function renderHealthSummary(
   line.textContent = t("health.summary", {
     total: health.total,
     exact: health.exact,
+    scored: health.scored,
     fuzzy: health.fuzzy,
     orphaned: health.orphaned,
   });
@@ -81,15 +82,26 @@ export function renderHealthSummary(
 }
 
 /** A compact match-tier badge for a spec card, aligned with the in-page badges:
- *  a "fuzzy" pill for a css-tier match, nothing for the silent exact tier (or an
- *  orphaned/unknown entry). DOM-built so it is never an injection sink. */
+ *  a "fuzzy" pill for a css-tier match, a "scored" pill for a hybrid-scorer
+ *  match, nothing for the silent exact tier (or an orphaned/unknown entry).
+ *  DOM-built so it is never an injection sink. */
 export function tierBadge(entry: MatchReportEntry | undefined): HTMLElement | null {
-  if (!entry?.matched || entry.strategy !== "css") return null;
-  const badge = document.createElement("span");
-  badge.className = "tier tier-fuzzy";
-  badge.textContent = t("health.fuzzy");
-  badge.title = t("match.fuzzy");
-  return badge;
+  if (!entry?.matched) return null;
+  if (entry.strategy === "css") {
+    const badge = document.createElement("span");
+    badge.className = "tier tier-fuzzy";
+    badge.textContent = t("health.fuzzy");
+    badge.title = t("match.fuzzy");
+    return badge;
+  }
+  if (entry.strategy === "scored") {
+    const badge = document.createElement("span");
+    badge.className = entry.needsReview ? "tier tier-fuzzy" : "tier tier-scored";
+    badge.textContent = t("health.scored");
+    badge.title = `${t("match.scored")} ${Math.round(entry.confidence * 100)}%`;
+    return badge;
+  }
+  return null;
 }
 
 export interface FragileScanDeps {

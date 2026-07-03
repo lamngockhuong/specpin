@@ -22,7 +22,7 @@ function extractTestId(el: Element): string | null {
   return null;
 }
 
-function normalizeText(text: string | null): string | null {
+export function normalizeText(text: string | null): string | null {
   if (!text) return null;
   const collapsed = text.replace(/\s+/g, " ").trim();
   if (!collapsed) return null;
@@ -38,7 +38,7 @@ function hrefPattern(href: string): string {
   }
 }
 
-function whitelistedAttributes(el: Element): Record<string, string> {
+export function whitelistedAttributes(el: Element): Record<string, string> {
   const out: Record<string, string> = {};
   for (const attr of ATTR_WHITELIST) {
     const v = el.getAttribute(attr);
@@ -56,14 +56,14 @@ function pageUrlOf(el: Element): string | null {
   return el.ownerDocument?.location?.pathname || null;
 }
 
-function positionHint(el: Element): PositionHint {
+export function positionHint(el: Element): PositionHint {
   const parent = el.parentElement;
   if (!parent) return { index: 0, siblingCount: 1 };
   const siblings = Array.from<Element>(parent.children);
   return { index: siblings.indexOf(el), siblingCount: siblings.length };
 }
 
-function domPathFor(el: Element): string[] {
+export function domPathFor(el: Element): string[] {
   const path: string[] = [];
   let current: Element | null = el;
   while (
@@ -78,7 +78,7 @@ function domPathFor(el: Element): string[] {
   return path;
 }
 
-function nearbyLabels(el: Element): string[] {
+export function nearbyLabels(el: Element): string[] {
   const labels = new Set<string>();
   const doc = el.ownerDocument;
 

@@ -43,11 +43,15 @@ i18n cho UI-chrome: một runtime `t(key, params)` tùy chỉnh trong `apps/exte
 
 ## Element fingerprinting
 
-Một fingerprint nắm bắt nhiều signal cho mỗi element (test-id anchors, aria, non-generated id, optimized cssSelector, xpath, domPath, text, whitelisted attributes, nearby labels, position, framework hint). Matching (MVP) thử exact anchors trước (confidence 1.0), rồi đến một unique cssSelector (0.7), nếu không thì gắn cờ `needsReview`. Một attribute `data-spec-id` trên các element quan trọng giúp việc matching trở nên chính xác một cách hết sức đơn giản.
+Một fingerprint nắm bắt nhiều signal cho mỗi element (test-id anchors, aria, non-generated id, optimized cssSelector, xpath, domPath, text, whitelisted attributes, nearby labels, position, framework hint). Matching thử exact anchors trước (confidence 1.0), rồi đến một unique cssSelector (0.7); nếu cả hai thất bại nó chạy một **hybrid weighted scorer** (`strategy:"scored"`) trên các hit của selector mơ hồ hoặc một tập candidate có giới hạn lấy từ DOM sống, và chỉ khớp phần tử tốt nhất khi phần tử đó vượt ngưỡng cao và hơn phần á quân một biên độ. Scorer được thiết kế thận trọng (né false positive): không bao giờ ghi đè một hit exact/css, bỏ qua khi không có signal nội dung định danh, và gắn cờ `needsReview` cho các match độ tin cậy trung bình; dưới tầng trung bình nó gắn cờ `needsReview` mà không có element. Trọng số và ngưỡng nằm trong một bảng ở `packages/fingerprint-core/src/score.ts`. Một attribute `data-spec-id` trên các element quan trọng giúp việc matching trở nên chính xác một cách hết sức đơn giản.
 
 Trước khi matching, render loop áp dụng `pageUrl` path glob (tùy chọn) của fingerprint (tự động điền lúc capture, có thể chỉnh): một spec chỉ render trên các route mà glob của nó bao phủ, nên một spec được pin ở màn hình này không bao giờ khớp sang màn hình khác có layout tạo ra selector trùng. Một spec không có `pageUrl` khớp trên mọi trang (tương thích ngược). Cùng phạm vi đó chặn danh sách "trang này" của popup / side panel (`GET_MATCHED_IDS`), giữ danh sách khớp với những gì thực sự render.
 
-Signature của matcher và shape của `MatchResult` được giữ ổn định để hybrid weighted scorer (đang được hoãn lại) có thể được lắp vào sau mà không phá vỡ caller.
+Signature của matcher và shape của `MatchResult` được giữ ổn định qua các tầng; tầng scored chỉ thêm `strategy:"scored"` và một breakdown `signals` tùy chọn theo từng signal (gợi ý "vì sao match"), nên các caller hiện có không bị ảnh hưởng.
+
+### Corpus drift cho matching (cục bộ, opt-in)
+
+Để tinh chỉnh scorer với drift thực tế, extension có thể thu thập một corpus huấn luyện cục bộ (`storage.local`, mặc định **TẮT**, ring-buffer có giới hạn, xuất + xóa được từ Options, không bao giờ tải lên). Hai nguồn: **supervised** — một lần re-pin ghi lại cặp fingerprint `(cũ → mới)` (ground truth); và **passive** — khi một spec trở nên mồ côi hoặc scored-trung-bình lúc match, nó chụp lại các candidate fingerprint mà scorer đã cân nhắc (nhãn `chosenByScorer` tạm thời, không bao giờ coi là sự thật). Chỉ fingerprint — không HTML — với `textContent` được che (email + chuỗi số dài) lúc ghi. Nằm ở `apps/extension/src/shared/drift-corpus.ts`.
 
 ## Multi-project registry
 

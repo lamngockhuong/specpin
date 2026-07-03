@@ -107,7 +107,7 @@ Goal: robustness, flexibility, polish. No timeline committed.
 - api-client: `SidecarClient.getViews()` / `putViews()`, exported `ViewsConfig` type.
 - New privileged messages: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (added to `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` is non-privileged (read-only, from content script).
 
-Planned, pending a real corpus / usage feedback: the hybrid weighted scorer (needs a before/after DOM corpus to tune), the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
+Planned, pending usage feedback: the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension. The hybrid weighted scorer + drift corpus shipped 2026-07-02 (see below).
 
 **User-selectable theme shipped (2026-06-28)** on branch `feat/extension-theme-and-i18n`:
 - Theme preference (System / Light / Dark) via Options page. Previously dark existed only behind `@media (prefers-color-scheme: dark)` (auto, no toggle). Now the user can force a theme. Generator emits four selector blocks in `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), and `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, applies only when no override). `tokens.ts` `scopeTokensToShadow()` rewrites all four forms to `:host(...)` for Shadow DOM renderers. `src/shared/theme.ts` exports `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` gained `getTheme`/`setTheme` (storage.local key `specpin:theme`, default `system`). Live propagation: `SET_THEME` message + `broadcastToTabs()` helper; Options broadcasts to all tabs, pages react via `storage.onChanged`. `theme` is threaded into `renderSession` and each renderer applies it to its shadow host. Forced themes may flash the System default for one frame on load (async storage read, accepted).
@@ -125,13 +125,12 @@ Planned, pending a real corpus / usage feedback: the hybrid weighted scorer (nee
 - Keyboard cycle navigation: `Alt+Shift+N` cycles focus through matched-and-visible specs on the page, flashing each element and wrapping around. Reduced-motion honored. Joins existing chords `Alt+Shift+S/M/C/G`.
 - What-changed digest: popup + side panel show "N changed since last visit" plus a list of new/edited spec titles, with a "Mark all seen" button. Digest computed from per-project content-hash snapshot in `storage.local` (title + description + business rules across all locales). First-ever visit or newly-connected project seeds silently (no "everything new" noise).
 
-### Planned Features
+**Matching reliability core (hybrid scorer + drift corpus) shipped (2026-07-02)** on branch `feat/matching-reliability-core`:
+- Hybrid weighted scorer in `packages/fingerprint-core/src/score.ts`: when exact + unique-css fail, score the ambiguous selector hits or a bounded live-DOM candidate pool on text/labels/attrs/tag/structure/position (weights normalized over the signals the fingerprint carries). Conservative tiers — HIGH (≥0.85) renders confidently, MID (0.6-0.85) renders + `needsReview`, below is no-match — with a top-2 margin (δ 0.1), never overriding exact/css, and abstaining without an identifying content signal. Adds `strategy:"scored"` + optional `signals` breakdown to `MatchResult` (additive; existing callers unaffected). Candidate pool capped (200) with a reported `considered` count; latency perf-tested.
+- Scored-tier surface: distinct **Scored match** badge (confidence + dominant-signal "why matched"), MID reads as the cautionary fuzzy style; page-health summary gains a `scored` bucket; side-panel card pill. EN+VI+JA strings.
+- Local drift corpus (`apps/extension/src/shared/drift-corpus.ts`, opt-in default OFF, `storage.local` ring-buffer cap 500): supervised re-pin `(old→new)` pairs + a "Correct" confirmation, and passive candidate-fingerprint snapshots for orphaned/MID specs (tentative `chosenByScorer` label). Fingerprints only, `textContent` redacted (emails + long digit runs) at write time; per-`(project,specId,pageUrl)` dedupe window for passive. Options card: opt-in toggle, live count, JSON export (local download), clear (confirm). New unprivileged `RECORD_DRIFT` / `RECORD_DRIFT_PASSIVE` messages (content-originated, background gates on opt-in). No schema/sidecar/`.specs/` change.
 
-**Hybrid Weighted Fingerprint Scoring:**
-- Multi-signal weighted matcher: when exact anchors fail, score cssSelector + xpath + domPath + text + labels + position + attrs with tuned coefficients
-- Confidence threshold (0.0-1.0): above threshold -> render, below -> flag `needsReview`
-- Collect real before/after DOM fixtures during dogfooding (corpus for tuning weights)
-- `MatchResult` interface already stable, scorer slots in without breaking callers
+### Planned Features
 
 **Additional Spec Sources:**
 - Manual import source - **delivered** (read-only `{ manifest, files }` bundle in Options)

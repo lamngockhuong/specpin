@@ -53,6 +53,12 @@ import {
   VISIBILITY_KEY,
 } from "../shared/config.js";
 import type { Connection } from "../shared/connection-types.js";
+import {
+  appendEntry as appendDriftEntry,
+  appendPassiveMany as appendDriftPassiveMany,
+  fingerprintChanged,
+  getCorpusEnabled,
+} from "../shared/drift-corpus.js";
 import { bundleToFiles, groupFromFileName } from "../shared/export-bundle.js";
 import { removeHostPermissionIfUnused } from "../shared/host-permission.js";
 import { isLocalConnectionId, localBatchId } from "../shared/local-id.js";
@@ -347,6 +353,10 @@ export default defineBackground(() => {
         return handleUpdateSpec(message.id, message.spec, originOf(sender), message.connectionId);
       case "DELETE_SPEC":
         return handleDeleteSpec(message.id, originOf(sender), message.connectionId);
+      case "RECORD_DRIFT":
+        return handleRecordDrift(message);
+      case "RECORD_DRIFT_PASSIVE":
+        return handleRecordDriftPassive(message);
       case "ADD_LOCAL_BATCH":
         return handleAddLocalBatch(message);
       case "REMOVE_LOCAL_BATCH":
@@ -797,6 +807,39 @@ export default defineBackground(() => {
         : await registry.updateSpec(origin, id, spec, connectionId);
     if (result.ok || result.conflict) await broadcastSpecsChanged();
     return result;
+  }
+
+  // Record a supervised drift pair when a re-pin replaced a spec's fingerprint.
+  // Gated on the opt-in flag (default OFF -> records nothing) and on an actual
+  // element change (a content-only or page-scope edit records nothing). The
+  // drift-corpus serializes + redacts + stamps the write. Fire-and-forget.
+  async function handleRecordDrift(
+    message: Extract<Message, { type: "RECORD_DRIFT" }>,
+  ): Promise<void> {
+    if (!(await getCorpusEnabled())) return;
+    // A "Correct" affirmation (new === old) is recorded as-is; a re-pin must be a
+    // real element change (a content-only or page-scope edit records nothing).
+    if (!message.confirmed && !fingerprintChanged(message.old, message.new)) return;
+    await appendDriftEntry({
+      kind: "supervised",
+      old: message.old,
+      new: message.new,
+      pageUrl: message.pageUrl,
+      prevStrategy: message.prevStrategy,
+      prevConfidence: message.prevConfidence,
+      project: message.project,
+      confirmed: message.confirmed,
+    });
+  }
+
+  // Persist passive candidate snapshots collected during a render pass. Gated on
+  // the opt-in flag; appendPassive dedupes per (project, specId, pageUrl) and
+  // redacts before persisting. Fire-and-forget.
+  async function handleRecordDriftPassive(
+    message: Extract<Message, { type: "RECORD_DRIFT_PASSIVE" }>,
+  ): Promise<void> {
+    if (!(await getCorpusEnabled())) return;
+    await appendDriftPassiveMany(message.entries);
   }
 
   async function handleDeleteSpec(

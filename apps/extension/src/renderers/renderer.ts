@@ -1,4 +1,4 @@
-import type { MatchAnchor, MatchResult } from "@specpin/fingerprint-core";
+import type { MatchAnchor, MatchResult, SignalScores } from "@specpin/fingerprint-core";
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import type { LauncherPosition } from "../shared/config.js";
 import { escapeHtml } from "../shared/html.js";
@@ -17,6 +17,9 @@ export interface RenderMeta {
   strategy?: MatchResult["strategy"];
   /** Which signal resolved the match, for the "why matched" hint. */
   anchor?: MatchAnchor;
+  /** Per-signal similarity breakdown for a scored match, so the badge can name
+   *  the dominant signal ("why matched"). Present only for strategy:"scored". */
+  signals?: SignalScores;
   locale?: string;
   defaultLocale?: string;
   /** Locales offered by the in-renderer language selector (sidebar only). When
@@ -42,6 +45,10 @@ export interface RenderMeta {
   /** Callback a renderer invokes to delete this spec (runs a confirm first).
    *  Threaded from the content script like onEdit; renderers stay DOM-pure. */
   onDelete?: (specId: string) => void;
+  /** Callback a renderer invokes to affirm a scored match is correct (the confirm
+   *  loop). Records a supervised confirmation in the local corpus. Provided only
+   *  when the corpus opt-in is ON, so the "Correct" action appears only then. */
+  onConfirm?: (specId: string) => void;
   /** False for read-only specs (Manual import); renderers hide the Edit + Delete
    *  affordances when false. Defaults to editable when omitted. */
   editable?: boolean;

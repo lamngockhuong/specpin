@@ -291,6 +291,21 @@
 
     <div class="card">
       <div class="header">
+        <h1 data-i18n="options.corpusTitle">Matching corpus (local, opt-in)</h1>
+      </div>
+      <p class="lead" data-i18n="options.corpusLead">
+        Collect anonymized matching data locally to help tune Specpin's element matching.
+        Off by default, stored only on this device, never uploaded.
+      </p>
+      <label class="inline"><input id="corpusEnabled" type="checkbox" /> <span data-i18n="options.corpusOptIn">Collect matching drift data on this device</span></label>
+      <p class="lead" id="corpusCount" style="margin-top: 12px"></p>
+      <button id="corpusExport" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusExport">Export corpus (JSON)</button>
+      <button id="corpusClear" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusClear">Clear corpus</button>
+      <div id="corpusResult"></div>
+    </div>
+
+    <div class="card">
+      <div class="header">
         <h1 data-i18n="options.supportFeedback">Support &amp; Feedback</h1>
       </div>
       <p class="lead" data-i18n="options.supportLead">

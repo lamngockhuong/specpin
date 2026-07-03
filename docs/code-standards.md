@@ -440,7 +440,7 @@ chore(deps): bump wxt to 0.20
 
 ## Unresolved Conventions (Deferred)
 
-- **Hybrid fingerprint scorer weights**: what signals, what coefficients? Deferred to 1.1. `MatchResult` interface stable, implementation can slot in.
+- **Hybrid fingerprint scorer tuning**: WEIGHTS table in `packages/fingerprint-core/src/score.ts` is the single tuning point (signal weights, thresholds). v1 scorer shipped and functional, but weights require dogfood tuning from production refactor data.
 - **AI-assisted capture prompt format**: no LLM integration in MVP, defer to 1.1.
 - **Safari packaging requirements**: awaiting Apple MV3 parity clarity.
 

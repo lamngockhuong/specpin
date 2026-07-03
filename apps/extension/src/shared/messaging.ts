@@ -1,6 +1,12 @@
 import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { AnchorStrength, MatchAnchor, MatchResult } from "@specpin/fingerprint-core";
-import type { DisplayMode, GuideDef, Manifest, Spec } from "@specpin/spec-schema";
+import type {
+  DisplayMode,
+  ElementFingerprint,
+  GuideDef,
+  Manifest,
+  Spec,
+} from "@specpin/spec-schema";
 import { browser } from "#imports";
 import type { UiLocale } from "../i18n/locales.js";
 import type {
@@ -9,6 +15,7 @@ import type {
   TaggedGuide,
   TaggedSpec,
 } from "./connection-types.js";
+import type { PassiveDriftEntry } from "./drift-corpus.js";
 import type { Theme } from "./theme.js";
 import type { PersonalVisibility, VisibilityState } from "./visibility.js";
 
@@ -186,7 +193,32 @@ export type Message =
       id: string;
       targetId?: string;
       origin?: string;
-    };
+    }
+  // Local drift-corpus append: a re-pin replaced a spec's fingerprint, so record
+  // the old->new pair for scorer tuning. UNprivileged — a re-pin legitimately
+  // originates from the content script (like UPDATE_SPEC); the background gates on
+  // the opt-in flag before persisting and ignores content-only edits.
+  | {
+      type: "RECORD_DRIFT";
+      old: ElementFingerprint;
+      new: ElementFingerprint;
+      pageUrl: string | null;
+      prevStrategy: MatchResult["strategy"];
+      prevConfidence: number;
+      project?: string;
+      /** True for a "Correct" affirmation (new === old): the current match is
+       *  confirmed right, so the background records it without the
+       *  fingerprint-changed guard. */
+      confirmed?: boolean;
+    }
+  // Local drift-corpus passive append: at match time some specs went orphaned/MID,
+  // so the content script snapshotted the candidate fingerprints the scorer weighed.
+  // UNprivileged (content-originated, like RECORD_DRIFT); the background gates on
+  // the opt-in flag and dedupes per (project, specId, pageUrl) before persisting.
+  | { type: "RECORD_DRIFT_PASSIVE"; entries: PassiveDriftInput[] };
+
+/** A passive drift entry as sent from content; the background stamps `ts`. */
+export type PassiveDriftInput = Omit<PassiveDriftEntry, "ts">;
 
 // Message types that mutate stored state and must originate from an extension
 // page (popup/options/side panel), never from a web-page content script. The

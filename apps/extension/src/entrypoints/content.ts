@@ -28,6 +28,7 @@ import {
 import type { TaggedSpec } from "../shared/connection-types.js";
 import { parseSpecLink } from "../shared/deep-link.js";
 import { confirmDialog } from "../shared/dialog.js";
+import { getCorpusEnabled } from "../shared/drift-corpus.js";
 import { isLocalConnectionId } from "../shared/local-id.js";
 import {
   type MatchReportEntry,
@@ -59,6 +60,9 @@ export default defineContentScript({
     let manifest: Manifest | null = null;
     let specs: TaggedSpec[] = [];
     let enabled = true;
+    // Local drift-corpus opt-in (default OFF), cached per refresh so the hot
+    // rerender path stays synchronous. Gates passive candidate capture.
+    let corpusEnabled = false;
     let forcedMode: DisplayMode | null = null;
     // Modes the user dismissed for this page session. The dismissed surface renders
     // as the floating relaunch pill instead of its panel; the flag survives
@@ -156,8 +160,17 @@ export default defineContentScript({
                 onMove: moveLauncher,
               },
               deleteSpecFlow,
+              {
+                captureDrift: corpusEnabled,
+                onConfirm: corpusEnabled ? confirmMatch : undefined,
+              },
             )
           : null;
+      // Passive corpus: hand any collected snapshots to the background single-writer
+      // (opt-in gated upstream; empty unless corpusEnabled). Fire-and-forget.
+      if (session?.drift.length) {
+        void sendToBackground({ type: "RECORD_DRIFT_PASSIVE", entries: session.drift });
+      }
     };
 
     // Persist a dismiss/reopen for a whole display mode, then re-render. A function
@@ -244,6 +257,8 @@ export default defineContentScript({
       availableLocales = res.locales?.length ? res.locales : localesFor(manifest);
       // Re-resolve the active locale: stored choice, else the project default.
       locale = pickLocale(await getLocale(), manifest?.settings?.defaultLocale);
+      // Cache the corpus opt-in so rerender (sync, hot) can gate passive capture.
+      corpusEnabled = await getCorpusEnabled();
       rerender();
     }
 
@@ -510,6 +525,9 @@ export default defineContentScript({
       // spec's connectionId (manual:<batchId> for local), which routes the write.
       const spec = specs.find((s) => s.id === specId);
       if (!spec) return;
+      // How the stored fingerprint was matching just before the re-pin, so a
+      // recorded drift pair carries the motivating (orphaned/fuzzy) state.
+      const prevMatch = matchElement(spec.fingerprint, document);
       // Freeze re-renders while editing so the spec's element is not re-rendered
       // out from under the form (RT-FM6, shared with capture).
       captureActive = true;
@@ -527,10 +545,43 @@ export default defineContentScript({
             spec: updated,
             connectionId: spec.connectionId,
           });
-          if (result.ok) endCapture();
+          if (result.ok) {
+            // Feed the local drift corpus: a re-pin gives ground truth (old ->
+            // correct new fingerprint). Fire-and-forget; the background gates on
+            // the opt-in flag and ignores content-only edits (no element change).
+            void sendToBackground({
+              type: "RECORD_DRIFT",
+              old: spec.fingerprint,
+              new: updated.fingerprint,
+              pageUrl: updated.fingerprint.pageUrl ?? spec.fingerprint.pageUrl ?? null,
+              prevStrategy: prevMatch.strategy,
+              prevConfidence: prevMatch.confidence,
+              project: spec.project,
+            });
+            endCapture();
+          }
           return result;
         },
         onCancel: endCapture,
+      });
+    }
+
+    // Confirm loop: affirm that a scored match resolved to the right element. Feeds
+    // a supervised confirmation (new === old) into the local corpus. The background
+    // gates on the opt-in flag; this is only wired when corpusEnabled anyway.
+    function confirmMatch(specId: string): void {
+      const spec = specs.find((s) => s.id === specId);
+      if (!spec) return;
+      const match = matchElement(spec.fingerprint, document);
+      void sendToBackground({
+        type: "RECORD_DRIFT",
+        old: spec.fingerprint,
+        new: spec.fingerprint,
+        pageUrl: spec.fingerprint.pageUrl ?? null,
+        prevStrategy: match.strategy,
+        prevConfidence: match.confidence,
+        project: spec.project,
+        confirmed: true,
       });
     }
 

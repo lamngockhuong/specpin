@@ -109,7 +109,7 @@ Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa ca
 - api-client: `SidecarClient.getViews()` / `putViews()`, type `ViewsConfig` được export.
 - Message privileged mới: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (thêm vào `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` là non-privileged (read-only, từ content script).
 
-Dự kiến, chờ corpus thực tế / phản hồi sử dụng: hybrid weighted scorer (cần corpus DOM trước/sau để tinh chỉnh), nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
+Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode. Hybrid weighted scorer + drift corpus đã giao 2026-07-02 (xem bên dưới).
 
 **Đã ship theme có thể chọn bởi người dùng (2026-06-28)** trên nhánh `feat/extension-theme-and-i18n`:
 - Tùy chọn theme (System / Light / Dark) qua trang Options. Trước đây dark chỉ tồn tại đằng sau `@media (prefers-color-scheme: dark)` (tự động, không có toggle). Giờ người dùng có thể force một theme. Generator phát ra bốn block selector trong `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), và `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, chỉ áp dụng khi không có override). `tokens.ts` `scopeTokensToShadow()` đổi tất cả bốn dạng sang `:host(...)` cho Shadow DOM renderer. `src/shared/theme.ts` export `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` có thêm `getTheme`/`setTheme` (key storage.local `specpin:theme`, mặc định `system`). Lan truyền trực tiếp: message `SET_THEME` + helper `broadcastToTabs()`; Options broadcast sang tất cả tab, các page phản ứng qua `storage.onChanged`. `theme` được thread vào `renderSession` và mỗi renderer áp dụng nó lên shadow host của nó. Forced theme có thể nhấp nháy System default trong một frame khi load (đọc storage bất đồng bộ, được chấp nhận).
@@ -127,13 +127,12 @@ Dự kiến, chờ corpus thực tế / phản hồi sử dụng: hybrid weighte
 - Điều hướng xoay vòng bằng bàn phím: `Alt+Shift+N` xoay vòng focus qua các spec đã match và đang hiển thị trên trang, nháy sáng từng element và quay lại từ đầu. Tôn trọng reduced-motion. Bổ sung cho các tổ hợp phím hiện có `Alt+Shift+S/M/C/G`.
 - Bản tóm tắt thay đổi: popup + side panel hiển thị "N thay đổi kể từ lần xem trước" kèm danh sách tiêu đề spec mới/đã sửa, với nút "Đánh dấu đã xem". Bản tóm tắt được tính từ snapshot hash nội dung theo từng dự án trong `storage.local` (title + description + business rules trên mọi locale). Lần xem đầu tiên hoặc dự án vừa kết nối được seed âm thầm (không gây nhiễu "tất cả đều mới").
 
-### Tính năng đã lên kế hoạch
+**Lõi độ tin cậy matching (hybrid scorer + drift corpus) đã giao (2026-07-02)** trên nhánh `feat/matching-reliability-core`:
+- Hybrid weighted scorer trong `packages/fingerprint-core/src/score.ts`: khi exact + unique-css thất bại, chấm điểm các hit của selector mơ hồ hoặc một tập candidate có giới hạn từ DOM sống theo text/labels/attrs/tag/cấu trúc/vị trí (trọng số chuẩn hóa trên các signal mà fingerprint mang theo). Các tầng thận trọng — HIGH (≥0.85) render tự tin, MID (0.6-0.85) render + `needsReview`, dưới đó là no-match — với biên độ top-2 (δ 0.1), không bao giờ ghi đè exact/css, và bỏ qua khi không có signal nội dung định danh. Thêm `strategy:"scored"` + breakdown `signals` tùy chọn vào `MatchResult` (bổ sung; caller hiện có không bị ảnh hưởng). Tập candidate có giới hạn (200) kèm số `considered` báo cáo; độ trễ được perf-test.
+- Bề mặt tầng scored: badge **Scored match** riêng biệt (độ tin cậy + gợi ý "vì sao match" theo signal nổi trội), MID đọc như kiểu fuzzy cảnh báo; tóm tắt sức khỏe trang có thêm bucket `scored`; pill trên thẻ side-panel. Chuỗi EN+VI+JA.
+- Drift corpus cục bộ (`apps/extension/src/shared/drift-corpus.ts`, opt-in mặc định TẮT, ring-buffer `storage.local` giới hạn 500): cặp re-pin supervised `(cũ→mới)` + một xác nhận "Correct", và snapshot passive các candidate fingerprint cho spec mồ côi/MID (nhãn `chosenByScorer` tạm thời). Chỉ fingerprint, `textContent` được che (email + chuỗi số dài) lúc ghi; cửa sổ dedupe theo `(project,specId,pageUrl)` cho passive. Thẻ Options: toggle opt-in, số mục trực tiếp, export JSON (tải về cục bộ), xóa (kèm xác nhận). Message mới không đặc quyền `RECORD_DRIFT` / `RECORD_DRIFT_PASSIVE` (khởi từ content, background kiểm cổng opt-in). Không đổi schema/sidecar/`.specs/`.
 
-**Hybrid Weighted Fingerprint Scoring:**
-- Matcher tính điểm theo trọng số đa tín hiệu: khi exact anchors fail, chấm điểm cssSelector + xpath + domPath + text + labels + position + attrs với các hệ số đã tinh chỉnh
-- Ngưỡng confidence (0.0-1.0): trên ngưỡng -> render, dưới ngưỡng -> gắn cờ `needsReview`
-- Thu thập các fixture DOM thực tế trước/sau trong quá trình dogfooding (corpus để tinh chỉnh trọng số)
-- Interface `MatchResult` đã ổn định, scorer ghép vào mà không phá vỡ caller
+### Tính năng đã lên kế hoạch
 
 **Các nguồn Spec bổ sung:**
 - Manual import source (đã giao) (bundle `{ manifest, files }` read-only trong Options)

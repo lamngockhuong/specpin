@@ -143,13 +143,23 @@ const en = {
   "match.byAria": "aria-label",
   "match.byId": "id",
   "match.byCss": "CSS selector",
+  // Scored (hybrid) tier: matched by weighted signals when exact/css failed.
+  "match.scored": "Scored match",
+  "match.signal.text": "text",
+  "match.signal.labels": "nearby labels",
+  "match.signal.attributes": "attributes",
+  "match.signal.tag": "tag",
+  "match.signal.structure": "structure",
+  "match.signal.position": "position",
 
   // Page match-health summary + orphaned list (popup + side panel).
-  "health.summary": "{total} specs · {exact} exact · {fuzzy} fuzzy · {orphaned} orphaned",
+  "health.summary":
+    "{total} specs · {exact} exact · {scored} scored · {fuzzy} fuzzy · {orphaned} orphaned",
   "health.orphanedTitle": "Orphaned ({count})",
   "health.orphanedHint": "These specs target this page but their element wasn't found.",
   "health.orphanedNotFound": "Not found on this page",
   "health.fuzzy": "fuzzy",
+  "health.scored": "scored",
 
   // data-spec-id helper: weak-anchor capture hint + fragile-spec list. The list is
   // a collapsible group titled "helper.scanTitle (N)", hidden when the count is 0.
@@ -316,6 +326,20 @@ const en = {
   "options.pickFiles": "Pick manifest.json and at least one .spec.json file.",
   "options.invalidSelection": "Invalid selection:\n- {errors}",
   "options.allCleared": "All manual specs cleared.",
+
+  // Matching corpus card (local, opt-in) + the scored-match confirm loop.
+  "options.corpusTitle": "Matching corpus (local, opt-in)",
+  "options.corpusLead":
+    "Collect local matching data to help tune Specpin's element matching. Off by default, stored only on this device, never uploaded; sensitive text (emails, long numbers) is masked.",
+  "options.corpusOptIn": "Collect matching drift data on this device",
+  "options.corpusCount": "{count} entries stored.",
+  "options.corpusExport": "Export corpus (JSON)",
+  "options.corpusClear": "Clear corpus",
+  "options.corpusExported": "Exported {count} entries.",
+  "options.corpusCleared": "Corpus cleared.",
+  "options.corpusEmpty": "The corpus is empty — nothing to export.",
+  "options.confirmClearCorpus": "Clear the local matching corpus? This cannot be undone.",
+  "match.correct": "Correct",
 
   // Support & Feedback card.
   "options.supportFeedback": "Support & Feedback",
