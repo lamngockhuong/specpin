@@ -138,6 +138,11 @@ Planned, pending usage feedback: the FileSystem Access source, the overlay + inl
 - CI: `specpin validate` now fails when a `verifiedBy` path is missing from the repo (a new repo-root-anchored guard + `--repo-root` flag; rejects absolute/`..`/symlink-escape; skips with a note when there is no readable working tree). On by default; gates the demo via `ci.yml`.
 - Trust model: provenance is **author-asserted**; the integrity boundary is the Git-diff review of `.specs/`, not the runtime message. Writes stay unprivileged; the UI never claims `status`/`reviewedBy` are verified, and `verifiedBy` is always "linked" (existence-checked), never "passed".
 
+**Opt-in badge numbering shipped (2026-07-03)** on branch `main`:
+- Options gets a "Number spec badges (show position instead of S)" checkbox (default OFF; `config.ts` `getBadgeNumbering`/`setBadgeNumbering`, storage.local key `specpin:badgeNumbering`, drops the key when off). When ON, on-page tooltip badges show a 1-based reading-order number instead of the "S" brand mark; the largest number equals the count of on-page tooltip badges (needsReview badges are numbered inline and stay yellow). Off is byte-identical to before.
+- Ordinals are computed in the orchestrator (`renderSession` split into match/collect -> ordinal pass -> render) using DOM document order (`compareDocumentPosition`) over tooltip-mode matches only, then threaded to the renderer via `RenderMeta.ordinal` (its presence is the "numbering on" signal; the tooltip prints it instead of "S"). DOM order equals visual reading order for effectively all pages; CSS-reordered/absolute layouts are the accepted imperfection. The number is a positional index, not a stable id (spec identity is unchanged).
+- 1-9 keep the 16px circle; 2+ digits widen to a pill (`.badge.wide`, `width:auto`). `badge-position.ts` gained a per-badge `width` so the placement/overlap solver reserves the true footprint (height stays 16px). Live toggle via a new `SET_BADGE_NUMBERING` broadcast (Options -> tabs), same path as `SET_THEME`. Scope: badge text only (no "n / total" in the tip, side panel, or reader-nav). i18n EN + VI + JA.
+
 ### Planned Features
 
 **Additional Spec Sources:**

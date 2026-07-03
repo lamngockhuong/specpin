@@ -18,6 +18,10 @@ import { MARKDOWN_BODY_CSS, rulesListHtml } from "./renderer.js";
 interface Pin {
   target: Element;
   badge: HTMLElement;
+  /** Rendered badge width in px, measured once at render (a pill for 2+ digits is
+   *  wider than BADGE_SIZE). Cached so scroll/resize re-placement reserves the true
+   *  footprint without re-measuring. */
+  width: number;
   specId: string;
   text: LocalizedSpecText;
   tags: string[];
@@ -58,6 +62,11 @@ ${SHADOW_PREAMBLE}
 }
 .badge[data-review="true"] {
   background: var(--sp-warning-border); color: var(--sp-accent-on);
+}
+/* 2+ digit ordinal: widen to a pill (height + fully-rounded ends unchanged) so the
+   number stays legible; the circle above is untouched for the default/S case. */
+.badge.wide {
+  width: auto; min-width: ${BADGE_SIZE}px; padding: 0 4px; border-radius: ${BADGE_SIZE / 2}px;
 }
 .tip {
   /* Match .layer's z-index (not auto, which the layer's explicit z-index would
@@ -203,13 +212,17 @@ export class TooltipRenderer implements SpecRenderer {
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     const badge = this.doc.createElement("div");
     badge.className = "badge";
-    badge.textContent = "S";
+    // Show the reading-order number when one was assigned (numbering on); otherwise
+    // the "S" brand mark. 2+ digits widen to a pill.
+    badge.textContent = meta?.ordinal ? String(meta.ordinal) : "S";
+    if (badge.textContent.length >= 2) badge.classList.add("wide");
     if (meta?.needsReview) badge.dataset.review = "true";
     const project = meta?.showProject && meta.project ? meta.project : "";
 
     const pin: Pin = {
       target,
       badge,
+      width: BADGE_SIZE,
       specId: spec.id,
       text,
       tags: spec.tags ?? [],
@@ -237,6 +250,10 @@ export class TooltipRenderer implements SpecRenderer {
       });
       badge.addEventListener("click", () => this.togglePin(pin));
       layer.appendChild(badge);
+      // Measure the rendered width once (a pill is wider than BADGE_SIZE) and cache
+      // it so scroll/resize re-placement reserves the true footprint without another
+      // reflow. Falls back to BADGE_SIZE when layout is unavailable (e.g. jsdom).
+      pin.width = badge.offsetWidth || BADGE_SIZE;
       // Place only the new badge, dodging the already-placed ones. Cheaper than a
       // full re-lay on every render (one getBoundingClientRect, not N); scroll and
       // resize still trigger positionAll() when every badge genuinely moves.
@@ -254,7 +271,7 @@ export class TooltipRenderer implements SpecRenderer {
       boxes.push({
         left: Number.parseFloat(pin.badge.style.left) || 0,
         top: Number.parseFloat(pin.badge.style.top) || 0,
-        width: BADGE_SIZE,
+        width: pin.width,
         height: BADGE_SIZE,
       });
     }
@@ -401,10 +418,11 @@ export class TooltipRenderer implements SpecRenderer {
         innerHeight: win.innerHeight,
       },
       placed,
+      { width: pin.width },
     );
     pin.badge.style.left = `${left}px`;
     pin.badge.style.top = `${top}px`;
-    return { left, top, width: BADGE_SIZE, height: BADGE_SIZE };
+    return { left, top, width: pin.width, height: BADGE_SIZE };
   }
 
   private positionAll(): void {

@@ -78,6 +78,11 @@ export interface RenderMeta {
    *  projects). Threaded per-spec so the freshness signal is correct on a
    *  multi-project page. Omitted falls back to the 90-day default at render. */
   stalenessThresholdDays?: number;
+  /** 1-based reading-order position among tooltip-mode badges on the page, set
+   *  only when the user enabled badge numbering (Options) and this spec renders as
+   *  a tooltip badge. The tooltip renderer prints it instead of "S"; other
+   *  renderers ignore it. Its presence is the "numbering on" signal (always >= 1). */
+  ordinal?: number;
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already

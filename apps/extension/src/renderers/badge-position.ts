@@ -35,8 +35,12 @@ export interface BadgeBox {
 }
 
 export interface ResolveOptions {
-  /** Badge diameter in px. */
+  /** Badge diameter in px (the height, and the single-digit circle's width). */
   size?: number;
+  /** Badge width in px, for a widened pill (2+ digits). Defaults to `size` (a
+   *  square badge). The height always stays `size`; only the horizontal footprint
+   *  and the corner-center offset use this. */
+  width?: number;
   /** Keep-clear margin from the viewport edges in px. */
   gutter?: number;
 }
@@ -80,11 +84,14 @@ export function resolveBadgePosition(
   opts: ResolveOptions = {},
 ): { left: number; top: number } {
   const size = opts.size ?? BADGE_SIZE;
+  // Pill width for 2+ digits; defaults to a square badge. Height stays `size`.
+  const width = opts.width ?? size;
   const gutter = opts.gutter ?? DEFAULT_GUTTER;
-  const half = size / 2;
+  const halfX = width / 2;
+  const halfY = size / 2;
 
   const minLeft = view.scrollX + gutter;
-  const maxLeft = view.scrollX + view.innerWidth - size - gutter;
+  const maxLeft = view.scrollX + view.innerWidth - width - gutter;
   const minTop = view.scrollY + gutter;
   const maxTop = view.scrollY + view.innerHeight - size - gutter;
 
@@ -94,14 +101,15 @@ export function resolveBadgePosition(
 
   for (let i = 0; i < CORNERS.length; i++) {
     const { cx, cy } = CORNERS[i](rect);
-    // Raw box, document-absolute, centered on the corner.
-    const rawLeft = cx + view.scrollX - half;
-    const rawTop = cy + view.scrollY - half;
+    // Raw box, document-absolute, centered on the corner (width may exceed height
+    // for a pill, so each axis uses its own half-extent).
+    const rawLeft = cx + view.scrollX - halfX;
+    const rawTop = cy + view.scrollY - halfY;
     const left = clampAxis(rawLeft, minLeft, maxLeft);
     const top = clampAxis(rawTop, minTop, maxTop);
 
     const moved = left !== rawLeft || top !== rawTop;
-    const box: BadgeBox = { left, top, width: size, height: size };
+    const box: BadgeBox = { left, top, width, height: size };
     const collides = placed.some((p) => overlaps(box, p));
 
     // Lower is better: a free, unclamped corner beats a clamped one beats a

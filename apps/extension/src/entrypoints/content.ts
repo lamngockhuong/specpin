@@ -15,6 +15,7 @@ import { initI18n, resolveUiLocale, t } from "../i18n/index.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
 import { TooltipRenderer } from "../renderers/tooltip.js";
 import {
+  getBadgeNumbering,
   getDisplayMode,
   getLauncherPosition,
   getLocale,
@@ -63,6 +64,10 @@ export default defineContentScript({
     // Local drift-corpus opt-in (default OFF), cached per refresh so the hot
     // rerender path stays synchronous. Gates passive candidate capture.
     let corpusEnabled = false;
+    // On-page badge numbering opt-in (default OFF), cached per refresh so the hot
+    // rerender path stays synchronous. Read at startup + updated by
+    // SET_BADGE_NUMBERING broadcasts from the Options page.
+    let badgeNumbering = false;
     let forcedMode: DisplayMode | null = null;
     // Modes the user dismissed for this page session. The dismissed surface renders
     // as the floating relaunch pill instead of its panel; the flag survives
@@ -163,6 +168,7 @@ export default defineContentScript({
               {
                 captureDrift: corpusEnabled,
                 onConfirm: corpusEnabled ? confirmMatch : undefined,
+                badgeNumbering,
               },
             )
           : null;
@@ -731,6 +737,12 @@ export default defineContentScript({
           theme = message.theme;
           rerender();
           break;
+        case "SET_BADGE_NUMBERING":
+          // Options already persisted the choice; re-render so on-page badges
+          // switch between "S" and their reading-order number.
+          badgeNumbering = message.on;
+          rerender();
+          break;
         case "SET_UI_LOCALE":
           // UI-chrome language changed in Options; re-init i18n and re-render so
           // renderers' chrome (badges, buttons, summaries) switches language.
@@ -790,15 +802,18 @@ export default defineContentScript({
     // position, and UI-chrome language before the first render so renderers
     // translate and a reloaded page honors them instead of resetting. These reads
     // are independent, so fetch them concurrently (content init runs on every page).
-    const [storedMode, storedTheme, storedUiLocale, storedLauncherPosition] = await Promise.all([
-      getDisplayMode(),
-      getTheme(),
-      getUiLocale(),
-      getLauncherPosition(),
-    ]);
+    const [storedMode, storedTheme, storedUiLocale, storedLauncherPosition, storedBadgeNumbering] =
+      await Promise.all([
+        getDisplayMode(),
+        getTheme(),
+        getUiLocale(),
+        getLauncherPosition(),
+        getBadgeNumbering(),
+      ]);
     forcedMode = storedMode;
     theme = storedTheme;
     launcherPosition = storedLauncherPosition;
+    badgeNumbering = storedBadgeNumbering;
     initI18n(resolveUiLocale(storedUiLocale));
     await refresh();
     // Seed after the first render so a stray early mutation doesn't trigger a
