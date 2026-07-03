@@ -123,6 +123,18 @@ Mã thoát:
 
 Theo mặc định, `validate` cảnh báo nếu `manifest.specFiles` và các file `*.spec.json` trên đĩa không khớp. Truyền `--strict-manifest` để biến sự lệch đó thành lỗi thay vì cảnh báo.
 
+### Kiểm tra các đường dẫn `verifiedBy`
+
+`validate` cũng kiểm tra rằng mọi đường dẫn `verifiedBy` trên một spec **tồn tại** trong repo. Đây là một cơ chế chống liên kết hỏng — nó không bao giờ chạy test và không bao giờ ngụ ý rằng chúng pass; một spec nêu tên một test chỉ *khai báo* một liên kết tới nó.
+
+Các đường dẫn được phân giải theo gốc repo, mặc định là thư mục cha của `--dir` (nên `.specs/` ở `<repo>/.specs` không cần cờ thêm). Khi `.specs/` của bạn nằm ở nơi khác, hãy trỏ validate về đúng gốc:
+
+```bash
+specpin validate --dir path/to/.specs --repo-root path/to/repo
+```
+
+Các đường dẫn phải nằm bên trong repo: đường dẫn tuyệt đối, đi ngược `../`, và symlink thoát ra khỏi gốc đều bị từ chối. Một đường dẫn `verifiedBy` không tồn tại sẽ thoát với mã `1`. Nếu không có cây làm việc đọc được để phân giải, việc kiểm tra được bỏ qua kèm một ghi chú (nó không làm hỏng lần chạy).
+
 :::tip
 Sử dụng `specpin validate` trong CI để phát hiện spec không hợp lệ trước khi merge. Xem [GitHub Action có thể tái sử dụng](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint) để lấy ví dụ.
 :::

@@ -27,6 +27,11 @@ Each `*.spec.json` file in `.specs/` is a **SpecFile**: a named group of specs.
       ],
       "tags": ["login", "critical"],
       "preferredDisplayMode": "tooltip",
+      "status": "approved",
+      "links": [
+        { "label": "JIRA-1234", "url": "https://issues.example.com/browse/JIRA-1234" }
+      ],
+      "verifiedBy": ["tests/login/email.spec.ts"],
       "fingerprint": {
         "testId": "login-email",
         "ariaLabel": null,
@@ -45,7 +50,9 @@ Each `*.spec.json` file in `.specs/` is a **SpecFile**: a named group of specs.
         "createdBy": "you@example.com",
         "createdAt": "2026-06-28T10:00:00Z",
         "updatedAt": "2026-06-28T10:00:00Z",
-        "source": "manual"
+        "source": "manual",
+        "reviewedAt": "2026-06-30T09:00:00Z",
+        "reviewedBy": "alex"
       }
     }
   ]
@@ -103,6 +110,37 @@ How this spec should render by default. One of: `"tooltip"`, `"sidebar"`, `"moda
 `"overlay"` and `"inline-badge"` are reserved (forward-compatible) modes. If you set them, they fall back to `"tooltip"` at render time.
 :::
 
+### `status` (optional)
+
+The spec's lifecycle state. One of: `"draft"`, `"approved"`, `"deprecated"`. When absent, the spec is neutral (there is no default). This drives the lifecycle badge and the stale display on rendered specs — a `deprecated` spec, for example, is flagged so reviewers notice it.
+
+```json
+{ "status": "approved" }
+```
+
+### `links` (optional)
+
+Author-declared references to related tickets, docs, or PRs. An array of `{ "label", "url" }` objects (up to 10). `url` must be `http` or `https`:
+
+```json
+[
+  { "label": "JIRA-1234", "url": "https://issues.example.com/browse/JIRA-1234" },
+  { "label": "Design doc", "url": "https://example.com/design" }
+]
+```
+
+These are shown as clickable links on the rendered spec (opening in a new tab). They are context you attach by hand; Specpin does not fetch or verify them.
+
+### `verifiedBy` (optional)
+
+Repo-relative paths to the tests that **declare** this spec. An array of strings (up to 20). This is a *declarative link*, not a test result:
+
+```json
+["tests/login/email.spec.ts", "e2e/auth.spec.ts"]
+```
+
+`specpin validate` checks that each path **exists** in the repo (a broken-link guard). It never runs the tests and never implies they pass. The UI shows these as **linked** tests — not "verified" or "passing". Keeping the link honest is up to your review process, the same as any other spec field.
+
 ## Markdown formatting
 
 `description` and each `businessRules` item support a small, safe Markdown subset:
@@ -158,8 +196,9 @@ You rarely need to hand-edit the fingerprint. The extension's capture flow popul
 - `createdBy` (string, e.g. your email or username)
 - `createdAt`, `updatedAt` (ISO 8601 date-time)
 - `source` (`"manual"` or `"ai-generated"`)
+- `reviewedAt` (ISO 8601 date-time) and `reviewedBy` (string): set by the extension's **Mark reviewed** action, not authored by hand. `reviewedBy` must be a **non-PII token** (a name or handle, **not** an email), because it is committed to Git and included in exports. `reviewedAt` also feeds the stale indicator (see `stalenessThresholdDays` in [Settings](/usage/settings/)).
 
-The extension sets these when you capture or edit a spec. You rarely touch them by hand.
+The extension sets these when you capture, edit, or mark a spec reviewed. You rarely touch them by hand.
 
 ## Validate your changes
 
@@ -170,6 +209,8 @@ specpin validate --dir .specs
 ```
 
 This checks every `.spec.json` against the schema and warns if `manifest.specFiles` is out of sync with the on-disk files.
+
+`specpin validate` also checks that each `verifiedBy` path exists in the repo — a broken-link guard, not a test run (it never executes anything). Pass `--repo-root <path>` when your `.specs/` is not at `<repo>/.specs`, so paths resolve against the right root. See the [CLI guide](/sidecar/cli/#validate-specs-offline) for details.
 
 For CI spec-lint, see the [CLI guide](/sidecar/cli/#validate-specs-offline).
 
