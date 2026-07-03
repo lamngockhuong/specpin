@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.9](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.8...extension-v0.0.9) (2026-07-03)
+
+
+### Features
+
+* **cli:** specpin format command + canonical .specs/ formatting ([#110](https://github.com/lamngockhuong/specpin/issues/110)) ([2a2aec6](https://github.com/lamngockhuong/specpin/commit/2a2aec64b23de56c0bed7dbd57ab0bf95eed3921))
+* **matching:** hybrid weighted scorer + local drift corpus ([#108](https://github.com/lamngockhuong/specpin/issues/108)) ([e428585](https://github.com/lamngockhuong/specpin/commit/e42858501a228291d9372cf6a6bdbea2da8e0945))
+
 ## [0.0.8](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.7...extension-v0.0.8) (2026-07-02)
 
 
