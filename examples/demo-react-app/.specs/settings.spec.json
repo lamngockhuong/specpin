@@ -4,19 +4,28 @@
   "specs": [
     {
       "id": "settings-display-name",
-      "title": { "en": "Display name", "vi": "Tên hiển thị" },
+      "title": {
+        "en": "Display name",
+        "vi": "Tên hiển thị"
+      },
       "description": {
         "en": "The name shown to teammates across the app.",
         "vi": "Tên hiển thị cho đồng đội trên toàn ứng dụng."
       },
       "businessRules": [
-        { "en": "1 to 60 characters", "vi": "Từ 1 đến 60 ký tự" },
+        {
+          "en": "1 to 60 characters",
+          "vi": "Từ 1 đến 60 ký tự"
+        },
         {
           "en": "Trimmed; cannot be only whitespace",
           "vi": "Được cắt khoảng trắng; không được chỉ gồm khoảng trắng"
         }
       ],
-      "tags": ["settings", "profile"],
+      "tags": [
+        "settings",
+        "profile"
+      ],
       "preferredDisplayMode": "tooltip",
       "fingerprint": {
         "testId": "settings-display-name",
@@ -24,12 +33,24 @@
         "id": null,
         "cssSelector": "[data-spec-id='settings-display-name']",
         "xpath": "//input[@data-spec-id='settings-display-name']",
-        "domPath": ["main", "form", "label", "input"],
+        "domPath": [
+          "main",
+          "form",
+          "label",
+          "input"
+        ],
         "tagName": "input",
         "textContent": null,
-        "attributes": { "type": "text" },
-        "nearbyLabels": ["Display name"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "attributes": {
+          "type": "text"
+        },
+        "nearbyLabels": [
+          "Display name"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/settings"
       },
@@ -42,7 +63,10 @@
     },
     {
       "id": "settings-notifications",
-      "title": { "en": "Email notifications toggle", "vi": "Bật/tắt thông báo email" },
+      "title": {
+        "en": "Email notifications toggle",
+        "vi": "Bật/tắt thông báo email"
+      },
       "description": {
         "en": "Controls whether the user receives activity emails.",
         "vi": "Kiểm soát việc người dùng có nhận email hoạt động hay không."
@@ -53,7 +77,9 @@
           "vi": "Khi tắt vẫn gửi email bảo mật và thanh toán"
         }
       ],
-      "tags": ["settings"],
+      "tags": [
+        "settings"
+      ],
       "preferredDisplayMode": "tooltip",
       "fingerprint": {
         "testId": "settings-notifications",
@@ -61,12 +87,25 @@
         "id": null,
         "cssSelector": "[data-spec-id='settings-notifications']",
         "xpath": "//input[@data-spec-id='settings-notifications']",
-        "domPath": ["main", "form", "div", "label", "input"],
+        "domPath": [
+          "main",
+          "form",
+          "div",
+          "label",
+          "input"
+        ],
         "tagName": "input",
         "textContent": null,
-        "attributes": { "type": "checkbox" },
-        "nearbyLabels": ["Email notifications"],
-        "positionHint": { "index": 0, "siblingCount": 2 },
+        "attributes": {
+          "type": "checkbox"
+        },
+        "nearbyLabels": [
+          "Email notifications"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 2
+        },
         "frameworkHint": "react",
         "pageUrl": "/settings"
       },
@@ -79,7 +118,10 @@
     },
     {
       "id": "settings-save",
-      "title": { "en": "Save changes button", "vi": "Nút lưu thay đổi" },
+      "title": {
+        "en": "Save changes button",
+        "vi": "Nút lưu thay đổi"
+      },
       "description": {
         "en": "Persists the settings form.",
         "vi": "Lưu lại biểu mẫu cài đặt."
@@ -90,7 +132,9 @@
           "vi": "Bị vô hiệu cho đến khi có trường thay đổi"
         }
       ],
-      "tags": ["settings"],
+      "tags": [
+        "settings"
+      ],
       "preferredDisplayMode": "tooltip",
       "fingerprint": {
         "testId": "settings-save",
@@ -98,12 +142,23 @@
         "id": null,
         "cssSelector": "[data-spec-id='settings-save']",
         "xpath": "//button[@data-spec-id='settings-save']",
-        "domPath": ["main", "form", "button"],
+        "domPath": [
+          "main",
+          "form",
+          "button"
+        ],
         "tagName": "button",
         "textContent": "Save changes",
-        "attributes": { "type": "submit" },
-        "nearbyLabels": ["Save changes"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "attributes": {
+          "type": "submit"
+        },
+        "nearbyLabels": [
+          "Save changes"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/settings"
       },
@@ -116,7 +171,10 @@
     },
     {
       "id": "settings-delete-account",
-      "title": { "en": "Delete account", "vi": "Xoá tài khoản" },
+      "title": {
+        "en": "Delete account",
+        "vi": "Xoá tài khoản"
+      },
       "description": {
         "en": "Permanently deletes the user's account and data after confirmation.",
         "vi": "Xoá vĩnh viễn tài khoản và dữ liệu của người dùng sau khi xác nhận."
@@ -131,7 +189,10 @@
           "vi": "Bị chặn khi tài khoản còn gói thanh toán đang hoạt động"
         }
       ],
-      "tags": ["settings", "critical"],
+      "tags": [
+        "settings",
+        "critical"
+      ],
       "preferredDisplayMode": "modal",
       "fingerprint": {
         "testId": "settings-delete-account",
@@ -139,12 +200,24 @@
         "id": null,
         "cssSelector": "[data-spec-id='settings-delete-account']",
         "xpath": "//button[@data-spec-id='settings-delete-account']",
-        "domPath": ["main", "div", "button"],
+        "domPath": [
+          "main",
+          "div",
+          "button"
+        ],
         "tagName": "button",
         "textContent": "Delete account",
-        "attributes": { "type": "button" },
-        "nearbyLabels": ["Danger zone", "Delete account"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "attributes": {
+          "type": "button"
+        },
+        "nearbyLabels": [
+          "Danger zone",
+          "Delete account"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/settings"
       },

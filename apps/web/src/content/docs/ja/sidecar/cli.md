@@ -127,6 +127,52 @@ specpin validate --dir .specs
 `specpin validate`をCIで使用してspecが無効なままマージされるのを防ぎます。例については[再利用可能なGitHub Action](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint)を参照してください。
 :::
 
+## specのフォーマット
+
+サイドカー、`specpin init`、拡張機能はいずれも`.specs/`のJSONを単一の正規形で書き込みます：2スペースインデント、完全展開（オブジェクト/配列の各要素を1行ずつ）、末尾に改行。`specpin format`はspecをその形に書き直すため、拡張機能で行った編集でもGit差分が最小限で読みやすくなります。
+
+```bash
+specpin format --dir .specs          # その場で書き直す
+specpin format --check --dir .specs  # 差分を報告し、書き込まない（CI / pre-commit用）
+```
+
+これは純粋な空白のみの変換です：キーの順序を変えたり値を変更したりすることはなく、2回実行しても no-op です。
+
+終了コード:
+- `0` すべてのファイルが既に正規形（または正常に再フォーマット済み）
+- `1` `--check`でフォーマットが必要なファイルを検出、またはファイルが読み取れない / 有効なJSONでない
+- `2` 実行できない（ディレクトリが存在しない）
+
+### `.specs/`はツール所有のアーティファクトとして扱う
+
+`.specs/`は`package-lock.json`や生成コードと同様に、specpinが生成し所有するものです。リポジトリ全体のフォーマッター（Prettier、Biome、dprint）を使う場合は、specpinと衝突しないよう**`.specs/`を除外**してください。そうしないと、フォーマッターがspecpinの展開した配列を折りたたみ、spec編集のたびにファイル全体が変更されてしまいます。
+
+```text
+# .prettierignore
+.specs/
+```
+
+```jsonc
+// biome.json - .specs/を無視するか ...
+{ "files": { "includes": ["**", "!**/.specs/**"] } }
+// ... または specpin のフォーマットに合わせて両者を一致させる:
+{ "overrides": [{ "includes": ["**/.specs/**/*.json"], "json": { "formatter": { "expand": "always" } } }] }
+```
+
+その後`specpin format`で正規化し、CIまたはpre-commitフックでゲートします:
+
+```bash
+# .git/hooks/pre-commit (または lint-staged / husky)
+specpin format --check || {
+  echo "specのフォーマットが必要です - 実行: specpin format" >&2
+  exit 1
+}
+```
+
+:::tip
+`specpin format --check`を`specpin validate`と組み合わせてCIで使うと、specが有効かつ一貫してフォーマットされた状態を保てます。
+:::
+
 ## `.specs/`フォルダー
 
 specはプロジェクトリポジトリのルートにある`.specs/`に存在します：

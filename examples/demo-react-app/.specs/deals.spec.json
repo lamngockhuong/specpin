@@ -4,15 +4,23 @@
   "specs": [
     {
       "id": "deal-name",
-      "title": { "en": "Deal name", "vi": "Tên giao dịch" },
+      "title": {
+        "en": "Deal name",
+        "vi": "Tên giao dịch"
+      },
       "description": {
         "en": "Human-readable label for the deal.",
         "vi": "Nhãn dễ đọc cho giao dịch."
       },
       "businessRules": [
-        { "en": "Required; cannot be empty", "vi": "Bắt buộc; không được để trống" }
+        {
+          "en": "Required; cannot be empty",
+          "vi": "Bắt buộc; không được để trống"
+        }
       ],
-      "tags": ["deals"],
+      "tags": [
+        "deals"
+      ],
       "preferredDisplayMode": "tooltip",
       "fingerprint": {
         "testId": "deal-name",
@@ -20,12 +28,24 @@
         "id": null,
         "cssSelector": "[data-spec-id='deal-name']",
         "xpath": "//input[@data-spec-id='deal-name']",
-        "domPath": ["main", "form", "label", "input"],
+        "domPath": [
+          "main",
+          "form",
+          "label",
+          "input"
+        ],
         "tagName": "input",
         "textContent": null,
-        "attributes": { "type": "text" },
-        "nearbyLabels": ["Deal name"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "attributes": {
+          "type": "text"
+        },
+        "nearbyLabels": [
+          "Deal name"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/deals/new"
       },
@@ -38,19 +58,28 @@
     },
     {
       "id": "deal-amount",
-      "title": { "en": "Deal amount", "vi": "Giá trị giao dịch" },
+      "title": {
+        "en": "Deal amount",
+        "vi": "Giá trị giao dịch"
+      },
       "description": {
         "en": "Expected value of the deal in USD.",
         "vi": "Giá trị dự kiến của giao dịch tính bằng USD."
       },
       "businessRules": [
-        { "en": "Must be a positive number", "vi": "Phải là số dương" },
+        {
+          "en": "Must be a positive number",
+          "vi": "Phải là số dương"
+        },
         {
           "en": "Stored in cents to avoid float rounding",
           "vi": "Lưu theo đơn vị xu để tránh sai số dấu phẩy động"
         }
       ],
-      "tags": ["deals", "critical"],
+      "tags": [
+        "deals",
+        "critical"
+      ],
       "preferredDisplayMode": "sidebar",
       "fingerprint": {
         "testId": "deal-amount",
@@ -58,12 +87,24 @@
         "id": null,
         "cssSelector": "[data-spec-id='deal-amount']",
         "xpath": "//input[@data-spec-id='deal-amount']",
-        "domPath": ["main", "form", "label", "input"],
+        "domPath": [
+          "main",
+          "form",
+          "label",
+          "input"
+        ],
         "tagName": "input",
         "textContent": null,
-        "attributes": { "type": "number" },
-        "nearbyLabels": ["Amount (USD)"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "attributes": {
+          "type": "number"
+        },
+        "nearbyLabels": [
+          "Amount (USD)"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/deals/new"
       },
@@ -76,7 +117,10 @@
     },
     {
       "id": "deal-stage",
-      "title": { "en": "Deal stage", "vi": "Trạng thái giao dịch" },
+      "title": {
+        "en": "Deal stage",
+        "vi": "Trạng thái giao dịch"
+      },
       "description": {
         "en": "Pipeline stage the deal currently sits in.",
         "vi": "Giai đoạn pipeline mà giao dịch đang ở."
@@ -87,7 +131,9 @@
           "vi": "Đã chốt và Thất bại là trạng thái kết thúc"
         }
       ],
-      "tags": ["deals"],
+      "tags": [
+        "deals"
+      ],
       "preferredDisplayMode": "tooltip",
       "fingerprint": {
         "testId": "deal-stage",
@@ -95,12 +141,22 @@
         "id": null,
         "cssSelector": "[data-spec-id='deal-stage']",
         "xpath": "//select[@data-spec-id='deal-stage']",
-        "domPath": ["main", "form", "label", "select"],
+        "domPath": [
+          "main",
+          "form",
+          "label",
+          "select"
+        ],
         "tagName": "select",
         "textContent": null,
         "attributes": {},
-        "nearbyLabels": ["Stage"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "nearbyLabels": [
+          "Stage"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/deals/new"
       },
@@ -113,7 +169,10 @@
     },
     {
       "id": "deal-owner",
-      "title": { "en": "Deal owner", "vi": "Người phụ trách giao dịch" },
+      "title": {
+        "en": "Deal owner",
+        "vi": "Người phụ trách giao dịch"
+      },
       "description": {
         "en": "Team member responsible for moving the deal forward.",
         "vi": "Thành viên nhóm chịu trách nhiệm thúc đẩy giao dịch."
@@ -124,7 +183,9 @@
           "vi": "Mặc định là người tạo giao dịch"
         }
       ],
-      "tags": ["deals"],
+      "tags": [
+        "deals"
+      ],
       "preferredDisplayMode": "tooltip",
       "fingerprint": {
         "testId": "deal-owner",
@@ -132,12 +193,22 @@
         "id": null,
         "cssSelector": "[data-spec-id='deal-owner']",
         "xpath": "//select[@data-spec-id='deal-owner']",
-        "domPath": ["main", "form", "label", "select"],
+        "domPath": [
+          "main",
+          "form",
+          "label",
+          "select"
+        ],
         "tagName": "select",
         "textContent": null,
         "attributes": {},
-        "nearbyLabels": ["Owner"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "nearbyLabels": [
+          "Owner"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/deals/new"
       },
@@ -150,7 +221,10 @@
     },
     {
       "id": "deal-submit",
-      "title": { "en": "Create deal button", "vi": "Nút tạo giao dịch" },
+      "title": {
+        "en": "Create deal button",
+        "vi": "Nút tạo giao dịch"
+      },
       "description": {
         "en": "Validates and submits the new-deal form.",
         "vi": "Kiểm tra và gửi biểu mẫu tạo giao dịch mới."
@@ -161,7 +235,9 @@
           "vi": "Chặn gửi cho đến khi có tên và giá trị dương"
         }
       ],
-      "tags": ["deals"],
+      "tags": [
+        "deals"
+      ],
       "preferredDisplayMode": "modal",
       "fingerprint": {
         "testId": "deal-submit",
@@ -169,12 +245,23 @@
         "id": null,
         "cssSelector": "[data-spec-id='deal-submit']",
         "xpath": "//button[@data-spec-id='deal-submit']",
-        "domPath": ["main", "form", "button"],
+        "domPath": [
+          "main",
+          "form",
+          "button"
+        ],
         "tagName": "button",
         "textContent": "Create deal",
-        "attributes": { "type": "submit" },
-        "nearbyLabels": ["Create deal"],
-        "positionHint": { "index": 0, "siblingCount": 1 },
+        "attributes": {
+          "type": "submit"
+        },
+        "nearbyLabels": [
+          "Create deal"
+        ],
+        "positionHint": {
+          "index": 0,
+          "siblingCount": 1
+        },
         "frameworkHint": "react",
         "pageUrl": "/deals/new"
       },

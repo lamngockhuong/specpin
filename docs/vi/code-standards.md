@@ -89,6 +89,25 @@ Một tool duy nhất xử lý lint, format và import organize. Không có ESLi
 Quote (double), semicolon (always) và trailing comma (all) dùng giá trị mặc định của Biome, vốn đã
 khớp với cấu hình Prettier cũ.
 
+**Override cho JSON trong `.specs/`:** một override ép `json.formatter.expand: "always"` cho `**/.specs/**/*.json`:
+
+```jsonc
+"overrides": [
+  { "includes": ["**/.specs/**/*.json"], "json": { "formatter": { "expand": "always" } } }
+]
+```
+
+Go sidecar và `specpin init` ghi file spec bằng `json.MarshalIndent` (mỗi phần tử object/array nằm
+trên một dòng riêng). Mặc định `expand: "auto"` của Biome lại giữ các object/array nhỏ ở dạng gọn,
+nên khi sửa một element qua sidecar thì cả file bị format lại. `expand: "always"` giúp Biome và các
+bộ ghi phía Go tạo ra output giống hệt nhau theo byte, nhờ đó các lần sửa qua sidecar chỉ tạo diff
+Git tối thiểu. Các file seed trong `.specs/` được giữ ở dạng expanded này.
+
+Các repo của end-user (không có cấu hình Biome này) đạt kết quả tương tự qua lệnh `specpin format`:
+lệnh này viết lại JSON trong `.specs/` về dạng canonical bằng chính bộ marshaling của CLI, còn
+`specpin format --check` để gate drift trong CI / pre-commit. Hướng dẫn: coi `.specs/` là artifact
+do tool sở hữu và loại trừ nó khỏi formatter chung của repo. Xem tài liệu CLI cho end-user.
+
 **Ignore** (các negation `files.includes`, cộng thêm `.gitignore` qua `vcs.useIgnoreFile`):
 - `**/*.gen.*` (tất cả generated file)
 - `apps/cli/**` (Go sidecar)

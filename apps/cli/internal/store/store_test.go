@@ -235,3 +235,45 @@ func TestGuidesJSONNotParsedAsSpec(t *testing.T) {
 		}
 	}
 }
+
+func TestCanonicalizeExpandsAndKeepsKeyOrder(t *testing.T) {
+	// Compact input with a deliberately non-alphabetical key order.
+	in := `{ "b": 1, "a": [1, 2], "c": { "z": true } }`
+	out, err := Canonicalize([]byte(in))
+	if err != nil {
+		t.Fatalf("canonicalize: %v", err)
+	}
+	got := string(out)
+	// Fully expanded: array elements on their own lines, trailing newline.
+	if !strings.Contains(got, "\n    1,\n    2\n") {
+		t.Errorf("array not expanded:\n%s", got)
+	}
+	if got[len(got)-1] != '\n' {
+		t.Errorf("missing trailing newline")
+	}
+	// Key order preserved (b before a before c), never alphabetized.
+	bi, ai, ci := strings.Index(got, `"b"`), strings.Index(got, `"a"`), strings.Index(got, `"c"`)
+	if !(bi < ai && ai < ci) {
+		t.Errorf("key order not preserved, got:\n%s", got)
+	}
+}
+
+func TestCanonicalizeIsIdempotent(t *testing.T) {
+	once, err := Canonicalize([]byte(`{ "a": [1, 2], "b": { "x": 1 } }`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	twice, err := Canonicalize(once)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(once) != string(twice) {
+		t.Errorf("Canonicalize not idempotent:\nonce:\n%s\ntwice:\n%s", once, twice)
+	}
+}
+
+func TestCanonicalizeRejectsInvalidJSON(t *testing.T) {
+	if _, err := Canonicalize([]byte(`{ "a": `)); err == nil {
+		t.Error("expected error on invalid JSON")
+	}
+}
