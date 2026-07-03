@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.5](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.4...cli-v0.0.5) (2026-07-03)
+
+
+### Features
+
+* **cli:** specpin format command + canonical .specs/ formatting ([#110](https://github.com/lamngockhuong/specpin/issues/110)) ([2a2aec6](https://github.com/lamngockhuong/specpin/commit/2a2aec64b23de56c0bed7dbd57ab0bf95eed3921))
+
 ## [0.0.4](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.3...cli-v0.0.4) (2026-07-01)
 
 
