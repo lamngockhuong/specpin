@@ -252,7 +252,7 @@ src/
 ## Toolchain & CI
 
 **Node/TS:**
-- Node >= 20, pnpm 10.33, Turborepo 2.3.
+- Node >= 22, pnpm 11.9, Turborepo 2.10.
 - TypeScript 5.7, strict mode + noUncheckedIndexedAccess.
 - Biome 2 (`biome.json`): công cụ duy nhất cho lint + format + import organize. Lint = preset recommended cộng `noUnusedVariables` + `noUnusedImports`. Bỏ qua `*.gen.*`, `apps/cli/**`, `packages/spec-schema/schema/**`, và các path trong `.gitignore`.
 - Format: space (2), lineWidth 100, double quotes, semicolons, trailingComma all (khớp config Prettier trước đó).

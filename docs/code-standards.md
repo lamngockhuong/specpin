@@ -408,7 +408,7 @@ chore(deps): bump wxt to 0.20
 **Node/pnpm:**
 - `pnpm-lock.yaml` committed (lock reproducible builds).
 - Workspace protocol for internal deps (`"workspace:*"`).
-- `engines` field enforced (`node >= 20`).
+- `engines` field enforced (`node >= 22`).
 - `onlyBuiltDependencies: ["esbuild"]` to skip unnecessary native builds.
 
 **Go:**

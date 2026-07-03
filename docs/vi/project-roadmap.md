@@ -13,7 +13,7 @@ Status: **DONE**. Bản end-to-end đầu tiên: đã implement, test và code-r
 ### Tính năng đã giao (Delivered Features)
 
 **Core Infrastructure:**
-- Khung monorepo (pnpm 10.33, Turborepo 2.3, Node >= 20, Go 1.26)
+- Khung monorepo (pnpm 11.9, Turborepo 2.10, Node >= 22, Go 1.26)
 - JSON Schema v1 (SSOT) với TS types được sinh ra và ajv validators
 - Go sidecar nhúng bản copy đã đồng bộ của schema, validate bằng `santhosh-tekuri/jsonschema/v6`
 - CI cross-validate các fixture qua cả hai validator, fail khi schema drift

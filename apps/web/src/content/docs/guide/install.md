@@ -15,8 +15,8 @@ For Firefox, or to hack on the extension, build it from source and load it as an
 
 ### Prerequisites
 
-- Node >= 20
-- pnpm 10
+- Node >= 22
+- pnpm 11
 
 ### Build the extension
 

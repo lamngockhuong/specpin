@@ -11,7 +11,7 @@ Status: **DONE**. The first end-to-end build: implemented, tested, and code-revi
 ### Delivered Features
 
 **Core Infrastructure:**
-- Monorepo scaffold (pnpm 10.33, Turborepo 2.3, Node >= 20, Go 1.26)
+- Monorepo scaffold (pnpm 11.9, Turborepo 2.10, Node >= 22, Go 1.26)
 - JSON Schema v1 (SSOT) with generated TS types and ajv validators
 - Go sidecar embeds synced copy of schema, validates with `santhosh-tekuri/jsonschema/v6`
 - CI cross-validates fixtures through both validators, fails on schema drift

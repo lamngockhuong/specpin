@@ -10,7 +10,7 @@ Specpin gắn các business spec sống vào một UI đang chạy; nó **không
 
 ## Yêu cầu trước
 
-- Node >= 20, pnpm 10
+- Node >= 22, pnpm 11
 - Go 1.26 (chỉ khi build sidecar từ source)
 - Chrome hoặc Firefox
 

@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.34.4",
+  "packageManager": "pnpm@11.9.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "turbo run build",
@@ -15,11 +15,6 @@
     "typecheck": "turbo run typecheck",
     "schema-validate": "turbo run schema-validate",
     "format": "biome format --write ."
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.2",
