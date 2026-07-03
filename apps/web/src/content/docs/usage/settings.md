@@ -19,6 +19,12 @@ Choose how Specpin displays:
 
 The theme changes immediately across all open Specpin surfaces.
 
+### Badge numbering
+
+Off by default. When on, each on-page tooltip badge shows a reading-order number instead of the "S" mark: the top-left-most badge is `1`, and the largest number equals how many specs the screen carries. It is a quick way to count and locate the specs on a page.
+
+The number is a position, not an identifier: adding or removing a spec renumbers the ones after it (like line numbers). It applies to the on-page tooltip badges only, and updates immediately across open tabs when you toggle it.
+
 ### Language
 
 Choose the language for Specpin's UI:
