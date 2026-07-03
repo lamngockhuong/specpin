@@ -196,7 +196,7 @@ Text fields above are ready to paste. The items below are NOT in this repo yet a
 
 - [ ] **Developer account**: a Firefox Add-on Developer Hub account (free). Verify the account email.
 - [ ] **Packaged build**: `pnpm --filter @specpin/extension build:firefox` -> `.output/firefox-mv2`, then `pnpm --filter @specpin/extension zip` for the Firefox target. Use the current manifest `version` (`0.0.5` in `apps/extension/package.json`), or bump it first if publishing alongside a Chrome update.
-- [ ] **Source code submission**: AMO requires reviewable source for any build step. Provide the repo (or a source ZIP) plus build instructions: `pnpm install && pnpm --filter @specpin/extension build:firefox`. Note the pnpm/Turbo monorepo and Node >= 20.
+- [ ] **Source code submission**: AMO requires reviewable source for any build step. Provide the repo (or a source ZIP) plus build instructions: `pnpm install && pnpm --filter @specpin/extension build:firefox`. Note the pnpm/Turbo monorepo and Node >= 22.
 - [ ] **Stable add-on ID**: already set (`specpin@ohnice.app` via `browser_specific_settings.gecko.id` in `wxt.config.ts`). Keep it stable across releases.
 - [ ] **Screenshots**: at least 1, ideally 5. Use the [Screenshot shot list](./chrome-web-store-listing.md#screenshot-shot-list) in the Chrome listing doc (for Firefox, swap the side panel for Firefox's sidebar).
 - [ ] **Icon**: 128x128 PNG (already have `apps/extension/public/icon/128.png`).

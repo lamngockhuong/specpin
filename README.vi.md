@@ -30,7 +30,7 @@
   <a href="https://github.com/lamngockhuong/specpin/stargazers">
     <img src="https://img.shields.io/github/stars/lamngockhuong/specpin?style=flat-square&color=f59e0b" alt="GitHub Stars">
   </a>
-  <img src="https://img.shields.io/badge/Node-%E2%89%A520-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node >= 20">
+  <img src="https://img.shields.io/badge/Node-%E2%89%A522-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node >= 22">
   <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go 1.26">
   <img src="https://img.shields.io/badge/MV3-Chrome%20%2B%20Firefox-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Chrome + Firefox">
 </p>
@@ -165,7 +165,7 @@ specpin/
 
 ## Bộ công cụ
 
-- Node >= 20, pnpm 10, Turborepo
+- Node >= 22, pnpm 11, Turborepo
 - Go 1.26 (sidecar CLI)
 - Vitest (mọi package TS), Biome (lint + format)
 

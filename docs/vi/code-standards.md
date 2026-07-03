@@ -410,7 +410,7 @@ chore(deps): bump wxt to 0.20
 **Node/pnpm:**
 - `pnpm-lock.yaml` được commit (lock build có thể tái lập).
 - Workspace protocol cho internal dep (`"workspace:*"`).
-- Trường `engines` được thực thi (`node >= 20`).
+- Trường `engines` được thực thi (`node >= 22`).
 - `onlyBuiltDependencies: ["esbuild"]` để bỏ qua các native build không cần thiết.
 
 **Go:**

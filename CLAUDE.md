@@ -14,7 +14,7 @@ Three-tier flow:
 
 ## Toolchain
 
-Node >= 20, pnpm 10, Turborepo, Go 1.26, Vitest. The repo is a pnpm + Turbo monorepo (`packages/*`, `apps/*`, `examples/*`).
+Node >= 22, pnpm 11, Turborepo, Go 1.26, Vitest. The repo is a pnpm + Turbo monorepo (`packages/*`, `apps/*`, `examples/*`).
 
 ## Commands
 

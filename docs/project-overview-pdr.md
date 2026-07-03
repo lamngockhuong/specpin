@@ -103,7 +103,7 @@ One schema, two validators: `packages/spec-schema/schema/v1.json` is the SSOT. T
 
 - **Performance**: extension content script bundle < 500 KB uncompressed (currently ~450 KB with ajv). Fingerprint match < 50ms per element (currently < 10ms for exact anchors). Render latency < 100ms after match.
 - **Security**: sidecar binds 127.0.0.1 only, auto-picks free port, requires Bearer token on every request, CORS accepts only extension origins (`chrome-extension://`, `moz-extension://`), rejects web origins, path-traversal guard on writes, no external network access.
-- **Compatibility**: Node >= 20, pnpm 10, Go 1.26, Chrome 120+ (MV3), Firefox 115+ (MV2 compat). Fingerprinting pure DOM (no framework coupling).
+- **Compatibility**: Node >= 22, pnpm 11, Go 1.26, Chrome 120+ (MV3), Firefox 115+ (MV2 compat). Fingerprinting pure DOM (no framework coupling).
 - **Maintainability**: TypeScript strict mode + noUncheckedIndexedAccess. Biome (lint + format). Generated files (`*.gen.*`) never hand-edited. Monorepo Turborepo orchestration. Vitest for all TS packages, Go stdlib testing for CLI.
 - **Licensing**: Apache-2.0.
 
