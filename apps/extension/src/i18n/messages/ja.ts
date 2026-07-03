@@ -239,6 +239,7 @@ const ja: Record<keyof Messages, string> = {
   "options.appearanceLead":
     "Specpin自身のインターフェースの見た目です。すべてのSpecpin画面 (popup、サイドパネル、設定、ページ内のツールチップ/サイドバー/モーダル) に適用されます。",
   "options.theme": "テーマ",
+  "options.badgeNumberingLabel": "スペックバッジに番号を表示 (Sの代わりに位置を表示)",
   "options.themeSystem": "システムのデフォルト",
   "options.themeLight": "ライト",
   "options.themeDark": "ダーク",

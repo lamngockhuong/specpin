@@ -326,6 +326,63 @@ describe("TooltipRenderer", () => {
     renderer.destroy();
   });
 
+  it("shows the ordinal instead of 'S' when one is assigned (numbering on)", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+      ordinal: 4,
+    });
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+    expect(badge.textContent).toBe("4");
+    // Single digit keeps the circle (no pill widening).
+    expect(badge.classList.contains("wide")).toBe(false);
+    renderer.destroy();
+  });
+
+  it("keeps 'S' when no ordinal is assigned (numbering off)", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+    });
+    expect(must(shadowOf().querySelector(".badge")).textContent).toBe("S");
+    renderer.destroy();
+  });
+
+  it("widens a 2+ digit ordinal to a pill (wide modifier)", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+      ordinal: 12,
+    });
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+    expect(badge.textContent).toBe("12");
+    expect(badge.classList.contains("wide")).toBe(true);
+    // The pill rule exists in the stylesheet.
+    const css = must(shadowOf().querySelector("style")).textContent ?? "";
+    expect(css).toMatch(/\.badge\.wide\s*\{[^}]*border-radius/);
+    renderer.destroy();
+  });
+
+  it("a needsReview badge still carries its number and stays flagged yellow", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 0.7,
+      needsReview: true,
+      ordinal: 3,
+    });
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+    expect(badge.textContent).toBe("3");
+    expect(badge.dataset.review).toBe("true");
+    renderer.destroy();
+  });
+
   it("renders the Markdown subset in description and rules", () => {
     document.body.innerHTML = `<button>x</button>`;
     const md: Spec = {

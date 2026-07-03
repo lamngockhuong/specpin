@@ -147,6 +147,79 @@ describe("renderSession", () => {
   });
 });
 
+/** Ordinal text of every tooltip badge, in the order they were appended (input
+ *  render order, not DOM order). */
+function badgeTexts(): string[] {
+  const shadow = document.getElementById("specpin-tooltip-host")?.shadowRoot;
+  return [...(shadow?.querySelectorAll(".badge") ?? [])].map((b) => b.textContent ?? "");
+}
+
+describe("renderSession badge numbering", () => {
+  it("shows the brand mark 'S' on every badge when numbering is off", () => {
+    document.body.innerHTML = `<button data-testid="a">a</button><button data-testid="b">b</button>`;
+    const session = renderSession(
+      [spec("a", "a", "tooltip"), spec("b", "b", "tooltip")],
+      null,
+      document,
+    );
+    expect(badgeTexts()).toEqual(["S", "S"]);
+    session.destroy();
+  });
+
+  it("numbers tooltip badges by DOM reading order, independent of input order", () => {
+    // DOM order a, b, c; specs passed scrambled (c, a, b). Ordinals follow the DOM:
+    // a=1, b=2, c=3. Badges are appended in input order, so their texts read 3,1,2.
+    document.body.innerHTML = `<button data-testid="a">a</button><button data-testid="b">b</button><button data-testid="c">c</button>`;
+    const session = renderSession(
+      [spec("c", "c", "tooltip"), spec("a", "a", "tooltip"), spec("b", "b", "tooltip")],
+      null,
+      document,
+      "tooltip",
+      undefined,
+      undefined,
+      undefined,
+      "",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { badgeNumbering: true },
+    );
+    expect(badgeTexts()).toEqual(["3", "1", "2"]);
+    // Largest number equals the on-page badge count, gap-free.
+    expect(new Set(badgeTexts())).toEqual(new Set(["1", "2", "3"]));
+    session.destroy();
+  });
+
+  it("does not number non-tooltip modes (ordinals count only tooltip badges)", () => {
+    // A sidebar spec sits between two tooltip specs in the DOM; it must not consume
+    // an ordinal, so the two tooltip badges stay 1 and 2 with no gap.
+    document.body.innerHTML = `<button data-testid="a">a</button><button data-testid="b">b</button><button data-testid="c">c</button>`;
+    const session = renderSession(
+      [spec("a", "a", "tooltip"), spec("b", "b", "sidebar"), spec("c", "c", "tooltip")],
+      null,
+      document,
+      null,
+      undefined,
+      undefined,
+      undefined,
+      "",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { badgeNumbering: true },
+    );
+    expect(badgeTexts()).toEqual(["1", "2"]);
+    session.destroy();
+    document.getElementById("specpin-sidebar-host")?.remove();
+  });
+});
+
 function tagged(id: string, testId: string, tags: string[]): Spec {
   return { ...spec(id, testId, "tooltip"), tags };
 }

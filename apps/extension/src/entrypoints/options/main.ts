@@ -3,9 +3,11 @@ import { hydrateI18n, initI18n, resolveUiLocale, t, type UiLocale } from "../../
 import { parseDomains } from "../../shared/add-project.js";
 import {
   type DefaultSurface,
+  getBadgeNumbering,
   getDefaultSurface,
   getTheme,
   getUiLocale,
+  setBadgeNumbering,
   setDefaultSurface,
   setTheme,
   setUiLocale,
@@ -58,6 +60,7 @@ const localResult = byId("localResult");
 const localBatches = byId("localBatches");
 const surface = byId("surface") as HTMLSelectElement;
 const theme = byId("theme") as HTMLSelectElement;
+const badgeNumbering = byId("badgeNumbering") as HTMLInputElement;
 const uiLocale = byId("uiLocale") as HTMLSelectElement;
 const corpusEnabled = byId("corpusEnabled") as HTMLInputElement;
 const corpusCount = byId("corpusCount");
@@ -625,6 +628,17 @@ theme.addEventListener("change", async () => {
   await setTheme(next);
   applyTheme(document.documentElement, next);
   await broadcastToTabs({ type: "SET_THEME", theme: next });
+});
+
+// Badge-numbering preference. Reflect the stored value, then on change persist +
+// broadcast to every tab's content script so open pages re-render live (same path
+// as the theme control above).
+void getBadgeNumbering().then((value) => {
+  badgeNumbering.checked = value;
+});
+badgeNumbering.addEventListener("change", async () => {
+  await setBadgeNumbering(badgeNumbering.checked);
+  await broadcastToTabs({ type: "SET_BADGE_NUMBERING", on: badgeNumbering.checked });
 });
 
 // UI-chrome language. "system" maps to stored null (follow the browser). On change

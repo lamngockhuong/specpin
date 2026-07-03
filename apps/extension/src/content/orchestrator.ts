@@ -112,8 +112,12 @@ export function renderSession(
     /** Confirm-loop "Correct" callback, threaded to renderers only when the corpus
      *  opt-in is ON (so the action appears only then). */
     onConfirm?: (specId: string) => void;
+    /** When on, tooltip-mode badges show a 1-based reading-order number instead of
+     *  "S" (Options opt-in, default OFF). */
+    badgeNumbering?: boolean;
   },
 ): RenderSession {
+  const numbering = opts?.badgeNumbering ?? false;
   const byMode = new Map<DisplayMode, SpecRenderer>();
   const matches = new Map<string, Element>();
   const drift: PassiveDriftInput[] = [];
@@ -153,6 +157,20 @@ export function renderSession(
     // Unparseable url: leave pageOrigin undefined (legacy: all links new-tab).
   }
 
+  // One matched-and-rendered spec, collected before rendering so the ordinal pass
+  // (which needs the whole set) can run first. `el` is the resolved match target.
+  interface RenderRecord {
+    spec: Spec;
+    el: Element;
+    match: ReturnType<typeof matchElement>;
+    mode: DisplayMode;
+  }
+
+  // Loop A - match + collect. Run matchElement once per spec, keep the orphan /
+  // needsReview stats and the drift snapshots, and record each matched spec (with
+  // its resolved display mode) for the render pass. No rendering happens here so
+  // the ordinal pass below sees the full matched set first.
+  const renderList: RenderRecord[] = [];
   for (const spec of visibleSpecs) {
     const match = matchElement(spec.fingerprint, doc);
     if (!match.el) {
@@ -172,12 +190,42 @@ export function renderSession(
       if (entry) drift.push(entry);
     }
     const mode = forcedMode ?? resolveMode(spec, manifest);
+    renderList.push({ spec, el: match.el, match, mode });
+  }
+
+  // Ordinal pass: number tooltip-mode badges in DOM document order (1-based) so a
+  // spec appearing first in the DOM gets `1`. Only tooltip badges are numbered, so
+  // the largest number equals the on-page badge count with no gaps. DOM order (via
+  // compareDocumentPosition) is deterministic and layout-free; it equals visual
+  // reading order for effectively all real pages (CSS-reordered / absolutely
+  // positioned layouts are the accepted imperfection).
+  const ordinalById = new Map<string, number>();
+  if (numbering) {
+    const inReadingOrder = renderList
+      .filter((r) => r.mode === "tooltip")
+      .sort((a, b) => {
+        if (a.el === b.el) return 0;
+        const pos = a.el.compareDocumentPosition(b.el);
+        if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1; // a before b
+        if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+        return 0;
+      });
+    inReadingOrder.forEach((r, i) => {
+      ordinalById.set(r.spec.id, i + 1);
+    });
+  }
+
+  // Loop B - render. Iterate renderList in its original order (unchanged render
+  // semantics), creating one renderer per distinct mode, and pass the per-spec
+  // meta plus the numbering flag + resolved ordinal (undefined for non-tooltip or
+  // when numbering is off).
+  for (const { spec, el, match, mode } of renderList) {
     let renderer = byMode.get(mode);
     if (!renderer) {
       renderer = createRenderer(mode, doc);
       byMode.set(mode, renderer);
     }
-    renderer.render(spec, match.el, {
+    renderer.render(spec, el, {
       confidence: match.confidence,
       needsReview: match.needsReview,
       strategy: match.strategy,
@@ -205,8 +253,10 @@ export function renderSession(
       onSetDismissed: dismiss?.onToggle,
       launcherPosition: dismiss?.position ?? null,
       onLauncherMove: dismiss?.onMove,
+      // ordinalById is empty unless numbering is on, so this is undefined when off.
+      ordinal: ordinalById.get(spec.id),
     });
-    matches.set(spec.id, match.el);
+    matches.set(spec.id, el);
     stats.rendered += 1;
   }
 

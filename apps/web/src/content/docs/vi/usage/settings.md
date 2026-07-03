@@ -19,6 +19,12 @@ Chọn cách Specpin hiển thị:
 
 Chủ đề thay đổi ngay lập tức trên tất cả các bề mặt Specpin đang mở.
 
+### Đánh số badge
+
+Mặc định tắt. Khi bật, mỗi badge tooltip trên trang hiển thị một số theo thứ tự đọc thay cho chữ "S": badge trên-trái nhất là `1`, và số lớn nhất bằng số spec màn hình đang có. Đây là cách nhanh để đếm và định vị các spec trên một trang.
+
+Con số là vị trí, không phải định danh: thêm hoặc xóa một spec sẽ đánh số lại các spec phía sau (giống số dòng). Nó chỉ áp dụng cho badge tooltip trên trang, và cập nhật ngay trên các tab đang mở khi bạn bật/tắt.
+
 ### Ngôn ngữ
 
 Chọn ngôn ngữ cho UI của Specpin:

@@ -86,6 +86,9 @@ export const SURFACE_KEY = "specpin:defaultSurface";
 /** The user's forced UI theme. Distinct from the spec-content locale: this is
  *  the extension's own chrome appearance. Default "system" follows the OS. */
 export const THEME_KEY = "specpin:theme";
+/** Whether on-page spec badges show a reading-order number instead of "S".
+ *  Default OFF preserves the "S" brand mark. */
+export const BADGE_NUMBERING_KEY = "specpin:badgeNumbering";
 /** The user's chosen UI-chrome language (`"en" | "vi"`), or null to follow the
  *  browser/system UI language. Independent from the spec-content LOCALE_KEY. */
 export const UI_LOCALE_KEY = "specpin:uiLocale";
@@ -208,6 +211,23 @@ export async function setTheme(theme: Theme): Promise<void> {
     return;
   }
   await browser.storage.local.set({ [THEME_KEY]: theme });
+}
+
+/** Whether on-page spec badges show a reading-order number instead of "S".
+ *  Default OFF preserves the "S" brand mark. */
+export async function getBadgeNumbering(): Promise<boolean> {
+  const stored = await browser.storage.local.get(BADGE_NUMBERING_KEY);
+  return (stored[BADGE_NUMBERING_KEY] as boolean | undefined) ?? false;
+}
+
+export async function setBadgeNumbering(on: boolean): Promise<void> {
+  // false is the default: drop the key so a default profile carries nothing
+  // (mirrors setTheme's "system" drop).
+  if (!on) {
+    await browser.storage.local.remove(BADGE_NUMBERING_KEY);
+    return;
+  }
+  await browser.storage.local.set({ [BADGE_NUMBERING_KEY]: true });
 }
 
 /** The user's chosen UI-chrome language, or null to follow the browser/system UI

@@ -231,6 +231,7 @@ const vi: Record<keyof Messages, string> = {
   "options.appearanceLead":
     "Giao diện của chính Specpin trông như thế nào. Áp dụng cho mọi bề mặt Specpin (popup, thanh bên, cài đặt, và tooltip/thanh bên/hộp thoại trong trang).",
   "options.theme": "Chủ đề",
+  "options.badgeNumberingLabel": "Đánh số badge spec (hiện vị trí thay cho chữ S)",
   "options.themeSystem": "Theo hệ thống",
   "options.themeLight": "Sáng",
   "options.themeDark": "Tối",

@@ -140,6 +140,11 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access, renderer
 - CI: `specpin validate` giờ fail khi một đường dẫn `verifiedBy` thiếu trong repo (một guard mới neo theo repo-root + cờ `--repo-root`; từ chối tuyệt đối/`..`/symlink-escape; bỏ qua kèm ghi chú khi không có working tree đọc được). Bật mặc định; chặn demo qua `ci.yml`.
 - Mô hình tin cậy: provenance là **do tác giả khẳng định**; ranh giới toàn vẹn là việc review diff Git của `.specs/`, không phải message lúc chạy. Các thao tác ghi vẫn không đặc quyền; UI không bao giờ tuyên bố `status`/`reviewedBy` đã được xác minh, và `verifiedBy` luôn là "linked" (kiểm tra tồn tại), không bao giờ là "passed".
 
+**Đánh số badge (opt-in) đã giao (2026-07-03)** trên nhánh `main`:
+- Options có thêm ô chọn "Đánh số badge spec (hiện vị trí thay cho chữ S)" (mặc định TẮT; `config.ts` `getBadgeNumbering`/`setBadgeNumbering`, khóa storage.local `specpin:badgeNumbering`, xóa khóa khi tắt). Khi BẬT, badge tooltip trên trang hiển thị số theo thứ tự đọc bắt đầu từ 1 thay cho chữ "S" thương hiệu; số lớn nhất bằng tổng số badge tooltip trên trang (badge needsReview vẫn được đánh số và giữ màu vàng). Khi tắt thì giống hệt từng byte như trước.
+- Số thứ tự được tính trong orchestrator (`renderSession` tách thành match/collect -> lượt tính ordinal -> render) dùng thứ tự tài liệu DOM (`compareDocumentPosition`) chỉ trên các match chế độ tooltip, rồi luồn tới renderer qua `RenderMeta.ordinal` (sự hiện diện của nó là tín hiệu "đang bật đánh số"; tooltip in nó thay cho "S"). Thứ tự DOM bằng thứ tự đọc trực quan cho hầu như mọi trang thực tế; layout bị CSS đảo/định vị tuyệt đối là khiếm khuyết chấp nhận được. Con số là chỉ số vị trí, không phải id ổn định (định danh spec không đổi).
+- 1-9 giữ hình tròn 16px; từ 2 chữ số trở lên nở thành viên thuốc (`.badge.wide`, `width:auto`). `badge-position.ts` có thêm `width` theo từng badge để bộ giải vị trí/chồng lấn giữ đúng vùng chiếm chỗ (chiều cao vẫn 16px). Cập nhật trực tiếp qua broadcast mới `SET_BADGE_NUMBERING` (Options -> các tab), cùng đường với `SET_THEME`. Phạm vi: chỉ text của badge (không có "n / tổng" trong tip, side panel, hay reader-nav). i18n EN + VI + JA.
+
 ### Tính năng đã lên kế hoạch
 
 **Các nguồn Spec bổ sung:**
