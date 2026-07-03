@@ -8,5 +8,20 @@ export { captureFingerprint, TEST_ID_ATTRS } from "./capture.js";
 export { detectFramework } from "./detect-framework.js";
 export { isGeneratedClass, isGeneratedId } from "./generated-id.js";
 export { type MatchAnchor, type MatchResult, matchElement } from "./match.js";
+export {
+  CANDIDATE_CAP,
+  type CandidateSet,
+  generateCandidates,
+  hasContentSignal,
+  pickBest,
+  rankCandidates,
+  type ScoredCandidate,
+  type Signal,
+  type SignalScores,
+  scoreCandidate,
+  signalScores,
+  THRESHOLDS,
+  WEIGHTS,
+} from "./score.js";
 export { cssSelectorFor, safeQueryAll } from "./selector.js";
 export { xpathFor } from "./xpath.js";

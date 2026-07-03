@@ -110,12 +110,14 @@ export async function fetchMatchState(): Promise<MatchState> {
 
 /** Page-level match health derived from a `report`: totals per match tier plus
  *  the orphaned count. `needsReview` is a distinct axis (a matched-but-low-
- *  confidence spec); today the MVP matcher only marks unmatched specs for review,
- *  so it stays 0 until the weighted scorer lands. Pure, DOM-free, unit-tested. */
+ *  confidence spec) — a MID-tier scored match counts toward both `scored` and
+ *  `needsReview`. Pure, DOM-free, unit-tested. */
 export interface PageHealth {
   total: number;
   exact: number;
   fuzzy: number;
+  /** Hybrid-scorer matches (strategy "scored"), across HIGH and MID tiers. */
+  scored: number;
   needsReview: number;
   orphaned: number;
 }
@@ -123,6 +125,7 @@ export interface PageHealth {
 export function pageHealth(report: MatchReportEntry[]): PageHealth {
   let exact = 0;
   let fuzzy = 0;
+  let scored = 0;
   let needsReview = 0;
   let orphaned = 0;
   for (const e of report) {
@@ -133,8 +136,9 @@ export function pageHealth(report: MatchReportEntry[]): PageHealth {
     if (e.needsReview) needsReview += 1;
     if (e.strategy === "exact") exact += 1;
     else if (e.strategy === "css") fuzzy += 1;
+    else if (e.strategy === "scored") scored += 1;
   }
-  return { total: report.length, exact, fuzzy, needsReview, orphaned };
+  return { total: report.length, exact, fuzzy, scored, needsReview, orphaned };
 }
 
 /** The orphaned specs: report entries whose fingerprint matched no element on the

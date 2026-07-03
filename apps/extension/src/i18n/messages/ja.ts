@@ -139,14 +139,23 @@ const ja: Record<keyof Messages, string> = {
   "match.byAria": "aria-label",
   "match.byId": "id",
   "match.byCss": "CSS セレクタ",
+  "match.scored": "スコア一致",
+  "match.signal.text": "テキスト",
+  "match.signal.labels": "近傍ラベル",
+  "match.signal.attributes": "属性",
+  "match.signal.tag": "タグ",
+  "match.signal.structure": "構造",
+  "match.signal.position": "位置",
 
   // Page match-health summary + orphaned list.
-  "health.summary": "{total} 件 · 正確 {exact} · あいまい {fuzzy} · 孤立 {orphaned}",
+  "health.summary":
+    "{total} 件 · 正確 {exact} · スコア {scored} · あいまい {fuzzy} · 孤立 {orphaned}",
   "health.orphanedTitle": "孤立 ({count})",
   "health.orphanedHint":
     "これらの spec はこのページを対象にしていますが、要素が見つかりませんでした。",
   "health.orphanedNotFound": "このページに見つかりません",
   "health.fuzzy": "あいまい",
+  "health.scored": "スコア",
 
   // data-spec-id helper.
   "helper.weakAnchorTitle": "壊れやすいアンカー",
@@ -315,6 +324,20 @@ const ja: Record<keyof Messages, string> = {
   "options.pickFiles": "manifest.json と少なくとも1つの .spec.json ファイルを選択してください。",
   "options.invalidSelection": "無効な選択:\n- {errors}",
   "options.allCleared": "すべての手動specを消去しました。",
+
+  // Matching corpus card (local, opt-in) + confirm loop.
+  "options.corpusTitle": "マッチングコーパス（ローカル、オプトイン）",
+  "options.corpusLead":
+    "Specpin の要素マッチングを調整するため、マッチングデータをローカルに収集します。既定はオフ、この端末にのみ保存し、アップロードはしません。機微なテキスト（メール、長い数字列）はマスクされます。",
+  "options.corpusOptIn": "この端末でマッチングのドリフトデータを収集する",
+  "options.corpusCount": "{count} 件を保存済み。",
+  "options.corpusExport": "コーパスをエクスポート (JSON)",
+  "options.corpusClear": "コーパスを消去",
+  "options.corpusExported": "{count} 件をエクスポートしました。",
+  "options.corpusCleared": "コーパスを消去しました。",
+  "options.corpusEmpty": "コーパスは空です。エクスポートする項目がありません。",
+  "options.confirmClearCorpus": "ローカルのマッチングコーパスを消去しますか？元に戻せません。",
+  "match.correct": "正しい",
 
   // Support & Feedback card.
   "options.supportFeedback": "サポートとフィードバック",

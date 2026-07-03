@@ -1,9 +1,16 @@
-import { matchElement } from "@specpin/fingerprint-core";
+import {
+  captureFingerprint,
+  generateCandidates,
+  hasContentSignal,
+  matchElement,
+  rankCandidates,
+} from "@specpin/fingerprint-core";
 import type { DisplayMode, Manifest, Spec } from "@specpin/spec-schema";
 import { createRenderer, resolveMode } from "../renderers/registry.js";
 import type { SpecRenderer } from "../renderers/renderer.js";
 import type { LauncherPosition } from "../shared/config.js";
 import type { TaggedSpec } from "../shared/connection-types.js";
+import type { PassiveDriftInput } from "../shared/messaging.js";
 import type { Theme } from "../shared/theme.js";
 import {
   EMPTY_VISIBILITY,
@@ -11,6 +18,10 @@ import {
   pageScopeAllows,
   type VisibilityState,
 } from "../shared/visibility.js";
+
+/** Top-K candidate fingerprints captured per passive drift snapshot: enough to
+ *  carry "what the DOM looks like now" without storing the whole page. */
+const PASSIVE_K = 5;
 
 export interface RenderStats {
   rendered: number;
@@ -26,7 +37,38 @@ export interface RenderSession {
    *  (popup / side panel, via the HIGHLIGHT_ELEMENT message) can resolve the
    *  element to highlight without re-running the matcher. */
   matches: Map<string, Element>;
+  /** Passive drift snapshots collected this pass (orphaned + MID-scored specs),
+   *  for the local corpus. Empty unless `opts.captureDrift` was set (opt-in). The
+   *  caller sends these to the background single-writer. */
+  drift: PassiveDriftInput[];
   destroy(): void;
+}
+
+/** Snapshot the candidate fingerprints the scorer weighed for a non-healthy spec
+ *  (orphaned or MID-scored), so the local corpus captures "what the DOM looks
+ *  like now" — fingerprints only, no raw HTML. `matchedEl` is the scorer's choice
+ *  for a MID match (null for an orphan); its index becomes the TENTATIVE
+ *  `chosenByScorer` label. Returns null when the fingerprint has no identifying
+ *  signal (nothing to learn). */
+function capturePassiveDrift(
+  spec: Spec,
+  doc: Document,
+  matchedEl: Element | null,
+): PassiveDriftInput | null {
+  const fp = spec.fingerprint;
+  if (!hasContentSignal(fp)) return null;
+  const { candidates } = generateCandidates(fp, doc);
+  const ranked = rankCandidates(fp, candidates).slice(0, PASSIVE_K);
+  const chosen = matchedEl ? ranked.findIndex((r) => r.el === matchedEl) : -1;
+  return {
+    kind: "passive",
+    old: fp,
+    candidates: ranked.map((r) => captureFingerprint(r.el)),
+    chosenByScorer: chosen >= 0 ? chosen : undefined,
+    pageUrl: fp.pageUrl ?? null,
+    project: (spec as Partial<TaggedSpec>).project,
+    specId: spec.id,
+  };
 }
 
 /**
@@ -62,9 +104,19 @@ export function renderSession(
     onMove?: (pos: LauncherPosition) => void;
   },
   onDelete?: (specId: string) => void,
+  opts?: {
+    /** Collect passive drift snapshots for orphaned/MID-scored specs (corpus
+     *  opt-in). Off by default so the hot render path stays free of candidate
+     *  generation. */
+    captureDrift?: boolean;
+    /** Confirm-loop "Correct" callback, threaded to renderers only when the corpus
+     *  opt-in is ON (so the action appears only then). */
+    onConfirm?: (specId: string) => void;
+  },
 ): RenderSession {
   const byMode = new Map<DisplayMode, SpecRenderer>();
   const matches = new Map<string, Element>();
+  const drift: PassiveDriftInput[] = [];
   const stats: RenderStats = { rendered: 0, needsReview: 0, unmatched: 0 };
   // The viewer's chosen locale drives rendering; fall back to the project's
   // default then "en" so callers without a manifest still render.
@@ -106,7 +158,18 @@ export function renderSession(
     if (!match.el) {
       if (match.needsReview) stats.needsReview += 1;
       else stats.unmatched += 1;
+      // Orphaned: snapshot the current candidates for the corpus (opt-in).
+      if (opts?.captureDrift) {
+        const entry = capturePassiveDrift(spec, doc, null);
+        if (entry) drift.push(entry);
+      }
       continue;
+    }
+    // MID-tier scored match (matched, but low-confidence): snapshot too, tagging
+    // the scorer's chosen element as the tentative label.
+    if (opts?.captureDrift && match.strategy === "scored" && match.needsReview) {
+      const entry = capturePassiveDrift(spec, doc, match.el);
+      if (entry) drift.push(entry);
     }
     const mode = forcedMode ?? resolveMode(spec, manifest);
     let renderer = byMode.get(mode);
@@ -119,6 +182,7 @@ export function renderSession(
       needsReview: match.needsReview,
       strategy: match.strategy,
       anchor: match.anchor,
+      signals: match.signals,
       locale: activeLocale,
       defaultLocale,
       availableLocales,
@@ -128,6 +192,7 @@ export function renderSession(
       onHighlight,
       onEdit,
       onDelete,
+      onConfirm: opts?.onConfirm,
       // Editable only when this origin can write the spec back to its source
       // (sidecar serving the page, or a local batch serving it under the
       // applyToAllSites gate). The background sets `writable`; gating on it avoids
@@ -149,6 +214,7 @@ export function renderSession(
     stats,
     renderers,
     matches,
+    drift,
     destroy: () => {
       for (const r of renderers) r.destroy();
     },

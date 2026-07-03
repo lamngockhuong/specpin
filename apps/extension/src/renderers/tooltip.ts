@@ -22,9 +22,12 @@ interface Pin {
   tags: string[];
   project: string;
   editable: boolean;
-  /** Precomputed confidence-badge HTML (fuzzy tier only; "" when silent), shown
-   *  in the tip beside the title. Built once at render from the match meta. */
+  /** Precomputed confidence-badge HTML (fuzzy/scored tiers; "" when silent),
+   *  shown in the tip beside the title. Built once at render from the match meta. */
   confHtml: string;
+  /** True for a hybrid-scorer match, so the pinned tip offers the "Correct"
+   *  confirm-loop action. */
+  scored: boolean;
   /** Host page origin, so same-origin links in the tip open in the current tab. */
   pageOrigin?: string;
   /** Forced UI theme, so the copy-link confirmation toast matches the host theme. */
@@ -133,6 +136,7 @@ export class TooltipRenderer implements SpecRenderer {
   private onOpenInPanel?: (specId: string) => void;
   private onEdit?: (specId: string) => void;
   private onDelete?: (specId: string) => void;
+  private onConfirm?: (specId: string) => void;
   private readonly doc: Document;
   private reposition = () => this.positionAll();
   private readonly hostId: string;
@@ -190,6 +194,7 @@ export class TooltipRenderer implements SpecRenderer {
     if (meta?.onOpenInPanel) this.onOpenInPanel = meta.onOpenInPanel;
     if (meta?.onEdit) this.onEdit = meta.onEdit;
     if (meta?.onDelete) this.onDelete = meta.onDelete;
+    if (meta?.onConfirm) this.onConfirm = meta.onConfirm;
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     const badge = this.doc.createElement("div");
     badge.className = "badge";
@@ -206,6 +211,7 @@ export class TooltipRenderer implements SpecRenderer {
       project,
       editable: meta?.editable ?? true,
       confHtml: confidenceBadge(meta),
+      scored: meta?.strategy === "scored",
       pageOrigin: meta?.pageOrigin,
       theme: meta?.theme,
     };
@@ -283,6 +289,10 @@ export class TooltipRenderer implements SpecRenderer {
       : "";
     const canEdit = pin.editable && !!this.onEdit;
     const canDelete = pin.editable && !!this.onDelete;
+    // Confirm loop: a scored match can be affirmed (Correct) or re-pinned (Fix,
+    // the existing Edit flow). "Correct" shows only when the corpus opt-in gave us
+    // an onConfirm callback, so it stays hidden for users who never opted in.
+    const canConfirm = pin.scored && !!this.onConfirm;
     tip.innerHTML =
       (pinned
         ? `<button type="button" class="pin-close" aria-label="${escapeHtml(t("common.close"))}">×</button>`
@@ -302,6 +312,9 @@ export class TooltipRenderer implements SpecRenderer {
       (pinned && canDelete
         ? `<button type="button" class="pin-delete">${escapeHtml(t("tooltip.deleteSpec"))}</button>`
         : "") +
+      (pinned && canConfirm
+        ? `<button type="button" class="pin-correct">${escapeHtml(t("match.correct"))}</button>`
+        : "") +
       (pinned
         ? `<button type="button" class="pin-copy">${escapeHtml(t("common.copyLink"))}</button>`
         : "") +
@@ -317,6 +330,10 @@ export class TooltipRenderer implements SpecRenderer {
       });
       tip.querySelector(".pin-delete")?.addEventListener("click", () => {
         this.onDelete?.(pin.specId);
+      });
+      tip.querySelector(".pin-correct")?.addEventListener("click", () => {
+        this.onConfirm?.(pin.specId);
+        this.unpin();
       });
       tip.querySelector(".pin-copy")?.addEventListener("click", () => {
         void this.copyLink(pin);

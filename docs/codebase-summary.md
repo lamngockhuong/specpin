@@ -50,7 +50,8 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 
 **Key files:**
 - `src/capture.ts` - `captureFingerprint(element)` (145 lines). Extracts anchors (test-id, aria, id, data-spec-id), cssSelector, xpath, domPath, text, attrs, labels, position, framework hint.
-- `src/match.ts` - `matchElement(fingerprint, root)` (90 lines). Tries exact anchors first (confidence 1.0), then unique cssSelector (0.7), else `needsReview`. Returns `MatchResult`.
+- `src/match.ts` - `matchElement(fingerprint, root)`. Exact anchors (1.0) -> unique cssSelector (0.7) -> hybrid scorer over ambiguous css hits or a bounded candidate pool (`strategy:"scored"`), else `needsReview`. Returns `MatchResult` (adds optional `signals` breakdown for a scored match).
+- `src/score.ts` - the hybrid weighted scorer: `WEIGHTS`/`THRESHOLDS` table, `signalScores`, `rankCandidates`, `pickBest` (margin + content-signal abstain), `generateCandidates` (capped pool). Conservative tiers HIGH>=0.85 / MID 0.6-0.85(needsReview) / else no-match.
 - `src/selector.ts` - `buildCssSelector(element)` (98 lines). Optimized selector generation, prefers classes over nth-child when unique.
 - `src/xpath.ts` - `buildXPath(element)` (38 lines). Fallback path when CSS ambiguous.
 - `src/detect-framework.ts` - `detectFramework()` (39 lines). Heuristics for React, Vue, Angular, Svelte.
@@ -188,7 +189,8 @@ src/
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
     config.ts                  - storage helpers (connections, locale, enabled, local batch list + legacy migration, personal visibility, theme, uiLocale, personal guides in storage.sync keyed by canonicalOrigin) + pure local mutators (createLocalBatch / upsertLocalSpec / removeLocalSpecById / renameLocalBatch / upsertLocalGuide / removeLocalGuide)
     surface-renderers.ts       - shared helpers for popup/side panel: sourceBadge() (sidecar vs manual pill), setListControlsHidden() + enabled-gated locale/filter rendering (hide list controls when Specpin is off), filter-group collapse state preserved across rebuilds
-    surface-data.ts            - shared spec filtering: specMatchesQuery() (title/file/tags/description predicate)
+    surface-data.ts            - shared spec filtering: specMatchesQuery() (title/file/tags/description predicate); pageHealth() (exact/scored/fuzzy/needsReview/orphaned buckets)
+    drift-corpus.ts            - local matching corpus (opt-in, default OFF): storage.local ring-buffer (cap 500), supervised + passive entries, free-text redaction at write, JSON export/clear. Fed via unprivileged RECORD_DRIFT / RECORD_DRIFT_PASSIVE (background gates on opt-in)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
     locales.ts                 - SUPPORTED=["en","vi"], UiLocale, resolveUiLocale (stored -> browser UI -> "en")
@@ -332,7 +334,7 @@ Two jobs (JS, Go):
 |------|-----|-------|
 | packages/spec-schema (hand-written) | ~650 | 6 TS + 3 scripts |
 | packages/spec-schema (generated) | ~61,500 | 3 gen files |
-| packages/fingerprint-core | ~550 | 9 TS |
+| packages/fingerprint-core | ~700 | 10 TS |
 | packages/api-client | ~350 | 4 TS |
 | apps/cli | ~970 | 17 Go |
 | apps/extension | ~2,100 | 35 TS |

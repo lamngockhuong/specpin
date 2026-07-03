@@ -2,6 +2,13 @@ import type { ElementFingerprint } from "@specpin/spec-schema";
 import { TEST_ID_ATTRS } from "./capture.js";
 import { cssEscapeAttrValue, cssEscapeIdent } from "./css-escape.js";
 import { isGeneratedId } from "./generated-id.js";
+import {
+  generateCandidates,
+  hasContentSignal,
+  pickBest,
+  type SignalScores,
+  THRESHOLDS,
+} from "./score.js";
 import { safeQueryAll } from "./selector.js";
 
 /** Which signal resolved a match: an exact anchor (testId/aria/id), the css
@@ -12,11 +19,14 @@ export type MatchAnchor = "testId" | "aria" | "id" | "css" | null;
 export interface MatchResult {
   el: Element | null;
   confidence: number;
-  strategy: "exact" | "css" | "none";
+  strategy: "exact" | "css" | "scored" | "none";
   needsReview: boolean;
   /** The signal that resolved this match (metadata only; does not affect the
    *  el/confidence/needsReview decision). Additive: existing callers ignore it. */
   anchor: MatchAnchor;
+  /** Per-signal similarity breakdown, present only on a scored match, for the
+   *  "why matched" surface. Additive: existing callers ignore it. */
+  signals?: SignalScores;
 }
 
 const NO_MATCH: MatchResult = {
@@ -81,7 +91,43 @@ export function matchElement(fp: ElementFingerprint, root: ParentNode = document
     if (hits.length === 1 && hit) {
       return { el: hit, confidence: 0.7, strategy: "css", needsReview: false, anchor: "css" };
     }
-    // Ambiguous (>1) is explicitly low-confidence: leave for human review.
+    // Ambiguous (>1): score the hit set and take the best only if it clears the
+    // ambiguity margin; a tie falls through to no-match rather than guessing.
+    // No MID floor here (unlike the true-orphan step below): a surviving selector
+    // is a strong prior — its hits ARE what the author targeted — so the best hit
+    // renders (flagged needsReview when < HIGH) even below MID. The δ margin is
+    // the guard against guessing.
+    if (hits.length > 1) {
+      const best = pickBest(fp, hits);
+      if (best) {
+        return {
+          el: best.el,
+          confidence: best.score,
+          strategy: "scored",
+          needsReview: best.score < THRESHOLDS.HIGH,
+          anchor: "css",
+          signals: best.signals,
+        };
+      }
+    }
+  }
+
+  // Step 3: true orphan (exact + css failed). Score a bounded candidate pool
+  // and match the best only if it clears MID; below MID biases to no-match. The
+  // content-signal guard skips the candidate scan for structure-only fingerprints.
+  if (hasContentSignal(fp)) {
+    const { candidates } = generateCandidates(fp, root);
+    const best = pickBest(fp, candidates);
+    if (best && best.score >= THRESHOLDS.MID) {
+      return {
+        el: best.el,
+        confidence: best.score,
+        strategy: "scored",
+        needsReview: best.score < THRESHOLDS.HIGH,
+        anchor: null,
+        signals: best.signals,
+      };
+    }
   }
 
   return { ...NO_MATCH };

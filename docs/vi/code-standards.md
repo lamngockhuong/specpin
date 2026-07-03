@@ -442,7 +442,7 @@ chore(deps): bump wxt to 0.20
 
 ## Unresolved Conventions (Deferred)
 
-- **Trọng số của hybrid fingerprint scorer**: dùng signal nào, hệ số nào? Hoãn sang 1.1. Interface `MatchResult` ổn định, implementation có thể slot in sau.
+- **Tuning hybrid fingerprint scorer**: WEIGHTS table trong `packages/fingerprint-core/src/score.ts` là điểm tuning duy nhất (signal weight, threshold). v1 scorer đã ship và hoạt động, nhưng weight cần tuning dogfood từ dữ liệu production refactor.
 - **Định dạng prompt cho AI-assisted capture**: không có LLM integration trong MVP, hoãn sang 1.1.
 - **Yêu cầu đóng gói cho Safari**: chờ Apple làm rõ về MV3 parity.
 

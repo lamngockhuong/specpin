@@ -52,7 +52,8 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 
 **Key files:**
 - `src/capture.ts` - `captureFingerprint(element)` (145 dòng). Trích xuất anchors (test-id, aria, id, data-spec-id), cssSelector, xpath, domPath, text, attrs, labels, position, framework hint.
-- `src/match.ts` - `matchElement(fingerprint, root)` (90 dòng). Thử exact anchors trước (confidence 1.0), rồi unique cssSelector (0.7), nếu không thì `needsReview`. Trả về `MatchResult`.
+- `src/match.ts` - `matchElement(fingerprint, root)`. Exact anchors (1.0) -> unique cssSelector (0.7) -> hybrid scorer trên các hit css mơ hồ hoặc một tập candidate có giới hạn (`strategy:"scored"`), nếu không thì `needsReview`. Trả về `MatchResult` (thêm breakdown `signals` tùy chọn cho một scored match).
+- `src/score.ts` - hybrid weighted scorer: bảng `WEIGHTS`/`THRESHOLDS`, `signalScores`, `rankCandidates`, `pickBest` (biên độ + bỏ qua khi không có signal nội dung), `generateCandidates` (tập có giới hạn). Tầng thận trọng HIGH>=0.85 / MID 0.6-0.85(needsReview) / còn lại no-match.
 - `src/selector.ts` - `buildCssSelector(element)` (98 dòng). Sinh selector tối ưu, ưu tiên class hơn nth-child khi unique.
 - `src/xpath.ts` - `buildXPath(element)` (38 dòng). Đường dẫn dự phòng khi CSS mơ hồ.
 - `src/detect-framework.ts` - `detectFramework()` (39 dòng). Heuristics cho React, Vue, Angular, Svelte.
@@ -189,7 +190,8 @@ src/
     visibility.ts              - unified facet model: isVisible(spec, url, state), matchPathGlob
     config.ts                  - storage helper (connections, locale, enabled, danh sách batch cục bộ + migration legacy, personal visibility, theme, uiLocale, personal guides trong storage.sync đánh key theo canonicalOrigin) + các mutator cục bộ thuần (createLocalBatch / upsertLocalSpec / removeLocalSpecById / renameLocalBatch / upsertLocalGuide / removeLocalGuide)
     surface-renderers.ts       - helper dùng chung cho popup/side panel: sourceBadge() (pill sidecar vs manual), setListControlsHidden() + render locale/filter có gate theo enabled (ẩn list controls khi Specpin off), giữ trạng thái đóng/mở của filter-group qua các lần rebuild
-    surface-data.ts            - lọc spec dùng chung: specMatchesQuery() (predicate title/file/tags/description)
+    surface-data.ts            - lọc spec dùng chung: specMatchesQuery() (predicate title/file/tags/description); pageHealth() (bucket exact/scored/fuzzy/needsReview/orphaned)
+    drift-corpus.ts            - corpus khớp cục bộ (opt-in, mặc định TẮT): ring-buffer storage.local (cap 500), entry supervised + passive, che free-text lúc ghi, export/clear JSON. Nạp qua RECORD_DRIFT / RECORD_DRIFT_PASSIVE không đặc quyền (background kiểm cổng opt-in)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
     locales.ts                 - SUPPORTED=["en","vi"], UiLocale, resolveUiLocale (stored -> browser UI -> "en")
@@ -333,7 +335,7 @@ Hai job (JS, Go):
 |------|-----|-------|
 | packages/spec-schema (viết tay) | ~650 | 6 TS + 3 scripts |
 | packages/spec-schema (generated) | ~61,500 | 3 gen files |
-| packages/fingerprint-core | ~550 | 9 TS |
+| packages/fingerprint-core | ~700 | 10 TS |
 | packages/api-client | ~350 | 4 TS |
 | apps/cli | ~970 | 17 Go |
 | apps/extension | ~2,100 | 35 TS |

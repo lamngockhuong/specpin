@@ -36,7 +36,7 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 - **Browser extension (WXT, MV3)**: Chrome + Firefox support. Background SW connects to sidecar, content script matches fingerprints and renders specs.
 - **Renderers**: tooltip (hover to peek), sidebar (persistent read/write panel), and a draggable modal.
 - **Manual capture mode**: click an element, fill form (title, description, rules), save to `.specs/`.
-- **Exact-match fingerprinting**: tries test-id anchors, aria, non-generated id, unique cssSelector, xpath. Flags `needsReview` when ambiguous. `data-spec-id` attribute guarantees exact match.
+- **Resilient fingerprinting**: tries test-id anchors, aria, non-generated id, unique cssSelector, xpath. Falls back to hybrid weighted scorer when exact/css match fails. Flags `needsReview` when ambiguous. `data-spec-id` attribute guarantees exact match.
 - **JSON Schema v1**: single source of truth for spec format. Validated client-side (ajv) and server-side (Go jsonschema). CI cross-validates both.
 - **Demo app**: React 19 + Vite example with seeded `.specs/` for instant tryout.
 
@@ -44,7 +44,6 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 
 - AI-assisted capture (`specpin generate`) - keeps LLM work out of the extension and CLI.
 - FileSystem Access API source adapter - sidecar + writable local projects cover authoring today.
-- Hybrid weighted fingerprint scoring - exact anchors + unique selector suffice today; the `MatchResult` interface stays stable for a future scorer.
 - Safari packaging - Chrome shipped, Firefox coming soon.
 - Overlay and inline-badge renderers - tooltip, sidebar, and modal ship today.
 
@@ -75,7 +74,6 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 
 **Planned / under consideration:**
 - FileSystem Access source for importing existing specs.
-- Hybrid weighted fingerprint scoring for robustness under refactors.
 - Overlay/modal/inline-badge renderers.
 - Safari packaging.
 - `specpin generate` (AI-assisted spec authoring).
@@ -112,14 +110,14 @@ One schema, two validators: `packages/spec-schema/schema/v1.json` is the SSOT. T
 | Risk | Impact | Mitigation | Status |
 |------|--------|------------|--------|
 | Go/TS schema drift (two validators) | Critical | CI `make check-schema` + cross-validate fixtures through both | Implemented |
-| Fingerprint brittleness on refactors | High | Exact anchors (test-id, aria, data-spec-id) preferred; hybrid scorer planned but interface stable | Planned |
+| Fingerprint brittleness on refactors | High | Exact anchors (test-id, aria, data-spec-id) preferred; hybrid scorer shipped (weights tuning ongoing) with local opt-in drift corpus | Shipped |
 | Extension content-script bundle bloat | Medium | Ajv validator (~100 KB) in content script; consider moving validation to the SW later | Accepted |
 | Port conflicts on multi-project devs | Low | Auto-pick free port unless --port override | Implemented |
 | Cross-origin spec leak to look-alike subdomains | High | Host-exact or label-boundary subdomain match only; regression test | Fixed |
 
 ## Unresolved Questions
 
-1. **Hybrid fingerprint scorer design**: what signals, what weights, what confidence threshold triggers `needsReview`? Planned; placeholder interface exists (`MatchResult` shape stable).
+1. **Hybrid fingerprint scorer tuning**: WEIGHTS table in `packages/fingerprint-core/src/score.ts` is the single tuning point (signal weights and confidence thresholds); v1 scorer shipped and functional, but weights require dogfood tuning with real before/after corpus from production refactors.
 2. **FileSystem Access API permissions UX**: how to prompt user for `.specs/` directory access without breaking capture flow? Planned.
 3. **Safari packaging timeline**: MV3 parity unclear as of 2026-06. Await Apple clarity.
 4. **AI-assisted capture (`specpin generate`)**: what model, what prompt shape, local vs cloud, key management? Planned; no decision sealed.

@@ -36,9 +36,25 @@ describe("pageHealth", () => {
       total: 4,
       exact: 1,
       fuzzy: 2,
+      scored: 0,
       needsReview: 0,
       orphaned: 1,
     });
+  });
+
+  it("buckets scored matches distinctly; MID scored also counts as needsReview", () => {
+    const h = pageHealth([
+      entry({ id: "hi", strategy: "scored", confidence: 0.9, anchor: null, strength: "weak" }),
+      entry({
+        id: "mid",
+        strategy: "scored",
+        confidence: 0.7,
+        anchor: null,
+        needsReview: true,
+        strength: "weak",
+      }),
+    ]);
+    expect(h).toEqual({ total: 2, exact: 0, fuzzy: 0, scored: 2, needsReview: 1, orphaned: 0 });
   });
 
   it("does not count an orphaned spec toward needsReview or a tier", () => {
@@ -53,11 +69,18 @@ describe("pageHealth", () => {
         strength: "weak",
       }),
     ]);
-    expect(h).toEqual({ total: 1, exact: 0, fuzzy: 0, needsReview: 0, orphaned: 1 });
+    expect(h).toEqual({ total: 1, exact: 0, fuzzy: 0, scored: 0, needsReview: 0, orphaned: 1 });
   });
 
   it("returns all-zero for an empty report", () => {
-    expect(pageHealth([])).toEqual({ total: 0, exact: 0, fuzzy: 0, needsReview: 0, orphaned: 0 });
+    expect(pageHealth([])).toEqual({
+      total: 0,
+      exact: 0,
+      fuzzy: 0,
+      scored: 0,
+      needsReview: 0,
+      orphaned: 0,
+    });
   });
 });
 

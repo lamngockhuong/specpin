@@ -12,6 +12,14 @@ import {
   type Theme,
 } from "../../shared/config.js";
 import { confirmDialog } from "../../shared/dialog.js";
+import { downloadBytes } from "../../shared/download.js";
+import {
+  clearCorpus,
+  exportCorpusJson,
+  getCorpusCount,
+  getCorpusEnabled,
+  setCorpusEnabled,
+} from "../../shared/drift-corpus.js";
 import { downloadExportBundles } from "../../shared/export-download.js";
 import { guideRowElement } from "../../shared/guide-section.js";
 import { ensureRemotePermission } from "../../shared/host-permission.js";
@@ -51,6 +59,9 @@ const localBatches = byId("localBatches");
 const surface = byId("surface") as HTMLSelectElement;
 const theme = byId("theme") as HTMLSelectElement;
 const uiLocale = byId("uiLocale") as HTMLSelectElement;
+const corpusEnabled = byId("corpusEnabled") as HTMLInputElement;
+const corpusCount = byId("corpusCount");
+const corpusResult = byId("corpusResult");
 
 function showResult(target: HTMLElement, ok: boolean, text: string): void {
   target.className = ok ? "ok" : "err";
@@ -760,12 +771,41 @@ byId("clearLocal").addEventListener("click", async () => {
   await refresh();
 });
 
+// Reflect the local matching-corpus state: opt-in checkbox + live entry count.
+async function refreshCorpus(): Promise<void> {
+  corpusEnabled.checked = await getCorpusEnabled();
+  corpusCount.textContent = t("options.corpusCount", { count: await getCorpusCount() });
+}
+
+corpusEnabled.addEventListener("change", async () => {
+  await setCorpusEnabled(corpusEnabled.checked);
+});
+
+byId("corpusExport").addEventListener("click", async () => {
+  const count = await getCorpusCount();
+  if (count === 0) {
+    showResult(corpusResult, false, t("options.corpusEmpty"));
+    return;
+  }
+  const json = await exportCorpusJson();
+  downloadBytes("specpin-drift-corpus.json", new TextEncoder().encode(json), "application/json");
+  showResult(corpusResult, true, t("options.corpusExported", { count }));
+});
+
+byId("corpusClear").addEventListener("click", async () => {
+  if (!(await confirmDialog({ message: t("options.confirmClearCorpus"), danger: true }))) return;
+  await clearCorpus();
+  await refreshCorpus();
+  showResult(corpusResult, true, t("options.corpusCleared"));
+});
+
 // Re-render everything that carries translated text: hydrate the static HTML, then
 // re-run the imperative connection/batch rows. Called at startup and after a UI
 // language change (Phase 5) so the page updates in place without a reload.
 async function renderAll(): Promise<void> {
   hydrateI18n(document);
   await refresh();
+  await refreshCorpus();
 }
 
 // Resolve the UI-chrome language, reflect the control, then render. initI18n runs

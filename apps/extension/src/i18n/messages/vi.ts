@@ -133,13 +133,22 @@ const vi: Record<keyof Messages, string> = {
   "match.byAria": "aria-label",
   "match.byId": "id",
   "match.byCss": "CSS selector",
+  "match.scored": "Khớp theo điểm",
+  "match.signal.text": "văn bản",
+  "match.signal.labels": "nhãn lân cận",
+  "match.signal.attributes": "thuộc tính",
+  "match.signal.tag": "thẻ",
+  "match.signal.structure": "cấu trúc",
+  "match.signal.position": "vị trí",
 
   // Page match-health summary + orphaned list.
-  "health.summary": "{total} spec · {exact} chính xác · {fuzzy} mờ · {orphaned} mồ côi",
+  "health.summary":
+    "{total} spec · {exact} chính xác · {scored} theo điểm · {fuzzy} mờ · {orphaned} mồ côi",
   "health.orphanedTitle": "Mồ côi ({count})",
   "health.orphanedHint": "Các spec này nhắm tới trang này nhưng không tìm thấy phần tử.",
   "health.orphanedNotFound": "Không tìm thấy trên trang này",
   "health.fuzzy": "mờ",
+  "health.scored": "theo điểm",
 
   // data-spec-id helper.
   "helper.weakAnchorTitle": "Neo yếu",
@@ -306,6 +315,20 @@ const vi: Record<keyof Messages, string> = {
   "options.pickFiles": "Chọn manifest.json và ít nhất một tệp .spec.json.",
   "options.invalidSelection": "Lựa chọn không hợp lệ:\n- {errors}",
   "options.allCleared": "Đã xóa tất cả spec thủ công.",
+
+  // Matching corpus card (local, opt-in) + confirm loop.
+  "options.corpusTitle": "Kho khớp (cục bộ, tự chọn)",
+  "options.corpusLead":
+    "Thu thập dữ liệu khớp cục bộ để giúp tinh chỉnh việc khớp phần tử của Specpin. Mặc định tắt, chỉ lưu trên thiết bị này, không bao giờ tải lên; văn bản nhạy cảm (email, chuỗi số dài) được che.",
+  "options.corpusOptIn": "Thu thập dữ liệu trôi dạt khớp trên thiết bị này",
+  "options.corpusCount": "Đã lưu {count} mục.",
+  "options.corpusExport": "Xuất kho (JSON)",
+  "options.corpusClear": "Xóa kho",
+  "options.corpusExported": "Đã xuất {count} mục.",
+  "options.corpusCleared": "Đã xóa kho.",
+  "options.corpusEmpty": "Kho trống — không có gì để xuất.",
+  "options.confirmClearCorpus": "Xóa kho khớp cục bộ? Không thể hoàn tác.",
+  "match.correct": "Đúng",
 
   // Support & Feedback card.
   "options.supportFeedback": "Hỗ trợ & Phản hồi",
