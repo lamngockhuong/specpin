@@ -1,0 +1,207 @@
+---
+/*
+ * Site header override.
+ *
+ * Mirrors Starlight's default Header (markup + styles copied verbatim from
+ * @astrojs/starlight 0.41.2 so desktop layout is unchanged) and adds one thing:
+ * a compact "preferences" popover for mobile splash pages.
+ *
+ * The <Default/> extension pattern used by Footer.astro is not usable here:
+ * the popover must sit inside the header's flex row (next to search), and
+ * Starlight exposes no in-header slot, so anchoring it any other way collides
+ * with the search box on mobile. Hence the verbatim copy; re-verify against
+ * upstream Header.astro on a Starlight upgrade.
+ *
+ * Why the popover: Starlight hides the header's theme/language switchers below
+ * 50rem and re-exposes them inside the sidebar hamburger menu. Splash pages
+ * (template: splash) have no sidebar, so that fallback never renders and phones
+ * lose all access to theme + language switching. Rather than crowd the narrow
+ * header with two inline dropdowns, collapse them into a single icon button.
+ * Shown only on mobile splash pages (:root:not([data-has-sidebar]) below
+ * 50rem); desktop and docs pages keep Starlight's default behavior untouched.
+ */
+import config from "virtual:starlight/user-config";
+
+// Concrete component paths (not virtual:starlight/components/*) so `tsc` in the
+// typecheck gate can resolve them; matches Footer.astro / changelog.astro.
+import LanguageSelect from "@astrojs/starlight/components/LanguageSelect.astro";
+import Search from "@astrojs/starlight/components/Search.astro";
+import SiteTitle from "@astrojs/starlight/components/SiteTitle.astro";
+import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
+import ThemeSelect from "@astrojs/starlight/components/ThemeSelect.astro";
+
+/**
+ * Render the `Search` component if Pagefind is enabled or the default search component has been overridden.
+ */
+const shouldRenderSearch =
+  config.pagefind ||
+  config.components.Search !== "@astrojs/starlight/components/Search.astro";
+---
+
+<div class="header">
+	<div class="title-wrapper sl-flex">
+		<SiteTitle />
+	</div>
+	<div class="sl-flex print:hidden">
+		{shouldRenderSearch && <Search />}
+	</div>
+	<div class="sl-hidden md:sl-flex print:hidden right-group">
+		<div class="sl-flex social-icons">
+			<SocialIcons />
+		</div>
+		<ThemeSelect />
+		<LanguageSelect />
+	</div>
+	{/* Compact fallback for mobile splash pages (see file header). */}
+	<details class="prefs-popover print:hidden">
+		<summary class="prefs-summary" aria-label="Preferences">
+			<svg
+				aria-hidden="true"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<line x1="4" y1="8" x2="20" y2="8"></line>
+				<line x1="4" y1="16" x2="20" y2="16"></line>
+				<circle cx="9" cy="8" r="2.5"></circle>
+				<circle cx="15" cy="16" r="2.5"></circle>
+			</svg>
+		</summary>
+		<div class="prefs-panel">
+			<ThemeSelect />
+			<LanguageSelect />
+		</div>
+	</details>
+</div>
+
+<script>
+	// Close the preferences popover on outside click or Escape (native <details>
+	// only toggles via its own summary).
+	const popover = document.querySelector<HTMLDetailsElement>("details.prefs-popover");
+	if (popover) {
+		document.addEventListener("click", (event) => {
+			if (!popover.contains(event.target as Node)) popover.removeAttribute("open");
+		});
+		popover.addEventListener("keydown", (event) => {
+			if (event.key === "Escape") popover.removeAttribute("open");
+		});
+	}
+</script>
+
+<style>
+	@layer starlight.core {
+		.header {
+			display: flex;
+			gap: var(--sl-nav-gap);
+			justify-content: space-between;
+			align-items: center;
+			height: 100%;
+		}
+
+		.title-wrapper {
+			/* Prevent long titles overflowing and covering the search and menu buttons on narrow viewports. */
+			overflow: clip;
+			/* Avoid clipping focus ring around link inside title wrapper. */
+			padding: 0.25rem;
+			margin: -0.25rem;
+			min-width: 0;
+		}
+
+		.right-group,
+		.social-icons {
+			gap: 1rem;
+			align-items: center;
+		}
+		.social-icons::after {
+			content: '';
+			height: 2rem;
+			border-inline-end: 1px solid var(--sl-color-gray-5);
+		}
+
+		@media (min-width: 50rem) {
+			:global(:root[data-has-sidebar]) {
+				--__sidebar-pad: calc(2 * var(--sl-nav-pad-x));
+			}
+			:global(:root:not([data-has-toc])) {
+				--__toc-width: 0rem;
+			}
+			.header {
+				--__sidebar-width: max(0rem, var(--sl-content-inline-start, 0rem) - var(--sl-nav-pad-x));
+				--__main-column-fr: calc(
+					(
+							100% + var(--__sidebar-pad, 0rem) - var(--__toc-width, var(--sl-sidebar-width)) -
+								(2 * var(--__toc-width, var(--sl-nav-pad-x))) - var(--sl-content-inline-start, 0rem) -
+								var(--sl-content-width)
+						) / 2
+				);
+				display: grid;
+				grid-template-columns:
+        /* 1 (site title): runs up until the main content column’s left edge or the width of the title, whichever is the largest  */
+					minmax(
+						calc(var(--__sidebar-width) + max(0rem, var(--__main-column-fr) - var(--sl-nav-gap))),
+						auto
+					)
+					/* 2 (search box): all free space that is available. */
+					1fr
+					/* 3 (right items): use the space that these need. */
+					auto;
+				align-content: center;
+			}
+		}
+	}
+
+	/* ---- Preferences popover (mobile splash only) ---- */
+
+	.prefs-popover {
+		display: none;
+		position: relative;
+	}
+	.prefs-summary {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 999px;
+		color: var(--sl-color-gray-1);
+		cursor: pointer;
+		list-style: none;
+	}
+	/* Hide the native <summary> disclosure marker. */
+	.prefs-summary::-webkit-details-marker {
+		display: none;
+	}
+	.prefs-summary:hover {
+		color: var(--sl-color-white);
+		background: var(--sl-color-gray-6);
+	}
+	.prefs-summary svg {
+		width: 1.4rem;
+		height: 1.4rem;
+	}
+	.prefs-panel {
+		position: absolute;
+		top: calc(100% + 0.5rem);
+		inset-inline-end: 0;
+		z-index: 40;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		min-width: 12rem;
+		padding: 0.875rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 12px;
+		background: var(--sl-color-gray-6);
+		box-shadow: var(--sl-shadow-md);
+	}
+
+	/* Reveal only on mobile splash pages (no sidebar => no hamburger fallback). */
+	@media (max-width: 50rem) {
+		:global(:root:not([data-has-sidebar])) .prefs-popover {
+			display: block;
+		}
+	}
+</style>

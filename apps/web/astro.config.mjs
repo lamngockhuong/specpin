@@ -15,9 +15,15 @@ export default defineConfig({
     starlight({
       title: "Specpin",
       customCss: ["./src/styles/custom.css"],
-      // Override the page footer to append a branded, localized site footer
-      // below Starlight's built-in prev/next + edit-link block.
-      components: { Footer: "./src/components/Footer.astro" },
+      // Footer: append a branded, localized site footer below Starlight's
+      // built-in prev/next + edit-link block.
+      // Header: mirrors Starlight's default header and adds a compact
+      // theme/language popover for mobile splash pages (no sidebar => no
+      // hamburger fallback for those controls). See the component's header.
+      components: {
+        Footer: "./src/components/Footer.astro",
+        Header: "./src/components/Header.astro",
+      },
       logo: { src: "./src/assets/specpin-icon.svg", alt: "Specpin" },
       favicon: "/favicon.svg",
       // Social-share + favicon fallback tags. Starlight emits og:title/
