@@ -79,7 +79,7 @@ When you change the schema: edit only `packages/spec-schema/schema/v1.json`, reg
 - `entrypoints/` - WXT entry points (background, content, popup, options).
 - `background/sidecar-controller.ts` - holds `SidecarClient`, spec cache, relays SSE to content scripts.
 - `content/` - `orchestrator.ts` drives match+render; `capture-*.ts` is the manual capture flow; `keyboard.ts` handles the shortcuts.
-- `renderers/` - pluggable display modes via `registry.ts` (tooltip, sidebar shipped; overlay/modal/inline-badge deferred).
+- `renderers/` - pluggable display modes via `registry.ts` (tooltip, sidebar, modal shipped; overlay + inline-badge dropped as redundant - enum values stay reserved and fall back to tooltip).
 - `sources/` - pluggable spec sources via `registry.ts` (sidecar shipped; FileSystem/Manual deferred).
 - `shared/shadow.ts` + `html.ts` - Shadow DOM isolation and CSP-safe HTML; rendering stays out of the host page's styles/CSP.
 - `shared/tokens.gen.css` - generated from `designs/design-tokens.json` by `designs/sync-css-tokens.mjs` (SSOT for the live UI palette; dual-theme via `prefers-color-scheme`). Pages import it directly; `shared/tokens.ts` re-exports a `:host`-scoped variant (`?inline`) for the Shadow DOM renderers. Do not hand-edit the `.gen.css`. See `docs/design-system.md`.
@@ -103,17 +103,4 @@ Binds `127.0.0.1` only (auto-picked port unless `--port`); every request needs `
 
 Released and live on the Chrome Web Store (extension ID `kkfmoieoahdjneagognaoedggkiiolkn`, <https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn>). Firefox Add-ons publication is pending (build-from-source only for now). Active development continues.
 
-Shipped:
-
-- **Core loop**: the Go sidecar serves `.specs/`; the WXT extension matches fingerprints and renders specs (tooltip + sidebar + modal) with manual click-to-capture.
-- **Multi-project**: connects to many projects at once, routed to each page by origin, with per-project enable/disable.
-- **Writable local projects**: edit, capture, create, and per-batch group-zip export specs without a running sidecar (each batch addressable as `manual:<batchId>`).
-- **Single-spec deletion**: remove a writable spec (sidecar or local) from the tooltip or side panel behind a destructive confirm.
-- **Spec content**: multi-language (locale-keyed strings, in-browser toggle, tabbed per-locale editor) plus a safe Markdown subset (bold, italic, links, lists) authored via a toolbar and rendered on every surface.
-- **Guide mode**: spec-driven onboarding tours in two scopes, team (committed to `.specs/` or a local project) and personal (per-origin in `storage.sync`), with a spotlight overlay and anchored popover.
-- **Surfaces and UX**: side panel (Chrome `side_panel` / Firefox `sidebar_action`), client-side spec search, source badges (sidecar vs local), user-selectable theme (System / Light / Dark), UI-chrome i18n (EN + VI + JA), popup draft persistence, and reader-navigation (deep-link specs, keyboard-cycle specs, change digest).
-- **Tooling**: offline `specpin validate` + `specpin report` (freshness/stats/required gate); CI spec-lint; `@specpin/cli` published to npm.
-
-Planned / under consideration: FileSystem Access source, hybrid fingerprint scoring, overlay + inline-badge renderers, Safari packaging, and `specpin generate` (AI-assisted capture).
-
-See `docs/project-roadmap.md` for detail.
+For the shipped-capability list, planned work, and the decision log (including dropped ideas such as the overlay + inline-badge renderers), see `docs/project-roadmap.md` — the single source of truth for project status.

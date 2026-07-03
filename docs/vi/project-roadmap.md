@@ -109,7 +109,7 @@ Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa ca
 - api-client: `SidecarClient.getViews()` / `putViews()`, type `ViewsConfig` được export.
 - Message privileged mới: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (thêm vào `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` là non-privileged (read-only, từ content script).
 
-Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
+Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access và extension VSCode.
 
 **Đã ship theme có thể chọn bởi người dùng (2026-06-28)** trên nhánh `feat/extension-theme-and-i18n`:
 - Tùy chọn theme (System / Light / Dark) qua trang Options. Trước đây dark chỉ tồn tại đằng sau `@media (prefers-color-scheme: dark)` (tự động, không có toggle). Giờ người dùng có thể force một theme. Generator phát ra bốn block selector trong `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), và `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, chỉ áp dụng khi không có override). `tokens.ts` `scopeTokensToShadow()` đổi tất cả bốn dạng sang `:host(...)` cho Shadow DOM renderer. `src/shared/theme.ts` export `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` có thêm `getTheme`/`setTheme` (key storage.local `specpin:theme`, mặc định `system`). Lan truyền trực tiếp: message `SET_THEME` + helper `broadcastToTabs()`; Options broadcast sang tất cả tab, các page phản ứng qua `storage.onChanged`. `theme` được thread vào `renderSession` và mỗi renderer áp dụng nó lên shadow host của nó. Forced theme có thể nhấp nháy System default trong một frame khi load (đọc storage bất đồng bộ, được chấp nhận).
@@ -159,7 +159,7 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access, renderer
 
 **Các Renderer bổ sung:**
 - Modal (đã giao) (centered dialog, dùng cho review tập trung)
-- Overlay (modal toàn màn hình có backdrop) và inline badge (đánh dấu trực quan cạnh element) (dự kiến)
+- Overlay và inline-badge - **đã bỏ vì trùng lặp** (xem Nhật ký Quyết định 2026-07-03): overlay trùng với modal đã ship và spotlight overlay của Guide mode; inline-badge trùng với badge element của tooltip. Enum `DisplayMode` giữ hai giá trị này ở dạng reserved (forward-compat, fall back về tooltip); không dự kiến làm renderer.
 - Renderer registry đã pluggable (interface `SpecRenderer`): tooltip + sidebar + modal đã hiện thực
 
 **Hỗ trợ Safari:**
@@ -172,7 +172,7 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access, renderer
 
 **Tối ưu hiệu năng:**
 - Chuyển việc validate spec trước khi POST từ content script sang background SW (bỏ ~100 KB ajv khỏi content bundle, dời chi phí parse sang thread SW)
-- Lazy-load renderer (code-split tooltip/sidebar/overlay, nạp khi dùng lần đầu)
+- Lazy-load renderer (code-split tooltip/sidebar/modal, nạp khi dùng lần đầu)
 
 **Đánh bóng UX:**
 - Đóng gói web font (Inter, JetBrains Mono) dưới dạng asset `@font-face`; design system của UI được ship hiện tham chiếu chúng qua các fallback stack (`system-ui` / `ui-monospace`) nên không đảm bảo có typography theo branding khi máy thiếu font
@@ -284,6 +284,7 @@ Dự kiến sau khi release public:
 
 | Ngày | Quyết định | Lý do |
 |------|----------|-------|
+| 2026-07-03 | Bỏ renderer overlay + inline-badge (giữ giá trị enum ở dạng reserved cho forward-compat) | Overlay trùng với modal đã ship + spotlight của Guide mode; inline-badge trùng với badge element của tooltip — không có giá trị riêng so với thứ đang ship |
 | 2026-06-25 | Thu hẹp phạm vi bản phát hành đầu (hoãn nguồn FS/Manual, modal/overlay/badge, hybrid scorer, Safari, AI) | Giao end-to-end demo được nhanh hơn, kiểm chứng giá trị cốt lõi trước khi đánh bóng |
 | 2026-06-25 | Ngôn ngữ CLI: Go (không phải Node) | Một binary tĩnh duy nhất, không phụ thuộc runtime, phù hợp cho localhost server hơn Bun/Deno |
 | 2026-06-25 | Fingerprint: exact anchors + cssSelector trước, weighted scorer hoãn lại | Bản phát hành đầu đủ cho demo, hybrid scorer cần corpus thực tế để tinh chỉnh |

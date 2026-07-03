@@ -14,7 +14,7 @@ Các giải pháp hiện có thì hoặc sinh code từ spec (coupling chặt, d
 
 Specpin pin các business specification (rule, mô tả, acceptance criteria) trực tiếp lên các element của một web UI đang chạy. Nó **KHÔNG phải là một spec-driven code generator** (không liên quan tới GitHub Spec Kit / OpenSpec). Nó không sinh ra application code từ spec. Nó là một lớp tri thức gắn tài liệu sống, được version hóa bằng Git, vào những interface bạn đã có sẵn. Interface vốn đã biết mọi thứ nằm ở đâu; Specpin trao cho nó một trí nhớ.
 
-Spec tồn tại dưới dạng JSON bên trong thư mục `.specs/` của repo consumer, được liên kết tới các element thông qua những fingerprint bền bỉ, và render ngay trong trình duyệt qua các display mode dạng pluggable (tooltip, sidebar, overlay, modal). Mọi thứ đều local-first và Git-native: được version hóa, review qua PR, và diff được.
+Spec tồn tại dưới dạng JSON bên trong thư mục `.specs/` của repo consumer, được liên kết tới các element thông qua những fingerprint bền bỉ, và render ngay trong trình duyệt qua các display mode dạng pluggable (tooltip, sidebar, modal). Mọi thứ đều local-first và Git-native: được version hóa, review qua PR, và diff được.
 
 ## Người dùng mục tiêu
 
@@ -28,7 +28,7 @@ Spec tồn tại dưới dạng JSON bên trong thư mục `.specs/` của repo 
 
 1. **Lớp spec zero-drift**: spec sống trong cùng repo với code, version cùng nhau, review cùng nhau qua PR.
 2. **Authoring lấy interface làm gốc**: capture spec bằng cách click vào element mục tiêu trên UI đang chạy, không phải đoán CSS selector hay viết tài liệu trừu tượng.
-3. **Render dạng pluggable**: tooltip (xem nhanh), sidebar (đọc tập trung), overlay/modal (chỉnh sửa toàn màn hình), inline badge (đánh dấu trực quan). Hiện ship tooltip, sidebar, và modal kéo thả được.
+3. **Render dạng pluggable**: tooltip (xem nhanh), sidebar (đọc tập trung), modal (review tập trung). Hiện ship tooltip, sidebar, và modal kéo thả được.
 4. **Matching bền bỉ**: fingerprint sống sót qua các đợt refactor. Các anchor exact (test-id, aria, data-spec-id) match trước; hybrid weighted scoring làm fallback khi layout thay đổi.
 5. **Local-first, Git-native**: không backend SaaS, không tường auth, không bị khóa vào nhà cung cấp. Sidecar chạy trên localhost, spec diff sạch trong Git.
 
@@ -47,7 +47,7 @@ Spec tồn tại dưới dạng JSON bên trong thư mục `.specs/` của repo 
 - Capture có AI hỗ trợ (`specpin generate`) - giữ mọi công việc LLM ra ngoài extension và CLI.
 - Source adapter dùng FileSystem Access API - hiện sidecar + dự án cục bộ ghi được đã đủ cho việc authoring.
 - Đóng gói Safari - Chrome đã có, Firefox sắp có.
-- Các renderer overlay và inline-badge - hiện đã ship tooltip, sidebar, và modal.
+- Các renderer overlay và inline-badge - **đã bỏ vì trùng lặp**: overlay trùng với modal + spotlight của Guide mode, inline-badge trùng với badge của tooltip. Giá trị enum vẫn giữ reserved; hiện đã ship tooltip, sidebar, và modal.
 
 ## Ranh giới phạm vi
 
@@ -76,7 +76,6 @@ Spec tồn tại dưới dạng JSON bên trong thư mục `.specs/` của repo 
 
 **Dự kiến / đang cân nhắc:**
 - Source FileSystem Access để import các spec sẵn có.
-- Các renderer overlay/modal/inline-badge.
 - Đóng gói Safari.
 - `specpin generate` (authoring spec có AI hỗ trợ).
 

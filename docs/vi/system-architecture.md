@@ -106,4 +106,4 @@ cùng các color/font token dùng chung nằm trong `apps/extension/designs/`. X
 
 ## Deferred (post-MVP)
 
-FileSystem Access source; overlay + inline-badge renderers; hybrid weighted fingerprint scoring; `specpin generate` (AI); đóng gói cho Safari. (Đã giao kể từ MVP: Manual import source, một luồng tạo nội dung cục bộ ghi được - tạo trong extension, capture, sửa, và export zip theo group - modal renderer, multi-language specs, và multi-project connections.)
+FileSystem Access source; hybrid weighted fingerprint scoring; `specpin generate` (AI); đóng gói cho Safari. (Đã giao kể từ MVP: Manual import source, một luồng tạo nội dung cục bộ ghi được - tạo trong extension, capture, sửa, và export zip theo group - modal renderer, multi-language specs, và multi-project connections. Đã bỏ vì trùng lặp: renderer overlay + inline-badge - overlay trùng với modal + spotlight của Guide, inline-badge trùng với badge của tooltip; giá trị enum vẫn giữ reserved.)

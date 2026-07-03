@@ -107,7 +107,7 @@ Goal: robustness, flexibility, polish. No timeline committed.
 - api-client: `SidecarClient.getViews()` / `putViews()`, exported `ViewsConfig` type.
 - New privileged messages: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (added to `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` is non-privileged (read-only, from content script).
 
-Planned, pending usage feedback: the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
+Planned, pending usage feedback: the FileSystem Access source and the VSCode authoring extension.
 
 **User-selectable theme shipped (2026-06-28)** on branch `feat/extension-theme-and-i18n`:
 - Theme preference (System / Light / Dark) via Options page. Previously dark existed only behind `@media (prefers-color-scheme: dark)` (auto, no toggle). Now the user can force a theme. Generator emits four selector blocks in `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), and `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, applies only when no override). `tokens.ts` `scopeTokensToShadow()` rewrites all four forms to `:host(...)` for Shadow DOM renderers. `src/shared/theme.ts` exports `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` gained `getTheme`/`setTheme` (storage.local key `specpin:theme`, default `system`). Live propagation: `SET_THEME` message + `broadcastToTabs()` helper; Options broadcasts to all tabs, pages react via `storage.onChanged`. `theme` is threaded into `renderSession` and each renderer applies it to its shadow host. Forced themes may flash the System default for one frame on load (async storage read, accepted).
@@ -157,7 +157,7 @@ Planned, pending usage feedback: the FileSystem Access source, the overlay + inl
 
 **Additional Renderers:**
 - Modal (centered dialog, for focused review) - **delivered**
-- Overlay (fullscreen modal with backdrop) and inline badge (marker next to element) - planned
+- Overlay and inline-badge - **dropped as redundant** (see Decision Log 2026-07-03): overlay duplicated the shipped modal and the Guide-mode spotlight overlay; inline-badge duplicated the tooltip's element badge. The `DisplayMode` enum keeps both values reserved (forward-compat, fall back to tooltip); no renderer is planned.
 - Renderer registry already pluggable (`SpecRenderer` interface): tooltip + sidebar + modal implemented
 
 **Safari Support:**
@@ -170,7 +170,7 @@ Planned, pending usage feedback: the FileSystem Access source, the overlay + inl
 
 **Performance Optimization:**
 - Move pre-POST spec validation from content script to background SW (drops ajv ~100 KB from content bundle, defers parse cost to SW thread)
-- Lazy-load renderers (code-split tooltip/sidebar/overlay, load on first use)
+- Lazy-load renderers (code-split tooltip/sidebar/modal, load on first use)
 
 **UX Polish:**
 - Bundle web fonts (Inter, JetBrains Mono) as `@font-face` assets; the shipped UI design system currently references them via fallback stacks (`system-ui` / `ui-monospace`) so the branded typography is not guaranteed off-system
@@ -282,6 +282,7 @@ Planned after public release:
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-07-03 | Dropped the overlay + inline-badge renderers (enum values stay reserved for forward-compat) | Overlay duplicated the shipped modal + the Guide-mode spotlight; inline-badge duplicated the tooltip element badge — no distinct user value over what ships today |
 | 2026-06-25 | Trimmed the initial release scope (defer FS/Manual sources, modal/overlay/badge, hybrid scorer, Safari, AI) | Deliver demoable end-to-end faster, validate core value prop before polish |
 | 2026-06-25 | CLI language: Go (not Node) | Single static binary, no runtime deps, better fit for localhost server than Bun/Deno |
 | 2026-06-25 | Fingerprint: exact anchors + cssSelector now, weighted scorer deferred | Initial release sufficient for demo, hybrid scorer needs real-world corpus for tuning |
