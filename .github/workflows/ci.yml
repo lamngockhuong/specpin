@@ -103,6 +103,10 @@ jobs:
       # action (.github/actions/spec-lint) instead builds from a pinned specpin
       # ref so a caller's PR cannot tamper with the validator.
       - run: ./bin/specpin validate --dir ../../examples/demo-react-app/.specs
+      # Governance gate: fail the build only when a spec id declared required in
+      # .specs/required.json is missing. Freshness/stats are warn-only and print
+      # here without gating; other --fail-on conditions stay opt-in.
+      - run: ./bin/specpin report --dir ../../examples/demo-react-app/.specs --fail-on missing-required
 
   # Single stable status that always reports: green when triggered jobs pass or
   # are skipped, red when any failed/was cancelled. Mark only this one as a

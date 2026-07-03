@@ -1,0 +1,8 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "version": "1.0",
+  "required": [
+    "login-submit-btn",
+    "dashboard-stat-revenue"
+  ]
+}

@@ -6,3 +6,4 @@ export const validateSpec: ValidateFunction;
 export const validateManifest: ValidateFunction;
 export const validateViews: ValidateFunction;
 export const validateGuides: ValidateFunction;
+export const validateRequired: ValidateFunction;

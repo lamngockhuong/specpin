@@ -25,6 +25,10 @@ const defaultViewsJSON = "{\n  \"version\": \"1.0\",\n  \"hidden\": []\n}\n"
 // an empty named-guides default, so clients need no 404 special-case.
 const defaultGuidesJSON = "{\n  \"version\": \"1.0\",\n  \"guides\": []\n}\n"
 
+// defaultRequiredJSON is returned by LoadRequired when .specs/required.json is
+// absent: no spec ids are required, so the report gate has nothing to enforce.
+const defaultRequiredJSON = "{\n  \"version\": \"1.0\",\n  \"required\": []\n}\n"
+
 // ErrNotFound is returned when a spec id cannot be located across spec files.
 var ErrNotFound = errors.New("spec not found")
 
@@ -216,6 +220,25 @@ func (s *Store) LoadGuides() ([]byte, error) {
 // schema first; Canonicalize preserves the client's key order.
 func (s *Store) SaveGuides(raw json.RawMessage) error {
 	return s.WriteCanonical("guides.json", raw)
+}
+
+// LoadRequired reads the raw .specs/required.json (the governance config listing
+// spec ids that must exist), or returns the empty default when the file does not
+// exist. The traversal + symlink guard applies via resolve, like every other
+// .specs/ read.
+func (s *Store) LoadRequired() ([]byte, error) {
+	full, err := s.resolve("required.json")
+	if err != nil {
+		return nil, err
+	}
+	raw, err := os.ReadFile(full)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []byte(defaultRequiredJSON), nil
+		}
+		return nil, err
+	}
+	return raw, nil
 }
 
 // LoadManifest reads and parses manifest.json.

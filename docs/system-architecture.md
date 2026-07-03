@@ -35,7 +35,7 @@ UI-chrome i18n: a custom runtime `t(key, params)` in `apps/extension/src/i18n/` 
 | `packages/spec-schema` | JSON Schema v1 (SSOT) + generated TS types + ajv validators |
 | `packages/fingerprint-core` | framework-agnostic `captureFingerprint` + `matchElement` (pure DOM) |
 | `packages/api-client` | typed `SidecarClient` over the sidecar HTTP contract + SSE helper |
-| `apps/cli` | Go sidecar: `init` + `serve` (CRUD, SSE, health), hardened localhost |
+| `apps/cli` | Go sidecar: `init` + `serve` (CRUD, SSE, health) + `validate` + `report` (offline), hardened localhost |
 | `apps/extension` | WXT MV3 extension (Chrome + Firefox) |
 | `examples/demo-react-app` | demo UI + seeded `.specs/` |
 

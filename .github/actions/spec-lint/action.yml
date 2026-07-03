@@ -19,6 +19,14 @@ inputs:
     description: "Fail (not just warn) when manifest.specFiles and on-disk *.spec.json files disagree."
     required: false
     default: "false"
+  report-fail-on:
+    description: >-
+      Optional governance gate. Comma-separated conditions passed to
+      `specpin report --fail-on` (stale, draft-committed, missing-required,
+      missing-verifiedby). Empty (default) skips the report gate entirely, so
+      existing callers are unaffected.
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -44,3 +52,10 @@ runs:
         STRICT=""
         if [ "${{ inputs.strict-manifest }}" = "true" ]; then STRICT="--strict-manifest"; fi
         "${{ github.workspace }}/.specpin-tool/apps/cli/bin/specpin" validate --dir "${{ inputs.dir }}" $STRICT
+    - name: Governance report gate
+      # Warn-only unless report-fail-on names conditions; skip entirely when empty
+      # so existing callers keep the same behavior.
+      if: ${{ inputs.report-fail-on != '' }}
+      shell: bash
+      run: |
+        "${{ github.workspace }}/.specpin-tool/apps/cli/bin/specpin" report --dir "${{ inputs.dir }}" --fail-on "${{ inputs.report-fail-on }}"

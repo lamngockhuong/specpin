@@ -25,11 +25,11 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 **Purpose**: JSON Schema v1 SSOT + generated TS types + ajv validators.
 
 **Key files:**
-- `schema/v1.json` - canonical schema (130+ lines), defines `Spec`, `SpecManifest`, `SpecFile`, `ViewsConfig`, `Fingerprint`, `MatchResult`.
+- `schema/v1.json` - canonical schema (130+ lines), defines `Spec`, `SpecManifest`, `SpecFile`, `ViewsConfig`, `GuidesConfig`, `RequiredConfig`, `Fingerprint`, `MatchResult`.
 - `src/schema.gen.ts` - generated ajv standalone validator (7,700+ lines, never edit).
 - `src/types.gen.ts` - generated TS types (3,100+ lines, never edit).
 - `src/validators.gen.cjs` - CJS ajv validator for Node consumers (49,900+ lines, never edit).
-- `src/validate.ts` - thin wrapper exposing `validateSpec()`, `validateManifest()`, `validateViews()` (30+ lines).
+- `src/validate.ts` - thin wrapper exposing `validateSpec()`, `validateManifest()`, `validateViews()`, `validateGuides()`, `validateRequired()` (40+ lines).
 - `src/resolve-localized.ts` - prototype-safe `resolveLocalized()` / `resolveLocalizedList()` for `LocalizedString` content (locale -> defaultLocale -> first present fallback).
 - `scripts/gen-types.ts` - codegen runner (json-schema-to-typescript + ajv standalone).
 - `scripts/copy-gen-assets.ts` - copies `.gen.cjs` + `.gen.d.cts` to dist post-build.
@@ -96,6 +96,7 @@ cmd/
   root.go       - cobra root command (33 lines)
   init.go       - `specpin init` scaffold manifest (62 lines)
   serve.go      - `specpin serve` entrypoint: --port/--host/--token, loopback default + non-loopback warning
+  report.go     - `specpin report` audits spec freshness/stats/required for CI gates (--fail-on conditions, --json output)
   generate.go   - stub: points users at the bundled AI-authoring skill (no LLM)
 skill/          - canonical @specpin/cli skill source (SKILL.md + references/)
                   that teaches a host coding agent to author specs; see docs/ai-authoring.md
@@ -103,7 +104,7 @@ npm/
   skill/        - synced copy bundled into the npm tarball (drift-gated by sync-skill.mjs --check)
 internal/
   schema/
-    schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views` (50+ lines)
+    schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views/Guides/Required` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
     server.go   - HTTP handlers: CRUD + SSE hub (with ~20s heartbeat) + GET/PUT /views + GET/PUT /guides; ETag on GET /specs + If-Match 409 on stale spec writes (370+ lines)

@@ -5,6 +5,7 @@ import type { ErrorObject, ValidateFunction } from "ajv";
 import {
   validateGuides as guidesValidator,
   validateManifest as manifestValidator,
+  validateRequired as requiredValidator,
   validateSpecFile as specFileValidator,
   validateSpec as specValidator,
   validateViews as viewsValidator,
@@ -43,6 +44,11 @@ export function validateViews(data: unknown): ValidationResult {
 /** Validate a .specs/guides.json named-guides config. */
 export function validateGuides(data: unknown): ValidationResult {
   return run(guidesValidator, data);
+}
+
+/** Validate a .specs/required.json governance config. */
+export function validateRequired(data: unknown): ValidationResult {
+  return run(requiredValidator, data);
 }
 
 /** Human-readable one-line summary of validation errors (e.g. for HTTP 400 bodies). */

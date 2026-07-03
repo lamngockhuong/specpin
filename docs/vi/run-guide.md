@@ -321,6 +321,16 @@ specpin validate --dir .specs
 
 Exit code: `0` hợp lệ toàn bộ, `1` có spec không hợp lệ (cần sửa spec), `2` không chạy được (thiếu thư mục hoặc manifest). Lệnh cũng cảnh báo khi `manifest.specFiles` và các file `*.spec.json` trên đĩa không khớp; thêm `--strict-manifest` để biến drift đó thành lỗi thay vì cảnh báo.
 
+## Báo cáo độ tươi (freshness) và governance của spec
+
+`specpin report` kiểm tra sức khỏe spec (độ cũ, spec draft, spec bắt buộc) cho các cổng CI:
+
+```bash
+specpin report --dir .specs
+```
+
+In trạng thái freshness (spec cũ hơn `settings.stalenessThresholdDays`), số lượng spec theo status/file, và kiểm tra tồn tại của spec bắt buộc (từ `.specs/required.json`, nếu có). Mặc định thoát `0` (chỉ cảnh báo). Chặn bằng `--fail-on <conds>` (danh sách phân tách bằng dấu phẩy gồm: `stale`, `draft-committed`, `missing-required`, `missing-verifiedby`) để thoát `1` khi có vi phạm. Exit `2` = không chạy được (thiếu thư mục/manifest). Dùng `--json` để CI parse.
+
 ## Lint spec trong CI
 
 Dùng reusable action để fail các PR đưa vào spec không hợp lệ. Không cần Node toolchain; validator được build từ một ref Specpin đã pin (không phải PR của repo gọi), nên một PR độc hại không thể thay đổi logic validate:

@@ -107,7 +107,7 @@ Goal: robustness, flexibility, polish. No timeline committed.
 - api-client: `SidecarClient.getViews()` / `putViews()`, exported `ViewsConfig` type.
 - New privileged messages: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (added to `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` is non-privileged (read-only, from content script).
 
-Planned, pending usage feedback: the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension. The hybrid weighted scorer + drift corpus shipped 2026-07-02 (see below).
+Planned, pending usage feedback: the FileSystem Access source, the overlay + inline-badge renderers, and the VSCode authoring extension.
 
 **User-selectable theme shipped (2026-06-28)** on branch `feat/extension-theme-and-i18n`:
 - Theme preference (System / Light / Dark) via Options page. Previously dark existed only behind `@media (prefers-color-scheme: dark)` (auto, no toggle). Now the user can force a theme. Generator emits four selector blocks in `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), and `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, applies only when no override). `tokens.ts` `scopeTokensToShadow()` rewrites all four forms to `:host(...)` for Shadow DOM renderers. `src/shared/theme.ts` exports `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` gained `getTheme`/`setTheme` (storage.local key `specpin:theme`, default `system`). Live propagation: `SET_THEME` message + `broadcastToTabs()` helper; Options broadcasts to all tabs, pages react via `storage.onChanged`. `theme` is threaded into `renderSession` and each renderer applies it to its shadow host. Forced themes may flash the System default for one frame on load (async storage read, accepted).
@@ -143,6 +143,11 @@ Planned, pending usage feedback: the FileSystem Access source, the overlay + inl
 - Ordinals are computed in the orchestrator (`renderSession` split into match/collect -> ordinal pass -> render) using DOM document order (`compareDocumentPosition`) over tooltip-mode matches only, then threaded to the renderer via `RenderMeta.ordinal` (its presence is the "numbering on" signal; the tooltip prints it instead of "S"). DOM order equals visual reading order for effectively all pages; CSS-reordered/absolute layouts are the accepted imperfection. The number is a positional index, not a stable id (spec identity is unchanged).
 - 1-9 keep the 16px circle; 2+ digits widen to a pill (`.badge.wide`, `width:auto`). `badge-position.ts` gained a per-badge `width` so the placement/overlap solver reserves the true footprint (height stays 16px). Live toggle via a new `SET_BADGE_NUMBERING` broadcast (Options -> tabs), same path as `SET_THEME`. Scope: badge text only (no "n / total" in the tip, side panel, or reader-nav). i18n EN + VI + JA.
 
+**Governance CI gate (report + required specs) shipped (2026-07-03)** on same branch `main`:
+- `specpin report --dir .specs` audits spec health (print only by default, warn-only exit 0): FRESHNESS (stale = `meta.reviewedAt` older than `settings.stalenessThresholdDays`, default 90, never-reviewed never stales), SPEC STATS (counts by status/file; counts specs not elements, no coverage %), REQUIRED-CHECK (every spec id in `.specs/required.json` must exist, skipped if file absent). Exit 2 = could not run. `--fail-on <conds>` (stale, draft-committed, missing-required, missing-verifiedby) gates CI: exit 1 on violations, exit 2 on unknown condition. `--json` emits structured output for parsing.
+- `RequiredConfig` entity: `{ version: string, required: string[] }`, SSOT `packages/spec-schema/schema/v1.json`, exported as `validateRequired` + type `RequiredConfig` from `@specpin/spec-schema`. Go `ValidateRequired`. Manifest corpus loop cross-validates settings; required-fixture loop cross-validates on both sides.
+- CI: `.github/workflows/ci.yml` Go job runs `specpin report --dir ../../examples/demo-react-app/.specs --fail-on missing-required` after `validate`. Demo `.specs/` gained `required.json` (requires `login-submit-btn`, `dashboard-stat-revenue`). Reusable composite action `.github/actions/spec-lint/action.yml` gained optional `report-fail-on` input (empty default = gate skipped, backward compatible).
+
 ### Planned Features
 
 **Additional Spec Sources:**
@@ -175,8 +180,6 @@ Planned, pending usage feedback: the FileSystem Access source, the overlay + inl
 
 **Developer Experience:**
 - VSCode extension for `.spec.json` authoring (schema autocomplete, validation, preview)
-- GitHub Action for spec linting in PRs (validate all `.specs/*.json` against schema)
-- CLI command `specpin validate` (offline schema check without serve)
 
 ## Future Exploration (no commitment)
 

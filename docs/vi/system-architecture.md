@@ -37,7 +37,7 @@ i18n cho UI-chrome: một runtime `t(key, params)` tùy chỉnh trong `apps/exte
 | `packages/spec-schema` | JSON Schema v1 (SSOT) + generated TS types + ajv validators |
 | `packages/fingerprint-core` | `captureFingerprint` + `matchElement` không phụ thuộc framework (pure DOM) |
 | `packages/api-client` | `SidecarClient` có kiểu (typed) trên HTTP contract của sidecar + SSE helper |
-| `apps/cli` | Go sidecar: `init` + `serve` (CRUD, SSE, health), localhost được hardened |
+| `apps/cli` | Go sidecar: `init` + `serve` (CRUD, SSE, health) + `validate` + `report` (offline), localhost được hardened |
 | `apps/extension` | WXT MV3 extension (Chrome + Firefox) |
 | `examples/demo-react-app` | demo UI + `.specs/` đã seed sẵn |
 

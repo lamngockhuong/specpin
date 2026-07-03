@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
   validateGuides,
   validateManifest,
+  validateRequired,
   validateSpec,
   validateSpecFile,
   validateViews,
@@ -18,6 +19,7 @@ const specsDir = resolve(here, "../../../tests/fixtures/specs");
 const viewsDir = resolve(here, "../../../tests/fixtures/views");
 const guidesDir = resolve(here, "../../../tests/fixtures/guides");
 const manifestDir = resolve(here, "../../../tests/fixtures/manifest");
+const requiredDir = resolve(here, "../../../tests/fixtures/required");
 
 async function readFixtures(
   baseDir: string,
@@ -81,10 +83,23 @@ async function main(): Promise<void> {
     if (valid) failures.push(`manifest/invalid/${name} should fail but passed`);
   }
 
+  // required.json corpus, cross-checked against validateRequired on both sides.
+  for (const { name, data } of await readFixtures(requiredDir, "valid")) {
+    const { valid, errors } = validateRequired(data);
+    if (!valid)
+      failures.push(`required/valid/${name} should pass but failed: ${JSON.stringify(errors)}`);
+  }
+  for (const { name, data } of await readFixtures(requiredDir, "invalid")) {
+    const { valid } = validateRequired(data);
+    if (valid) failures.push(`required/invalid/${name} should fail but passed`);
+  }
+
   // Guard against demo rot: the seeded demo specs must stay schema-valid.
   const demoSpecsDir = resolve(here, "../../../examples/demo-react-app/.specs");
   const manifestRaw = JSON.parse(await readFile(join(demoSpecsDir, "manifest.json"), "utf8"));
   if (!validateManifest(manifestRaw).valid) failures.push("demo manifest.json is invalid");
+  const requiredRaw = JSON.parse(await readFile(join(demoSpecsDir, "required.json"), "utf8"));
+  if (!validateRequired(requiredRaw).valid) failures.push("demo required.json is invalid");
   for (const file of (await readdir(demoSpecsDir)).filter((f) => f.endsWith(".spec.json"))) {
     const data = JSON.parse(await readFile(join(demoSpecsDir, file), "utf8"));
     const { valid, errors } = validateSpecFile(data);
