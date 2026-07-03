@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/lamngockhuong/specpin/compare/spec-schema-v0.0.3...spec-schema-v0.0.4) (2026-07-03)
+
+
+### Features
+
+* **provenance:** add spec provenance/trust layer ([#111](https://github.com/lamngockhuong/specpin/issues/111)) ([0ab6b38](https://github.com/lamngockhuong/specpin/commit/0ab6b3841843a1d0a63c682f5676de34305e7dce))
+
 ## [0.0.3](https://github.com/lamngockhuong/specpin/compare/spec-schema-v0.0.2...spec-schema-v0.0.3) (2026-07-01)
 
 

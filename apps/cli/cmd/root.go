@@ -10,7 +10,7 @@ import (
 // Version is the CLI version, overridable at build time via -ldflags. The
 // release workflow stamps it via -X specpin/cmd.Version; release-please bumps
 // the literal below via the trailing release marker, which must stay last.
-var Version = "0.0.5" // x-release-please-version
+var Version = "0.0.6" // x-release-please-version
 
 var rootCmd = &cobra.Command{
 	Use:   "specpin",

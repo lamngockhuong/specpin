@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.10](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.9...extension-v0.0.10) (2026-07-03)
+
+
+### Features
+
+* **provenance:** add spec provenance/trust layer ([#111](https://github.com/lamngockhuong/specpin/issues/111)) ([0ab6b38](https://github.com/lamngockhuong/specpin/commit/0ab6b3841843a1d0a63c682f5676de34305e7dce))
+
 ## [0.0.9](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.8...extension-v0.0.9) (2026-07-03)
 
 
