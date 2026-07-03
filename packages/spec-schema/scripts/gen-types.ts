@@ -56,6 +56,10 @@ const ts = await compile(genRoot, "SpecpinSchemaRoots", {
   additionalProperties: false,
   declareExternallyReferenced: true,
   enableConstEnums: false,
+  // Emit bounded arrays (maxItems) as `T[]` rather than tuple-unions. The ajv +
+  // Go validators still enforce the bound at runtime; the TS type stays ergonomic
+  // so authoring code can assign a general array (e.g. Spec.links = Link[]).
+  ignoreMinAndMaxItems: true,
 });
 
 await writeFile(typesOutPath, ts);

@@ -25,6 +25,7 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 | `settings.defaultLocale` | string | no | fallback locale when the viewer's choice is absent on a spec |
 | `settings.locales` | string[] | no | BCP-47 locales this project authors specs in; the extension's language picker offers the union across connected projects |
 | `settings.matchConfidenceThreshold` | number 0-1 | no | reserved for the deferred hybrid scorer |
+| `settings.stalenessThresholdDays` | number 1-3650 | no | days after a spec's `meta.reviewedAt` before it renders as **stale**; runtime default **90** when absent. Bounded so it cannot silently disable the freshness signal. Resolved per-project, so a multi-project page uses each spec's own project setting; local/manual projects (no manifest) always use 90. |
 | `settings.defaultDisplayMode` | DisplayMode | no | fallback render mode |
 
 ## SpecFile (`<area>.spec.json`)
@@ -43,9 +44,27 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 | `description` | LocalizedString | yes | locale-keyed object; each value non-empty |
 | `businessRules` | LocalizedString[] | no | each rule is a locale-keyed object |
 | `tags` | string[] | no | not localized |
+| `links` | Link[] | no | author-declared references (tickets, docs, PRs); ≤10; see Link below |
+| `verifiedBy` | string[] | no | repo-relative paths of tests that **declare** this spec; ≤20, each ≤200 chars. Declarative only — see the trust note below |
+| `status` | SpecStatus | no | `"draft" \| "approved" \| "deprecated"`; **absent = neutral** (no default, so existing specs are not relabelled) |
 | `preferredDisplayMode` | DisplayMode | no | overrides `settings.defaultDisplayMode` |
 | `fingerprint` | ElementFingerprint | yes | the element link |
 | `meta` | SpecMeta | no | provenance + timestamps |
+
+### Link
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `label` | string | yes | 1-80 chars |
+| `url` | string | yes | `http`/`https` only (`^https?://` + `format: uri`) |
+
+The `url` schema constraint is **defense-in-depth at the storage boundary**, not the authoritative sanitizer: a scheme-valid URL can still carry a payload, so the render-time href sanitizer (which rejects `javascript:`/`data:`/scheme-relative and HTML-escapes the value) is what makes links safe. Note the two validators' `uri`-format implementations differ on some edge cases; scheme rejection is enforced by the `^https?://` **pattern** (identical on both), and render safety is enforced at display time.
+
+### Provenance / trust model
+
+Provenance is **author-asserted**. The integrity boundary is the **human review of the `.specs/` JSON diff in a Git PR**, not any runtime signal — the extension's write path is unprivileged (a page can send an edit, by design, for in-page capture), so `status` / `reviewedBy` / `links` are no more trusted than a spec's title. The UI never presents `status: "approved"` or `reviewedBy` as cryptographically verified.
+
+`verifiedBy` is a **declared** test link: `specpin validate` checks each referenced path **exists** in the repo (a "link isn't broken" signal); it does **not** run the tests or know pass/fail. The UI wording is always "linked tests", never "verified"/"passed".
 
 ## LocalizedString
 
@@ -91,6 +110,13 @@ Optional: `testId`, `ariaLabel`, `id` (all nullable), `textContent` (nullable), 
 ## SpecMeta
 
 `createdBy` (string), `createdAt` + `updatedAt` (date-time), `source` (`"ai-generated" | "manual"`). The date-time format is asserted by both validators.
+
+Optional review fields (stamped by the extension's **Mark reviewed** action, all backward-compatible):
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `reviewedAt` | date-time | when the spec content was last human-reviewed; absent = never reviewed. Drives the stale indicator against `settings.stalenessThresholdDays`. |
+| `reviewedBy` | string | author-declared reviewer **token**. Defaults to the same non-PII token `createdBy` uses (e.g. `manual`/`agent`), editable in the form. **Committed to `.specs/` (Git) and included in export bundles — do not put PII/emails here.** |
 
 ## DisplayMode
 

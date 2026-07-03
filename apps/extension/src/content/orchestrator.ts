@@ -200,6 +200,7 @@ export function renderSession(
       editable: Boolean((spec as Partial<TaggedSpec>).writable),
       theme,
       pageOrigin,
+      stalenessThresholdDays: (spec as Partial<TaggedSpec>).stalenessThresholdDays,
       dismissed: dismiss?.modes.has(mode) ?? false,
       onSetDismissed: dismiss?.onToggle,
       launcherPosition: dismiss?.position ?? null,

@@ -1,0 +1,14 @@
+{
+  "id": "with-status-only",
+  "title": { "en": "Status only" },
+  "description": { "en": "Only the status provenance field." },
+  "status": "draft",
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

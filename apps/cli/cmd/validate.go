@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/spf13/cobra"
@@ -14,8 +15,9 @@ import (
 )
 
 var (
-	validateDir    string
-	validateStrict bool
+	validateDir      string
+	validateStrict   bool
+	validateRepoRoot string
 )
 
 // Exit codes are differentiated so CI can tell a spec problem (author must fix)
@@ -37,7 +39,7 @@ var validateCmd = &cobra.Command{
 		"*.spec.json against the embedded schema. No server, no token, no browser.\n" +
 		"Exit 0 = all valid, 1 = invalid specs found, 2 = could not run.",
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		code := runValidate(validateDir, validateStrict, cmd.OutOrStdout(), cmd.ErrOrStderr())
+		code := runValidate(validateDir, validateRepoRoot, validateStrict, cmd.OutOrStdout(), cmd.ErrOrStderr())
 		if code != exitValid {
 			os.Exit(code)
 		}
@@ -49,17 +51,32 @@ func init() {
 	validateCmd.Flags().StringVar(&validateDir, "dir", ".specs", "path to the .specs/ directory")
 	validateCmd.Flags().BoolVar(&validateStrict, "strict-manifest", false,
 		"fail (not just warn) when manifest.specFiles and on-disk *.spec.json files disagree")
+	validateCmd.Flags().StringVar(&validateRepoRoot, "repo-root", "",
+		"repo root that verifiedBy paths resolve against (default: the parent of --dir)")
 }
 
 // runValidate performs the validation and returns the process exit code. It is
 // pure with respect to I/O streams (no os.Exit) so it is directly testable.
-func runValidate(dir string, strictManifest bool, out, errOut io.Writer) int {
+func runValidate(dir, repoRoot string, strictManifest bool, out, errOut io.Writer) int {
 	v, err := schema.NewValidator()
 	if err != nil {
 		fmt.Fprintln(errOut, "error: build validator:", err)
 		return exitCannotRun
 	}
 	st := store.New(dir)
+
+	// verifiedBy paths resolve against the repo root. It is NOT necessarily the
+	// parent of .specs/ (a custom --dir like ./config/specs breaks that guess), so
+	// it is an explicit flag defaulting to the parent of --dir. When it is not a
+	// readable directory (e.g. a piped bundle with no working tree) the existence
+	// check is skipped with a note rather than failing the run.
+	if repoRoot == "" {
+		repoRoot = filepath.Dir(dir)
+	}
+	checkPaths := repoRootReadable(repoRoot)
+	if !checkPaths {
+		fmt.Fprintf(out, "note: repo root %q is not a readable directory; skipping verifiedBy existence check\n", repoRoot)
+	}
 
 	// manifest.json must be present and readable to run at all.
 	manifestRaw, err := st.ReadRaw("manifest.json")
@@ -98,9 +115,18 @@ func runValidate(dir string, strictManifest bool, out, errOut io.Writer) int {
 		if errs := v.ValidateSpecFile(raw); errs != nil {
 			printFileResult(out, name, errs)
 			totalErrors += len(errs)
-		} else {
-			fmt.Fprintf(out, "OK %s\n", name)
+			continue
 		}
+		// Schema-valid: now check that each spec's declared verifiedBy paths exist
+		// inside the repo (only meaningful once the file parses + validates).
+		if checkPaths {
+			if problems := checkVerifiedByPaths(repoRoot, raw); problems != nil {
+				printFileResult(out, name, problems)
+				totalErrors += len(problems)
+				continue
+			}
+		}
+		fmt.Fprintf(out, "OK %s\n", name)
 	}
 
 	driftErrors := reportDrift(out, manifestRaw, names, strictManifest)

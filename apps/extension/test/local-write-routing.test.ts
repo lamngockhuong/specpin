@@ -85,3 +85,25 @@ describe("findSpecIdCollisions (import-time cross-batch warning)", () => {
     expect(findSpecIdCollisions(resp("B", ["b.test"], "dup"), existing)).toEqual(["dup"]);
   });
 });
+
+describe("specsForOrigin staleness threshold (per-project resolve + clamp)", () => {
+  it("attaches the clamped manifest threshold, and the 90-day default when absent", () => {
+    const withSetting: SpecsResponse = {
+      manifest: {
+        version: "1.0",
+        project: "P",
+        domains: ["crm.test"],
+        specFiles: [],
+        settings: { stalenessThresholdDays: 5000 }, // above the 3650 max
+      },
+      specs: [{ id: "s1" } as never],
+    };
+    const r = new SidecarRegistry();
+    r.setLocalBatches([batch("a", withSetting), batch("b", resp("Q", ["crm.test"], "s2"))]);
+    const byId = Object.fromEntries(
+      r.specsForOrigin("https://crm.test").specs.map((s) => [s.id, s.stalenessThresholdDays]),
+    );
+    expect(byId.s1).toBe(3650); // clamped from 5000
+    expect(byId.s2).toBe(90); // manifest carried no setting → default
+  });
+});

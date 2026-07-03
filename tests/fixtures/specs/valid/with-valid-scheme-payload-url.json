@@ -1,0 +1,21 @@
+{
+  "id": "with-valid-scheme-payload-url",
+  "title": { "en": "Valid-scheme payload URL" },
+  "description": {
+    "en": "A schema-valid https URL whose query still needs render-time HTML escaping (ampersand + percent-encoded angle brackets). Proves the render-time sanitizer, not the schema, is authoritative."
+  },
+  "links": [
+    {
+      "label": "Tracker",
+      "url": "https://tracker.example/issue?id=42&ref=%3Cimg%20src%3Dx%20onerror%3Dalert(1)%3E"
+    }
+  ],
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

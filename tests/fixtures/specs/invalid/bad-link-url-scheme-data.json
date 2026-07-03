@@ -1,0 +1,14 @@
+{
+  "id": "bad-link-url-scheme-data",
+  "title": { "en": "Bad link scheme" },
+  "description": { "en": "Link url uses the data: scheme." },
+  "links": [{ "label": "Click", "url": "data:text/html,<script>alert(1)</script>" }],
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

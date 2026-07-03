@@ -393,6 +393,39 @@ const en = {
   "options.teamGuidesSummary": "Team guides",
   "options.teamGuidesNote": "Named onboarding tours committed to .specs/guides.json.",
   "options.noTeamGuides": "No team guides.",
+
+  // Capture/edit form: provenance authoring + Mark-reviewed.
+  "capture.statusLabel": "Status",
+  "capture.statusHint": "optional lifecycle",
+  "capture.statusNeutral": "— (none)",
+  "capture.linksLabel": "Links",
+  "capture.linksHint": "tickets, docs, PRs (http/https)",
+  "capture.addLink": "Add link",
+  "capture.linkLabelPlaceholder": "Label (e.g. JIRA-123)",
+  "capture.linkUrlPlaceholder": "https://…",
+  "capture.linkRemove": "Remove link",
+  "capture.verifiedByLabel": "Linked tests",
+  "capture.verifiedByHint": "one repo-relative path per line; declared, not run",
+  "capture.verifiedByPlaceholder": "tests/login.spec.ts",
+  "capture.reviewLabel": "Review",
+  "capture.markReviewed": "Mark reviewed",
+  "capture.reviewedOn": "Reviewed {date}",
+  "capture.notReviewed": "Not reviewed yet",
+  "capture.reviewedByPlaceholder": "Reviewer (e.g. manual)",
+  "capture.reviewedByWarning":
+    "Committed to .specs/ and included in exports — do not enter PII/emails.",
+
+  // Provenance/trust block shown on every reader surface.
+  "prov.statusDraft": "Draft",
+  "prov.statusApproved": "Approved",
+  "prov.statusDeprecated": "Deprecated",
+  "prov.linkedTests": "Linked tests ({count})",
+  "prov.linkedTestsTitle":
+    "Tests that declare this spec. specpin validate checks these paths exist; it does not run them.",
+  "prov.reviewed": "Reviewed {when}",
+  "prov.reviewedBy": "Reviewed {when} by {who}",
+  "prov.stale": "Stale",
+  "prov.staleTitle": "Not reviewed in over {days} days",
 } satisfies Record<string, string>;
 
 export type Messages = typeof en;

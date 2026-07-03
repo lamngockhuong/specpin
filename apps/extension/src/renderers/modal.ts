@@ -3,6 +3,7 @@ import { localizeSpec } from "../content/localize-spec.js";
 import { plural, t } from "../i18n/index.js";
 import { escapeHtml } from "../shared/html.js";
 import { renderMarkdownBlock } from "../shared/markdown.js";
+import { PROVENANCE_CSS, provenanceSectionHtml } from "../shared/provenance.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
@@ -90,6 +91,7 @@ ${SHADOW_PREAMBLE}
 .card li { margin: 2px 0; }
 .card .sp-conf { margin-bottom: 8px; }
 ${MARKDOWN_BODY_CSS}
+${PROVENANCE_CSS}
 ${CONFIDENCE_BADGE_CSS}
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
 `;
@@ -179,7 +181,12 @@ export class ModalRenderer implements SpecRenderer {
       projectCaptionHtml(meta) +
       `<div class="t">${escapeHtml(text.title)}</div>` +
       `<div class="d">${renderMarkdownBlock(text.description, meta?.pageOrigin)}</div>` +
-      rulesListHtml(text.businessRules, meta?.pageOrigin);
+      rulesListHtml(text.businessRules, meta?.pageOrigin) +
+      provenanceSectionHtml(spec, {
+        pageOrigin: meta?.pageOrigin,
+        thresholdDays: meta?.stalenessThresholdDays,
+        locale: meta?.locale,
+      });
     const onHighlight = meta?.onHighlight;
     // Jump to the element (scroll + outline) but keep the panel open: only the
     // corner close button dismisses it. Drag the panel aside if it covers the

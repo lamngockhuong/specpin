@@ -1,0 +1,10 @@
+{
+  "version": "1",
+  "project": "demo",
+  "domains": ["localhost:3000"],
+  "specFiles": ["login.spec.json"],
+  "settings": {
+    "defaultLocale": "en",
+    "stalenessThresholdDays": 30
+  }
+}

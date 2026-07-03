@@ -40,6 +40,11 @@ export type TaggedSpec = SpecWithFile & {
   connectionId: string;
   project: string;
   writable?: boolean;
+  /** This spec's project staleness threshold (days), already resolved + clamped
+   *  from the owning manifest's `settings.stalenessThresholdDays` by the background
+   *  (90-day default for manifest-less local projects). Threaded per-spec so a
+   *  multi-project page resolves each spec against its own project. */
+  stalenessThresholdDays?: number;
 };
 
 /** A guide tagged with where it came from, for the merged GET_GUIDES_FOR_ORIGIN

@@ -383,6 +383,39 @@ const vi: Record<keyof Messages, string> = {
   "options.teamGuidesSummary": "Hướng dẫn nhóm",
   "options.teamGuidesNote": "Các hướng dẫn onboarding lưu trong .specs/guides.json.",
   "options.noTeamGuides": "Chưa có hướng dẫn nhóm.",
+
+  // Capture/edit form: provenance authoring + Mark-reviewed.
+  "capture.statusLabel": "Trạng thái",
+  "capture.statusHint": "vòng đời (tùy chọn)",
+  "capture.statusNeutral": "— (không)",
+  "capture.linksLabel": "Liên kết",
+  "capture.linksHint": "ticket, tài liệu, PR (http/https)",
+  "capture.addLink": "Thêm liên kết",
+  "capture.linkLabelPlaceholder": "Nhãn (vd. JIRA-123)",
+  "capture.linkUrlPlaceholder": "https://…",
+  "capture.linkRemove": "Xóa liên kết",
+  "capture.verifiedByLabel": "Test liên kết",
+  "capture.verifiedByHint": "mỗi dòng một đường dẫn tương đối repo; khai báo, không chạy",
+  "capture.verifiedByPlaceholder": "tests/login.spec.ts",
+  "capture.reviewLabel": "Rà soát",
+  "capture.markReviewed": "Đánh dấu đã rà soát",
+  "capture.reviewedOn": "Đã rà soát {date}",
+  "capture.notReviewed": "Chưa rà soát",
+  "capture.reviewedByPlaceholder": "Người rà soát (vd. manual)",
+  "capture.reviewedByWarning":
+    "Được commit vào .specs/ và có trong bản export — không nhập thông tin cá nhân/email.",
+
+  // Provenance/trust block shown on every reader surface.
+  "prov.statusDraft": "Bản nháp",
+  "prov.statusApproved": "Đã duyệt",
+  "prov.statusDeprecated": "Ngừng dùng",
+  "prov.linkedTests": "Test liên kết ({count})",
+  "prov.linkedTestsTitle":
+    "Các test khai báo spec này. specpin validate kiểm tra các đường dẫn này tồn tại; không chạy chúng.",
+  "prov.reviewed": "Đã rà soát {when}",
+  "prov.reviewedBy": "Đã rà soát {when} bởi {who}",
+  "prov.stale": "Cũ",
+  "prov.staleTitle": "Chưa rà soát trong hơn {days} ngày",
 };
 
 export default vi;

@@ -1,0 +1,14 @@
+{
+  "id": "bad-status-enum",
+  "title": { "en": "Bad status" },
+  "description": { "en": "Status is not one of draft/approved/deprecated." },
+  "status": "archived",
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

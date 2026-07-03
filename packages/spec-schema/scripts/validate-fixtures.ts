@@ -17,6 +17,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const specsDir = resolve(here, "../../../tests/fixtures/specs");
 const viewsDir = resolve(here, "../../../tests/fixtures/views");
 const guidesDir = resolve(here, "../../../tests/fixtures/guides");
+const manifestDir = resolve(here, "../../../tests/fixtures/manifest");
 
 async function readFixtures(
   baseDir: string,
@@ -65,6 +66,19 @@ async function main(): Promise<void> {
   for (const { name, data } of await readFixtures(guidesDir, "invalid")) {
     const { valid } = validateGuides(data);
     if (valid) failures.push(`guides/invalid/${name} should fail but passed`);
+  }
+
+  // manifest.json corpus, cross-checked against validateManifest on both sides.
+  // The manifest is otherwise absent from the shared corpus, so settings drift
+  // (e.g. stalenessThresholdDays bounds) would ship silently without this loop.
+  for (const { name, data } of await readFixtures(manifestDir, "valid")) {
+    const { valid, errors } = validateManifest(data);
+    if (!valid)
+      failures.push(`manifest/valid/${name} should pass but failed: ${JSON.stringify(errors)}`);
+  }
+  for (const { name, data } of await readFixtures(manifestDir, "invalid")) {
+    const { valid } = validateManifest(data);
+    if (valid) failures.push(`manifest/invalid/${name} should fail but passed`);
   }
 
   // Guard against demo rot: the seeded demo specs must stay schema-valid.

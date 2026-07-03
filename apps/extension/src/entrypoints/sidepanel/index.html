@@ -207,6 +207,34 @@
       #specs .file { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; margin-top: 6px; }
       #specs .rules { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-2); }
       #specs .rules li { margin: 3px 0; }
+      /* Provenance block (status / links / linked tests / reviewed). Mirrors
+         shared/provenance.ts PROVENANCE_CSS, scoped to the side panel list. */
+      #specs .prov { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 0.9em; }
+      #specs .prov-status {
+        align-self: flex-start; padding: 1px 8px; border-radius: 999px;
+        border: 1px solid var(--sp-border); font-size: 0.85em; font-weight: 600;
+      }
+      #specs .prov-status-draft { background: var(--sp-control); color: var(--sp-text-2); }
+      #specs .prov-status-approved {
+        background: var(--sp-success-bg); color: var(--sp-success-text); border-color: var(--sp-success-border);
+      }
+      #specs .prov-status-deprecated {
+        background: var(--sp-warning-bg); color: var(--sp-warning);
+        border-color: var(--sp-warning-border); text-decoration: line-through;
+      }
+      #specs .prov-links { display: flex; flex-wrap: wrap; gap: 8px; }
+      #specs .prov-link { color: var(--sp-accent); text-decoration: underline; }
+      #specs .prov-link-broken { color: var(--sp-text-3); }
+      #specs .linked-tests > summary { cursor: pointer; color: var(--sp-text-2); }
+      #specs .linked-tests ul { margin: 4px 0; padding-left: 18px; }
+      #specs .linked-tests li { font-family: var(--sp-font-mono); font-size: 0.9em; word-break: break-all; }
+      #specs .prov-reviewed { color: var(--sp-text-2); }
+      #specs .prov-reviewed.is-stale { color: var(--sp-warning); }
+      #specs .prov-stale {
+        margin-left: 6px; padding: 0 6px; border-radius: 999px;
+        background: var(--sp-warning-bg); color: var(--sp-warning);
+        border: 1px solid var(--sp-warning-border); font-size: 0.85em;
+      }
       #specs > li.muted { color: var(--sp-text-3); padding: 10px 0; }
       /* Transient flash when a tooltip pin opens a spec here. */
       #specs > li.spec.highlight {

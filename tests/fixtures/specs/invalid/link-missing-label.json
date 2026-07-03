@@ -1,0 +1,14 @@
+{
+  "id": "link-missing-label",
+  "title": { "en": "Link missing label" },
+  "description": { "en": "A link entry omits the required label." },
+  "links": [{ "url": "https://tracker.example/1" }],
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

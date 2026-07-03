@@ -28,8 +28,18 @@ Không cần auth, key hay cấu hình model: sidecar chỉ chạy localhost và
 
 1. **Scaffold** (một lần): `specpin init --project "<Name>" --domains <origin>`.
 2. **Soạn**: agent chọn element mục tiêu và, mặc định, dựng fingerprint từ các signal element đã có sẵn (một `data-testid` / `data-spec-id` đang tồn tại, một `id` không phải dạng generated, một `aria-label`, hoặc một selector duy nhất) mà KHÔNG sửa source của ứng dụng. Nó ghi một file `<area>.spec.json` với `title` / `description` đánh key theo locale, `businessRules` tuỳ chọn, một `fingerprint`, và `meta.source: "ai-generated"`. Thêm `data-spec-id` để có anchor chính xác chỉ là opt-in tuỳ chọn, khi dự án muốn.
+   - Các trường provenance tùy chọn mà agent có thể thêm (đều tương thích ngược):
+     `links` (URL ticket/doc/PR, chỉ `http`/`https`), `verifiedBy` (đường dẫn test tương đối
+     theo repo — **mang tính khai báo**: `specpin validate` kiểm tra chúng *tồn tại*, nó không
+     chạy chúng hay ngụ ý chúng pass, nên chỉ liệt kê file thật), và `status`
+     (`draft`/`approved`/`deprecated`; bỏ qua để trung tính). **Không** tự soạn
+     `meta.reviewedAt`/`reviewedBy` — những thứ đó do con người đóng dấu qua hành động
+     Mark-reviewed của extension, và `reviewedBy` là một token không-PII được
+     commit vào Git/exports (không bao giờ là email/danh tính).
 3. **Đăng ký**: thêm file mới vào `manifest.json` `specFiles[]`.
 4. **Kiểm tra**: `specpin validate` (cần exit 0; sửa các dòng `FAIL` khi exit 1).
+   Bất kỳ đường dẫn `verifiedBy` nào không tồn tại trong repo sẽ làm fail validation (một
+   broken-link check, không phải chạy test).
 5. **Xem trước**: `specpin serve`, rồi extension render spec trực tiếp.
 
 Xem trọn vòng lặp, gồm cả đường capture thủ công, trong [`run-guide.md`](./run-guide.md).

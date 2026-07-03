@@ -1,0 +1,17 @@
+{
+  "id": "with-links-only",
+  "title": { "en": "Links only" },
+  "description": { "en": "Only the links provenance field." },
+  "links": [
+    { "label": "Design doc", "url": "https://docs.example/design" },
+    { "label": "Issue #42", "url": "http://tracker.example/42" }
+  ],
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

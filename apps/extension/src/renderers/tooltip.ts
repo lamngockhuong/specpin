@@ -6,6 +6,7 @@ import { copyText } from "../shared/clipboard.js";
 import { buildSpecLink } from "../shared/deep-link.js";
 import { escapeHtml } from "../shared/html.js";
 import { renderMarkdownBlock } from "../shared/markdown.js";
+import { PROVENANCE_CSS, provenanceSectionHtml } from "../shared/provenance.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
@@ -25,6 +26,9 @@ interface Pin {
   /** Precomputed confidence-badge HTML (fuzzy/scored tiers; "" when silent),
    *  shown in the tip beside the title. Built once at render from the match meta. */
   confHtml: string;
+  /** Precomputed provenance-block HTML (status/links/linked-tests/reviewed; "" when
+   *  the spec carries none). Built once at render (needs the raw spec + meta). */
+  provenanceHtml: string;
   /** True for a hybrid-scorer match, so the pinned tip offers the "Correct"
    *  confirm-loop action. */
   scored: boolean;
@@ -80,6 +84,7 @@ ${SHADOW_PREAMBLE}
 .tip ol { margin: 4px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .tip li { margin: 2px 0; }
 ${MARKDOWN_BODY_CSS}
+${PROVENANCE_CSS}
 .tip .tags { margin-top: 6px; color: var(--sp-accent); font-family: var(--sp-font-mono); font-size: 11px; }
 .tip .pin-close {
   position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
@@ -211,6 +216,11 @@ export class TooltipRenderer implements SpecRenderer {
       project,
       editable: meta?.editable ?? true,
       confHtml: confidenceBadge(meta),
+      provenanceHtml: provenanceSectionHtml(spec, {
+        pageOrigin: meta?.pageOrigin,
+        thresholdDays: meta?.stalenessThresholdDays,
+        locale: meta?.locale,
+      }),
       scored: meta?.strategy === "scored",
       pageOrigin: meta?.pageOrigin,
       theme: meta?.theme,
@@ -306,6 +316,7 @@ export class TooltipRenderer implements SpecRenderer {
       `<div class="d">${renderMarkdownBlock(pin.text.description, pin.pageOrigin)}</div>` +
       rulesListHtml(pin.text.businessRules, pin.pageOrigin) +
       tags +
+      pin.provenanceHtml +
       (pinned && canEdit
         ? `<button type="button" class="pin-edit">${escapeHtml(t("tooltip.editSpec"))}</button>`
         : "") +
