@@ -139,6 +139,56 @@ Các đường dẫn phải nằm bên trong repo: đường dẫn tuyệt đố
 Sử dụng `specpin validate` trong CI để phát hiện spec không hợp lệ trước khi merge. Xem [GitHub Action có thể tái sử dụng](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint) để lấy ví dụ.
 :::
 
+## Báo cáo sức khỏe spec
+
+`specpin report` audit một thư mục `.specs/` ngoại tuyến và in ra ba phần: **freshness**, **spec stats**, và một **kiểm tra spec bắt buộc**. Mặc định chỉ cảnh báo, nên bạn có thể đưa các tín hiệu governance lên CI mà không làm hỏng build cho đến khi chủ động bật.
+
+```bash
+specpin report --dir .specs
+specpin report --dir .specs --json   # output có cấu trúc để CI parse
+```
+
+**Freshness** đánh dấu các spec đã cũ về mặt review. Một spec là *stale* khi `meta.reviewedAt` cũ hơn `settings.stalenessThresholdDays` (mặc định 90). Một spec không có `reviewedAt` là *never-reviewed* — được báo cáo riêng và không bao giờ bị tính là stale. Freshness đo độ mới của *review*, không phải của *sửa đổi*, nên cố ý không fallback về `updatedAt`.
+
+**Spec stats** đếm spec theo status và theo file. Chúng đếm *spec*, không phải element UI: report chạy ngoại tuyến không có trình duyệt, nên không hứa hẹn % coverage — độ phủ element chỉ đo được trong extension.
+
+**Kiểm tra spec bắt buộc** đọc `.specs/required.json` và đánh dấu bất kỳ id nào liệt kê trong đó mà không có spec khớp. Nó chỉ kiểm tra sự tồn tại, không bao giờ kiểm tra element matching. Nếu file vắng, việc kiểm tra được bỏ qua.
+
+```json
+// .specs/required.json
+{
+  "version": "1.0",
+  "required": ["login-submit-btn", "dashboard-stat-revenue"]
+}
+```
+
+Mã thoát:
+- `0` báo cáo đã tạo (chỉ cảnh báo — mặc định)
+- `1` một điều kiện `--fail-on` bị kích hoạt
+- `2` không thể chạy (thiếu thư mục hoặc manifest), hoặc truyền một điều kiện `--fail-on` không xác định
+
+### Chặn CI bằng `--fail-on`
+
+Mặc định không có gì làm hỏng build. Bật bằng `--fail-on`, một danh sách điều kiện phân tách bằng dấu phẩy:
+
+```bash
+specpin report --dir .specs --fail-on missing-required
+specpin report --dir .specs --fail-on stale,missing-required
+```
+
+| Điều kiện | Thất bại khi |
+|-----------|--------------|
+| `stale` | `reviewedAt` của một spec cũ hơn ngưỡng |
+| `draft-committed` | một spec đã commit có `status: "draft"` |
+| `missing-required` | một id trong `required.json` không có spec khớp |
+| `missing-verifiedby` | một spec không khai báo đường dẫn `verifiedBy` nào |
+
+`missing-verifiedby` chỉ kiểm tra xem một spec có *khai báo* `verifiedBy` hay không — khác với `validate`, vốn kiểm tra các đường dẫn đã khai báo có tồn tại. Một điều kiện không xác định sẽ thoát `2` thay vì bị âm thầm bỏ qua, và các spec `never-reviewed` được báo cáo nhưng không bao giờ chặn.
+
+:::tip
+[GitHub Action có thể tái sử dụng](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint) nhận một input `report-fail-on` để chạy gate này trong CI; để trống để bỏ qua gate.
+:::
+
 ## Format spec
 
 Sidecar, `specpin init`, và extension đều ghi JSON trong `.specs/` theo một dạng canonical duy nhất: thụt lề 2 khoảng trắng, expand hoàn toàn (mỗi phần tử object/array một dòng), có newline ở cuối. `specpin format` viết lại spec của bạn về dạng đó, nhờ vậy các chỉnh sửa qua extension chỉ tạo diff Git tối thiểu, dễ review.

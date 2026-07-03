@@ -139,6 +139,56 @@ specpin validate --dir path/to/.specs --repo-root path/to/repo
 `specpin validate`をCIで使用してspecが無効なままマージされるのを防ぎます。例については[再利用可能なGitHub Action](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint)を参照してください。
 :::
 
+## specの健全性レポート
+
+`specpin report`は`.specs/`ディレクトリをオフラインで監査し、**freshness**、**spec stats**、**必須specチェック**の3つを出力します。デフォルトは警告のみなので、明示的に有効化するまではビルドを壊さずにCIでガバナンスシグナルを可視化できます。
+
+```bash
+specpin report --dir .specs
+specpin report --dir .specs --json   # CIがパースする構造化出力
+```
+
+**Freshness**はレビューが古くなったspecを検出します。specは`meta.reviewedAt`が`settings.stalenessThresholdDays`（デフォルト90）より古いとき*stale*です。`reviewedAt`がないspecは*never-reviewed*で、別途報告され、staleとしてカウントされることはありません。Freshnessは*編集*の新しさではなく*レビュー*の新しさを測るため、意図的に`updatedAt`へのフォールバックはありません。
+
+**Spec stats**はspecをstatusごと、fileごとに集計します。UI要素ではなく*spec*を数えます：レポートはブラウザなしでオフライン実行されるため、カバレッジ%は約束しません — 要素カバレッジはextensionでのみ測定できます。
+
+**必須specチェック**は`.specs/required.json`を読み、そこに列挙された各idのうち一致するspecがないものを検出します。存在のみをチェックし、要素マッチングは行いません。ファイルがなければチェックはスキップされます。
+
+```json
+// .specs/required.json
+{
+  "version": "1.0",
+  "required": ["login-submit-btn", "dashboard-stat-revenue"]
+}
+```
+
+終了コード：
+- `0` レポート生成（警告のみ — デフォルト）
+- `1` `--fail-on`条件がトリガーされた
+- `2` 実行できなかった（ディレクトリまたはmanifestが見つからない）、または未知の`--fail-on`条件が渡された
+
+### `--fail-on`でCIをゲートする
+
+デフォルトでは何もビルドを失敗させません。`--fail-on`（カンマ区切りの条件リスト）で有効化します：
+
+```bash
+specpin report --dir .specs --fail-on missing-required
+specpin report --dir .specs --fail-on stale,missing-required
+```
+
+| 条件 | 失敗する条件 |
+|------|--------------|
+| `stale` | specの`reviewedAt`がしきい値より古い |
+| `draft-committed` | コミット済みのspecが`status: "draft"`を持つ |
+| `missing-required` | `required.json`のidに一致するspecがない |
+| `missing-verifiedby` | specが`verifiedBy`パスを一つも宣言していない |
+
+`missing-verifiedby`はspecが`verifiedBy`を*宣言している*かどうかのみをチェックします — 宣言されたパスの存在を確認する`validate`とは異なります。未知の条件は黙って無視されるのではなく`2`で終了し、`never-reviewed`のspecは報告されますがゲートすることはありません。
+
+:::tip
+[再利用可能なGitHub Action](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint)は`report-fail-on`入力を受け取り、このゲートをCIで実行します。空にするとゲートはスキップされます。
+:::
+
 ## specのフォーマット
 
 サイドカー、`specpin init`、拡張機能はいずれも`.specs/`のJSONを単一の正規形で書き込みます：2スペースインデント、完全展開（オブジェクト/配列の各要素を1行ずつ）、末尾に改行。`specpin format`はspecをその形に書き直すため、拡張機能で行った編集でもGit差分が最小限で読みやすくなります。

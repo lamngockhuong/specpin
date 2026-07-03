@@ -384,6 +384,16 @@ specpin validate --dir .specs
 
 Exit codes: `0` all valid, `1` invalid specs found (fix the spec), `2` could not run (directory or manifest missing). It also warns when `manifest.specFiles` and the on-disk `*.spec.json` files disagree; pass `--strict-manifest` to make that drift fail instead of warn.
 
+## Report on spec freshness and governance
+
+`specpin report` audits spec health (staleness, draft specs, required specs) for CI gates:
+
+```bash
+specpin report --dir .specs
+```
+
+Prints freshness status (specs older than `settings.stalenessThresholdDays`), spec counts by status/file, and required-spec existence check (from `.specs/required.json`, if present). Exit `0` by default (warn-only). Gate with `--fail-on <conds>` (comma list of: `stale`, `draft-committed`, `missing-required`, `missing-verifiedby`) to exit `1` on violations. Exit `2` = could not run (missing dir/manifest). Use `--json` for CI parsing.
+
 ## Lint specs in CI
 
 Use the reusable action to fail PRs that introduce invalid specs. No Node toolchain needed; the validator is built from a pinned Specpin ref (never the calling repo's PR), so a malicious PR cannot alter validation:

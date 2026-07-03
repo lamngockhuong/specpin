@@ -146,6 +146,22 @@ Các tour onboarding có tên (tùy chọn): lối đi tuần tự qua các spec
 | `version` | string | có | ví dụ `"1.0"` |
 | `guides` | GuideDef[] | có | có thể rỗng; tối đa 50 (`maxItems`) |
 
+## RequiredConfig (`.specs/required.json`)
+
+Cổng governance tùy chọn: danh sách spec id bắt buộc phải tồn tại trong dự án. Dùng bởi `specpin report --fail-on missing-required` để chặn CI khi một spec bắt buộc bị xóa hoặc đổi tên.
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|--------|------|----------|---------|
+| `version` | string | có | ví dụ `"1.0"` |
+| `required` | string[] | có | spec id phải tồn tại (có thể rỗng; mỗi phần tử `maxLength` 200) |
+
+```json
+{
+  "version": "1.0",
+  "required": ["login-submit-btn", "dashboard-stat-revenue"]
+}
+```
+
 `GuideDef`:
 
 | Trường | Kiểu | Bắt buộc | Ghi chú |
@@ -170,9 +186,9 @@ Khi `.specs/guides.json` không có, sidecar trả về default rỗng `{ "versi
 
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides`.
-- Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired`.
+- Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).
 
 ## Dùng schema (consuming)
 

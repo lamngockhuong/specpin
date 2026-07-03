@@ -109,7 +109,7 @@ Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa ca
 - api-client: `SidecarClient.getViews()` / `putViews()`, type `ViewsConfig` được export.
 - Message privileged mới: `SET_PERSONAL_VISIBILITY`, `SAVE_TEAM_VIEWS` (thêm vào `PRIVILEGED_MESSAGE_TYPES`). `OPEN_SPEC_IN_PANEL` là non-privileged (read-only, từ content script).
 
-Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode. Hybrid weighted scorer + drift corpus đã giao 2026-07-02 (xem bên dưới).
+Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access, renderer overlay + inline-badge, và extension VSCode.
 
 **Đã ship theme có thể chọn bởi người dùng (2026-06-28)** trên nhánh `feat/extension-theme-and-i18n`:
 - Tùy chọn theme (System / Light / Dark) qua trang Options. Trước đây dark chỉ tồn tại đằng sau `@media (prefers-color-scheme: dark)` (tự động, không có toggle). Giờ người dùng có thể force một theme. Generator phát ra bốn block selector trong `tokens.gen.css`: `:root` (shared + light), `:root[data-theme="dark"]` (forced dark), `:root[data-theme="light"]` (forced light), và `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { ... } }` (system default, chỉ áp dụng khi không có override). `tokens.ts` `scopeTokensToShadow()` đổi tất cả bốn dạng sang `:host(...)` cho Shadow DOM renderer. `src/shared/theme.ts` export `Theme`, `applyTheme(el, theme)`, `applyStoredTheme()`, `watchThemeChanges()`. `config.ts` có thêm `getTheme`/`setTheme` (key storage.local `specpin:theme`, mặc định `system`). Lan truyền trực tiếp: message `SET_THEME` + helper `broadcastToTabs()`; Options broadcast sang tất cả tab, các page phản ứng qua `storage.onChanged`. `theme` được thread vào `renderSession` và mỗi renderer áp dụng nó lên shadow host của nó. Forced theme có thể nhấp nháy System default trong một frame khi load (đọc storage bất đồng bộ, được chấp nhận).
@@ -145,6 +145,11 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access, renderer
 - Số thứ tự được tính trong orchestrator (`renderSession` tách thành match/collect -> lượt tính ordinal -> render) dùng thứ tự tài liệu DOM (`compareDocumentPosition`) chỉ trên các match chế độ tooltip, rồi luồn tới renderer qua `RenderMeta.ordinal` (sự hiện diện của nó là tín hiệu "đang bật đánh số"; tooltip in nó thay cho "S"). Thứ tự DOM bằng thứ tự đọc trực quan cho hầu như mọi trang thực tế; layout bị CSS đảo/định vị tuyệt đối là khiếm khuyết chấp nhận được. Con số là chỉ số vị trí, không phải id ổn định (định danh spec không đổi).
 - 1-9 giữ hình tròn 16px; từ 2 chữ số trở lên nở thành viên thuốc (`.badge.wide`, `width:auto`). `badge-position.ts` có thêm `width` theo từng badge để bộ giải vị trí/chồng lấn giữ đúng vùng chiếm chỗ (chiều cao vẫn 16px). Cập nhật trực tiếp qua broadcast mới `SET_BADGE_NUMBERING` (Options -> các tab), cùng đường với `SET_THEME`. Phạm vi: chỉ text của badge (không có "n / tổng" trong tip, side panel, hay reader-nav). i18n EN + VI + JA.
 
+**Cổng CI governance (report + spec bắt buộc) đã giao (2026-07-03)** trên cùng nhánh `main`:
+- `specpin report --dir .specs` kiểm tra sức khỏe spec (mặc định chỉ in, chỉ cảnh báo, exit 0): FRESHNESS (stale = `meta.reviewedAt` cũ hơn `settings.stalenessThresholdDays`, mặc định 90, never-reviewed không bao giờ stale), SPEC STATS (đếm theo status/file; đếm spec chứ không phải element, không có % coverage), REQUIRED-CHECK (mọi spec id trong `.specs/required.json` phải tồn tại, bỏ qua nếu không có file). Exit 2 = không chạy được. `--fail-on <conds>` (stale, draft-committed, missing-required, missing-verifiedby) chặn CI: exit 1 khi có vi phạm, exit 2 khi điều kiện không xác định. `--json` phát output có cấu trúc để parse.
+- Thực thể `RequiredConfig`: `{ version: string, required: string[] }`, SSOT `packages/spec-schema/schema/v1.json`, export thành `validateRequired` + type `RequiredConfig` từ `@specpin/spec-schema`. Go `ValidateRequired`. Vòng lặp manifest corpus cross-validate settings; vòng lặp required-fixture cross-validate ở cả hai phía.
+- CI: job Go trong `.github/workflows/ci.yml` chạy `specpin report --dir ../../examples/demo-react-app/.specs --fail-on missing-required` sau `validate`. Demo `.specs/` được bổ sung `required.json` (yêu cầu `login-submit-btn`, `dashboard-stat-revenue`). Composite action tái sử dụng `.github/actions/spec-lint/action.yml` được thêm input tùy chọn `report-fail-on` (mặc định rỗng = bỏ qua gate, tương thích ngược).
+
 ### Tính năng đã lên kế hoạch
 
 **Các nguồn Spec bổ sung:**
@@ -177,8 +182,6 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access, renderer
 
 **Trải nghiệm Lập trình viên (Developer Experience):**
 - Extension VSCode để soạn `.spec.json` (autocomplete schema, validation, preview)
-- GitHub Action lint spec trong PR (validate tất cả `.specs/*.json` theo schema)
-- Lệnh CLI `specpin validate` (kiểm tra schema offline, không cần serve)
 
 ## Khám phá Tương lai (chưa cam kết)
 

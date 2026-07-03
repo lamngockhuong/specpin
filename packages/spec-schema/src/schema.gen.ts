@@ -380,6 +380,33 @@ export const schemaV1: Record<string, unknown> = {
         }
       }
     },
+    "RequiredConfig": {
+      "title": "RequiredConfig",
+      "description": "The .specs/required.json governance config. `required` is a flat list of spec ids that MUST exist in the project; `specpin report --fail-on missing-required` fails the build when any listed id is absent. It checks existence only, never element matching (that is a runtime concern).",
+      "type": "object",
+      "required": [
+        "version",
+        "required"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Optional pointer to this schema for editor tooling."
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Spec ids that must exist in the project."
+        }
+      }
+    },
     "GuideDef": {
       "title": "GuideDef",
       "description": "One named onboarding guide: an ordered list of spec ids to walk through. Empty steps means the guide falls back to all matched specs in default order at launch.",

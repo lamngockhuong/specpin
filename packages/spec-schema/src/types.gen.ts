@@ -23,6 +23,7 @@ export interface SpecpinSchemaRoots {
   manifest: Manifest;
   views: ViewsConfig;
   guides: GuidesConfig;
+  required: RequiredConfig;
 }
 /**
  * A Specpin <area>.spec.json file: a named group of specs pinned to UI elements.
@@ -216,4 +217,18 @@ export interface GuideDef {
    * @maxItems 200
    */
   steps: string[];
+}
+/**
+ * The .specs/required.json governance config. `required` is a flat list of spec ids that MUST exist in the project; `specpin report --fail-on missing-required` fails the build when any listed id is absent. It checks existence only, never element matching (that is a runtime concern).
+ */
+export interface RequiredConfig {
+  /**
+   * Optional pointer to this schema for editor tooling.
+   */
+  $schema?: string;
+  version: string;
+  /**
+   * Spec ids that must exist in the project.
+   */
+  required: string[];
 }

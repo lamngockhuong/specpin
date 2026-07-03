@@ -27,11 +27,11 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 **Purpose**: JSON Schema v1 SSOT + generated TS types + ajv validators.
 
 **Key files:**
-- `schema/v1.json` - schema chuẩn (130+ dòng), định nghĩa `Spec`, `SpecManifest`, `SpecFile`, `ViewsConfig`, `Fingerprint`, `MatchResult`.
+- `schema/v1.json` - schema chuẩn (130+ dòng), định nghĩa `Spec`, `SpecManifest`, `SpecFile`, `ViewsConfig`, `GuidesConfig`, `RequiredConfig`, `Fingerprint`, `MatchResult`.
 - `src/schema.gen.ts` - generated ajv standalone validator (7,700+ dòng, không bao giờ sửa).
 - `src/types.gen.ts` - generated TS types (3,100+ dòng, không bao giờ sửa).
 - `src/validators.gen.cjs` - CJS ajv validator cho các consumer Node (49,900+ dòng, không bao giờ sửa).
-- `src/validate.ts` - wrapper mỏng expose `validateSpec()`, `validateManifest()`, `validateViews()` (30+ dòng).
+- `src/validate.ts` - wrapper mỏng expose `validateSpec()`, `validateManifest()`, `validateViews()`, `validateGuides()`, `validateRequired()` (40+ dòng).
 - `src/resolve-localized.ts` - prototype-safe `resolveLocalized()` / `resolveLocalizedList()` cho nội dung `LocalizedString` (locale -> defaultLocale -> fallback first present).
 - `scripts/gen-types.ts` - codegen runner (json-schema-to-typescript + ajv standalone).
 - `scripts/copy-gen-assets.ts` - copy `.gen.cjs` + `.gen.d.cts` sang dist sau build.
@@ -98,6 +98,7 @@ cmd/
   root.go       - cobra root command (33 lines)
   init.go       - `specpin init` scaffold manifest (62 lines)
   serve.go      - `specpin serve` entrypoint (115 lines)
+  report.go     - `specpin report` kiểm tra freshness/stats/required của spec cho các CI gate (điều kiện --fail-on, output --json)
   generate.go   - stub: trỏ người dùng tới skill soạn spec bằng AI (không có LLM)
 skill/          - nguồn chuẩn của skill @specpin/cli (SKILL.md + references/) dạy
                   một coding agent soạn spec; xem docs/ai-authoring.md
@@ -105,7 +106,7 @@ npm/
   skill/        - bản copy đồng bộ, đóng gói vào tarball npm (drift-gate bằng sync-skill.mjs --check)
 internal/
   schema/
-    schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views` (50+ lines)
+    schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views/Guides/Required` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
     server.go   - HTTP handlers: CRUD + SSE hub + GET/PUT /views + GET/PUT /guides (370+ lines)

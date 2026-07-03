@@ -31,5 +31,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(initCmd, serveCmd, validateCmd, formatCmd, bundleCmd, generateCmd)
+	rootCmd.AddCommand(initCmd, serveCmd, validateCmd, formatCmd, bundleCmd, generateCmd, reportCmd)
 }

@@ -144,6 +144,22 @@ Optional named onboarding tours: ordered walkthroughs over specs already pinned 
 | `version` | string | yes | e.g. `"1.0"` |
 | `guides` | GuideDef[] | yes | may be empty; at most 50 (`maxItems`) |
 
+## RequiredConfig (`.specs/required.json`)
+
+Optional governance gate: a list of spec ids that must exist in the project. Used by `specpin report --fail-on missing-required` to gate CI when a required spec is deleted or renamed.
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `version` | string | yes | e.g. `"1.0"` |
+| `required` | string[] | yes | spec ids that must exist (may be empty; each `maxLength` 200) |
+
+```json
+{
+  "version": "1.0",
+  "required": ["login-submit-btn", "dashboard-stat-revenue"]
+}
+```
+
 `GuideDef`:
 
 | Field | Type | Required | Notes |
@@ -168,9 +184,9 @@ When `.specs/guides.json` is absent, the sidecar returns the empty default `{ "v
 
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides`.
-- Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired`.
+- Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).
 
 ## Consuming the schema
 

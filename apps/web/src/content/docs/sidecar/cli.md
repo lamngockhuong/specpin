@@ -139,6 +139,56 @@ Paths must stay inside the repo: absolute paths, `../` traversal, and symlinks t
 Use `specpin validate` in CI to catch invalid specs before they merge. See the [reusable GitHub Action](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint) for an example.
 :::
 
+## Report on spec health
+
+`specpin report` audits a `.specs/` directory offline and prints three things: **freshness**, **spec stats**, and a **required-spec check**. It is warn-only by default, so you can surface governance signals in CI without breaking the build until you opt in.
+
+```bash
+specpin report --dir .specs
+specpin report --dir .specs --json   # structured output for CI to parse
+```
+
+**Freshness** flags specs whose review has gone stale. A spec is *stale* when its `meta.reviewedAt` is older than `settings.stalenessThresholdDays` (default 90). A spec with no `reviewedAt` is *never-reviewed* — reported separately and never counted as stale. Freshness measures *review* recency, not *edit* recency, so there is deliberately no fallback to `updatedAt`.
+
+**Spec stats** count specs by status and by file. They count *specs*, not UI elements: the report runs offline with no browser, so it promises no coverage % — element coverage is only measurable in the extension.
+
+**Required-spec check** reads `.specs/required.json` and flags any id listed there that has no matching spec. It checks existence only, never element matching. If the file is absent, the check is skipped.
+
+```json
+// .specs/required.json
+{
+  "version": "1.0",
+  "required": ["login-submit-btn", "dashboard-stat-revenue"]
+}
+```
+
+Exit codes:
+- `0` report produced (warn-only — the default)
+- `1` a `--fail-on` condition was triggered
+- `2` could not run (directory or manifest missing), or an unknown `--fail-on` condition was passed
+
+### Gate CI with `--fail-on`
+
+By default nothing fails the build. Opt in with `--fail-on`, a comma-separated list of conditions:
+
+```bash
+specpin report --dir .specs --fail-on missing-required
+specpin report --dir .specs --fail-on stale,missing-required
+```
+
+| Condition | Fails when |
+|-----------|------------|
+| `stale` | a spec's `reviewedAt` is older than the threshold |
+| `draft-committed` | a committed spec has `status: "draft"` |
+| `missing-required` | a `required.json` id has no matching spec |
+| `missing-verifiedby` | a spec declares no `verifiedBy` paths |
+
+`missing-verifiedby` checks only whether a spec *declares* any `verifiedBy` — distinct from `validate`, which checks that declared paths exist. An unknown condition exits `2` rather than being silently ignored, and `never-reviewed` specs are reported but never gate.
+
+:::tip
+The [reusable GitHub Action](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint) accepts a `report-fail-on` input to run this gate in CI; leave it empty to skip the gate.
+:::
+
 ## Format specs
 
 The sidecar, `specpin init`, and the extension all write `.specs/` JSON in one canonical shape: 2-space indent, fully expanded (one object/array element per line), with a trailing newline. `specpin format` rewrites your specs into that shape, so edits made through the extension produce minimal, reviewable Git diffs.
