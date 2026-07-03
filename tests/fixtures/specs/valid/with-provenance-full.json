@@ -1,0 +1,24 @@
+{
+  "id": "with-provenance-full",
+  "title": { "en": "Full provenance" },
+  "description": { "en": "Carries all provenance fields." },
+  "links": [{ "label": "Ticket JIRA-123", "url": "https://tracker.example/browse/JIRA-123" }],
+  "verifiedBy": ["tests/login.spec.ts", "src/auth/login.test.tsx"],
+  "status": "approved",
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  },
+  "meta": {
+    "createdBy": "manual",
+    "createdAt": "2026-06-25T08:00:00Z",
+    "updatedAt": "2026-06-25T08:00:00Z",
+    "source": "manual",
+    "reviewedAt": "2026-06-30T10:00:00Z",
+    "reviewedBy": "manual"
+  }
+}

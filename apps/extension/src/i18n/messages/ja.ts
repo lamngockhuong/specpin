@@ -394,6 +394,39 @@ const ja: Record<keyof Messages, string> = {
   "options.teamGuidesSummary": "チームガイド",
   "options.teamGuidesNote": ".specs/guides.json にコミットされる名前付きオンボーディングツアー。",
   "options.noTeamGuides": "チームガイドはありません。",
+
+  // Capture/edit form: provenance authoring + Mark-reviewed.
+  "capture.statusLabel": "ステータス",
+  "capture.statusHint": "任意のライフサイクル",
+  "capture.statusNeutral": "— (なし)",
+  "capture.linksLabel": "リンク",
+  "capture.linksHint": "チケット、ドキュメント、PR (http/https)",
+  "capture.addLink": "リンクを追加",
+  "capture.linkLabelPlaceholder": "ラベル (例: JIRA-123)",
+  "capture.linkUrlPlaceholder": "https://…",
+  "capture.linkRemove": "リンクを削除",
+  "capture.verifiedByLabel": "関連テスト",
+  "capture.verifiedByHint": "1行に1つのリポジトリ相対パス。宣言のみで実行はしません",
+  "capture.verifiedByPlaceholder": "tests/login.spec.ts",
+  "capture.reviewLabel": "レビュー",
+  "capture.markReviewed": "レビュー済みにする",
+  "capture.reviewedOn": "{date} にレビュー",
+  "capture.notReviewed": "未レビュー",
+  "capture.reviewedByPlaceholder": "レビュアー (例: manual)",
+  "capture.reviewedByWarning":
+    ".specs/ にコミットされエクスポートにも含まれます — 個人情報/メールは入力しないでください。",
+
+  // Provenance/trust block shown on every reader surface.
+  "prov.statusDraft": "ドラフト",
+  "prov.statusApproved": "承認済み",
+  "prov.statusDeprecated": "非推奨",
+  "prov.linkedTests": "関連テスト ({count})",
+  "prov.linkedTestsTitle":
+    "このスペックを宣言するテスト。specpin validate はパスの存在を確認しますが、実行はしません。",
+  "prov.reviewed": "{when} にレビュー",
+  "prov.reviewedBy": "{who} が {when} にレビュー",
+  "prov.stale": "古い",
+  "prov.staleTitle": "{days} 日以上レビューされていません",
 };
 
 export default ja;

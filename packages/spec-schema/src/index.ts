@@ -11,6 +11,7 @@ export type {
   FrameworkHint,
   GuideDef,
   GuidesConfig,
+  Link,
   LocalizedString,
   Manifest,
   ManifestSettings,
@@ -19,6 +20,7 @@ export type {
   SpecFile,
   SpecMeta,
   SpecSource,
+  SpecStatus,
   ViewsConfig,
 } from "./types.gen.js";
 export {

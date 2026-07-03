@@ -31,6 +31,23 @@
       "type": "string",
       "enum": ["ai-generated", "manual"]
     },
+    "Link": {
+      "title": "Link",
+      "description": "An author-declared reference from a spec to an external resource (ticket, design doc, PR). The url is constrained to http/https as defense-in-depth; the render-time href sanitizer is authoritative.",
+      "type": "object",
+      "required": ["label", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "url": { "type": "string", "format": "uri", "pattern": "^https?://" }
+      }
+    },
+    "SpecStatus": {
+      "title": "SpecStatus",
+      "description": "Author-declared lifecycle of a spec. Absent means neutral/untagged (no default).",
+      "type": "string",
+      "enum": ["draft", "approved", "deprecated"]
+    },
     "PositionHint": {
       "title": "PositionHint",
       "type": "object",
@@ -95,7 +112,17 @@
         "createdBy": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" },
-        "source": { "$ref": "#/$defs/SpecSource" }
+        "source": { "$ref": "#/$defs/SpecSource" },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the spec content was last human-reviewed. Stamped by the Mark-reviewed action. Optional; absent means never reviewed."
+        },
+        "reviewedBy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Author-declared reviewer token. Committed to .specs/ (Git) and included in export bundles — must not contain PII/emails; defaults to the same non-PII token as createdBy."
+        }
       }
     },
     "Spec": {
@@ -120,6 +147,19 @@
           "type": "array",
           "items": { "type": "string" }
         },
+        "links": {
+          "type": "array",
+          "maxItems": 10,
+          "items": { "$ref": "#/$defs/Link" },
+          "description": "Author-declared references (tickets, docs, PRs) this spec came from."
+        },
+        "verifiedBy": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "description": "Repo-relative paths of tests that declare this spec. Declarative only: `specpin validate` checks each path exists; it does not run tests or know pass/fail."
+        },
+        "status": { "$ref": "#/$defs/SpecStatus" },
         "preferredDisplayMode": { "$ref": "#/$defs/DisplayMode" },
         "fingerprint": { "$ref": "#/$defs/ElementFingerprint" },
         "meta": { "$ref": "#/$defs/SpecMeta" }
@@ -162,6 +202,12 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "stalenessThresholdDays": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3650,
+          "description": "Days after `meta.reviewedAt` before a spec is shown as stale. Runtime default 90 when absent. Bounded so it cannot silently disable the freshness signal."
         },
         "defaultDisplayMode": { "$ref": "#/$defs/DisplayMode" }
       }

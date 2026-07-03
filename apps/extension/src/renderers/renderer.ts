@@ -73,6 +73,11 @@ export interface RenderMeta {
    *  same origin open in the current tab and cross-origin links open in a new tab
    *  (see classifyHref). Omitted leaves every link opening in a new tab. */
   pageOrigin?: string;
+  /** This spec's project staleness threshold (days), resolved + clamped by the
+   *  background per the spec's own project (90-day default for manifest-less local
+   *  projects). Threaded per-spec so the freshness signal is correct on a
+   *  multi-project page. Omitted falls back to the 90-day default at render. */
+  stalenessThresholdDays?: number;
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already

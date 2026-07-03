@@ -1,0 +1,14 @@
+{
+  "id": "verifiedby-non-string",
+  "title": { "en": "verifiedBy non-string" },
+  "description": { "en": "verifiedBy contains a non-string entry." },
+  "verifiedBy": ["tests/ok.spec.ts", 123],
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

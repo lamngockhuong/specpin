@@ -1,0 +1,14 @@
+{
+  "id": "bad-link-url-scheme-javascript",
+  "title": { "en": "Bad link scheme" },
+  "description": { "en": "Link url uses the javascript: scheme." },
+  "links": [{ "label": "Click", "url": "javascript:alert(1)" }],
+  "fingerprint": {
+    "cssSelector": "button",
+    "xpath": "/button",
+    "domPath": ["button"],
+    "tagName": "button",
+    "attributes": {},
+    "positionHint": { "index": 0, "siblingCount": 1 }
+  }
+}

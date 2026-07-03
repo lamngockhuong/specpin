@@ -24,6 +24,9 @@ The spec writes to the chosen project and appears immediately on the element.
 - **Description**: What the element does (required for the default language). Markdown supported.
 - **Business rules**: One rule per line (optional). Markdown supported (inline marks only).
 - **Tags**: Comma-separated (optional, e.g. `auth, critical`).
+- **Status**: Lifecycle state — draft, approved, or deprecated (optional; leave unset for neutral).
+- **Links**: Author-declared references to related tickets, docs, or PRs (optional). Each is a label plus an `http`/`https` URL.
+- **Linked tests**: Repo-relative test paths that declare this spec (optional). These are *declared* links, not test results — Specpin checks the paths exist during `specpin validate`, but never runs them.
 - **Display mode**: Use project default, tooltip, or sidebar.
 - **Target project**: Which project to save into. With more than one writable project serving the page, pick from the dropdown. With exactly one, it is selected automatically. With none, capture is disabled with an explanation.
 - **Target file**: The `.spec.json` file to write into (pre-filled, editable).
@@ -60,6 +63,10 @@ Click **Edit** on a spec card in the side panel, or click a tooltip badge then *
 The same form opens, pre-filled with the spec's content for every authored language. Change any field and click **Save changes**. The spec keeps its `id` and provenance (`createdBy`, `createdAt`, `source`); only `updatedAt` is bumped.
 
 Edit writes back through the owning project (sidecar or local) and live-updates the page.
+
+## Mark reviewed
+
+The edit form has a **Mark reviewed** action that stamps the spec's review date (`reviewedAt`) and a reviewer token (`reviewedBy`). Enter a **non-PII token** — a name or handle, not an email — because it is committed to Git and included in exports; the form warns you of this. The review date drives the **stale** indicator on rendered specs once it passes the project's staleness threshold.
 
 ## Re-link element (edit only)
 

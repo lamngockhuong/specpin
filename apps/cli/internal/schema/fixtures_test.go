@@ -37,6 +37,18 @@ func TestSharedGuidesCorpus(t *testing.T) {
 	runFixtureCorpus(t, "guides", v.ValidateGuides)
 }
 
+// TestSharedManifestCorpus mirrors the ajv manifest loop so the TS and Go
+// validators agree on the manifest.json (Manifest) schema too — notably the
+// ManifestSettings.stalenessThresholdDays bounds, which are otherwise absent
+// from the shared corpus.
+func TestSharedManifestCorpus(t *testing.T) {
+	v, err := NewValidator()
+	if err != nil {
+		t.Fatalf("new validator: %v", err)
+	}
+	runFixtureCorpus(t, "manifest", v.ValidateManifest)
+}
+
 // runFixtureCorpus runs every fixture under tests/fixtures/<name>/{valid,invalid}
 // through validate, asserting valid ones pass and invalid ones fail.
 func runFixtureCorpus(t *testing.T, name string, validate func([]byte) []string) {

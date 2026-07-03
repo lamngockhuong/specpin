@@ -59,6 +59,17 @@ Mỗi hàng spec hiển thị một huy hiệu nhỏ đánh dấu nguồn của 
 
 Rê chuột qua huy hiệu để xem tooltip với chi tiết hơn.
 
+## Khối nguồn gốc
+
+Khi một spec mang các trường nguồn gốc, spec đã render sẽ hiển thị một khối nguồn gốc:
+
+- **Huy hiệu trạng thái**: trạng thái vòng đời của spec (draft, approved, hoặc deprecated), khi được đặt.
+- **Liên kết**: các tham chiếu do tác giả khai báo tới ticket, tài liệu hoặc PR. Mỗi liên kết mở trong tab mới.
+- **Test liên kết**: các đường dẫn `verifiedBy` khai báo spec, hiển thị dưới dạng danh sách. Chúng được *liên kết*, không phải đã xác minh — Specpin không chạy chúng hay tuyên bố chúng pass.
+- **Đã review**: một dòng "đã review {thời gian tương đối}" từ hành động **Đánh dấu đã review** gần nhất. Vượt qua ngưỡng cũ của dự án, một chỉ báo **cũ** xuất hiện, nhắc bạn review lại.
+
+Nguồn gốc do tác giả khẳng định: nó phản ánh những gì tác giả của spec đã commit, và bước kiểm tra thực sự là việc review Git-diff của `.specs/`, không phải điều gì đó lúc chạy.
+
 ## Ngôn ngữ nội dung spec
 
 Văn bản spec (tiêu đề, mô tả, quy tắc nghiệp vụ) có thể được bản địa hóa. Menu thả xuống **Ngôn ngữ** (được gán nhãn **Ngôn ngữ của spec** trong tiêu đề popup) đặt locale đang hoạt động. Lựa chọn được duy trì qua các phiên.

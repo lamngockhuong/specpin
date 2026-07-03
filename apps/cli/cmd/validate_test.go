@@ -57,7 +57,7 @@ func TestValidatePassesOnValidSpecs(t *testing.T) {
 		"login.spec.json": validSpecFile,
 	})
 	var out, errOut bytes.Buffer
-	if code := runValidate(dir, false, &out, &errOut); code != exitValid {
+	if code := runValidate(dir, "", false, &out, &errOut); code != exitValid {
 		t.Fatalf("want exit %d, got %d\nstdout:\n%s\nstderr:\n%s", exitValid, code, out.String(), errOut.String())
 	}
 	if !strings.Contains(out.String(), "OK manifest.json") {
@@ -73,7 +73,7 @@ func TestValidateFailsOnSchemaViolation(t *testing.T) {
 		"login.spec.json": bad,
 	})
 	var out, errOut bytes.Buffer
-	if code := runValidate(dir, false, &out, &errOut); code != exitInvalid {
+	if code := runValidate(dir, "", false, &out, &errOut); code != exitInvalid {
 		t.Fatalf("want exit %d, got %d\nstdout:\n%s", exitInvalid, code, out.String())
 	}
 	if !strings.Contains(out.String(), "FAIL login.spec.json") {
@@ -87,7 +87,7 @@ func TestValidateCannotRunWhenManifestMissing(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out, errOut bytes.Buffer
-	if code := runValidate(dir, false, &out, &errOut); code != exitCannotRun {
+	if code := runValidate(dir, "", false, &out, &errOut); code != exitCannotRun {
 		t.Fatalf("want exit %d, got %d", exitCannotRun, code)
 	}
 }
@@ -101,7 +101,7 @@ func TestValidateWarnsOnDriftButPasses(t *testing.T) {
 		"orphan.spec.json": validSpecFile,
 	})
 	var out, errOut bytes.Buffer
-	if code := runValidate(dir, false, &out, &errOut); code != exitValid {
+	if code := runValidate(dir, "", false, &out, &errOut); code != exitValid {
 		t.Fatalf("drift should warn-only; want exit %d, got %d\n%s", exitValid, code, out.String())
 	}
 	if !strings.Contains(out.String(), "warning:") || !strings.Contains(out.String(), "orphan.spec.json") {
@@ -119,7 +119,7 @@ func TestValidateRejectsSymlinkedSpecFile(t *testing.T) {
 		t.Skipf("symlinks unsupported: %v", err)
 	}
 	var out, errOut bytes.Buffer
-	if code := runValidate(dir, false, &out, &errOut); code != exitInvalid {
+	if code := runValidate(dir, "", false, &out, &errOut); code != exitInvalid {
 		t.Fatalf("want exit %d for symlinked spec, got %d\n%s", exitInvalid, code, out.String())
 	}
 	if !strings.Contains(out.String(), "FAIL evil.spec.json") || !strings.Contains(out.String(), "symlink") {
@@ -134,7 +134,7 @@ func TestValidateStrictManifestFailsOnDrift(t *testing.T) {
 		"orphan.spec.json": validSpecFile,
 	})
 	var out, errOut bytes.Buffer
-	if code := runValidate(dir, true, &out, &errOut); code != exitInvalid {
+	if code := runValidate(dir, "", true, &out, &errOut); code != exitInvalid {
 		t.Fatalf("strict drift should fail; want exit %d, got %d\n%s", exitInvalid, code, out.String())
 	}
 }

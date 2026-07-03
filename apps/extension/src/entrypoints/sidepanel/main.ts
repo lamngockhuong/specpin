@@ -10,6 +10,7 @@ import {
 import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import { renderInlineMarkdown, renderMarkdownBlock } from "../../shared/markdown.js";
+import { provenanceSectionHtml } from "../../shared/provenance.js";
 import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
@@ -265,6 +266,22 @@ function renderSpecs(res: SpecsForOrigin): void {
         rules.appendChild(item);
       }
       li.appendChild(rules);
+    }
+
+    // Provenance block (status / links / linked tests / reviewed). The helper
+    // emits a module-controlled, fully escaped trusted fragment (same property as
+    // the Markdown blocks above), so a <template> parse + append is safe and adds
+    // its own `.prov` wrapper (no extra node). Empty string → nothing appended, so
+    // a spec with no provenance renders exactly as before.
+    const provHtml = provenanceSectionHtml(spec, {
+      pageOrigin,
+      thresholdDays: spec.stalenessThresholdDays,
+      locale: activeLocale,
+    });
+    if (provHtml) {
+      const tpl = document.createElement("template");
+      tpl.innerHTML = provHtml;
+      li.appendChild(tpl.content);
     }
 
     const file = document.createElement("div");

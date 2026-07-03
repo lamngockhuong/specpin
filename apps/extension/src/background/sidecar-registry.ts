@@ -15,6 +15,7 @@ import type {
 } from "../shared/connection-types.js";
 import { localConnId } from "../shared/local-id.js";
 import { originMatchesDomains } from "../shared/origin-match.js";
+import { resolveStalenessThreshold } from "../shared/provenance.js";
 import { type ConnectionDeps, SidecarConnection } from "./sidecar-connection.js";
 
 export interface RegistryDeps {
@@ -168,9 +169,18 @@ export class SidecarRegistry {
       const cache = conn.getCache();
       if (!cache || !conn.matchesOrigin(origin)) continue;
       const project = cache.manifest?.project ?? "";
+      const stalenessThresholdDays = resolveStalenessThreshold(
+        cache.manifest?.settings?.stalenessThresholdDays,
+      );
       // A serving sidecar spec is always writable (capture/edit POST back to it).
       for (const spec of cache.specs)
-        specs.push({ ...spec, connectionId: conn.id, project, writable: true });
+        specs.push({
+          ...spec,
+          connectionId: conn.id,
+          project,
+          writable: true,
+          stalenessThresholdDays,
+        });
       manifest ??= cache.manifest;
       collectLocales(localeSet, cache.manifest);
     }
@@ -195,6 +205,11 @@ export class SidecarRegistry {
       if (!originMatchesDomains(origin, domains)) continue;
       const project = batch.specs.manifest?.project ?? "";
       const connectionId = localConnId(batch.id);
+      // Local/manual batches usually carry no manifest settings → the 90-day
+      // default (documented limitation: no per-local-project override).
+      const stalenessThresholdDays = resolveStalenessThreshold(
+        batch.specs.manifest?.settings?.stalenessThresholdDays,
+      );
       // A local spec is editable only when this origin could also write to its
       // batch (the same applyToAllSites gate the write guard uses): an
       // empty-domains imported batch renders match-all but is not a write target,
@@ -203,7 +218,7 @@ export class SidecarRegistry {
       for (const spec of batch.specs.specs) {
         if (seenManualIds.has(spec.id)) continue;
         seenManualIds.add(spec.id);
-        specs.push({ ...spec, connectionId, project, writable });
+        specs.push({ ...spec, connectionId, project, writable, stalenessThresholdDays });
       }
       manifest ??= batch.specs.manifest ?? null;
       collectLocales(localeSet, batch.specs.manifest ?? null);

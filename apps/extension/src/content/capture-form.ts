@@ -1,5 +1,12 @@
 import { anchorStrength } from "@specpin/fingerprint-core";
-import type { DisplayMode, ElementFingerprint, LocalizedString, Spec } from "@specpin/spec-schema";
+import type {
+  DisplayMode,
+  ElementFingerprint,
+  Link,
+  LocalizedString,
+  Spec,
+  SpecStatus,
+} from "@specpin/spec-schema";
 import { formatErrors, validateSpec } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import { copyText } from "../shared/clipboard.js";
@@ -34,6 +41,15 @@ export interface CaptureFields {
   tags: string[];
   preferredDisplayMode?: DisplayMode | null;
   createdBy?: string;
+  /** Author-declared issue/doc links. Rows with an empty label or url are dropped
+   *  on build; an empty list omits the field (and, in edit mode, overwrites any
+   *  prior links rather than preserving them). */
+  links?: Link[];
+  /** Author-declared test paths (one per line in the form). Trimmed, empties
+   *  dropped; empty omits + overwrites prior, like links. */
+  verifiedBy?: string[];
+  /** Lifecycle status; empty/undefined omits the field (neutral). */
+  status?: SpecStatus | null;
 }
 
 /** Submit handler returns whether the write succeeded (and any errors to show).
@@ -95,6 +111,18 @@ function mdToolbarHtml(cmds: readonly MdCommand[], variant: string): string {
   return `<div class="md-toolbar ${variant}">${buttons}</div>`;
 }
 
+/** One editable label+url link row for the provenance links sub-form. Values are
+ *  attribute-escaped; the row is removable via its × button. */
+function linkRowHtml(label = "", url = ""): string {
+  return (
+    `<div class="link-row">` +
+    `<input class="link-label" placeholder="${escapeAttr(t("capture.linkLabelPlaceholder"))}" value="${escapeAttr(label)}" />` +
+    `<input class="link-url" placeholder="${escapeAttr(t("capture.linkUrlPlaceholder"))}" value="${escapeAttr(url)}" />` +
+    `<button type="button" class="link-remove" aria-label="${escapeAttr(t("capture.linkRemove"))}" title="${escapeAttr(t("capture.linkRemove"))}">×</button>` +
+    `</div>`
+  );
+}
+
 /** A capture-target option label: project name plus its kind, so "CRM (local)"
  *  reads clearly against "My Sidecar (sidecar)" when both serve the page. */
 function targetLabel(target: WriteTarget): string {
@@ -122,13 +150,19 @@ export function mergeLocalized(
  *  collect every locale with a non-empty value; business rules pair across
  *  locales by line index. When `existing` is given (edit mode) the spec keeps its
  *  id and provenance (createdBy/createdAt/source) and only bumps updatedAt;
- *  otherwise a fresh id + manual provenance are minted. Pure + testable. */
+ *  otherwise a fresh id + manual provenance are minted. The prior `meta` is
+ *  SPREAD (not reconstructed from a subset), so an unrelated edit never drops the
+ *  review stamp (reviewedAt/reviewedBy). `review`, when passed (Mark-reviewed),
+ *  stamps those two fields. links/verifiedBy/status come straight from `fields`
+ *  (not merged with `existing`), so clearing a field in edit mode overwrites the
+ *  prior value instead of resurrecting it; empty values are omitted. Pure + testable. */
 export function buildSpec(
   fields: CaptureFields,
   fingerprint: ElementFingerprint,
   nowIso: string,
   idSuffix: string,
   existing?: Spec,
+  review?: { at: string; by: string },
 ): Spec {
   const title: LocalizedString = {};
   const description: LocalizedString = {};
@@ -153,7 +187,9 @@ export function buildSpec(
   const base = slugify(baseTitle) || "spec";
 
   // Editing preserves the stable id and provenance (createdBy/createdAt/source)
-  // and only bumps updatedAt; capture mints a fresh id + manual provenance.
+  // and only bumps updatedAt; capture mints a fresh id + manual provenance. The
+  // prior meta is spread first so review fields (and any future meta) survive an
+  // unrelated edit; the enumerated keys then override.
   const spec: Spec = {
     id: existing?.id ?? `${base}-${idSuffix}`,
     title,
@@ -162,13 +198,27 @@ export function buildSpec(
     tags: fields.tags.map((t) => t.trim()).filter(Boolean),
     fingerprint,
     meta: {
+      ...(existing?.meta ?? {}),
       createdBy: existing?.meta?.createdBy ?? (fields.createdBy?.trim() || "manual"),
       createdAt: existing?.meta?.createdAt ?? nowIso,
       updatedAt: nowIso,
       source: existing?.meta?.source ?? "manual",
+      ...(review ? { reviewedAt: review.at, reviewedBy: review.by } : {}),
     },
   };
   if (fields.preferredDisplayMode) spec.preferredDisplayMode = fields.preferredDisplayMode;
+
+  // Provenance fields come purely from the form state (preloaded from `existing`
+  // on open), never merged with `existing` here — so clearing a field overwrites
+  // the prior value. Empty values omit the key entirely (the saved shape).
+  const links = (fields.links ?? [])
+    .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
+    .filter((l) => l.label && l.url);
+  if (links.length) spec.links = links;
+  const verifiedBy = (fields.verifiedBy ?? []).map((p) => p.trim()).filter(Boolean);
+  if (verifiedBy.length) spec.verifiedBy = verifiedBy;
+  if (fields.status) spec.status = fields.status;
+
   return spec;
 }
 
@@ -237,6 +287,17 @@ textarea { min-height: 64px; resize: vertical; }
 .md-btn:hover { border-color: var(--sp-accent); color: var(--sp-text); filter: none; }
 .md-btn:focus-visible { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
 .md-btn.md-italic { font-style: italic; }
+.link-row { display: flex; gap: 6px; margin-bottom: 6px; }
+.link-row .link-label { flex: 0 0 34%; }
+.link-row .link-url { flex: 1 1 auto; }
+.link-row .link-remove {
+  flex: 0 0 auto; width: auto; min-width: 34px; padding: 0 10px;
+  background: var(--sp-control); color: var(--sp-text-2);
+}
+#sp-add-link.add-link { width: auto; margin-top: 2px; padding: 6px 12px; }
+.review-row { display: flex; align-items: center; gap: 10px; }
+.review-row #sp-mark-reviewed { width: auto; padding: 8px 14px; }
+#sp-reviewed-by { margin-top: 8px; }
 .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 button {
   padding: 10px 18px;
@@ -336,9 +397,19 @@ export class CaptureForm {
     const rulesEl = q<HTMLTextAreaElement>("#sp-rules");
     const pageUrlEl = q<HTMLInputElement>("#sp-pageurl");
     const tabStrip = q<HTMLElement>(".lang-tabs");
+    const linksBox = q<HTMLElement>("#sp-links");
     // Prefill the page-scope glob from the fingerprint (auto-filled at capture,
     // preserved on edit). Blank means "match on any page".
     pageUrlEl.value = activeFingerprint.pageUrl ?? "";
+
+    // Links sub-form: "Add link" appends an empty row; a delegated handler removes
+    // a row via its × button. The rows are the source of truth read at save.
+    q<HTMLButtonElement>("#sp-add-link").addEventListener("click", () => {
+      linksBox.insertAdjacentHTML("beforeend", linkRowHtml());
+    });
+    linksBox.addEventListener("click", (e) => {
+      (e.target as HTMLElement).closest(".link-remove")?.closest(".link-row")?.remove();
+    });
 
     // Preload content for editing an existing spec: per-locale text plus the
     // locale-independent tags + display mode (else saving would wipe them).
@@ -348,6 +419,23 @@ export class CaptureForm {
       q<HTMLInputElement>("#sp-tags").value = (options.initial.tags ?? []).join(", ");
       if (options.initial.preferredDisplayMode)
         q<HTMLSelectElement>("#sp-mode").value = options.initial.preferredDisplayMode;
+      // Provenance: preload so an edit preserves them and clearing a field
+      // overwrites (buildSpec never falls back to `existing` for these).
+      if (options.initial.status) q<HTMLSelectElement>("#sp-status").value = options.initial.status;
+      q<HTMLTextAreaElement>("#sp-verifiedby").value = (options.initial.verifiedBy ?? []).join(
+        "\n",
+      );
+      for (const link of options.initial.links ?? [])
+        linksBox.insertAdjacentHTML("beforeend", linkRowHtml(link.label, link.url));
+      // Mark-reviewed prefill: the spec's existing reviewer, else the non-PII
+      // createdBy token — never a resolved user identity/email.
+      const reviewedByEl = q<HTMLInputElement>("#sp-reviewed-by");
+      reviewedByEl.value =
+        options.initial.meta?.reviewedBy ?? options.initial.meta?.createdBy ?? "manual";
+      const reviewedAt = options.initial.meta?.reviewedAt;
+      q<HTMLElement>("#sp-reviewed-status").textContent = reviewedAt
+        ? t("capture.reviewedOn", { date: reviewedAt })
+        : t("capture.notReviewed");
     }
 
     const stashCurrent = (): void => {
@@ -537,7 +625,32 @@ export class CaptureForm {
       if (e.target === wrap) cancel();
     });
 
-    q<HTMLButtonElement>("#sp-save").addEventListener("click", async () => {
+    // Read the current link rows into label/url pairs (empties dropped in build).
+    const readLinkRows = (): Link[] =>
+      [...linksBox.querySelectorAll<HTMLElement>(".link-row")].map((row) => ({
+        label: (row.querySelector(".link-label") as HTMLInputElement).value,
+        url: (row.querySelector(".link-url") as HTMLInputElement).value,
+      }));
+
+    // Gather all form state into CaptureFields (provenance included).
+    const readFields = (): CaptureFields => {
+      stashCurrent();
+      return {
+        byLocale,
+        defaultLocale: options.defaultLocale || current,
+        tags: q<HTMLInputElement>("#sp-tags").value.split(","),
+        preferredDisplayMode: (q<HTMLSelectElement>("#sp-mode").value ||
+          null) as DisplayMode | null,
+        links: readLinkRows(),
+        verifiedBy: q<HTMLTextAreaElement>("#sp-verifiedby").value.split("\n"),
+        status: (q<HTMLSelectElement>("#sp-status").value || null) as SpecStatus | null,
+      };
+    };
+
+    // One write path shared by Save and Mark-reviewed. `review`, when passed,
+    // stamps meta.reviewedAt/reviewedBy; both routes reuse the same validation,
+    // routing, and 409-conflict handling.
+    const submit = async (review?: { at: string; by: string }): Promise<void> => {
       // A capture with no writable project serving the page cannot be routed:
       // explain rather than misroute to a non-existent sidecar. (Edit always has
       // its owning project, so this never blocks an edit.)
@@ -545,14 +658,7 @@ export class CaptureForm {
         this.showErrors(errorsBox, [t("capture.noWritableProject")]);
         return;
       }
-      stashCurrent();
-      const fields: CaptureFields = {
-        byLocale,
-        defaultLocale: options.defaultLocale || current,
-        tags: q<HTMLInputElement>("#sp-tags").value.split(","),
-        preferredDisplayMode: (q<HTMLSelectElement>("#sp-mode").value ||
-          null) as DisplayMode | null,
-      };
+      const fields = readFields();
 
       // Friendly guard: the default locale must carry title + description so the
       // user gets a clear message instead of a raw schema error.
@@ -583,6 +689,7 @@ export class CaptureForm {
         new Date().toISOString(),
         idSuffix,
         options.initial,
+        review,
       );
 
       const validation = validateSpec(spec);
@@ -606,7 +713,17 @@ export class CaptureForm {
       if (result.ok) this.close();
       else if (result.conflict) this.showErrors(errorsBox, [t("capture.specChangedReloaded")]);
       else this.showErrors(errorsBox, result.errors ?? [t("capture.saveFailed")]);
-    });
+    };
+
+    q<HTMLButtonElement>("#sp-save").addEventListener("click", () => void submit());
+    // Mark reviewed (edit mode only): stamp meta.reviewedAt=now + the reviewer
+    // token (non-PII default, editable) and save through the same path.
+    if (editing) {
+      q<HTMLButtonElement>("#sp-mark-reviewed").addEventListener("click", () => {
+        const by = q<HTMLInputElement>("#sp-reviewed-by").value.trim() || "manual";
+        void submit({ at: new Date().toISOString(), by });
+      });
+    }
   }
 
   private template(
@@ -666,6 +783,29 @@ export class CaptureForm {
           <option value="tooltip">tooltip</option>
           <option value="sidebar">sidebar</option>
         </select>
+        <label>${escapeHtml(t("capture.statusLabel"))} <span class="hint">${escapeHtml(t("capture.statusHint"))}</span></label>
+        <select id="sp-status">
+          <option value="">${escapeHtml(t("capture.statusNeutral"))}</option>
+          <option value="draft">${escapeHtml(t("prov.statusDraft"))}</option>
+          <option value="approved">${escapeHtml(t("prov.statusApproved"))}</option>
+          <option value="deprecated">${escapeHtml(t("prov.statusDeprecated"))}</option>
+        </select>
+        <label>${escapeHtml(t("capture.linksLabel"))} <span class="hint">${escapeHtml(t("capture.linksHint"))}</span></label>
+        <div id="sp-links"></div>
+        <button type="button" id="sp-add-link" class="add-link">${escapeHtml(t("capture.addLink"))}</button>
+        <label>${escapeHtml(t("capture.verifiedByLabel"))} <span class="hint">${escapeHtml(t("capture.verifiedByHint"))}</span></label>
+        <textarea id="sp-verifiedby" placeholder="${escapeAttr(t("capture.verifiedByPlaceholder"))}"></textarea>
+        ${
+          opts.editing
+            ? `<label>${escapeHtml(t("capture.reviewLabel"))}</label>
+        <div class="review-row">
+          <span id="sp-reviewed-status" class="hint"></span>
+          <button type="button" id="sp-mark-reviewed">${escapeHtml(t("capture.markReviewed"))}</button>
+        </div>
+        <input id="sp-reviewed-by" placeholder="${escapeAttr(t("capture.reviewedByPlaceholder"))}" />
+        <span class="hint">${escapeHtml(t("capture.reviewedByWarning"))}</span>`
+            : ""
+        }
         <label>${escapeHtml(t("capture.pageScopeField"))} <span class="hint">${escapeHtml(t("capture.pageScopeHint"))}</span></label><input id="sp-pageurl" placeholder="${escapeAttr(t("capture.pageScopePlaceholder"))}" />
         ${fileField}
         ${relinkField}

@@ -27,6 +27,7 @@ to each file for editor autocomplete.
 | `settings.defaultLocale` | string | no | fallback locale |
 | `settings.locales` | string[] | no | BCP-47 locales authored |
 | `settings.matchConfidenceThreshold` | number 0-1 | no | reserved for the deferred hybrid scorer |
+| `settings.stalenessThresholdDays` | number 1-3650 | no | days after a spec's `meta.reviewedAt` before it shows as stale; default 90 |
 | `settings.defaultDisplayMode` | DisplayMode | no | fallback render mode |
 
 ## SpecFile (`<area>.spec.json`)
@@ -45,9 +46,22 @@ to each file for editor autocomplete.
 | `description` | LocalizedString | yes | locale-keyed object, each value non-empty |
 | `businessRules` | LocalizedString[] | no | one locale-keyed object per rule |
 | `tags` | string[] | no | NOT localized |
+| `links` | Link[] | no | author-declared refs (tickets/docs/PRs); ≤10; see Link below |
+| `verifiedBy` | string[] | no | repo-relative test paths that DECLARE this spec; ≤20, each ≤200 chars. Declarative only (see note) |
+| `status` | SpecStatus | no | `"draft" \| "approved" \| "deprecated"`; omit = neutral (no default) |
 | `preferredDisplayMode` | DisplayMode | no | overrides `settings.defaultDisplayMode` |
 | `fingerprint` | ElementFingerprint | yes | the element link |
 | `meta` | SpecMeta | no | provenance + timestamps |
+
+### Link
+
+`{ "label": string (1-80), "url": string }`. `url` must be `http`/`https`
+(`^https?://`). Both fields required.
+
+**`verifiedBy` is declarative.** It lists tests that *claim* to cover the spec;
+`specpin validate` checks each path **exists** in the repo (a broken-link guard),
+it does NOT run the tests or imply they pass. Only list real files. Never present
+these as "verified"/"passing" — they are "linked".
 
 ## LocalizedString
 
@@ -83,6 +97,11 @@ See `fingerprint-strategy.md` for how to fill these from source.
 All four required when `meta` is present: `createdBy` (string),
 `createdAt` + `updatedAt` (RFC3339 date-time, format-checked by both validators),
 `source` (`"ai-generated" | "manual"`). Use `"ai-generated"` for specs you author.
+
+Optional review fields — **do NOT author these**; a human stamps them via the
+extension's Mark-reviewed action: `reviewedAt` (RFC3339 date-time), `reviewedBy`
+(a non-PII token like `createdBy`, e.g. `"agent"`/`"manual"` — never an email or
+identity, since it is committed to `.specs/` and included in export bundles).
 
 ## DisplayMode
 

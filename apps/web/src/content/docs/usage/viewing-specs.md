@@ -59,6 +59,17 @@ Each spec row shows a small badge marking its source:
 
 Hover the badge to see a tooltip with more detail.
 
+## Provenance block
+
+When a spec carries provenance fields, rendered specs show a provenance block:
+
+- **Status badge**: the spec's lifecycle state (draft, approved, or deprecated), when set.
+- **Links**: author-declared references to tickets, docs, or PRs. Each opens in a new tab.
+- **Linked tests**: the `verifiedBy` paths that declare the spec, shown as a list. These are *linked*, not verified — Specpin does not run them or claim they pass.
+- **Reviewed**: a "reviewed {relative time}" line from the last **Mark reviewed** action. Past the project's staleness threshold, a **stale** indicator appears, prompting a re-review.
+
+Provenance is author-asserted: it reflects what the spec's author committed, and the real check is the Git-diff review of `.specs/`, not anything at runtime.
+
 ## Spec content language
 
 Spec text (title, description, business rules) can be localized. The **Language** dropdown (labeled **Spec language** in the popup header) sets the active locale. The choice persists across sessions.

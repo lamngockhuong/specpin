@@ -123,6 +123,18 @@ specpin validate --dir .specs
 
 デフォルトでは、`validate`は`manifest.specFiles`とディスク上の`*.spec.json`ファイルが一致しない場合に警告します。`--strict-manifest`を渡すと、その乖離を警告ではなくエラーにします。
 
+### `verifiedBy`パスをチェックする
+
+`validate`は、spec上のすべての`verifiedBy`パスがリポジトリに**存在する**こともチェックします。これはリンク切れガードです — テストを実行することはなく、パスすることを示唆することもありません。テスト名を挙げるspecは、そのテストへのリンクを*宣言する*だけです。
+
+パスはリポジトリルートに対して解決されます。デフォルトは`--dir`の親です（`<repo>/.specs`にある`.specs/`には追加のフラグは不要）。`.specs/`が別の場所にある場合は、validateにルートを指定します：
+
+```bash
+specpin validate --dir path/to/.specs --repo-root path/to/repo
+```
+
+パスはリポジトリ内に留まる必要があります：絶対パス、`../`によるトラバーサル、ルートから外に出るシンボリックリンクは拒否されます。存在しない`verifiedBy`パスは`1`で終了します。解決に使える読み取り可能なワーキングツリーがない場合、チェックはノート付きでスキップされます（実行を失敗させません）。
+
 :::tip
 `specpin validate`をCIで使用してspecが無効なままマージされるのを防ぎます。例については[再利用可能なGitHub Action](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint)を参照してください。
 :::

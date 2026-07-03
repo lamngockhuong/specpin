@@ -40,16 +40,26 @@ Validate the corpus against the embedded schema, offline. CI-friendly.
 ```bash
 specpin validate                 # checks ./.specs
 specpin validate --dir path/to/.specs
+specpin validate --repo-root .   # root that verifiedBy paths resolve against
 specpin validate --strict-manifest
 ```
 
 - `--dir` (default `.specs`), `--strict-manifest` (turn drift warnings into failures).
+- `--repo-root` (default: the parent of `--dir`): the root each `verifiedBy` path
+  is resolved against. Set it when `.specs/` is not at `<repo>/.specs` (e.g.
+  `./config/specs`).
+- **`verifiedBy` existence check (on by default):** after schema validation, each
+  spec's `verifiedBy` path must exist inside the repo root — a broken-link guard,
+  NOT a test run. Absolute paths, `..`-escapes, and symlinks leaving the repo are
+  rejected. A missing path fails (exit 1) naming the spec id + path. When there is
+  no readable working tree (e.g. a piped bundle) the check is skipped with a note.
 - Output: `OK <file>` or `FAIL <file>` plus indented errors per file, then
   `N files checked, M error(s)`. Manifest/disk drift prints `warning:` lines
   (or `FAIL:` under `--strict-manifest`).
 - Exit codes:
   - `0`: all valid.
-  - `1`: schema violations or an unreadable/symlinked spec file (author fixes).
+  - `1`: schema violations, an unreadable/symlinked spec file, or a missing/escaping
+    `verifiedBy` path (author fixes).
   - `2`: could not run (missing `.specs/`, no `manifest.json`, internal error).
 
 ## bundle

@@ -123,6 +123,18 @@ Exit codes:
 
 By default, `validate` warns if `manifest.specFiles` and the on-disk `*.spec.json` files disagree. Pass `--strict-manifest` to make that drift fail instead of warn.
 
+### Check `verifiedBy` paths
+
+`validate` also checks that every `verifiedBy` path on a spec **exists** in the repo. This is a broken-link guard — it never runs the tests and never implies they pass; a spec that names a test only *declares* a link to it.
+
+Paths are resolved against the repository root, which defaults to the parent of `--dir` (so `.specs/` at `<repo>/.specs` needs no extra flag). When your `.specs/` lives elsewhere, point validate at the root:
+
+```bash
+specpin validate --dir path/to/.specs --repo-root path/to/repo
+```
+
+Paths must stay inside the repo: absolute paths, `../` traversal, and symlinks that escape the root are rejected. A `verifiedBy` path that does not exist exits `1`. If there is no readable working tree to resolve against, the check is skipped with a note (it does not fail the run).
+
 :::tip
 Use `specpin validate` in CI to catch invalid specs before they merge. See the [reusable GitHub Action](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint) for an example.
 :::

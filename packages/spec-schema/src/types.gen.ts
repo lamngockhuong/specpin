@@ -5,6 +5,10 @@
  */
 
 /**
+ * Author-declared lifecycle of a spec. Absent means neutral/untagged (no default).
+ */
+export type SpecStatus = "draft" | "approved" | "deprecated";
+/**
  * How a spec renders in the browser. Phase 1 ships tooltip + sidebar; the others are reserved for forward compatibility.
  */
 export type DisplayMode = "overlay" | "tooltip" | "sidebar" | "modal" | "inline-badge";
@@ -46,6 +50,19 @@ export interface Spec {
   description: LocalizedString;
   businessRules?: LocalizedString[];
   tags?: string[];
+  /**
+   * Author-declared references (tickets, docs, PRs) this spec came from.
+   *
+   * @maxItems 10
+   */
+  links?: Link[];
+  /**
+   * Repo-relative paths of tests that declare this spec. Declarative only: `specpin validate` checks each path exists; it does not run tests or know pass/fail.
+   *
+   * @maxItems 20
+   */
+  verifiedBy?: string[];
+  status?: SpecStatus;
   preferredDisplayMode?: DisplayMode;
   fingerprint: ElementFingerprint;
   meta?: SpecMeta;
@@ -55,6 +72,13 @@ export interface Spec {
  */
 export interface LocalizedString {
   [k: string]: string;
+}
+/**
+ * An author-declared reference from a spec to an external resource (ticket, design doc, PR). The url is constrained to http/https as defense-in-depth; the render-time href sanitizer is authoritative.
+ */
+export interface Link {
+  label: string;
+  url: string;
 }
 /**
  * Multi-signal capture of a DOM element, separated from business content so relinking never touches the spec text.
@@ -103,6 +127,14 @@ export interface SpecMeta {
   createdAt: string;
   updatedAt: string;
   source: SpecSource;
+  /**
+   * When the spec content was last human-reviewed. Stamped by the Mark-reviewed action. Optional; absent means never reviewed.
+   */
+  reviewedAt?: string;
+  /**
+   * Author-declared reviewer token. Committed to .specs/ (Git) and included in export bundles — must not contain PII/emails; defaults to the same non-PII token as createdBy.
+   */
+  reviewedBy?: string;
 }
 /**
  * The .specs/manifest.json index + project configuration.
@@ -131,6 +163,10 @@ export interface ManifestSettings {
    */
   locales?: string[];
   matchConfidenceThreshold?: number;
+  /**
+   * Days after `meta.reviewedAt` before a spec is shown as stale. Runtime default 90 when absent. Bounded so it cannot silently disable the freshness signal.
+   */
+  stalenessThresholdDays?: number;
   defaultDisplayMode?: DisplayMode;
 }
 /**

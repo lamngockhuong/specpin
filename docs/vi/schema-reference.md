@@ -27,6 +27,7 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 | `settings.defaultLocale` | string | no | fallback locale khi lựa chọn của người xem không có trên một spec |
 | `settings.locales` | string[] | no | BCP-47 locales mà project này soạn spec trong đó; language picker của extension cung cấp hợp (union) của các project được kết nối |
 | `settings.matchConfidenceThreshold` | number 0-1 | no | dành riêng cho hybrid scorer đang được hoãn lại |
+| `settings.stalenessThresholdDays` | number 1-3650 | no | số ngày sau `meta.reviewedAt` của một spec trước khi nó render là **stale** (cũ); mặc định lúc chạy là **90** khi vắng mặt. Có chặn ngưỡng để không thể âm thầm tắt tín hiệu độ tươi (freshness). Được phân giải theo từng project, nên một trang nhiều project dùng cài đặt của chính project chứa mỗi spec; project local/manual (không có manifest) luôn dùng 90. |
 | `settings.defaultDisplayMode` | DisplayMode | no | render mode dự phòng (fallback) |
 
 ## SpecFile (`<area>.spec.json`)
@@ -45,9 +46,27 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 | `description` | LocalizedString | yes | object đánh key theo locale; mỗi giá trị không rỗng |
 | `businessRules` | LocalizedString[] | no | mỗi rule là một object đánh key theo locale |
 | `tags` | string[] | no | không localize |
+| `links` | Link[] | no | tham chiếu do tác giả khai báo (ticket, doc, PR); ≤10; xem Link phía dưới |
+| `verifiedBy` | string[] | no | đường dẫn tương đối theo repo của các test **khai báo** spec này; ≤20, mỗi đường dẫn ≤200 ký tự. Chỉ mang tính khai báo — xem lưu ý về trust phía dưới |
+| `status` | SpecStatus | no | `"draft" \| "approved" \| "deprecated"`; **vắng mặt = trung tính (neutral)** (không có default, nên các spec cũ không bị gắn lại nhãn) |
 | `preferredDisplayMode` | DisplayMode | no | ghi đè `settings.defaultDisplayMode` |
 | `fingerprint` | ElementFingerprint | yes | liên kết tới element |
 | `meta` | SpecMeta | no | nguồn gốc (provenance) + timestamp |
+
+### Link
+
+| Field | Type | Required | Ghi chú |
+|-------|------|----------|-------|
+| `label` | string | yes | 1-80 ký tự |
+| `url` | string | yes | chỉ `http`/`https` (`^https?://` + `format: uri`) |
+
+Ràng buộc schema trên `url` là **phòng thủ theo chiều sâu ở ranh giới lưu trữ**, không phải bộ sanitizer có thẩm quyền: một URL hợp lệ về scheme vẫn có thể mang payload, nên bộ sanitize href lúc render (từ chối `javascript:`/`data:`/scheme-relative và HTML-escape giá trị) mới là thứ làm cho liên kết an toàn. Lưu ý rằng cách hai validator hiện thực `format: uri` khác nhau ở một số trường hợp biên; việc từ chối scheme được đảm bảo bởi **pattern** `^https?://` (giống nhau ở cả hai), còn độ an toàn khi render được đảm bảo tại thời điểm hiển thị.
+
+### Provenance / mô hình tin cậy (trust model)
+
+Provenance là **do tác giả khẳng định (author-asserted)**. Ranh giới toàn vẹn (integrity boundary) là **việc con người review diff JSON của `.specs/` trong một Git PR**, không phải bất kỳ tín hiệu lúc chạy nào — đường ghi của extension là unprivileged (một trang có thể gửi một chỉnh sửa, theo thiết kế, để capture ngay trên trang), nên `status` / `reviewedBy` / `links` không đáng tin hơn tiêu đề của một spec. UI không bao giờ trình bày `status: "approved"` hay `reviewedBy` như thể đã được xác minh bằng mật mã.
+
+`verifiedBy` là một liên kết test **được khai báo**: `specpin validate` kiểm tra mỗi đường dẫn được tham chiếu **có tồn tại** trong repo hay không (tín hiệu "liên kết không bị hỏng"); nó **không** chạy các test và không biết pass/fail. Câu chữ trong UI luôn là "linked tests", không bao giờ là "verified"/"passed".
 
 ## LocalizedString
 
@@ -93,6 +112,13 @@ Optional: `testId`, `ariaLabel`, `id` (đều nullable), `textContent` (nullable
 ## SpecMeta
 
 `createdBy` (string), `createdAt` + `updatedAt` (date-time), `source` (`"ai-generated" | "manual"`). Định dạng date-time được assert bởi cả hai validator.
+
+Các trường review tùy chọn (được đóng dấu bởi hành động **Mark reviewed** của extension, đều tương thích ngược):
+
+| Field | Type | Ghi chú |
+|-------|------|-------|
+| `reviewedAt` | date-time | thời điểm nội dung spec được con người review lần cuối; vắng mặt = chưa từng review. Điều khiển tín hiệu stale so với `settings.stalenessThresholdDays`. |
+| `reviewedBy` | string | **token** người review do tác giả khai báo. Mặc định là cùng token không-PII mà `createdBy` dùng (ví dụ `manual`/`agent`), có thể chỉnh trong form. **Được commit vào `.specs/` (Git) và có trong các export bundle — không đặt PII/email vào đây.** |
 
 ## DisplayMode
 
