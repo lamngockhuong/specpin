@@ -22,11 +22,13 @@
  */
 import config from "virtual:starlight/user-config";
 
-import LanguageSelect from "virtual:starlight/components/LanguageSelect";
-import Search from "virtual:starlight/components/Search";
-import SiteTitle from "virtual:starlight/components/SiteTitle";
-import SocialIcons from "virtual:starlight/components/SocialIcons";
-import ThemeSelect from "virtual:starlight/components/ThemeSelect";
+// Concrete component paths (not virtual:starlight/components/*) so `tsc` in the
+// typecheck gate can resolve them; matches Footer.astro / changelog.astro.
+import LanguageSelect from "@astrojs/starlight/components/LanguageSelect.astro";
+import Search from "@astrojs/starlight/components/Search.astro";
+import SiteTitle from "@astrojs/starlight/components/SiteTitle.astro";
+import SocialIcons from "@astrojs/starlight/components/SocialIcons.astro";
+import ThemeSelect from "@astrojs/starlight/components/ThemeSelect.astro";
 
 /**
  * Render the `Search` component if Pagefind is enabled or the default search component has been overridden.
