@@ -32,6 +32,7 @@ Choose the language for Specpin's UI:
 - **System default**: Use your browser's UI language (falls back to English if not available).
 - **English**: Force English UI.
 - **Tiếng Việt**: Force Vietnamese UI.
+- **日本語**: Force Japanese UI.
 
 This setting is independent from the spec content language (the **Language** dropdown in the popup and side panel). Changing the UI language does not change which language specs display in.
 

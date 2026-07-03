@@ -92,6 +92,8 @@ A personal override (force-show or force-hide) syncs across machines via `chrome
 
 When a spec's fingerprint cannot be matched exactly, it appears with an amber border and a **Needs review** tag. The badge turns amber (instead of the default blue). This means the element may have changed, and you should verify the spec still describes the right element.
 
+When no exact match exists, Specpin can still fall back to a weighted **scored** match. A confident scored match renders normally but carries a distinct **Scored match** badge showing its confidence and the signal that matched it ("why matched"); a borderline one also gets the amber **Needs review** treatment. Below the confidence threshold nothing renders, rather than guess.
+
 ## Markdown rendering
 
 Spec descriptions and business rules support a safe Markdown subset:

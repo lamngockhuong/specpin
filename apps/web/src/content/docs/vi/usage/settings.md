@@ -32,6 +32,7 @@ Chọn ngôn ngữ cho UI của Specpin:
 - **Theo hệ thống**: Sử dụng ngôn ngữ UI của trình duyệt của bạn (rơi vào tiếng Anh nếu không có).
 - **English**: Ép UI tiếng Anh.
 - **Tiếng Việt**: Ép UI tiếng Việt.
+- **日本語**: Ép UI tiếng Nhật.
 
 Cài đặt này độc lập với ngôn ngữ nội dung spec (menu thả xuống **Ngôn ngữ** trong popup và side panel). Thay đổi ngôn ngữ UI không thay đổi ngôn ngữ mà spec hiển thị.
 
