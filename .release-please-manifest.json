@@ -1,5 +1,5 @@
 {
-  "apps/extension": "0.0.10",
-  "apps/cli": "0.0.6",
-  "packages/spec-schema": "0.0.4"
+  "apps/extension": "0.0.11",
+  "apps/cli": "0.0.7",
+  "packages/spec-schema": "0.0.5"
 }
