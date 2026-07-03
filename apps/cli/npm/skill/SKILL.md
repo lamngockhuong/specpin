@@ -61,11 +61,16 @@ c. **Write `<area>.spec.json`** (one file per page or feature). It has a `group`
      e.g. `{ "en": "Log in button" }`. `description` must be non-empty.
    - `businessRules` (optional): array of locale-keyed objects, one rule each.
    - `tags` (optional): plain string array (not localized).
+   - `links`, `verifiedBy`, `status` (all optional provenance): `links` are
+     ticket/doc/PR refs (`{label,url}`, http/https); `verifiedBy` are repo-relative
+     test paths that **declare** the spec (checked to exist, never run — only list
+     real files); `status` is `draft` | `approved` | `deprecated` (omit = neutral).
    - `preferredDisplayMode` (optional): `tooltip` | `sidebar` | `modal`
      (`overlay` and `inline-badge` are reserved and fall back to `tooltip`).
    - `fingerprint`: the element link (required). See the fingerprint reference.
    - `meta`: set `"source": "ai-generated"` for specs you author, plus
-     `createdBy`, `createdAt`, `updatedAt` (RFC3339).
+     `createdBy`, `createdAt`, `updatedAt` (RFC3339). Do NOT author
+     `reviewedAt`/`reviewedBy` — a human stamps those via Mark-reviewed.
 
    `description` and each `businessRules` item may use a small, safe Markdown
    subset (bold, italic, `[label](url)` links, and lists in `description`).
