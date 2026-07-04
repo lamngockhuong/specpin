@@ -5,7 +5,7 @@ description: Thực hành bảo mật và xử lý dữ liệu của Specpin. Ư
 
 **Cập nhật lần cuối**: Ngày 29 tháng 6 năm 2026
 
-Specpin cam kết bảo vệ quyền riêng tư của bạn. Chính sách này giải thích tiện ích trình duyệt thu thập (hoặc không thu thập) dữ liệu gì và cách sử dụng.
+Specpin cam kết bảo vệ quyền riêng tư của bạn. Chính sách này giải thích tiện ích trình duyệt thu thập (hoặc không thu thập) dữ liệu gì và dữ liệu đó được dùng ra sao.
 
 ## Tóm tắt
 
@@ -21,7 +21,7 @@ Specpin không thu thập, truyền, bán hay chia sẻ bất kỳ dữ liệu c
 
 ### Chúng tôi thu thập gì
 
-Không gì cả. Specpin không gửi dữ liệu nào cho chúng tôi hay bất kỳ bên thứ ba nào. Kết nối mạng duy nhất nó thực hiện là tới một sidecar **do chính bạn chạy** — trên `localhost` theo mặc định, hoặc trên máy chủ từ xa của riêng bạn (qua HTTPS) nếu bạn chọn dùng (xem [Hoạt động mạng](#hoạt-động-mạng)).
+Không gì cả. Specpin không gửi dữ liệu nào cho chúng tôi hay bất kỳ bên thứ ba nào. Kết nối mạng duy nhất nó thực hiện là tới một sidecar **do chính bạn chạy** - trên `localhost` theo mặc định, hoặc trên máy chủ từ xa của riêng bạn (qua HTTPS) nếu bạn chọn dùng (xem [Hoạt động mạng](#hoạt-động-mạng)).
 
 ### Chúng tôi lưu cục bộ những gì
 
@@ -45,13 +45,13 @@ Lưu cài đặt kết nối, đặc tả dự án cục bộ và tùy chọn gi
 
 ### `activeTab` / `tabs` - Định tuyến đặc tả theo trang
 
-Đọc origin của tab đang hoạt động để định tuyến đúng đặc tả của dự án tới từng trang, và chuyển tiếp các cập nhật đặc tả (bao gồm sự kiện làm mới trực tiếp) từ service worker nền tới content script của các tab khớp.
+Đọc origin của tab đang hoạt động để định tuyến đúng đặc tả của dự án tới từng trang, và chuyển tiếp các cập nhật đặc tả (bao gồm sự kiện live-reload) từ service worker nền tới content script của các tab khớp.
 
 **Những gì nó KHÔNG làm**: gửi lịch sử duyệt web của bạn đi đâu, theo dõi các trang bạn truy cập, hay lưu lịch sử duyệt web.
 
 ### `alarms` - Giữ kết nối luôn sống
 
-Chạy một alarm keepalive mỗi phút để service worker nền luôn sống nhằm duy trì kết nối làm mới trực tiếp (Server-Sent Events) tới sidecar cục bộ. Trình duyệt sẽ kết thúc service worker khi rảnh; alarm đánh thức nó để giữ luồng đặc tả luôn kết nối.
+Chạy một alarm keepalive mỗi phút để service worker nền luôn sống nhằm duy trì kết nối live-reload (Server-Sent Events) tới sidecar cục bộ. Trình duyệt sẽ kết thúc service worker khi rảnh; alarm đánh thức nó để giữ luồng đặc tả luôn kết nối.
 
 ### `contextMenus` - Menu chuột phải
 
@@ -63,11 +63,11 @@ Mở bề mặt Specpin trong side panel của Chrome bên cạnh trang. Firefox
 
 ### `host_permissions` - `http://127.0.0.1/*`, `http://localhost/*`
 
-Cho phép service worker nền kết nối tới sidecar cục bộ qua HTTP và Server-Sent Events trên `localhost` để đọc `.specs/` và nhận cập nhật làm mới trực tiếp. Theo mặc định, Specpin **không** gửi yêu cầu nào tới bất kỳ máy chủ từ xa nào. Nếu bạn thêm một sidecar từ xa, extension yêu cầu quyền truy cập đúng một origin đó khi kết nối (một quyền tùy chọn, có thể thu hồi) và thu hồi khi bạn xóa kết nối.
+Cho phép service worker nền kết nối tới sidecar cục bộ qua HTTP và Server-Sent Events trên `localhost` để đọc `.specs/` và nhận cập nhật live-reload. Theo mặc định, Specpin **không** gửi yêu cầu nào tới bất kỳ máy chủ từ xa nào. Nếu bạn thêm một sidecar từ xa, extension yêu cầu quyền truy cập đúng một origin đó khi kết nối (một quyền tùy chọn, có thể thu hồi) và thu hồi khi bạn xóa kết nối.
 
 ## Hoạt động mạng
 
-Specpin chỉ kết nối tới một sidecar **do chính bạn chạy** (`specpin serve`) — trên `localhost` (`127.0.0.1` / `localhost`) theo mặc định, hoặc trên máy chủ từ xa của riêng bạn qua HTTPS nếu bạn chọn dùng. Nó giao tiếp qua HTTP/HTTPS và Server-Sent Events, xác thực bằng bearer token.
+Specpin chỉ kết nối tới một sidecar **do chính bạn chạy** (`specpin serve`) - trên `localhost` (`127.0.0.1` / `localhost`) theo mặc định, hoặc trên máy chủ từ xa của riêng bạn qua HTTPS nếu bạn chọn dùng. Nó giao tiếp qua HTTP/HTTPS và Server-Sent Events, xác thực bằng bearer token.
 
 | Đích đến | Có dùng? |
 |----------|----------|
@@ -136,4 +136,4 @@ Câu hỏi hoặc lo ngại về quyền riêng tư?
 
 ---
 
-**Tóm lại**: Specpin là tiện ích ưu tiên quyền riêng tư, ưu tiên cục bộ. Chúng tôi không thu thập gì, không gửi gì, không theo dõi gì. Kết nối mạng duy nhất nó thực hiện là tới một sidecar do chính bạn chạy — trên `localhost` theo mặc định, hoặc trên máy chủ từ xa của riêng bạn qua HTTPS nếu bạn chọn dùng.
+**Tóm lại**: Specpin là tiện ích ưu tiên quyền riêng tư, ưu tiên cục bộ. Chúng tôi không thu thập gì, không gửi gì, không theo dõi gì. Kết nối mạng duy nhất nó thực hiện là tới một sidecar do chính bạn chạy - trên `localhost` theo mặc định, hoặc trên máy chủ từ xa của riêng bạn qua HTTPS nếu bạn chọn dùng.

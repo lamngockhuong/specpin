@@ -112,7 +112,7 @@ Cách spec này nên render theo mặc định. Một trong: `"tooltip"`, `"side
 
 ### `status` (tùy chọn)
 
-Trạng thái vòng đời của spec. Một trong: `"draft"`, `"approved"`, `"deprecated"`. Khi vắng mặt, spec ở trạng thái trung tính (không có giá trị mặc định). Trường này điều khiển huy hiệu vòng đời và hiển thị "cũ" trên spec đã render — ví dụ, một spec `deprecated` được đánh dấu để người review chú ý.
+Trạng thái vòng đời của spec. Một trong: `"draft"`, `"approved"`, `"deprecated"`. Khi vắng mặt, spec ở trạng thái trung tính (không có giá trị mặc định). Trường này điều khiển huy hiệu vòng đời và hiển thị "cũ" trên spec đã render - ví dụ, một spec `deprecated` được đánh dấu để người review chú ý.
 
 ```json
 { "status": "approved" }
@@ -139,7 +139,7 @@ Các đường dẫn tương đối so với repo tới những test **khai báo
 ["tests/login/email.spec.ts", "e2e/auth.spec.ts"]
 ```
 
-`specpin validate` kiểm tra rằng mỗi đường dẫn **tồn tại** trong repo (một cơ chế chống liên kết hỏng). Nó không bao giờ chạy test và không bao giờ ngụ ý rằng chúng pass. UI hiển thị chúng là các test được **liên kết** — không phải "đã xác minh" hay "đã pass". Giữ cho liên kết trung thực là trách nhiệm của quy trình review của bạn, giống như mọi trường spec khác.
+`specpin validate` kiểm tra rằng mỗi đường dẫn **tồn tại** trong repo (một cơ chế chống liên kết hỏng). Nó không bao giờ chạy test và không bao giờ ngụ ý rằng chúng pass. UI hiển thị chúng là các test được **liên kết** - không phải "đã xác minh" hay "đã pass". Giữ cho liên kết trung thực là trách nhiệm của quy trình review của bạn, giống như mọi trường spec khác.
 
 ## Định dạng Markdown
 
@@ -210,7 +210,7 @@ specpin validate --dir .specs
 
 Lệnh này kiểm tra mọi `.spec.json` với schema và cảnh báo nếu `manifest.specFiles` không đồng bộ với các file trên đĩa.
 
-`specpin validate` cũng kiểm tra rằng mỗi đường dẫn `verifiedBy` tồn tại trong repo — một cơ chế chống liên kết hỏng, không phải chạy test (nó không bao giờ thực thi bất cứ thứ gì). Truyền `--repo-root <path>` khi `.specs/` của bạn không nằm ở `<repo>/.specs`, để các đường dẫn được phân giải theo đúng gốc. Xem [hướng dẫn CLI](/vi/sidecar/cli/#validate-spec-ngoại-tuyến) để biết chi tiết.
+`specpin validate` cũng kiểm tra rằng mỗi đường dẫn `verifiedBy` tồn tại trong repo - một cơ chế chống liên kết hỏng, không phải chạy test (nó không bao giờ thực thi bất cứ thứ gì). Truyền `--repo-root <path>` khi `.specs/` của bạn không nằm ở `<repo>/.specs`, để các đường dẫn được phân giải theo đúng gốc. Xem [hướng dẫn CLI](/vi/sidecar/cli/#validate-spec-ngoại-tuyến) để biết chi tiết.
 
 Để lint spec trong CI, xem [hướng dẫn CLI](/vi/sidecar/cli/#validate-spec-ngoại-tuyến).
 

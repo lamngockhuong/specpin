@@ -173,7 +173,7 @@ Extension sẽ capture một fingerprint mới và lưu lại vào `.specs/`. Đ
 
 ### Dữ liệu của tôi có được gửi đi đâu không?
 
-Không gửi cho chúng tôi. Specpin ưu tiên cục bộ: theo mặc định sidecar bind tới `127.0.0.1` và extension kết nối qua localhost. Nếu bạn chọn dùng sidecar từ xa, đặc tả chỉ đi tới máy chủ đó — một máy do chính bạn chạy. Không có server nào do Specpin vận hành nhìn thấy đặc tả hoặc trang của bạn. Xem [Bảo Mật và Quyền Riêng Tư](/vi/concepts/security-and-privacy/) để biết chi tiết đầy đủ.
+Không gửi cho chúng tôi. Specpin ưu tiên cục bộ: theo mặc định sidecar bind tới `127.0.0.1` và extension kết nối qua localhost. Nếu bạn chọn dùng sidecar từ xa, đặc tả chỉ đi tới máy chủ đó - một máy do chính bạn chạy. Không có server nào do Specpin vận hành nhìn thấy đặc tả hoặc trang của bạn. Xem [Bảo Mật và Quyền Riêng Tư](/vi/concepts/security-and-privacy/) để biết chi tiết đầy đủ.
 
 ### Tôi có cần CLI để dùng Specpin không?
 
@@ -196,7 +196,7 @@ Có. Đặc tả được lưu dưới dạng file JSON trong `.specs/`, nhưng 
 
 ### Tôi có thể kết nối tới một sidecar trên máy khác không?
 
-Có. Chạy sidecar trên máy từ xa phía sau một reverse proxy HTTPS (giữ nó trên loopback với proxy đặt cùng máy, hoặc dùng `--host` cùng firewall), ghim một `--token` ổn định, và kết nối extension tới URL `https://` của proxy. Kết nối từ xa bắt buộc dùng HTTPS — `http://` thuần tới máy chủ từ xa sẽ bị chặn. Xem [Phục vụ trên máy từ xa](/vi/sidecar/cli/) để biết chi tiết.
+Có. Chạy sidecar trên máy từ xa phía sau một reverse proxy HTTPS (giữ nó trên loopback với proxy đặt cùng máy, hoặc dùng `--host` cùng firewall), ghim một `--token` ổn định, và kết nối extension tới URL `https://` của proxy. Kết nối từ xa bắt buộc dùng HTTPS - `http://` thuần tới máy chủ từ xa sẽ bị chặn. Xem [Phục vụ trên máy từ xa](/vi/sidecar/cli/) để biết chi tiết.
 
 ### Tôi có thể nhận trợ giúp ở đâu?
 

@@ -87,7 +87,7 @@ specs.example.com {
 }
 ```
 
-`--host <addr>` bind một địa chỉ không phải loopback cho trường hợp nâng cao "proxy trên máy khác". Điều này **không** tự đưa proxy vào đường đi, nó phơi bày trực tiếp cổng thô, **plaintext, chỉ-token**, nên hãy firewall cổng đó và luôn ghim `--port`. Lệnh serve sẽ in một cảnh báo rõ ràng mỗi khi bind ngoài loopback.
+`--host <addr>` bind một địa chỉ không phải loopback cho trường hợp nâng cao "proxy trên máy khác". Điều này **không** tự đưa proxy vào đường đi, nó để lộ trực tiếp cổng thô, **plaintext, chỉ-token**, nên hãy firewall cổng đó và luôn ghim `--port`. Lệnh serve sẽ in một cảnh báo rõ ràng mỗi khi bind ngoài loopback.
 
 ### Không có domain? Phục vụ qua IP
 
@@ -99,7 +99,7 @@ Server nội bộ chỉ có IP (không có domain) không dùng được HTTPS *
 `http://<ip>` thuần **không** dùng được: trình duyệt chặn remote plaintext (IP LAN nội bộ chỉ chạy trên Chrome 142+ qua Local Network Access, vốn không thể hiện prompt từ service worker của extension, còn Firefox không có cơ chế tương đương). Xem mục "No domain? Serve over IP" trong hướng dẫn chạy để có công thức đầy đủ.
 
 :::caution
-Bearer token là ranh giới ủy quyền duy nhất đối với các client mạng không phải trình duyệt (CORS chỉ ràng buộc trình duyệt). Hãy coi nó như mật khẩu và phân phối ngoài luồng (out-of-band). Cổng thô ngoài loopback là plaintext: đừng bao giờ phơi nó ra internet mà không có HTTPS proxy đứng trước.
+Bearer token là ranh giới ủy quyền duy nhất đối với các client mạng không phải trình duyệt (CORS chỉ ràng buộc trình duyệt). Hãy coi nó như mật khẩu và phân phối ngoài luồng (out-of-band). Cổng thô ngoài loopback là plaintext: đừng bao giờ để lộ nó ra internet mà không có HTTPS proxy đứng trước.
 :::
 
 Xem mục "Serve on a remote machine" trong hướng dẫn chạy để có ví dụ Caddy + nginx hoạt động được (đệm SSE, preflight CORS) và mô hình mối đe dọa đầy đủ.
@@ -125,7 +125,7 @@ Theo mặc định, `validate` cảnh báo nếu `manifest.specFiles` và các f
 
 ### Kiểm tra các đường dẫn `verifiedBy`
 
-`validate` cũng kiểm tra rằng mọi đường dẫn `verifiedBy` trên một spec **tồn tại** trong repo. Đây là một cơ chế chống liên kết hỏng — nó không bao giờ chạy test và không bao giờ ngụ ý rằng chúng pass; một spec nêu tên một test chỉ *khai báo* một liên kết tới nó.
+`validate` cũng kiểm tra rằng mọi đường dẫn `verifiedBy` trên một spec **tồn tại** trong repo. Đây là một cơ chế chống liên kết hỏng - nó không bao giờ chạy test và không bao giờ ngụ ý rằng chúng pass; một spec nêu tên một test chỉ *khai báo* một liên kết tới nó.
 
 Các đường dẫn được phân giải theo gốc repo, mặc định là thư mục cha của `--dir` (nên `.specs/` ở `<repo>/.specs` không cần cờ thêm). Khi `.specs/` của bạn nằm ở nơi khác, hãy trỏ validate về đúng gốc:
 
@@ -148,9 +148,9 @@ specpin report --dir .specs
 specpin report --dir .specs --json   # output có cấu trúc để CI parse
 ```
 
-**Freshness** đánh dấu các spec đã cũ về mặt review. Một spec là *stale* khi `meta.reviewedAt` cũ hơn `settings.stalenessThresholdDays` (mặc định 90). Một spec không có `reviewedAt` là *never-reviewed* — được báo cáo riêng và không bao giờ bị tính là stale. Freshness đo độ mới của *review*, không phải của *sửa đổi*, nên cố ý không fallback về `updatedAt`.
+**Freshness** đánh dấu các spec đã cũ về mặt review. Một spec là *stale* khi `meta.reviewedAt` cũ hơn `settings.stalenessThresholdDays` (mặc định 90). Một spec không có `reviewedAt` là *never-reviewed* - được báo cáo riêng và không bao giờ bị tính là stale. Freshness đo độ mới của *review*, không phải của *sửa đổi*, nên cố ý không fallback về `updatedAt`.
 
-**Spec stats** đếm spec theo status và theo file. Chúng đếm *spec*, không phải element UI: report chạy ngoại tuyến không có trình duyệt, nên không hứa hẹn % coverage — độ phủ element chỉ đo được trong extension.
+**Spec stats** đếm spec theo status và theo file. Chúng đếm *spec*, không phải element UI: report chạy ngoại tuyến không có trình duyệt, nên không hứa hẹn % coverage - độ phủ element chỉ đo được trong extension.
 
 **Kiểm tra spec bắt buộc** đọc `.specs/required.json` và đánh dấu bất kỳ id nào liệt kê trong đó mà không có spec khớp. Nó chỉ kiểm tra sự tồn tại, không bao giờ kiểm tra element matching. Nếu file vắng, việc kiểm tra được bỏ qua.
 
@@ -163,7 +163,7 @@ specpin report --dir .specs --json   # output có cấu trúc để CI parse
 ```
 
 Mã thoát:
-- `0` báo cáo đã tạo (chỉ cảnh báo — mặc định)
+- `0` báo cáo đã tạo (chỉ cảnh báo - mặc định)
 - `1` một điều kiện `--fail-on` bị kích hoạt
 - `2` không thể chạy (thiếu thư mục hoặc manifest), hoặc truyền một điều kiện `--fail-on` không xác định
 
@@ -183,7 +183,7 @@ specpin report --dir .specs --fail-on stale,missing-required
 | `missing-required` | một id trong `required.json` không có spec khớp |
 | `missing-verifiedby` | một spec không khai báo đường dẫn `verifiedBy` nào |
 
-`missing-verifiedby` chỉ kiểm tra xem một spec có *khai báo* `verifiedBy` hay không — khác với `validate`, vốn kiểm tra các đường dẫn đã khai báo có tồn tại. Một điều kiện không xác định sẽ thoát `2` thay vì bị âm thầm bỏ qua, và các spec `never-reviewed` được báo cáo nhưng không bao giờ chặn.
+`missing-verifiedby` chỉ kiểm tra xem một spec có *khai báo* `verifiedBy` hay không - khác với `validate`, vốn kiểm tra các đường dẫn đã khai báo có tồn tại. Một điều kiện không xác định sẽ thoát `2` thay vì bị âm thầm bỏ qua, và các spec `never-reviewed` được báo cáo nhưng không bao giờ chặn.
 
 :::tip
 [GitHub Action có thể tái sử dụng](https://github.com/lamngockhuong/specpin/tree/main/.github/actions/spec-lint) nhận một input `report-fail-on` để chạy gate này trong CI; để trống để bỏ qua gate.
