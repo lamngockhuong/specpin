@@ -1,0 +1,54 @@
+{
+  "skill": "translate-i18n",
+  "description": "Trigger accuracy for the translation-review skill. Positive cases must activate; negative cases must NOT (they belong to authoring, whole-catalog translation, or loader-code work).",
+  "cases": [
+    {
+      "id": "vi-review-request",
+      "prompt": "Tôi thấy một số từ tiếng Việt dịch chưa tự nhiên, kiểm tra lại bản dịch tiếng Việt của extension giúp tôi.",
+      "shouldTrigger": true,
+      "why": "Explicit review of an existing translation + 'chưa tự nhiên' cue."
+    },
+    {
+      "id": "ja-source-vs-target",
+      "prompt": "Review apps/extension/src/i18n/messages/ja.ts against en.ts for naturalness.",
+      "shouldTrigger": true,
+      "why": "Named locale files + source-vs-target naturalness audit."
+    },
+    {
+      "id": "generic-awkward-string",
+      "prompt": "This label in the locale file sounds awkward, can you fix the wording?",
+      "shouldTrigger": true,
+      "why": "Proofread/fix wording in a locale catalog."
+    },
+    {
+      "id": "proofread-i18n",
+      "prompt": "Proofread our vi and ja i18n catalogs for consistency before release.",
+      "shouldTrigger": true,
+      "why": "Consistency proofread across target catalogs."
+    },
+    {
+      "id": "docs-site-prose",
+      "prompt": "Kiểm tra bản dịch tiếng Việt và tiếng Nhật của trang docs (thư mục vi/ và ja/) xem có chỗ nào dịch sai hoặc chưa tự nhiên không.",
+      "shouldTrigger": true,
+      "why": "Reviewing the translated prose of a localized docs site."
+    },
+    {
+      "id": "authoring-new-key",
+      "prompt": "Add a new key errorTimeout to messages/en.ts and wire it into the toast component.",
+      "shouldTrigger": false,
+      "why": "Authoring a new source key + code wiring, not reviewing a translation."
+    },
+    {
+      "id": "loader-bug",
+      "prompt": "Fix the bug in i18n.ts where the locale fallback returns undefined.",
+      "shouldTrigger": false,
+      "why": "i18n runtime/loader code logic, not translation text."
+    },
+    {
+      "id": "whole-doc-translation",
+      "prompt": "Translate this README.md into Japanese from scratch.",
+      "shouldTrigger": false,
+      "why": "Whole-document translation from scratch, outside catalog-review scope."
+    }
+  ]
+}
