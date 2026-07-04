@@ -13,25 +13,66 @@
       body {
         margin: 0;
         min-height: 100vh;
-        padding: 48px 16px;
+        padding: 40px 20px;
         font: 14px/1.5 var(--sp-font-ui);
         color: var(--sp-text);
         background:
           radial-gradient(110% 70% at 50% 0%, var(--sp-grad-top), var(--sp-grad-bottom)) fixed;
       }
-      .card {
-        max-width: 720px;
+
+      /* Sidebar-rail shell: fixed nav on the left, one section pane on the right. */
+      .settings {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 24px;
+        max-width: 960px;
         margin: 0 auto;
+        align-items: start;
+      }
+      .rail {
+        position: sticky;
+        top: 40px;
+        padding: 12px;
+        background: var(--sp-surface);
+        border: 1px solid var(--sp-border);
+        border-radius: var(--sp-radius-card);
+      }
+      .rail-brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 14px; }
+      .rail-brand .logo { width: 26px; height: 26px; display: block; }
+      .rail-brand h1 { font-size: 16px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+      .nav-item {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        margin-top: 2px; padding: 9px 10px;
+        font: 600 13px/1.2 var(--sp-font-ui);
+        text-align: left; color: var(--sp-text-2);
+        background: transparent; border: 0; border-radius: var(--sp-radius-control);
+        box-shadow: none;
+        cursor: pointer;
+        transition: background 0.12s, color 0.12s;
+      }
+      .nav-item svg { width: 16px; height: 16px; flex: none; }
+      .nav-item:hover { background: var(--sp-control); color: var(--sp-text); }
+      .nav-item[aria-current="page"] {
+        background: var(--sp-control); color: var(--sp-text);
+        box-shadow: inset 2px 0 0 var(--sp-accent);
+      }
+      .nav-item:focus-visible { outline: 2px solid var(--sp-accent); outline-offset: 2px; }
+
+      /* Content panes: one visible at a time (nav.ts toggles .active). */
+      .pane { display: none; }
+      .pane.active { display: block; animation: pane-in 0.16s ease; }
+      @keyframes pane-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) { .pane.active { animation: none; } }
+
+      .pane-card {
         padding: 32px;
         background: var(--sp-surface);
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-card);
       }
-      .header { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
-      .logo { width: 28px; height: 28px; display: block; }
-      h1 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
-      h2 { font-size: 15px; font-weight: 700; margin: 24px 0 10px; }
-      p.lead { color: var(--sp-text-2); margin: 0 0 24px; }
+      h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+      h3 { font-size: 15px; font-weight: 700; margin: 24px 0 10px; }
+      p.lead { color: var(--sp-text-2); margin: 8px 0 24px; }
       label { display: block; margin: 18px 0 6px; font-weight: 600; color: var(--sp-text); }
       label.inline { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; font-weight: 500; }
       input[type="text"], input[type="password"] {
@@ -87,7 +128,6 @@
         border-color: var(--sp-accent);
         box-shadow: 0 0 0 3px var(--sp-accent-glow);
       }
-      .card + .card { margin-top: 20px; }
       button {
         width: 100%; margin-top: 24px; padding: 12px 14px;
         font: 700 14px/1 var(--sp-font-ui);
@@ -197,143 +237,185 @@
       .support-link:hover { color: var(--sp-accent); border-color: var(--sp-accent); background: var(--sp-control); }
       .support-link svg { width: 16px; height: 16px; flex: none; }
       @media (max-width: 480px) { .support-links { grid-template-columns: 1fr; } }
+
+      /* Narrow window: the rail wraps into a horizontal strip above content. */
+      @media (max-width: 720px) {
+        .settings { grid-template-columns: 1fr; }
+        .rail { position: static; display: flex; flex-wrap: wrap; gap: 6px; }
+        .rail-brand { flex-basis: 100%; padding: 4px 8px 10px; }
+        .nav-item { width: auto; margin-top: 0; }
+      }
     </style>
   </head>
   <body>
-    <div class="card">
-      <div class="header">
-        <img class="logo" src="/icon/128.png" alt="" />
-        <h1 data-i18n="options.connectedProjects">Connected projects</h1>
-      </div>
-      <p class="lead" data-i18n-html="options.connectedLead">
-        Run <code>specpin serve</code> in each project, then add its URL and token below.
-        Specs show on a page only if the project's manifest <code>domains</code> include that page.
-      </p>
+    <div class="settings">
+      <nav class="rail" aria-label="Settings sections">
+        <div class="rail-brand">
+          <img class="logo" src="/icon/128.png" alt="" />
+          <h1 data-i18n="options.pageTitle">Specpin Settings</h1>
+        </div>
+        <button class="nav-item" type="button" data-pane="projects" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>
+          <span data-i18n="options.navProjects">Projects</span>
+        </button>
+        <button class="nav-item" type="button" data-pane="appearance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg>
+          <span data-i18n="options.navAppearance">Appearance</span>
+        </button>
+        <button class="nav-item" type="button" data-pane="toolbar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+          <span data-i18n="options.navToolbar">Toolbar</span>
+        </button>
+        <button class="nav-item" type="button" data-pane="manual">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/></svg>
+          <span data-i18n="options.navManual">Manual specs</span>
+        </button>
+        <button class="nav-item" type="button" data-pane="corpus">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+          <span data-i18n="options.navCorpus">Matching</span>
+        </button>
+        <button class="nav-item" type="button" data-pane="support">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3 2.4c-.6.2-1 .8-1 1.6M12 17h.01"/></svg>
+          <span data-i18n="options.navSupport">Support</span>
+        </button>
+      </nav>
 
-      <div id="connections"></div>
+      <main>
+        <section class="pane active" id="pane-projects">
+          <div class="pane-card">
+            <h2 data-i18n="options.connectedProjects">Connected projects</h2>
+            <p class="lead" data-i18n-html="options.connectedLead">
+              Run <code>specpin serve</code> in each project, then add its URL and token below.
+              Specs show on a page only if the project's manifest <code>domains</code> include that page.
+            </p>
 
-      <h2 data-i18n="options.addProject">Add a project</h2>
-      <label for="baseUrl" data-i18n="options.sidecarUrl">Sidecar URL</label>
-      <input id="baseUrl" type="text" placeholder="http://127.0.0.1:PORT" />
-      <label for="label"><span data-i18n="options.labelField">Label</span> <span style="font-weight: 400; color: var(--sp-text-3)" data-i18n="options.optional">(optional)</span></label>
-      <input id="label" type="text" data-i18n-placeholder="options.labelPlaceholder" placeholder="e.g. Acme CRM" />
-      <label for="token" data-i18n="options.token">Token</label>
-      <input id="token" type="password" data-i18n-placeholder="options.tokenPlaceholder" placeholder="paste bearer token" autocomplete="off" />
-      <label class="inline"><input id="applyAll" type="checkbox" /> <span data-i18n="options.applyAllLabel">Apply to all sites if this project pins no domains</span></label>
-      <button id="add" type="button" data-i18n="options.testAddProject">Test &amp; add project</button>
-      <div id="addResult"></div>
-    </div>
+            <div id="connections"></div>
 
-    <div class="card">
-      <div class="header">
-        <h1 data-i18n="options.appearance">Appearance</h1>
-      </div>
-      <p class="lead" data-i18n="options.appearanceLead">
-        How Specpin's own interface looks. These apply to every Specpin surface
-        (popup, side panel, options, and the in-page tooltip/sidebar/modal).
-      </p>
-      <label for="theme" data-i18n="options.theme">Theme</label>
-      <select id="theme">
-        <option value="system" data-i18n="options.themeSystem">System default</option>
-        <option value="light" data-i18n="options.themeLight">Light</option>
-        <option value="dark" data-i18n="options.themeDark">Dark</option>
-      </select>
+            <h3 data-i18n="options.addProject">Add a project</h3>
+            <label for="baseUrl" data-i18n="options.sidecarUrl">Sidecar URL</label>
+            <input id="baseUrl" type="text" placeholder="http://127.0.0.1:PORT" />
+            <label for="label"><span data-i18n="options.labelField">Label</span> <span style="font-weight: 400; color: var(--sp-text-3)" data-i18n="options.optional">(optional)</span></label>
+            <input id="label" type="text" data-i18n-placeholder="options.labelPlaceholder" placeholder="e.g. Acme CRM" />
+            <label for="token" data-i18n="options.token">Token</label>
+            <input id="token" type="password" data-i18n-placeholder="options.tokenPlaceholder" placeholder="paste bearer token" autocomplete="off" />
+            <label class="inline"><input id="applyAll" type="checkbox" /> <span data-i18n="options.applyAllLabel">Apply to all sites if this project pins no domains</span></label>
+            <button id="add" type="button" data-i18n="options.testAddProject">Test &amp; add project</button>
+            <div id="addResult"></div>
+          </div>
+        </section>
 
-      <label for="uiLocale" data-i18n="options.languageSetting">Language</label>
-      <p class="lead" data-i18n="options.languageSettingLead" style="margin-top: 6px">
-        The language of Specpin's own interface. Independent from a project's spec content language.
-      </p>
-      <select id="uiLocale">
-        <option value="system" data-i18n="options.uiLanguageSystem">System default</option>
-        <!-- Language names display in their own script and are never translated. -->
-        <option value="en">English</option>
-        <option value="vi">Tiếng Việt</option>
-        <option value="ja">日本語</option>
-      </select>
+        <section class="pane" id="pane-appearance">
+          <div class="pane-card">
+            <h2 data-i18n="options.appearance">Appearance</h2>
+            <p class="lead" data-i18n="options.appearanceLead">
+              How Specpin's own interface looks. These apply to every Specpin surface
+              (popup, side panel, options, and the in-page tooltip/sidebar/modal).
+            </p>
+            <label for="theme" data-i18n="options.theme">Theme</label>
+            <select id="theme">
+              <option value="system" data-i18n="options.themeSystem">System default</option>
+              <option value="light" data-i18n="options.themeLight">Light</option>
+              <option value="dark" data-i18n="options.themeDark">Dark</option>
+            </select>
 
-      <label class="inline" style="margin-top: 16px"><input id="badgeNumbering" type="checkbox" /> <span data-i18n="options.badgeNumberingLabel">Number spec badges (show position instead of S)</span></label>
-    </div>
+            <label for="uiLocale" data-i18n="options.languageSetting">Language</label>
+            <p class="lead" data-i18n="options.languageSettingLead" style="margin-top: 6px">
+              The language of Specpin's own interface. Independent from a project's spec content language.
+            </p>
+            <select id="uiLocale">
+              <option value="system" data-i18n="options.uiLanguageSystem">System default</option>
+              <!-- Language names display in their own script and are never translated. -->
+              <option value="en">English</option>
+              <option value="vi">Tiếng Việt</option>
+              <option value="ja">日本語</option>
+            </select>
 
-    <div class="card">
-      <div class="header">
-        <h1 data-i18n="options.toolbarIcon">Toolbar icon</h1>
-      </div>
-      <p class="lead" data-i18n-html="options.toolbarLead">
-        What clicking the Specpin toolbar icon opens. <strong>Chrome only</strong>:
-        on Firefox the icon always opens the popup, and the side panel is opened
-        from Firefox's own sidebar toggle (View &rarr; Sidebar).
-      </p>
-      <label for="surface" data-i18n="options.toolbarLabel">When I click the toolbar icon</label>
-      <select id="surface">
-        <option value="popup" data-i18n="options.toolbarPopup">Open the popup</option>
-        <option value="sidepanel" data-i18n="options.toolbarSidepanel">Open the side panel</option>
-      </select>
-    </div>
+            <label class="inline" style="margin-top: 16px"><input id="badgeNumbering" type="checkbox" /> <span data-i18n="options.badgeNumberingLabel">Number spec badges (show position instead of S)</span></label>
+          </div>
+        </section>
 
-    <div class="card">
-      <div class="header">
-        <h1 data-i18n="options.manualSpecs">Manual specs (no sidecar)</h1>
-      </div>
-      <p class="lead" data-i18n-html="options.manualLead">
-        Paste a bundle to view specs without running <code>specpin serve</code>. Read-only:
-        capture still needs a sidecar. Shape:
-        <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>
-      </p>
-      <label for="localFiles"><span data-i18n="options.fromFiles">From files</span> <span style="font-weight: 400; color: var(--sp-text-3)" data-i18n="options.fromFilesHint">(pick manifest.json + one or more *.spec.json)</span></label>
-      <input id="localFiles" type="file" accept=".json,application/json" multiple />
-      <button id="loadFiles" type="button" data-i18n="options.loadFromFiles">Load from files</button>
+        <section class="pane" id="pane-toolbar">
+          <div class="pane-card">
+            <h2 data-i18n="options.toolbarIcon">Toolbar icon</h2>
+            <p class="lead" data-i18n-html="options.toolbarLead">
+              What clicking the Specpin toolbar icon opens. <strong>Chrome only</strong>:
+              on Firefox the icon always opens the popup, and the side panel is opened
+              from Firefox's own sidebar toggle (View &rarr; Sidebar).
+            </p>
+            <label for="surface" data-i18n="options.toolbarLabel">When I click the toolbar icon</label>
+            <select id="surface">
+              <option value="popup" data-i18n="options.toolbarPopup">Open the popup</option>
+              <option value="sidepanel" data-i18n="options.toolbarSidepanel">Open the side panel</option>
+            </select>
+          </div>
+        </section>
 
-      <label for="localSpecs" style="margin-top: 24px" data-i18n="options.orPaste">Or paste bundle JSON</label>
-      <textarea id="localSpecs" placeholder='{ "manifest": { … }, "files": { "login.spec.json": { … } } }'></textarea>
-      <button id="loadLocal" type="button" data-i18n="options.loadPasted">Load pasted bundle</button>
-      <button id="clearLocal" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.clearAll">Clear all manual specs</button>
-      <div id="localResult"></div>
-      <div id="localBatches"></div>
-    </div>
+        <section class="pane" id="pane-manual">
+          <div class="pane-card">
+            <h2 data-i18n="options.manualSpecs">Manual specs (no sidecar)</h2>
+            <p class="lead" data-i18n-html="options.manualLead">
+              Paste a bundle to view specs without running <code>specpin serve</code>. Read-only:
+              capture still needs a sidecar. Shape:
+              <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>
+            </p>
+            <label for="localFiles"><span data-i18n="options.fromFiles">From files</span> <span style="font-weight: 400; color: var(--sp-text-3)" data-i18n="options.fromFilesHint">(pick manifest.json + one or more *.spec.json)</span></label>
+            <input id="localFiles" type="file" accept=".json,application/json" multiple />
+            <button id="loadFiles" type="button" data-i18n="options.loadFromFiles">Load from files</button>
 
-    <div class="card">
-      <div class="header">
-        <h1 data-i18n="options.corpusTitle">Matching corpus (local, opt-in)</h1>
-      </div>
-      <p class="lead" data-i18n="options.corpusLead">
-        Collect anonymized matching data locally to help tune Specpin's element matching.
-        Off by default, stored only on this device, never uploaded.
-      </p>
-      <label class="inline"><input id="corpusEnabled" type="checkbox" /> <span data-i18n="options.corpusOptIn">Collect matching drift data on this device</span></label>
-      <p class="lead" id="corpusCount" style="margin-top: 12px"></p>
-      <button id="corpusExport" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusExport">Export corpus (JSON)</button>
-      <button id="corpusClear" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusClear">Clear corpus</button>
-      <div id="corpusResult"></div>
-    </div>
+            <label for="localSpecs" style="margin-top: 24px" data-i18n="options.orPaste">Or paste bundle JSON</label>
+            <textarea id="localSpecs" placeholder='{ "manifest": { … }, "files": { "login.spec.json": { … } } }'></textarea>
+            <button id="loadLocal" type="button" data-i18n="options.loadPasted">Load pasted bundle</button>
+            <button id="clearLocal" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.clearAll">Clear all manual specs</button>
+            <div id="localResult"></div>
+            <div id="localBatches"></div>
+          </div>
+        </section>
 
-    <div class="card">
-      <div class="header">
-        <h1 data-i18n="options.supportFeedback">Support &amp; Feedback</h1>
-      </div>
-      <p class="lead" data-i18n="options.supportLead">
-        Found a bug or have a question? Reach the project on GitHub.
-      </p>
-      <div class="support-links">
-        <a class="support-link" href="https://github.com/lamngockhuong/specpin/issues" target="_blank" rel="noopener noreferrer">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.56-1.14-4.56-5.05 0-1.12.39-2.03 1.03-2.74-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05a9.36 9.36 0 0 1 5 0c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.71 1.03 1.62 1.03 2.74 0 3.92-2.34 4.78-4.57 5.04.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.6.69.49A10.27 10.27 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/>
-          </svg>
-          <span data-i18n="options.reportIssue">Report an Issue</span>
-        </a>
-        <a class="support-link" href="https://github.com/lamngockhuong/specpin/discussions" target="_blank" rel="noopener noreferrer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span data-i18n="options.askQuestion">Ask a Question</span>
-        </a>
-        <a class="support-link" href="https://specpin.ohnice.app/changelog" target="_blank" rel="noopener noreferrer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 8v4l3 3"/>
-            <circle cx="12" cy="12" r="9"/>
-          </svg>
-          <span data-i18n="options.changelog">What's New</span>
-        </a>
-      </div>
+        <section class="pane" id="pane-corpus">
+          <div class="pane-card">
+            <h2 data-i18n="options.corpusTitle">Matching corpus (local, opt-in)</h2>
+            <p class="lead" data-i18n="options.corpusLead">
+              Collect anonymized matching data locally to help tune Specpin's element matching.
+              Off by default, stored only on this device, never uploaded.
+            </p>
+            <label class="inline"><input id="corpusEnabled" type="checkbox" /> <span data-i18n="options.corpusOptIn">Collect matching drift data on this device</span></label>
+            <p class="lead" id="corpusCount" style="margin-top: 12px"></p>
+            <button id="corpusExport" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusExport">Export corpus (JSON)</button>
+            <button id="corpusClear" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusClear">Clear corpus</button>
+            <div id="corpusResult"></div>
+          </div>
+        </section>
+
+        <section class="pane" id="pane-support">
+          <div class="pane-card">
+            <h2 data-i18n="options.supportFeedback">Support &amp; Feedback</h2>
+            <p class="lead" data-i18n="options.supportLead">
+              Found a bug or have a question? Reach the project on GitHub.
+            </p>
+            <div class="support-links">
+              <a class="support-link" href="https://github.com/lamngockhuong/specpin/issues" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.56-1.14-4.56-5.05 0-1.12.39-2.03 1.03-2.74-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05a9.36 9.36 0 0 1 5 0c1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.71 1.03 1.62 1.03 2.74 0 3.92-2.34 4.78-4.57 5.04.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.6.69.49A10.27 10.27 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/>
+                </svg>
+                <span data-i18n="options.reportIssue">Report an Issue</span>
+              </a>
+              <a class="support-link" href="https://github.com/lamngockhuong/specpin/discussions" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span data-i18n="options.askQuestion">Ask a Question</span>
+              </a>
+              <a class="support-link" href="https://specpin.ohnice.app/changelog" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 8v4l3 3"/>
+                  <circle cx="12" cy="12" r="9"/>
+                </svg>
+                <span data-i18n="options.changelog">What's New</span>
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
     <script type="module" src="./main.ts"></script>
   </body>
