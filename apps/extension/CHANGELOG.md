@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.12](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.11...extension-v0.0.12) (2026-07-04)
+
+
+### Features
+
+* **extension:** redesign options page as sidebar-rail layout ([#119](https://github.com/lamngockhuong/specpin/issues/119)) ([349fd46](https://github.com/lamngockhuong/specpin/commit/349fd46b5f095a9d818132d443299ac223efb4e0))
+
 ## [0.0.11](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.10...extension-v0.0.11) (2026-07-03)
 
 
