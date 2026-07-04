@@ -38,6 +38,7 @@ import {
 } from "../../shared/messaging.js";
 import { applyTheme, watchThemeChanges } from "../../shared/theme.js";
 import { parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
+import { initOptionsNav } from "./nav.js";
 import "../../shared/tokens.gen.css";
 import "../../shared/switch.css";
 import "../../shared/guide-section.css";
@@ -830,4 +831,7 @@ async function init(): Promise<void> {
   initI18n(resolveUiLocale(stored));
   await renderAll();
 }
+// Wire the sidebar-rail section switching before the async init so the correct
+// pane shows immediately on load (panes are static markup; no data needed).
+initOptionsNav();
 void init();

@@ -227,6 +227,13 @@ const en = {
 
   // Options page (static HTML + dynamic rows).
   "options.pageTitle": "Specpin Settings",
+  // Sidebar-rail nav labels (short forms of the section headings below).
+  "options.navProjects": "Projects",
+  "options.navAppearance": "Appearance",
+  "options.navToolbar": "Toolbar",
+  "options.navManual": "Manual specs",
+  "options.navCorpus": "Matching",
+  "options.navSupport": "Support",
   "options.connectedProjects": "Connected projects",
   "options.connectedLead":
     "Run <code>specpin serve</code> in each project, then add its URL and token below. Specs show on a page only if the project's manifest <code>domains</code> include that page.",

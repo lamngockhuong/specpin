@@ -130,7 +130,7 @@ const ja: Record<keyof Messages, string> = {
   "digest.changedSince": "前回の訪問から{count}件が変更されました",
   "digest.markSeen": "すべて既読にする",
   "digest.tagNew": "新規",
-  "digest.tagEdited": "編集",
+  "digest.tagEdited": "編集済み",
 
   // Match-confidence badge + "why matched".
   "match.fuzzy": "セレクタ一致",
@@ -222,6 +222,13 @@ const ja: Record<keyof Messages, string> = {
 
   // Options page (static HTML + dynamic rows).
   "options.pageTitle": "Specpin 設定",
+  // サイドバーのナビゲーションラベル (下のセクション見出しの短縮形)。
+  "options.navProjects": "プロジェクト",
+  "options.navAppearance": "外観",
+  "options.navToolbar": "ツールバー",
+  "options.navManual": "手動spec",
+  "options.navCorpus": "マッチング",
+  "options.navSupport": "サポート",
   "options.connectedProjects": "接続済みプロジェクト",
   "options.connectedLead":
     "各プロジェクトで <code>specpin serve</code> を実行し、下にそのURLとtokenを追加してください。spec は、プロジェクトのmanifestの <code>domains</code> にそのページが含まれている場合にのみ表示されます。",
@@ -239,7 +246,7 @@ const ja: Record<keyof Messages, string> = {
   "options.appearanceLead":
     "Specpin自身のインターフェースの見た目です。すべてのSpecpin画面 (popup、サイドパネル、設定、ページ内のツールチップ/サイドバー/モーダル) に適用されます。",
   "options.theme": "テーマ",
-  "options.badgeNumberingLabel": "スペックバッジに番号を表示 (Sの代わりに位置を表示)",
+  "options.badgeNumberingLabel": "specバッジに番号を表示 (Sの代わりに位置を表示)",
   "options.themeSystem": "システムのデフォルト",
   "options.themeLight": "ライト",
   "options.themeDark": "ダーク",
@@ -284,7 +291,7 @@ const ja: Record<keyof Messages, string> = {
     "このプロジェクトはドメインをピン留めしていないため、非アクティブです。下のオプションを有効にすると、訪問するすべてのサイトにspecが表示されます。",
   "options.applyToAllSites": "すべてのサイトに適用",
   "options.labelOptional": "ラベル (任意)",
-  "options.tokenKeepPlaceholder": "現在のtokenを保持するには空のままにします",
+  "options.tokenKeepPlaceholder": "現在のtokenを保持するには空のままにしてください",
   "options.saveChanges": "変更を保存",
   "options.urlRequired": "URLは必須です。",
   "options.couldNotConnect": "接続できませんでした: {error}",
@@ -327,10 +334,10 @@ const ja: Record<keyof Messages, string> = {
   "options.allCleared": "すべての手動specを消去しました。",
 
   // Matching corpus card (local, opt-in) + confirm loop.
-  "options.corpusTitle": "マッチングコーパス（ローカル、オプトイン）",
+  "options.corpusTitle": "マッチングコーパス (ローカル、オプトイン)",
   "options.corpusLead":
-    "Specpin の要素マッチングを調整するため、マッチングデータをローカルに収集します。既定はオフ、この端末にのみ保存し、アップロードはしません。機微なテキスト（メール、長い数字列）はマスクされます。",
-  "options.corpusOptIn": "この端末でマッチングのドリフトデータを収集する",
+    "Specpin の要素マッチングを調整するため、マッチングデータをローカルに収集します。デフォルトはオフ、この端末にのみ保存し、アップロードはしません。機微なテキスト (メール、長い数字列) はマスクされます。",
+  "options.corpusOptIn": "この端末でマッチングのずれデータを収集する",
   "options.corpusCount": "{count} 件を保存済み。",
   "options.corpusExport": "コーパスをエクスポート (JSON)",
   "options.corpusClear": "コーパスを消去",
@@ -423,7 +430,7 @@ const ja: Record<keyof Messages, string> = {
   "prov.statusDeprecated": "非推奨",
   "prov.linkedTests": "関連テスト ({count})",
   "prov.linkedTestsTitle":
-    "このスペックを宣言するテスト。specpin validate はパスの存在を確認しますが、実行はしません。",
+    "このspecを宣言するテスト。specpin validate はパスの存在を確認しますが、実行はしません。",
   "prov.reviewed": "{when} にレビュー",
   "prov.reviewedBy": "{who} が {when} にレビュー",
   "prov.stale": "古い",

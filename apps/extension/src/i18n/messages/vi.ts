@@ -23,11 +23,11 @@ const vi: Record<keyof Messages, string> = {
   "common.connectionSettings": "Cài đặt kết nối",
   "common.captureSpec": "+ Ghi spec",
   "common.edit": "Sửa",
-  "common.delete": "Xoá",
+  "common.delete": "Xóa",
   "common.cancel": "Hủy",
   "common.ok": "OK",
   "common.close": "Đóng",
-  "common.hidePanel": "Ẩn bảng",
+  "common.hidePanel": "Ẩn khung bên",
   "common.reopenPanel": "Hiện spec Specpin",
   "common.and": "và",
   "common.clickToHighlight": "Nhấp để làm nổi bật trên trang",
@@ -86,7 +86,8 @@ const vi: Record<keyof Messages, string> = {
   "addProject.projectPlaceholder": "Tên dự án",
   "addProject.domainsPlaceholder": "Tên miền (tùy chọn, phân tách bằng dấu phẩy)",
   "addProject.applyAllSites": "Áp dụng cho mọi trang",
-  "addProject.applyAllHint": "Không có tên miền hoặc mục này thì dự án không phục vụ trang nào.",
+  "addProject.applyAllHint":
+    "Nếu không có tên miền và cũng không bật mục này, dự án sẽ không phục vụ trang nào.",
   "addProject.urlPlaceholder": "http://127.0.0.1:PORT",
   "addProject.labelPlaceholder": "Nhãn (tùy chọn)",
   "addProject.tokenPlaceholder": "Token",
@@ -107,22 +108,22 @@ const vi: Record<keyof Messages, string> = {
   "sidepanel.hideThisSpec": "Ẩn spec này",
   "sidepanel.showThisSpec": "Hiện spec này",
   "sidepanel.editThisSpec": "Sửa spec này",
-  "sidepanel.deleteThisSpec": "Xoá spec này",
+  "sidepanel.deleteThisSpec": "Xóa spec này",
 
   // Tooltip renderer.
   "tooltip.editSpec": "Sửa spec",
-  "tooltip.deleteSpec": "Xoá spec",
+  "tooltip.deleteSpec": "Xóa spec",
   "tooltip.openInPanel": "Mở trong thanh bên",
 
   // Spec delete flow (shared by tooltip + side panel).
-  "spec.deleteConfirm": "Xoá spec này? Có thể khôi phục từ Git nếu cần.",
-  "spec.deleteConfirmLocal": "Xoá spec này? Không thể hoàn tác.",
-  "spec.deleteConflict": "Spec đã thay đổi ở nơi khác; giao diện đã được làm mới. Chưa xoá gì cả.",
-  "spec.deleteFailed": "Không thể xoá spec: {error}",
+  "spec.deleteConfirm": "Xóa spec này? Có thể khôi phục từ Git nếu cần.",
+  "spec.deleteConfirmLocal": "Xóa spec này? Không thể hoàn tác.",
+  "spec.deleteConflict": "Spec đã thay đổi ở nơi khác; giao diện đã được làm mới. Chưa xóa gì cả.",
+  "spec.deleteFailed": "Không thể xóa spec: {error}",
   "spec.linkElementMissing": "Phần tử của spec này không có trên trang.",
 
   "digest.changedSince": "{count} thay đổi kể từ lần xem trước",
-  "digest.markSeen": "Đánh dấu đã xem",
+  "digest.markSeen": "Đánh dấu tất cả đã xem",
   "digest.tagNew": "mới",
   "digest.tagEdited": "đã sửa",
 
@@ -143,20 +144,20 @@ const vi: Record<keyof Messages, string> = {
 
   // Page match-health summary + orphaned list.
   "health.summary":
-    "{total} spec · {exact} chính xác · {scored} theo điểm · {fuzzy} mờ · {orphaned} mồ côi",
-  "health.orphanedTitle": "Mồ côi ({count})",
+    "{total} spec · {exact} chính xác · {scored} theo điểm · {fuzzy} gần đúng · {orphaned} lạc",
+  "health.orphanedTitle": "Spec lạc ({count})",
   "health.orphanedHint": "Các spec này nhắm tới trang này nhưng không tìm thấy phần tử.",
   "health.orphanedNotFound": "Không tìm thấy trên trang này",
-  "health.fuzzy": "mờ",
+  "health.fuzzy": "gần đúng",
   "health.scored": "theo điểm",
 
   // data-spec-id helper.
-  "helper.weakAnchorTitle": "Neo yếu",
+  "helper.weakAnchorTitle": "Điểm neo yếu",
   "helper.weakAnchorHint":
     "Phần tử này không có neo ổn định. Thêm thuộc tính này vào mã nguồn để khớp chính xác và ổn định:",
   "helper.copySnippet": "Sao chép",
   "helper.copied": "Đã sao chép!",
-  "helper.scanTitle": "Spec dễ vỡ",
+  "helper.scanTitle": "Spec kém ổn định",
 
   // Capture / edit form.
   "capture.titleCapture": "Ghi spec",
@@ -215,6 +216,13 @@ const vi: Record<keyof Messages, string> = {
 
   // Options page (static HTML + dynamic rows).
   "options.pageTitle": "Cài đặt Specpin",
+  // Nhãn điều hướng thanh bên (dạng rút gọn của tiêu đề mục bên dưới).
+  "options.navProjects": "Dự án",
+  "options.navAppearance": "Giao diện",
+  "options.navToolbar": "Thanh công cụ",
+  "options.navManual": "Spec thủ công",
+  "options.navCorpus": "Đối sánh",
+  "options.navSupport": "Hỗ trợ",
   "options.connectedProjects": "Dự án đã kết nối",
   "options.connectedLead":
     "Chạy <code>specpin serve</code> trong mỗi dự án, rồi thêm URL và token bên dưới. Spec chỉ hiển thị trên một trang nếu <code>domains</code> trong manifest của dự án bao gồm trang đó.",
@@ -320,8 +328,8 @@ const vi: Record<keyof Messages, string> = {
   // Matching corpus card (local, opt-in) + confirm loop.
   "options.corpusTitle": "Kho khớp (cục bộ, tự chọn)",
   "options.corpusLead":
-    "Thu thập dữ liệu khớp cục bộ để giúp tinh chỉnh việc khớp phần tử của Specpin. Mặc định tắt, chỉ lưu trên thiết bị này, không bao giờ tải lên; văn bản nhạy cảm (email, chuỗi số dài) được che.",
-  "options.corpusOptIn": "Thu thập dữ liệu trôi dạt khớp trên thiết bị này",
+    "Thu thập dữ liệu khớp cục bộ để giúp tinh chỉnh việc khớp phần tử của Specpin. Mặc định tắt, chỉ lưu trên thiết bị này, không bao giờ tải lên; văn bản nhạy cảm (email, chuỗi số dài) được che giấu.",
+  "options.corpusOptIn": "Thu thập dữ liệu sai lệch khi khớp trên thiết bị này",
   "options.corpusCount": "Đã lưu {count} mục.",
   "options.corpusExport": "Xuất kho (JSON)",
   "options.corpusClear": "Xóa kho",
@@ -395,7 +403,7 @@ const vi: Record<keyof Messages, string> = {
   "capture.linkLabelPlaceholder": "Nhãn (vd. JIRA-123)",
   "capture.linkUrlPlaceholder": "https://…",
   "capture.linkRemove": "Xóa liên kết",
-  "capture.verifiedByLabel": "Test liên kết",
+  "capture.verifiedByLabel": "Test đã liên kết",
   "capture.verifiedByHint": "mỗi dòng một đường dẫn tương đối repo; khai báo, không chạy",
   "capture.verifiedByPlaceholder": "tests/login.spec.ts",
   "capture.reviewLabel": "Rà soát",
@@ -410,7 +418,7 @@ const vi: Record<keyof Messages, string> = {
   "prov.statusDraft": "Bản nháp",
   "prov.statusApproved": "Đã duyệt",
   "prov.statusDeprecated": "Ngừng dùng",
-  "prov.linkedTests": "Test liên kết ({count})",
+  "prov.linkedTests": "Test đã liên kết ({count})",
   "prov.linkedTestsTitle":
     "Các test khai báo spec này. specpin validate kiểm tra các đường dẫn này tồn tại; không chạy chúng.",
   "prov.reviewed": "Đã rà soát {when}",
