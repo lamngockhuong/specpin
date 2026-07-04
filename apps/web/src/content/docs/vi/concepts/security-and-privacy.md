@@ -14,7 +14,7 @@ Tất cả dữ liệu chạy qua máy cục bộ của bạn:
 3. **Extension trình duyệt tải đặc tả qua HTTP localhost.** Nó kết nối tới `http://127.0.0.1:<port>` bằng một bearer token (hoặc tới reverse proxy `https://` của riêng bạn đối với sidecar từ xa).
 4. **Các thao tác ghi quay lại `.specs/` trên đĩa.** Khi bạn capture hoặc sửa một đặc tả, extension gửi nó tới sidecar, sidecar ghi một file JSON được format đẹp một cách nguyên tử. Thay đổi xuất hiện trong `git diff` ngay lập tức.
 
-Không có thành phần Specpin nào gửi dữ liệu tới một server do Specpin vận hành. Không có dịch vụ cloud, không có telemetry, không có analytics. Dữ liệu đặc tả chỉ đi tới sidecar do bạn chạy — trên localhost theo mặc định, hoặc trên máy chủ từ xa của riêng bạn nếu bạn chọn dùng.
+Không có thành phần Specpin nào gửi dữ liệu tới một server do Specpin vận hành. Không có dịch vụ cloud, không có telemetry, không có analytics. Dữ liệu đặc tả chỉ đi tới sidecar do bạn chạy - trên localhost theo mặc định, hoặc trên máy chủ từ xa của riêng bạn nếu bạn chọn dùng.
 
 ## Mô Hình Bảo Mật Sidecar
 
@@ -24,7 +24,7 @@ Sidecar được cứng hóa để ngăn truy cập trái phép:
 
 Theo mặc định, sidecar bind tới `127.0.0.1`. Chỉ các tiến trình trên máy của bạn có thể tiếp cận nó. Cổng được tự động chọn từ các cổng cao khả dụng trừ khi bạn ghi đè bằng `--port`.
 
-Để dùng theo nhóm, `--host <addr>` bind một interface không phải loopback. Điều này phơi bày trực tiếp cổng thô, **plaintext, chỉ-token** ra mạng (reverse proxy không tự động nằm trong đường đi), nên sidecar sẽ in một cảnh báo, và bạn phải firewall cổng đó cùng đặt một reverse proxy HTTPS phía trước. Client từ xa luôn kết nối qua HTTPS qua proxy đó — extension chặn các kết nối từ xa plaintext vì mixed content.
+Để dùng theo nhóm, `--host <addr>` bind một interface không phải loopback. Điều này để lộ trực tiếp cổng thô, **plaintext, chỉ-token** ra mạng (reverse proxy không tự động nằm trong đường đi), nên sidecar sẽ in một cảnh báo, và bạn phải firewall cổng đó cùng đặt một reverse proxy HTTPS phía trước. Client từ xa luôn kết nối qua HTTPS qua proxy đó - extension chặn các kết nối từ xa plaintext vì mixed content.
 
 ### Xác Thực Bearer Token
 
@@ -39,7 +39,7 @@ Specpin sidecar running.
 Sao chép token và dán vào phần cài đặt kết nối của extension. Extension lưu nó một cách an toàn trong background service worker và gửi kèm nó với mỗi request. Không có token đúng, tất cả request sẽ bị từ chối với `401 Unauthorized`.
 
 :::caution
-Token được in trong terminal của bạn. Nếu ai đó có quyền truy cập vật lý hoặc từ xa vào máy của bạn nhìn thấy output terminal, họ có thể kết nối tới sidecar trong khi nó đang chạy. Đối xử với token như một mật khẩu — nó là ranh giới ủy quyền **duy nhất** đối với các client mạng không phải trình duyệt (CORS chỉ ràng buộc trình duyệt). Theo mặc định token thay đổi mỗi lần bạn khởi động lại `specpin serve`; hãy ghim một token ổn định bằng `--token` / `SPECPIN_TOKEN` (cho sidecar từ xa/nhóm) để việc khởi động lại không làm mất xác thực của mọi người — nhưng khi đó hãy phân phối và xoay vòng nó cẩn thận.
+Token được in trong terminal của bạn. Nếu ai đó có quyền truy cập vật lý hoặc từ xa vào máy của bạn nhìn thấy output terminal, họ có thể kết nối tới sidecar trong khi nó đang chạy. Đối xử với token như một mật khẩu - nó là ranh giới ủy quyền **duy nhất** đối với các client mạng không phải trình duyệt (CORS chỉ ràng buộc trình duyệt). Theo mặc định token thay đổi mỗi lần bạn khởi động lại `specpin serve`; hãy ghim một token ổn định bằng `--token` / `SPECPIN_TOKEN` (cho sidecar từ xa/nhóm) để việc khởi động lại không làm mất xác thực của mọi người - nhưng khi đó hãy phân phối và xoay vòng nó cẩn thận.
 :::
 
 ### CORS: Chỉ Origin Extension
@@ -91,7 +91,7 @@ Bạn có thể kết nối extension tới nhiều instance sidecar (ví dụ: 
 ## Câu Hỏi Thường Gặp
 
 **Dữ liệu của tôi có được gửi đi đâu không?**  
-Không gửi cho chúng tôi. Theo mặc định, tất cả dữ liệu đặc tả chỉ chạy qua máy cục bộ của bạn — sidecar bind tới `127.0.0.1` và extension kết nối qua localhost. Nếu bạn chọn dùng sidecar từ xa, đặc tả chỉ đi tới máy chủ đó, do **bạn** vận hành; không có server của Specpin và không có telemetry.
+Không gửi cho chúng tôi. Theo mặc định, tất cả dữ liệu đặc tả chỉ chạy qua máy cục bộ của bạn - sidecar bind tới `127.0.0.1` và extension kết nối qua localhost. Nếu bạn chọn dùng sidecar từ xa, đặc tả chỉ đi tới máy chủ đó, do **bạn** vận hành; không có server của Specpin và không có telemetry.
 
 **Một website có thể đọc đặc tả của tôi không?**  
 Không. Sidecar từ chối request từ origin web (qua CORS). Chỉ browser extension mới có thể tải đặc tả.

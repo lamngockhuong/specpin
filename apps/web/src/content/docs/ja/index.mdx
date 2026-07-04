@@ -45,7 +45,7 @@ Specpinはビジネス仕様（ルール、説明、受け入れ基準）を*動
 
 <CardGrid>
   <Card title="ライブ要素にspecを固定" icon="pin">
-    レジリエントなフィンガープリントマッチング（test-id、aria、selector、xpath、テキスト、
+    堅牢なフィンガープリントマッチング（test-id、aria、selector、xpath、テキスト、
     位置）により、リファクタリング後もspecが要素に固定されたままになります。
   </Card>
   <Card title="3つの表示モード" icon="laptop">
@@ -60,18 +60,18 @@ Specpinはビジネス仕様（ルール、説明、受け入れ基準）を*動
     sidecarを起動しなくてもspecの編集、キャプチャ、作成、グループzipエクスポートができます。
   </Card>
   <Card title="マルチプロジェクト、origin別" icon="open-book">
-    1つのextensionで複数のプロジェクトを同時に扱い、ドメインで各ページに振り分けます。
+    1つの拡張機能で複数のプロジェクトを同時に扱い、ドメインで各ページに振り分けます。
     プロジェクトごとに個別に有効・無効を切り替えられます。
   </Card>
-  <Card title="provenance & trust" icon="approve-check">
-    オプションのspecステータス、issue/PRリンク、リンクされたテスト、staleインジケーター付きのレビュー鮮度。
+  <Card title="来歴と信頼" icon="approve-check">
+    オプションのspecステータス、issue/PRリンク、リンクされたテスト、古さインジケーター付きのレビュー鮮度。
   </Card>
   <Card title="Guide mode" icon="rocket">
-    teamとpersonalスコープのspec駆動オンボーディングツアー。spotlightオーバーレイとアンカーされたpopover付き。
+    チームおよび個人スコープでのspec駆動オンボーディングツアー。スポットライトオーバーレイと、要素に固定されるポップオーバーを備えます。
   </Card>
   <Card title="デフォルトでセキュア" icon="approve-check">
     sidecarはデフォルトでlocalhostにバインドし、すべてのリクエストをbearerトークンで認証し、
-    extensionのoriginのみを受け付けます。チームに必要なときはHTTPS経由のリモートsidecarを
+    拡張機能のoriginのみを受け付けます。チームに必要なときはHTTPS経由のリモートsidecarを
     オプトインできます。それはあなたが運用するサーバーのままです。
   </Card>
 </CardGrid>
@@ -93,8 +93,8 @@ Specpinはビジネス仕様（ルール、説明、受け入れ基準）を*動
   </div>
   <div class="step">
     <span class="n">3</span>
-    <h3>extensionがレンダリングする</h3>
-    <p>ブラウザextensionが各specをライブ要素にマッチさせ、ページ上にレンダリングします。</p>
+    <h3>拡張機能がレンダリングする</h3>
+    <p>ブラウザ拡張機能が各specをライブ要素にマッチさせ、ページ上にレンダリングします。</p>
   </div>
 </div>
 
@@ -117,12 +117,12 @@ specpin serve                  # localhost URL + bearerトークンを表示
 #    Firefox: ソースからビルド（AMOは近日公開）
 ```
 
-Chrome版Specpinを[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)からインストールし、表示されたURLとトークンをextensionに貼り付け、アプリを開くと各要素にspecがレンダリングされます。
+Chrome版Specpinを[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)からインストールし、表示されたURLとトークンを拡張機能に貼り付け、アプリを開くと各要素にspecがレンダリングされます。
 
 <CardGrid>
   <Card title="Specpinを初めて使う方へ" icon="rocket">
     まず[はじめに](/ja/guide/introduction/)を読み、
-    [extensionをインストール](/ja/guide/install/)して、
+    [拡張機能をインストール](/ja/guide/install/)して、
     [最初のspecをレンダリング](/ja/guide/getting-started/)してみましょう。
   </Card>
   <Card title="自分のリポジトリを配信する場合" icon="setting">

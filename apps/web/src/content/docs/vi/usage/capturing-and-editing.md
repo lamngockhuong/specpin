@@ -11,7 +11,7 @@ Vào chế độ ghi, nhấp vào một phần tử và điền vào biểu mẫ
 
 1. Nhấp **+ Ghi spec** trong popup hoặc side panel, hoặc nhấn `Alt+Shift+C`.
 2. Rê chuột qua trang. Một khung làm nổi bật xuất hiện xung quanh các phần tử khi bạn di chuyển.
-3. Nhấp vào phần tử bạn muốn spec.
+3. Nhấp vào phần tử bạn muốn gắn spec.
 4. Biểu mẫu ghi mở ra. Điền các trường (xem bên dưới).
 5. Nhấp **Lưu spec**.
 
@@ -24,9 +24,9 @@ Spec được ghi vào dự án đã chọn và xuất hiện ngay lập tức t
 - **Mô tả**: Phần tử này làm gì (bắt buộc đối với ngôn ngữ mặc định). Hỗ trợ Markdown.
 - **Quy tắc nghiệp vụ**: Một quy tắc trên mỗi dòng (tùy chọn). Hỗ trợ Markdown (chỉ đánh dấu nội tuyến).
 - **Thẻ**: Phân tách bằng dấu phẩy (tùy chọn, ví dụ: `auth, critical`).
-- **Trạng thái**: Trạng thái vòng đời — draft, approved, hoặc deprecated (tùy chọn; để trống cho trung tính).
+- **Trạng thái**: Trạng thái vòng đời - draft, approved, hoặc deprecated (tùy chọn; để trống cho trung tính).
 - **Liên kết**: Các tham chiếu do tác giả khai báo tới ticket, tài liệu hoặc PR liên quan (tùy chọn). Mỗi liên kết gồm một nhãn cùng một URL `http`/`https`.
-- **Test liên kết**: Các đường dẫn test tương đối so với repo khai báo spec này (tùy chọn). Đây là các liên kết *được khai báo*, không phải kết quả test — Specpin kiểm tra các đường dẫn tồn tại khi chạy `specpin validate`, nhưng không bao giờ chạy chúng.
+- **Test liên kết**: Các đường dẫn test tương đối so với repo khai báo spec này (tùy chọn). Đây là các liên kết *được khai báo*, không phải kết quả test - Specpin kiểm tra các đường dẫn tồn tại khi chạy `specpin validate`, nhưng không bao giờ chạy chúng.
 - **Chế độ hiển thị**: Dùng mặc định của dự án, tooltip hoặc thanh bên.
 - **Dự án đích**: Dự án nào để lưu vào. Với nhiều hơn một dự án ghi được phục vụ trang, chọn từ menu thả xuống. Với chính xác một, nó được chọn tự động. Với không có, ghi bị vô hiệu hóa với một lời giải thích.
 - **Tệp đích**: Tệp `.spec.json` để ghi vào (được điền trước, có thể chỉnh sửa).
@@ -62,11 +62,11 @@ Nhấp **Sửa** trên thẻ spec trong side panel, hoặc nhấp vào huy hiệ
 
 Cùng một biểu mẫu mở ra, được điền trước với nội dung của spec cho mọi ngôn ngữ đã soạn. Thay đổi bất kỳ trường nào và nhấp **Lưu thay đổi**. Spec giữ `id` và nguồn gốc của nó (`createdBy`, `createdAt`, `source`); chỉ `updatedAt` được tăng lên.
 
-Sửa ghi lại thông qua dự án sở hữu (sidecar hoặc cục bộ) và cập nhật trực tiếp trang.
+Sửa ghi lại thông qua dự án sở hữu (sidecar hoặc cục bộ) và cập nhật trang tức thời.
 
 ## Đánh dấu đã review
 
-Biểu mẫu sửa có hành động **Đánh dấu đã review** đóng dấu ngày review của spec (`reviewedAt`) và một token người review (`reviewedBy`). Nhập một **token không chứa PII** — một cái tên hoặc handle, không phải email — vì nó được commit vào Git và bao gồm trong các bản export; biểu mẫu cảnh báo bạn điều này. Ngày review điều khiển chỉ báo **cũ** trên spec đã render một khi vượt qua ngưỡng cũ của dự án.
+Biểu mẫu sửa có hành động **Đánh dấu đã review** đóng dấu ngày review của spec (`reviewedAt`) và một token người review (`reviewedBy`). Nhập một **token không chứa PII** - một cái tên hoặc handle, không phải email - vì nó được commit vào Git và bao gồm trong các bản export; biểu mẫu cảnh báo bạn điều này. Ngày review điều khiển chỉ báo **cũ** trên spec đã render một khi vượt qua ngưỡng cũ của dự án.
 
 ## Liên kết lại phần tử (chỉ sửa)
 
