@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.13](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.12...extension-v0.0.13) (2026-07-05)
+
+
+### Features
+
+* **extension:** empty & paused states for popup and side panel ([#124](https://github.com/lamngockhuong/specpin/issues/124)) ([366935b](https://github.com/lamngockhuong/specpin/commit/366935bbb35441f28dcef4a7ab7f015c144e66e2))
+* **extension:** larger UI fonts, bundled Inter, DOMParser trusted-HTML ([#122](https://github.com/lamngockhuong/specpin/issues/122)) ([a95fea1](https://github.com/lamngockhuong/specpin/commit/a95fea1e08d69575f4bcfbdb1509fbf8142ea7d2))
+* **extension:** merge sidecar + manual specs into one Spec nav section ([#129](https://github.com/lamngockhuong/specpin/issues/129)) ([cbb0511](https://github.com/lamngockhuong/specpin/commit/cbb0511b2de2d7feaf1f595aa084d9479ca19b53))
+* matching-corpus entry list + offline scorer tuning ([#128](https://github.com/lamngockhuong/specpin/issues/128)) ([9479cd8](https://github.com/lamngockhuong/specpin/commit/9479cd82eff8e6106e00b89647f6d9933c41256b))
+
+
+### Bug Fixes
+
+* **extension:** auto-hide options result banners + dedupe ui-docs reminder ([#130](https://github.com/lamngockhuong/specpin/issues/130)) ([145bd69](https://github.com/lamngockhuong/specpin/commit/145bd69f1652d0c2099daec5d348dcaa5ddf13a6))
+* **extension:** surface toast when side panel guide launch hits a restricted tab ([#127](https://github.com/lamngockhuong/specpin/issues/127)) ([8fc81ad](https://github.com/lamngockhuong/specpin/commit/8fc81ad285d2206ca262600a3b1c3e864e719510))
+* **i18n:** natural Vietnamese wording across extension UI + vi docs ([#126](https://github.com/lamngockhuong/specpin/issues/126)) ([9a2032f](https://github.com/lamngockhuong/specpin/commit/9a2032faefed01a173086f5e7b9443246d9d5768))
+
 ## [0.0.12](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.11...extension-v0.0.12) (2026-07-04)
 
 
