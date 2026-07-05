@@ -425,9 +425,11 @@ async function refresh(): Promise<void> {
 }
 
 // The Guides launch section. The side panel is persistent, so launching a tour
-// does NOT close it (unlike the popup); it just sends START_GUIDE to the tab.
+// does NOT close it (unlike the popup): actOnActiveTab with no onDelivered stays
+// docked on success and surfaces a toast when the tab has no content script to
+// receive it (chrome://, the store, the extension's own pages).
 const guideSection = mountGuideSection(byId("guides"), {
-  launch: (steps, name) => void sendToActiveTab({ type: "START_GUIDE", steps, name }),
+  launch: (steps, name) => void actOnActiveTab({ type: "START_GUIDE", steps, name }),
 });
 
 // The shared "+ New project" inline form; refresh() re-renders the project list
