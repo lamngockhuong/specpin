@@ -47,3 +47,6 @@ docs/journals/
 .env.*
 !.env.example
 
+
+# UI-docs reminder hook state (per-clone, not shared)
+.claude/.ui-docs-reminder-state

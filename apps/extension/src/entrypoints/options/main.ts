@@ -72,9 +72,27 @@ const corpusCount = byId("corpusCount");
 const corpusList = byId("corpusList");
 const corpusResult = byId("corpusResult");
 
+// Auto-hide result banners so they don't linger until the next action or a page
+// reload (the earlier behaviour). Success clears sooner than errors, which the
+// user may still need to read. A per-target timer is reset on each call so a
+// fresh message is never wiped by a stale timer from a previous one.
+const RESULT_HIDE_MS = { ok: 4000, err: 8000 };
+const resultTimers = new WeakMap<HTMLElement, number>();
+
 function showResult(target: HTMLElement, ok: boolean, text: string): void {
   target.className = ok ? "ok" : "err";
   target.textContent = text;
+  // clearTimeout is a no-op for a missing/expired id, so no guard is needed.
+  clearTimeout(resultTimers.get(target));
+  const timer = window.setTimeout(
+    () => {
+      target.className = "";
+      target.textContent = "";
+      resultTimers.delete(target);
+    },
+    ok ? RESULT_HIDE_MS.ok : RESULT_HIDE_MS.err,
+  );
+  resultTimers.set(target, timer);
 }
 
 /** Build one connection row with DOM nodes (no innerHTML) so project/label/
