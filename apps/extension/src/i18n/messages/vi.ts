@@ -217,12 +217,14 @@ const vi: Record<keyof Messages, string> = {
   // Options page (static HTML + dynamic rows).
   "options.pageTitle": "Cài đặt Specpin",
   // Nhãn điều hướng thanh bên (dạng rút gọn của tiêu đề mục bên dưới).
-  "options.navProjects": "Dự án",
+  "options.navSpec": "Spec",
   "options.navAppearance": "Giao diện",
   "options.navToolbar": "Thanh công cụ",
-  "options.navManual": "Spec thủ công",
   "options.navCorpus": "Đối sánh",
   "options.navSupport": "Hỗ trợ",
+  // Segmented control trong mục Spec: sidecar trực tiếp so với bundle dán tay.
+  "options.specTabLive": "Trực tiếp",
+  "options.specTabManual": "Thủ công",
   "options.connectedProjects": "Dự án đã kết nối",
   "options.connectedLead":
     "Chạy <code>specpin serve</code> trong mỗi dự án, rồi thêm URL và token bên dưới. Spec chỉ hiển thị trên một trang nếu <code>domains</code> trong manifest của dự án bao gồm trang đó.",
