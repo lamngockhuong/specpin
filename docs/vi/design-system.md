@@ -86,8 +86,11 @@ Hai consumer, một file được sinh ra:
   property không bị reset bởi `all`, nên các biến vẫn sống sót qua bước isolation reset.
 
 Cả năm surface chỉ tham chiếu các biến `--sp-*` (không có literal palette hardcode).
-Web font (Inter, JetBrains Mono) được tham chiếu qua fallback stack, chưa bundle file
-`@font-face` (xem `project-roadmap.md`).
+Font UI Inter đã được bundle dưới dạng latin variable woff2 (`public/fonts/`): các
+trang extension nạp qua `@font-face` trong `shared/inter-font.css`, còn content
+script đăng ký cùng face lên host document (`shared/inter-font.ts`) để các renderer
+shadow-DOM cũng dùng được, fallback về system-ui khi CSP của host chặn font.
+JetBrains Mono vẫn tham chiếu qua fallback stack, chưa bundle (xem `project-roadmap.md`).
 
 `render.sh` chạy `pencil interactive` ở chế độ headless (deterministic, không dùng AI
 agent): với mỗi surface, nó pin `theme` của frame chính sang light rồi dark và export

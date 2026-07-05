@@ -84,8 +84,12 @@ Two consumers, one generated file:
   vars survive the isolation reset.
 
 All five surfaces reference `--sp-*` vars only (no hardcoded palette literals).
-Web fonts (Inter, JetBrains Mono) are referenced via fallback stacks, not bundled
-`@font-face` files yet (see `project-roadmap.md`).
+The Inter UI face is bundled as a latin variable woff2 (`public/fonts/`): extension
+pages load it via `@font-face` in `shared/inter-font.css`, and the content script
+registers the same face on the host document (`shared/inter-font.ts`) so the
+shadow-DOM renderers pick it up too, falling back to system-ui where a host CSP
+blocks the font. JetBrains Mono is still referenced via its fallback stack, not
+bundled yet (see `project-roadmap.md`).
 
 `render.sh` uses `pencil interactive` headless (deterministic, no AI agent): for
 each surface it pins the primary frame's `theme` to light then dark and exports

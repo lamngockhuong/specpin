@@ -126,7 +126,7 @@ Planned, pending usage feedback: the FileSystem Access source and the VSCode aut
 - What-changed digest: popup + side panel show "N changed since last visit" plus a list of new/edited spec titles, with a "Mark all seen" button. Digest computed from per-project content-hash snapshot in `storage.local` (title + description + business rules across all locales). First-ever visit or newly-connected project seeds silently (no "everything new" noise).
 
 **Matching reliability core (hybrid scorer + drift corpus) shipped (2026-07-02)** on branch `feat/matching-reliability-core`:
-- Hybrid weighted scorer in `packages/fingerprint-core/src/score.ts`: when exact + unique-css fail, score the ambiguous selector hits or a bounded live-DOM candidate pool on text/labels/attrs/tag/structure/position (weights normalized over the signals the fingerprint carries). Conservative tiers — HIGH (≥0.85) renders confidently, MID (0.6-0.85) renders + `needsReview`, below is no-match — with a top-2 margin (δ 0.1), never overriding exact/css, and abstaining without an identifying content signal. Adds `strategy:"scored"` + optional `signals` breakdown to `MatchResult` (additive; existing callers unaffected). Candidate pool capped (200) with a reported `considered` count; latency perf-tested.
+- Hybrid weighted scorer in `packages/fingerprint-core/src/score.ts`: when exact + unique-css fail, score the ambiguous selector hits or a bounded live-DOM candidate pool on text/labels/attrs/tag/structure/position (weights normalized over the signals the fingerprint carries). Conservative tiers (HIGH (≥0.85) renders confidently, MID (0.6-0.85) renders + `needsReview`, below is no-match) with a top-2 margin (δ 0.1), never overriding exact/css, and abstaining without an identifying content signal. Adds `strategy:"scored"` + optional `signals` breakdown to `MatchResult` (additive; existing callers unaffected). Candidate pool capped (200) with a reported `considered` count; latency perf-tested.
 - Scored-tier surface: distinct **Scored match** badge (confidence + dominant-signal "why matched"), MID reads as the cautionary fuzzy style; page-health summary gains a `scored` bucket; side-panel card pill. EN+VI+JA strings.
 - Local drift corpus (`apps/extension/src/shared/drift-corpus.ts`, opt-in default OFF, `storage.local` ring-buffer cap 500): supervised re-pin `(old→new)` pairs + a "Correct" confirmation, and passive candidate-fingerprint snapshots for orphaned/MID specs (tentative `chosenByScorer` label). Fingerprints only, `textContent` redacted (emails + long digit runs) at write time; per-`(project,specId,pageUrl)` dedupe window for passive. Options card: opt-in toggle, live count, JSON export (local download), clear (confirm). New unprivileged `RECORD_DRIFT` / `RECORD_DRIFT_PASSIVE` messages (content-originated, background gates on opt-in). No schema/sidecar/`.specs/` change.
 
@@ -173,7 +173,7 @@ Planned, pending usage feedback: the FileSystem Access source and the VSCode aut
 - Lazy-load renderers (code-split tooltip/sidebar/modal, load on first use)
 
 **UX Polish:**
-- Bundle web fonts (Inter, JetBrains Mono) as `@font-face` assets; the shipped UI design system currently references them via fallback stacks (`system-ui` / `ui-monospace`) so the branded typography is not guaranteed off-system
+- Bundle the JetBrains Mono code face as an `@font-face` asset; it still falls back to `ui-monospace` off-system. (Inter UI face - **delivered**: latin variable woff2 in `public/fonts/`, loaded on pages via `shared/inter-font.css` and registered document-side for shadow-DOM renderers via `shared/inter-font.ts`.)
 - Capture mode visual improvements (highlight quality, form styling)
 - Keyboard shortcut customization UI
 - Extension options page advanced settings
@@ -282,7 +282,7 @@ Planned after public release:
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| 2026-07-03 | Dropped the overlay + inline-badge renderers (enum values stay reserved for forward-compat) | Overlay duplicated the shipped modal + the Guide-mode spotlight; inline-badge duplicated the tooltip element badge — no distinct user value over what ships today |
+| 2026-07-03 | Dropped the overlay + inline-badge renderers (enum values stay reserved for forward-compat) | Overlay duplicated the shipped modal + the Guide-mode spotlight; inline-badge duplicated the tooltip element badge, no distinct user value over what ships today |
 | 2026-06-25 | Trimmed the initial release scope (defer FS/Manual sources, modal/overlay/badge, hybrid scorer, Safari, AI) | Deliver demoable end-to-end faster, validate core value prop before polish |
 | 2026-06-25 | CLI language: Go (not Node) | Single static binary, no runtime deps, better fit for localhost server than Bun/Deno |
 | 2026-06-25 | Fingerprint: exact anchors + cssSelector now, weighted scorer deferred | Initial release sufficient for demo, hybrid scorer needs real-world corpus for tuning |
