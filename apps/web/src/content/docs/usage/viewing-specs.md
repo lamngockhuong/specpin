@@ -7,7 +7,7 @@ Once a project is connected, specs appear on matched elements.
 
 ## Turn Specpin on/off
 
-Click the toggle at the top of the popup, or press `Alt+Shift+S`. When Specpin is off, specs disappear from the page. The setting persists across sessions.
+Click the toggle at the top of the popup, or press `Alt+Shift+S`. When Specpin is off, specs disappear from the page and the popup shows a paused panel (**Specpin is off**) that tells you how many specs are hidden on this page; turn it back on from the same toggle. When no project serves the page at all, the popup instead shows a **+ New project** prompt to get started. The setting persists across sessions.
 
 ## Display modes
 
@@ -40,7 +40,7 @@ The search box in the popup and side panel filters specs live by title, file, an
 
 ## Share a spec (deep link)
 
-Each side-panel spec card and each pinned tooltip has a **Copy link** action. It copies a URL of the form `<page-url>#specpin=<spec-id>`. Opening that link scrolls to and flashes the spec's element and opens the side panel with its card highlighted — handy for pointing a teammate at one spec in context.
+Each side-panel spec card and each pinned tooltip has a **Copy link** action. It copies a URL of the form `<page-url>#specpin=<spec-id>`. Opening that link scrolls to and flashes the spec's element and opens the side panel with its card highlighted - handy for pointing a teammate at one spec in context.
 
 If the element renders late, Specpin retries briefly before giving up. If the spec exists but its element is gone from the page, the side-panel card still opens and a short "not on this page" message appears. Any fragment your app already uses in the URL is preserved.
 
@@ -48,7 +48,7 @@ If the element renders late, Specpin retries briefly before giving up. If the sp
 
 The popup and side panel show a **"N changed since last visit"** digest: a count plus the titles of specs added or edited since you last looked, per project. Click **Mark all seen** to clear it and set the new baseline.
 
-Detection compares a content hash of each spec's title, description, and business rules (across all languages), stored locally in your browser — no network, no telemetry. Switching the spec language never counts as a change. The first time a project appears, its specs are seeded silently, so nothing shows up as "new".
+Detection compares a content hash of each spec's title, description, and business rules (across all languages), stored locally in your browser - no network, no telemetry. Switching the spec language never counts as a change. The first time a project appears, its specs are seeded silently, so nothing shows up as "new".
 
 ## Source badges
 
@@ -65,7 +65,7 @@ When a spec carries provenance fields, rendered specs show a provenance block:
 
 - **Status badge**: the spec's lifecycle state (draft, approved, or deprecated), when set.
 - **Links**: author-declared references to tickets, docs, or PRs. Each opens in a new tab.
-- **Linked tests**: the `verifiedBy` paths that declare the spec, shown as a list. These are *linked*, not verified — Specpin does not run them or claim they pass.
+- **Linked tests**: the `verifiedBy` paths that declare the spec, shown as a list. These are *linked*, not verified - Specpin does not run them or claim they pass.
 - **Reviewed**: a "reviewed {relative time}" line from the last **Mark reviewed** action. Past the project's staleness threshold, a **stale** indicator appears, prompting a re-review.
 
 Provenance is author-asserted: it reflects what the spec's author committed, and the real check is the Git-diff review of `.specs/`, not anything at runtime.

@@ -91,7 +91,7 @@ A project whose manifest pins no `domains` is inactive by default (its specs wou
 
 Visit the demo app (`http://localhost:3000`). Matched specs appear as tooltips on their elements (the badge turns amber when a match needs review). Edit a `.spec.json` on disk and the page live-updates via SSE.
 
-The popup lists the specs for the current page and toggles Specpin on/off. The top-right header holds a settings gear (opens the Options page), a **+ New project** button (create a local project or connect a sidecar inline), and, when a project serves the page, an **Export** button (download one project's specs as a `.specs.zip`; if several serve the page, it opens a small picker to choose which one). Export covers both local projects (from their stored bundle) and connected sidecar projects (from their live cache; sidecar exports derive group names from file names since the cache flattens groups). The primary controls (**+ Capture spec** and the display-mode select) sit directly above the list so they stay visible without scrolling, with the spec **Language** picker just above them. Each spec row shows a small source badge (`sidecar` or `manual`) marking which source it came from. A search box above the list filters specs live by title, file, and tags. Just above the search box a **This page | All** toggle scopes the list: it defaults to only the specs pinned on the current page, and **All** switches to every spec the project serves for this origin (the toggle hides, and the full list shows, on pages Specpin cannot inspect such as the extension's own pages). When more than one project serves the page, the popup lists each matching project and renderers caption each spec with its project. Turning Specpin off for the page collapses the list to an off notice and hides the controls that only act on it (search, language, capture, mode, filters); the status, project list, and settings gear stay.
+The popup lists the specs for the current page and toggles Specpin on/off. The top-right header holds a settings gear (opens the Options page), a **+ New project** button (create a local project or connect a sidecar inline), and, when a project serves the page, an **Export** button (download one project's specs as a `.specs.zip`; if several serve the page, it opens a small picker to choose which one). Export covers both local projects (from their stored bundle) and connected sidecar projects (from their live cache; sidecar exports derive group names from file names since the cache flattens groups). The primary controls (**+ Capture spec** and the display-mode select) sit directly above the list so they stay visible without scrolling, with the spec **Language** picker just above them. Each spec row shows a small source badge (`sidecar` or `manual`) marking which source it came from. A search box above the list filters specs live by title, file, and tags. Just above the search box a **This page | All** toggle scopes the list: it defaults to only the specs pinned on the current page, and **All** switches to every spec the project serves for this origin (the toggle hides, and the full list shows, on pages Specpin cannot inspect such as the extension's own pages). When more than one project serves the page, the popup lists each matching project and renderers caption each spec with its project. When no project serves the page, the popup body is replaced by a create-a-project prompt (**+ New project**); the side panel shows the same as a short two-step (create a project, then capture your first spec). Turning Specpin off while a project still serves the page shows a paused panel (**Specpin is off**, with a count of how many specs are hidden here) and collapses the controls that only act on the list (search, language, capture, mode, filters) along with the status line, project list, and spec list; the on/off toggle and the settings gear stay so you can turn it back on.
 
 ### Side panel (docked)
 
@@ -119,7 +119,7 @@ Team admins can set project-wide defaults in the Options page (**Team visibility
 
 ## 10. Capture a new spec (with translations)
 
-Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, then fill the form. The form has a row of **language tabs** (one per locale, plus a **+** tab to add one): click a tab to author that language's title/description/rules, then switch tabs to add a translation - switching tabs keeps what you already entered. The default language requires a title and description. The description and business-rules fields have a small **Markdown toolbar** (description: bold / italic / link / bullet / numbered; rules: bold / italic / link); each button inserts Markdown into the textarea around your selection. Below the display mode the form has optional **provenance** inputs: a **Status** select (draft / approved / deprecated; leave blank for none), a **Links** sub-form (repeatable label + `http`/`https` URL rows, "Add link" / × to remove), and **Linked tests** (one repo-relative test path per line — a *declared* link that `specpin validate` checks exists, never runs). The **Save to** picker lists every writable project serving the page, labelled by kind (`sidecar` or `local`); pick one (a lone target is selected automatically, and capture is disabled with an explanation when no project serves the page). On save the spec is validated and written: a sidecar target writes the chosen `.spec.json` (pretty-printed) so it shows up in `git diff`; a local target writes it into `browser.storage.local` (origin-bounded, never a sidecar). Captured specs carry `meta.source: "manual"`. The authored Markdown renders as formatted text in every display mode (see [schema-reference](./schema-reference.md#formatting-markdown-subset) for the supported subset). If the element you pinned has no stable anchor, the form shows a **Fragile anchor** hint with a copyable `data-spec-id="…"` snippet - add that attribute to your source to upgrade the match to exact (suggest-only; Specpin never edits source).
+Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, then fill the form. The form has a row of **language tabs** (one per locale, plus a **+** tab to add one): click a tab to author that language's title/description/rules, then switch tabs to add a translation - switching tabs keeps what you already entered. The default language requires a title and description. The description and business-rules fields have a small **Markdown toolbar** (description: bold / italic / link / bullet / numbered; rules: bold / italic / link); each button inserts Markdown into the textarea around your selection. Below the display mode the form has optional **provenance** inputs: a **Status** select (draft / approved / deprecated; leave blank for none), a **Links** sub-form (repeatable label + `http`/`https` URL rows, "Add link" / × to remove), and **Linked tests** (one repo-relative test path per line - a *declared* link that `specpin validate` checks exists, never runs). The **Save to** picker lists every writable project serving the page, labelled by kind (`sidecar` or `local`); pick one (a lone target is selected automatically, and capture is disabled with an explanation when no project serves the page). On save the spec is validated and written: a sidecar target writes the chosen `.spec.json` (pretty-printed) so it shows up in `git diff`; a local target writes it into `browser.storage.local` (origin-bounded, never a sidecar). Captured specs carry `meta.source: "manual"`. The authored Markdown renders as formatted text in every display mode (see [schema-reference](./schema-reference.md#formatting-markdown-subset) for the supported subset). If the element you pinned has no stable anchor, the form shows a **Fragile anchor** hint with a copyable `data-spec-id="…"` snippet - add that attribute to your source to upgrade the match to exact (suggest-only; Specpin never edits source).
 
 ### Right-click menu
 
@@ -127,7 +127,7 @@ When Specpin is on, the page right-click menu has a **Specpin** submenu with fou
 
 ## 11. Edit an existing spec
 
-Open a spec for editing from either surface: click a tooltip badge to pin it and hit **Edit spec**, or click **Edit** on a spec card in the side panel. The same form opens pre-filled with the spec's content for every authored language (including the provenance fields — status, links, and linked tests); change the title, description, business rules, tags, display mode, or provenance and click **Save changes**. The spec keeps its `id` and provenance (`createdBy`/`createdAt`/`source`) and preserves any prior review stamp; only `updatedAt` is bumped. Clearing a link or the linked-tests list removes it (it is not silently kept). In edit mode a **Mark reviewed** action stamps `meta.reviewedAt` to now plus a reviewer token (`reviewedBy`, prefilled with the spec's non-PII `createdBy` token, editable) and saves through the same path — the reviewer field is **committed to `.specs/` and included in exports, so it must not contain PII/emails**. A spec whose last review is older than its project's staleness threshold shows a **Stale** indicator on every surface. The change writes back through the owning sidecar and live-updates the page via SSE, the same as editing the `.spec.json` on disk.
+Open a spec for editing from either surface: click a tooltip badge to pin it and hit **Edit spec**, or click **Edit** on a spec card in the side panel. The same form opens pre-filled with the spec's content for every authored language (including the provenance fields - status, links, and linked tests); change the title, description, business rules, tags, display mode, or provenance and click **Save changes**. The spec keeps its `id` and provenance (`createdBy`/`createdAt`/`source`) and preserves any prior review stamp; only `updatedAt` is bumped. Clearing a link or the linked-tests list removes it (it is not silently kept). In edit mode a **Mark reviewed** action stamps `meta.reviewedAt` to now plus a reviewer token (`reviewedBy`, prefilled with the spec's non-PII `createdBy` token, editable) and saves through the same path - the reviewer field is **committed to `.specs/` and included in exports, so it must not contain PII/emails**. A spec whose last review is older than its project's staleness threshold shows a **Stale** indicator on every surface. The change writes back through the owning sidecar and live-updates the page via SSE, the same as editing the `.spec.json` on disk.
 
 To point a spec at a different element, click **Re-link element** in the edit form, then click the new element on the page; the form reopens with your edits intact and the new fingerprint applied on save. Local (Manual) specs are now editable the same way; the edit writes back to `browser.storage.local` instead of a sidecar. (Side panel Edit drives the in-page form, so keep the panel docked next to the page it describes.)
 
@@ -135,7 +135,7 @@ To delete a writable spec, use **Delete spec** on the pinned tooltip or **Delete
 
 ### Provenance validation & freshness
 
-`specpin validate` now also checks that every `verifiedBy` path exists in the repo — a broken-link check, not a test run (it never runs tests or reads pass/fail). Paths resolve against the **repo root**, which defaults to the parent of `--dir`; pass `--repo-root <path>` when your `.specs/` lives somewhere other than `<repo>/.specs` (e.g. `./config/specs`). Absolute paths, `..`-escapes, and symlinks that leave the repo are rejected; a missing file exits non-zero naming the spec id + path. When there is no readable working tree (e.g. a piped bundle) the check is skipped with a note rather than failing.
+`specpin validate` now also checks that every `verifiedBy` path exists in the repo - a broken-link check, not a test run (it never runs tests or reads pass/fail). Paths resolve against the **repo root**, which defaults to the parent of `--dir`; pass `--repo-root <path>` when your `.specs/` lives somewhere other than `<repo>/.specs` (e.g. `./config/specs`). Absolute paths, `..`-escapes, and symlinks that leave the repo are rejected; a missing file exits non-zero naming the spec id + path. When there is no readable working tree (e.g. a piped bundle) the check is skipped with a note rather than failing.
 
 The **staleness threshold** (how old a review may be before a spec shows as *stale*) is set per project via `manifest.json` `settings.stalenessThresholdDays` (1-3650), defaulting to **90** days. On a page serving several projects, each spec uses its own project's threshold. Local/manual projects have no manifest, so they always use the 90-day default (there is no per-local override yet).
 
@@ -194,7 +194,7 @@ specs.example.com {
 }
 ```
 
-**nginx** — must disable buffering (for SSE) and forward `OPTIONS` +
+**nginx** - must disable buffering (for SSE) and forward `OPTIONS` +
 `Authorization` (for the CORS preflight on writes), not just `proxy_pass`:
 
 ```nginx
@@ -214,7 +214,7 @@ open. If `OPTIONS` or `Authorization`/`If-Match` are not forwarded, writes to
 ### Advanced: bind off-loopback (proxy on another host)
 
 `specpin serve --host <addr>` binds a non-loopback address. **This does not put a
-proxy in the path** — it exposes the raw, **plaintext, token-only** port directly
+proxy in the path** - it exposes the raw, **plaintext, token-only** port directly
 to the network. Only use it when the proxy runs on a *different* machine, and
 **firewall the raw port** so only the proxy can reach it. Always pin `--port`
 (an auto-picked port changes on restart and breaks the proxy config). The serve
@@ -229,14 +229,14 @@ command prints a blunt warning whenever it binds off-loopback.
 
 Internal servers often have only an IP and no public domain, so the Caddy
 *automatic* HTTPS above (which needs a domain for the ACME challenge) doesn't
-apply. You still cannot connect over plain `http://<ip>`: the **browser** — not
-Specpin — blocks a plaintext request from the extension's secure-context service
+apply. You still cannot connect over plain `http://<ip>`: the **browser** - not
+Specpin - blocks a plaintext request from the extension's secure-context service
 worker to any host other than `localhost`/`127.0.0.1`. The extension accepts
 `https://<ip>` as-is (no domain required), so the job is to put HTTPS on the IP,
 or to make the remote look like localhost. Two paths, both work today in every
 browser:
 
-**Path A — HTTPS on the IP via an internal CA (team-friendly).** A certificate's
+**Path A - HTTPS on the IP via an internal CA (team-friendly).** A certificate's
 Subject Alternative Name (SAN) can be a bare IP, so no domain is needed; trust
 comes from an internal CA you distribute to your team's browsers once. Works for
 private LAN IPs **and** public IPs alike.
@@ -254,7 +254,7 @@ private LAN IPs **and** public IPs alike.
   `pki/authorities/local/root.crt` (under Caddy's data dir) into each browser/OS
   trust store.
 
-- *nginx / no Caddy* — mint an IP-SAN cert yourself and reuse the nginx block
+- *nginx / no Caddy* - mint an IP-SAN cert yourself and reuse the nginx block
   from [Recommended](#recommended-loopback-bind--co-located-proxy) (the
   `proxy_buffering off` + `Authorization`/`If-Match` forwarding still matters):
 
@@ -271,9 +271,9 @@ private LAN IPs **and** public IPs alike.
 Then connect the extension to `https://192.168.1.50` and approve the permission
 prompt (see [Connect the extension](#connect-the-extension)).
 
-**Path B — SSH tunnel to localhost (zero cert, per-user).** For one user, or
+**Path B - SSH tunnel to localhost (zero cert, per-user).** For one user, or
 when installing a root CA isn't allowed, forward a local port to the server's
-loopback sidecar — `localhost` is exempt from mixed-content everywhere, so no
+loopback sidecar - `localhost` is exempt from mixed-content everywhere, so no
 cert and no proxy are needed:
 
 ```bash
@@ -287,7 +287,7 @@ ssh -N -L 9123:127.0.0.1:51234 user@192.168.1.50
 SSH provides the encryption and authentication. It's per-user (each teammate
 runs their own tunnel) and the tunnel must stay up while you work.
 
-> **Why not just `http://192.168.1.50`?** A public IP is never allowed —
+> **Why not just `http://192.168.1.50`?** A public IP is never allowed -
 > plaintext remote is blocked, period. A private LAN IP is allowed *only* on
 > Chrome 142+ via [Local Network Access](https://developer.chrome.com/blog/local-network-access),
 > and even there the permission prompt can't be raised from the extension's
@@ -309,7 +309,7 @@ connection, so the default install carries no broad-host permission.
   CORS rejects browser requests from non-extension origins, but it does **not**
   constrain `curl` or any non-browser client (a request with no `Origin` passes).
   Anyone with the token has full read/write. Treat it like a password; distribute
-  it out-of-band. Pin it with `--token`/`SPECPIN_TOKEN` — otherwise every restart
+  it out-of-band. Pin it with `--token`/`SPECPIN_TOKEN` - otherwise every restart
   mints a new token and every client must be updated.
 - **The raw non-loopback port is plaintext and token-only.** Firewall it; never
   expose it to the public internet without the proxy in front.

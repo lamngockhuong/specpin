@@ -1,7 +1,7 @@
-import { type MessageKey, t } from "../i18n/index.js";
+import { t } from "../i18n/index.js";
 import { clearDraft, loadDraft, saveDraft } from "./draft-store.js";
 import { ensureRemotePermission } from "./host-permission.js";
-import { escapeAttr, escapeHtml, setTrustedHtml } from "./html.js";
+import { setTrustedHtml } from "./html.js";
 import { normalizeSidecarUrl } from "./local-url.js";
 import { type CreateLocalProjectResult, sendToBackground } from "./messaging.js";
 
@@ -33,32 +33,34 @@ export interface AddProjectHandle {
   hide(): void;
 }
 
-/** A capture-target kind switch + the two field sets. No user data is ever
- *  interpolated into this template (only our own translated labels, escaped),
- *  so it is injection-safe on an extension page. */
+/** A capture-target kind switch + the two field sets. Labels/placeholders carry
+ *  `data-i18n*` keys (with English fallback text) rather than baked-in `t()` calls:
+ *  this panel is mounted at module load, BEFORE each surface runs initI18n(), so a
+ *  `t()` here would freeze the startup-default English. The surface's
+ *  hydrateI18n(document) (run after initI18n and on every UI-locale change)
+ *  translates these nodes in place. No user data is interpolated, so the static
+ *  template is injection-safe on an extension page. */
 function template(): string {
-  const ph = (key: MessageKey) => escapeAttr(t(key));
-  const lbl = (key: MessageKey) => escapeHtml(t(key));
   return `
     <div class="ap-panel">
       <div class="ap-modes">
-        <label><input type="radio" name="ap-kind" value="local" checked /> ${lbl("addProject.modeLocal")}</label>
-        <label><input type="radio" name="ap-kind" value="sidecar" /> ${lbl("addProject.modeSidecar")}</label>
+        <label><input type="radio" name="ap-kind" value="local" checked /> <span data-i18n="addProject.modeLocal">Local project</span></label>
+        <label><input type="radio" name="ap-kind" value="sidecar" /> <span data-i18n="addProject.modeSidecar">Sidecar</span></label>
       </div>
       <div class="ap-fields ap-local">
-        <input type="text" id="ap-project" placeholder="${ph("addProject.projectPlaceholder")}" />
-        <input type="text" id="ap-domains" placeholder="${ph("addProject.domainsPlaceholder")}" />
-        <label class="ap-check"><input type="checkbox" id="ap-all" /> ${lbl("addProject.applyAllSites")}</label>
-        <div class="ap-hint">${lbl("addProject.applyAllHint")}</div>
+        <input type="text" id="ap-project" data-i18n-placeholder="addProject.projectPlaceholder" placeholder="Project name" />
+        <input type="text" id="ap-domains" data-i18n-placeholder="addProject.domainsPlaceholder" placeholder="Domains (optional, comma-separated)" />
+        <label class="ap-check"><input type="checkbox" id="ap-all" /> <span data-i18n="addProject.applyAllSites">Apply to all sites</span></label>
+        <div class="ap-hint" data-i18n="addProject.applyAllHint">Without domains or this, the project serves no page.</div>
       </div>
       <div class="ap-fields ap-sidecar" hidden>
-        <input type="text" id="ap-url" placeholder="${ph("addProject.urlPlaceholder")}" />
-        <input type="text" id="ap-label" placeholder="${ph("addProject.labelPlaceholder")}" />
-        <input type="password" id="ap-token" placeholder="${ph("addProject.tokenPlaceholder")}" />
+        <input type="text" id="ap-url" data-i18n-placeholder="addProject.urlPlaceholder" placeholder="http://127.0.0.1:PORT" />
+        <input type="text" id="ap-label" data-i18n-placeholder="addProject.labelPlaceholder" placeholder="Label (optional)" />
+        <input type="password" id="ap-token" data-i18n-placeholder="addProject.tokenPlaceholder" placeholder="Token" />
       </div>
       <div class="ap-actions">
-        <button type="button" id="ap-create">${lbl("addProject.create")}</button>
-        <button type="button" id="ap-cancel">${lbl("addProject.cancel")}</button>
+        <button type="button" id="ap-create" data-i18n="addProject.create">Create</button>
+        <button type="button" id="ap-cancel" data-i18n="addProject.cancel">Cancel</button>
       </div>
       <div id="ap-result"></div>
     </div>`;

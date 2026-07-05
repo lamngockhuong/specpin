@@ -434,6 +434,22 @@ const en = {
   "prov.reviewedBy": "Reviewed {when} by {who}",
   "prov.stale": "Stale",
   "prov.staleTitle": "Not reviewed in over {days} days",
+  // "No project serves this page" empty state (popup Option A + panel Option B).
+  "emptyState.title": "No specs cover this page yet",
+  "emptyState.subtitle": "Create a project for this site to start pinning specs onto its elements.",
+  "emptyState.panelSubtitle":
+    "Set up a project to pin living specs onto this site's elements. Everything you capture is saved as JSON in your repo.",
+  "emptyState.newProject": "+ New project",
+  "emptyState.startTitle": "Start specs for this page",
+  "emptyState.step1Title": "Create a project",
+  "emptyState.step1Body": "A .specs/ folder rooted at this site's origin.",
+  "emptyState.step2Title": "Capture your first spec",
+  "emptyState.step2Body": "Click any element to pin a rule or description onto it.",
+  // "Specpin is off" paused state (a project serves the page but specs are hidden).
+  "offState.title": "Specpin is off",
+  "offState.hiddenOne": "{count} spec hidden on this page",
+  "offState.hiddenOther": "{count} specs hidden on this page",
+  "offState.subtitle": "Turn it back on above.",
 } satisfies Record<string, string>;
 
 export type Messages = typeof en;

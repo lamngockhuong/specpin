@@ -219,6 +219,36 @@
     </div>
     <div class="row meta"><span id="count" class="pill"></span></div>
     <ul id="projects"></ul>
+    <!-- Shown by setEmptyState() when no project serves this page; body.no-project
+         then collapses the spec-operating controls below. Option A: a compact
+         call-to-action. #es-new opens the add-project form (delegates to the header
+         "+ New project"). No capture here: it needs a project, and once one serves
+         the page this state is gone. -->
+    <div id="empty-state" class="empty-state" hidden>
+      <div class="es-hero">
+        <span class="es-ring">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </span>
+        <div class="es-title" data-i18n="emptyState.title">No specs cover this page yet</div>
+        <div class="es-sub" data-i18n="emptyState.subtitle">Create a project for this site to start pinning specs onto its elements.</div>
+      </div>
+      <div class="es-actions">
+        <button type="button" id="es-new" class="es-btn" data-i18n="emptyState.newProject">+ New project</button>
+      </div>
+    </div>
+    <!-- Shown by setSurfaceState() when a project serves the page but Specpin is
+         off; body.paused collapses the spec-operating controls (the toggle above
+         stays, as the way back on). -->
+    <div id="off-state" class="empty-state" hidden>
+      <div class="es-hero">
+        <span class="es-ring es-ring-muted">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </span>
+        <div class="es-title" data-i18n="offState.title">Specpin is off</div>
+        <div class="es-count" id="off-count" hidden></div>
+        <div class="es-sub" data-i18n="offState.subtitle">Turn it back on above.</div>
+      </div>
+    </div>
     <div id="digest" class="digest" hidden></div>
     <div class="row locale-row" id="locale-row" hidden>
       <label for="locale" data-i18n="common.languageLabel">Language</label>

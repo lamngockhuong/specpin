@@ -23,6 +23,10 @@ export interface ProjectActions {
    *  project serves THIS page. `targets` are those projects (one export each). Also
    *  collapses the add-project panel + export menu when disabled. */
   update(enabled: boolean, targets: ExportTarget[]): void;
+  /** Open (or close) the inline add-project form. The header "+ New project" button
+   *  is wired to this too, so the empty state's call-to-action can drive the same
+   *  action directly instead of synthesizing a click on that button. */
+  toggleAddProject(): void;
 }
 
 /** Export exactly one project's specs (by connection id), then zip + download.
@@ -147,6 +151,9 @@ export function wireProjectActions(
   });
 
   return {
+    toggleAddProject() {
+      addProject.toggle();
+    },
     update(enabled, next) {
       targets = next;
       byId("new-project").hidden = !enabled;

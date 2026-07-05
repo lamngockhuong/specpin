@@ -1,5 +1,5 @@
 import { resolveLocalized } from "@specpin/spec-schema";
-import { t } from "../i18n/index.js";
+import { plural, t } from "../i18n/index.js";
 import { copyText } from "./clipboard.js";
 import type { ManualBatchSummary, TaggedSpec } from "./connection-types.js";
 import { dataSpecIdSnippet, fragileEntries } from "./data-spec-id.js";
@@ -197,11 +197,17 @@ export function renderStatus(status: StatusResult, origin: string, originSpecCou
   // preserved in renderProjects' serving filter (a project bound to another
   // domain must not appear here).
   const serving = (status.connections ?? []).filter((c) => connectionServesOrigin(c, origin));
+  // A local project serving this origin counts as a project even before it holds
+  // any specs, so it must suppress the "No project" text (its specCount is 0, so
+  // originSpecCount alone would wrongly report the source gap).
+  const servesLocal = (status.manualBatches ?? []).some((b) =>
+    manualSummaryServesOrigin(b, origin),
+  );
   let text = "";
-  if (!status.configured) {
+  if (!status.configured && !servesLocal) {
     text = t("common.statusNotConfigured");
-  } else if (serving.length === 0 && originSpecCount === 0) {
-    // No sidecar and no Manual specs render here. The spec list owns the
+  } else if (serving.length === 0 && originSpecCount === 0 && !servesLocal) {
+    // No sidecar and no Manual project serve here. The spec list owns the
     // "No specs for this page" empty state, so this only names the source gap.
     text = t("common.statusNoProject");
   }
@@ -215,6 +221,56 @@ export function renderStatus(status: StatusResult, origin: string, originSpecCou
   byId("count").textContent = originSpecCount
     ? t("common.specsCountPill", { count: originSpecCount })
     : "";
+}
+
+/** Whether no project serves the active page: no sidecar connection AND no local
+ *  project bound to this origin. Deliberately independent of both the global on/off
+ *  (which zeroes the spec list) and the spec count (a freshly created project has
+ *  no specs yet) - neither of those means "no project", so the empty state this
+ *  gates never hides the controls, nor the on/off toggle, once a project exists
+ *  here. Mirrors renderStatus's serving check so the two cannot drift. */
+export function noServingProject(status: StatusResult, origin: string): boolean {
+  const servesSidecar = (status.connections ?? []).some((c) => connectionServesOrigin(c, origin));
+  const servesLocal = (status.manualBatches ?? []).some((b) =>
+    manualSummaryServesOrigin(b, origin),
+  );
+  return !servesSidecar && !servesLocal;
+}
+
+/** Total specs across the projects serving this origin, read from `status` (each
+ *  project carries its own specCount) rather than the spec list, so it is correct
+ *  even while Specpin is off and the list comes back empty. Used by the paused
+ *  state to say how many specs are waiting. */
+function servingSpecCount(status: StatusResult, origin: string): number {
+  const sidecar = (status.connections ?? [])
+    .filter((c) => connectionServesOrigin(c, origin))
+    .reduce((n, c) => n + c.specCount, 0);
+  const local = (status.manualBatches ?? [])
+    .filter((b) => manualSummaryServesOrigin(b, origin))
+    .reduce((n, b) => n + b.specCount, 0);
+  return sidecar + local;
+}
+
+/** Drive the two mutually-exclusive full-surface states (see surface-states.css):
+ *  the empty state when no project serves the page, else the paused state when
+ *  Specpin is off. no-project wins over paused (turning Specpin on with no project
+ *  here would do nothing). Each toggles a body class that collapses the
+ *  spec-operating chrome and reveals its block; when neither holds the normal
+ *  surface renders. The blocks' markup + wiring live in each surface. In the paused
+ *  state it also fills the "N specs hidden" line from the serving projects' counts
+ *  (the spec list is empty while off), hiding it when there are none yet. */
+export function setSurfaceState(status: StatusResult, origin: string, enabled: boolean): void {
+  const noProject = noServingProject(status, origin);
+  const paused = !noProject && !enabled;
+  document.body.classList.toggle("no-project", noProject);
+  document.body.classList.toggle("paused", paused);
+  byId("empty-state").hidden = !noProject;
+  byId("off-state").hidden = !paused;
+
+  const count = paused ? servingSpecCount(status, origin) : 0;
+  const countEl = byId("off-count");
+  countEl.hidden = count === 0;
+  if (count > 0) countEl.textContent = plural(count, "offState.hiddenOne", "offState.hiddenOther");
 }
 
 /** One row in the project list: a unified view over both sources. A sidecar
@@ -555,20 +611,6 @@ export function renderLocalePicker(locales: string[], activeLocale: string, enab
     if (l === activeLocale) opt.selected = true;
     select.appendChild(opt);
   }
-}
-
-/** Toggle the spec-list controls (search box, capture action, display-mode row,
- *  and the browse-zone divider) that are meaningless when Specpin is off and the
- *  list collapses to the "off" message. Shared by the popup and side panel, which
- *  use the same element ids. */
-export function setListControlsHidden(hidden: boolean): void {
-  byId("search").hidden = hidden;
-  byId("actions").hidden = hidden;
-  // Display mode moved out of #actions into its own labeled row, so hide it here
-  // too when Specpin is off (nothing renders, so the mode picker is meaningless).
-  byId("mode-row").hidden = hidden;
-  // The browse-zone divider only makes sense alongside those controls.
-  byId("list-divider").hidden = hidden;
 }
 
 /** Render the "what changed since last visit" digest: a count + a "Mark all seen"
