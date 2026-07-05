@@ -4,7 +4,7 @@
 > nếu hai bản lệch nhau, ưu tiên bản tiếng Anh. Các thuật ngữ kỹ thuật, lệnh,
 > đường dẫn và tên file được giữ nguyên tiếng Anh.
 
-Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schema draft 2020-12, `$id: https://specpin.ohnice.app/schema/v1.json`). Nó là single source of truth: TS types được sinh ra từ nó, và Go sidecar nhúng cùng file đó. Không hand-edit các generated artifact.
+Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schema draft 2020-12, `$id: https://specpin.ohnice.app/schema/v1.json`). Nó là single source of truth: TS types được sinh ra từ nó, và Go sidecar nhúng cùng file đó. Không chỉnh sửa tay các file được sinh ra (generated artifacts).
 
 ## Files in a consumer repo
 
@@ -18,28 +18,28 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 
 ## Manifest
 
-| Field | Type | Required | Ghi chú |
+| Trường | Kiểu | Bắt buộc | Ghi chú |
 |-------|------|----------|-------|
-| `version` | string | yes | marker đánh dấu schema/version, ví dụ `"1.0"` |
+| `version` | string | yes | nhãn đánh dấu schema/version, ví dụ `"1.0"` |
 | `project` | string | yes | tên hiển thị |
 | `domains` | string[] | yes | các origin nơi UI chạy, ví dụ `["localhost:3000"]`; rỗng = bất kỳ |
 | `specFiles` | string[] | yes | tên của các file `<area>.spec.json` |
 | `settings.defaultLocale` | string | no | fallback locale khi lựa chọn của người xem không có trên một spec |
 | `settings.locales` | string[] | no | BCP-47 locales mà project này soạn spec trong đó; language picker của extension cung cấp hợp (union) của các project được kết nối |
 | `settings.matchConfidenceThreshold` | number 0-1 | no | dành riêng cho hybrid scorer đang được hoãn lại |
-| `settings.stalenessThresholdDays` | number 1-3650 | no | số ngày sau `meta.reviewedAt` của một spec trước khi nó render là **stale** (cũ); mặc định lúc chạy là **90** khi vắng mặt. Có chặn ngưỡng để không thể âm thầm tắt tín hiệu độ tươi (freshness). Được phân giải theo từng project, nên một trang nhiều project dùng cài đặt của chính project chứa mỗi spec; project local/manual (không có manifest) luôn dùng 90. |
+| `settings.stalenessThresholdDays` | number 1-3650 | no | số ngày sau `meta.reviewedAt` của một spec trước khi nó render là **stale** (cũ); mặc định lúc chạy là **90** khi không có. Giá trị bị giới hạn khoảng nên không thể âm thầm tắt tín hiệu độ mới (freshness). Được phân giải theo từng project, nên một trang nhiều project dùng cài đặt của chính project chứa mỗi spec; project local/manual (không có manifest) luôn dùng 90. |
 | `settings.defaultDisplayMode` | DisplayMode | no | render mode dự phòng (fallback) |
 
 ## SpecFile (`<area>.spec.json`)
 
-| Field | Type | Required |
+| Trường | Kiểu | Bắt buộc |
 |-------|------|----------|
 | `group` | string | yes |
 | `specs` | Spec[] | yes |
 
 ## Spec
 
-| Field | Type | Required | Ghi chú |
+| Trường | Kiểu | Bắt buộc | Ghi chú |
 |-------|------|----------|-------|
 | `id` | string | yes | duy nhất trong phạm vi project |
 | `title` | LocalizedString | yes | object đánh key theo locale (xem phía dưới) |
@@ -47,15 +47,15 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 | `businessRules` | LocalizedString[] | no | mỗi rule là một object đánh key theo locale |
 | `tags` | string[] | no | không localize |
 | `links` | Link[] | no | tham chiếu do tác giả khai báo (ticket, doc, PR); ≤10; xem Link phía dưới |
-| `verifiedBy` | string[] | no | đường dẫn tương đối theo repo của các test **khai báo** spec này; ≤20, mỗi đường dẫn ≤200 ký tự. Chỉ mang tính khai báo — xem lưu ý về trust phía dưới |
-| `status` | SpecStatus | no | `"draft" \| "approved" \| "deprecated"`; **vắng mặt = trung tính (neutral)** (không có default, nên các spec cũ không bị gắn lại nhãn) |
+| `verifiedBy` | string[] | no | đường dẫn tương đối theo repo của các test **khai báo** spec này; ≤20, mỗi đường dẫn ≤200 ký tự. Chỉ mang tính khai báo, xem lưu ý về trust phía dưới |
+| `status` | SpecStatus | no | `"draft" \| "approved" \| "deprecated"`; **không khai báo = trung tính (neutral)** (không có default, nên các spec cũ không bị gắn lại nhãn) |
 | `preferredDisplayMode` | DisplayMode | no | ghi đè `settings.defaultDisplayMode` |
 | `fingerprint` | ElementFingerprint | yes | liên kết tới element |
 | `meta` | SpecMeta | no | nguồn gốc (provenance) + timestamp |
 
 ### Link
 
-| Field | Type | Required | Ghi chú |
+| Trường | Kiểu | Bắt buộc | Ghi chú |
 |-------|------|----------|-------|
 | `label` | string | yes | 1-80 ký tự |
 | `url` | string | yes | chỉ `http`/`https` (`^https?://` + `format: uri`) |
@@ -64,7 +64,7 @@ Ràng buộc schema trên `url` là **phòng thủ theo chiều sâu ở ranh gi
 
 ### Provenance / mô hình tin cậy (trust model)
 
-Provenance là **do tác giả khẳng định (author-asserted)**. Ranh giới toàn vẹn (integrity boundary) là **việc con người review diff JSON của `.specs/` trong một Git PR**, không phải bất kỳ tín hiệu lúc chạy nào — đường ghi của extension là unprivileged (một trang có thể gửi một chỉnh sửa, theo thiết kế, để capture ngay trên trang), nên `status` / `reviewedBy` / `links` không đáng tin hơn tiêu đề của một spec. UI không bao giờ trình bày `status: "approved"` hay `reviewedBy` như thể đã được xác minh bằng mật mã.
+Provenance là **do tác giả khẳng định (author-asserted)**. Ranh giới toàn vẹn (integrity boundary) là **việc con người review diff JSON của `.specs/` trong một Git PR**, không phải bất kỳ tín hiệu lúc chạy nào: luồng ghi (write path) của extension không có đặc quyền (unprivileged) (một trang có thể gửi một chỉnh sửa, theo thiết kế, để capture ngay trên trang), nên `status` / `reviewedBy` / `links` không đáng tin hơn tiêu đề của một spec. UI không bao giờ trình bày `status: "approved"` hay `reviewedBy` như thể đã được xác minh bằng mật mã.
 
 `verifiedBy` là một liên kết test **được khai báo**: `specpin validate` kiểm tra mỗi đường dẫn được tham chiếu **có tồn tại** trong repo hay không (tín hiệu "liên kết không bị hỏng"); nó **không** chạy các test và không biết pass/fail. Câu chữ trong UI luôn là "linked tests", không bao giờ là "verified"/"passed".
 
@@ -81,7 +81,7 @@ Nội dung business của spec (`title`, `description`, mỗi item trong `busine
 - **String phẳng bị từ chối** bởi cả hai validator (nghĩa là `"title": "Log in"` không hợp lệ).
 - Thứ tự fallback khi render cho một locale: locale được yêu cầu, rồi `defaultLocale` của manifest, rồi giá trị đầu tiên có mặt. Một danh sách `businessRules` được dịch một phần sẽ bỏ các item không có giá trị cho locale đã giải quyết (không bao giờ render một rule trống).
 
-Giá trị `description` không rỗng (`minLength: 1`), nên một description trống bây giờ không hợp lệ (trước đây là empty string được phép trước khi localize).
+Giá trị `description` không rỗng (`minLength: 1`), nên một description trống bây giờ không hợp lệ (trước khi có bản địa hóa, chuỗi rỗng vẫn được cho phép).
 
 ## Định dạng (tập con Markdown)
 
@@ -107,7 +107,7 @@ Optional: `testId`, `ariaLabel`, `id` (đều nullable), `textContent` (nullable
 
 `positionHint` = `{ index: int >= 0, siblingCount: int >= 0 }`.
 
-`pageUrl` là một path glob giới hạn spec vào một page/route (`*` khớp một segment đường dẫn, `**` khớp qua nhiều segment; query và hash được bỏ qua). Nó được tự động điền bằng path lúc capture và có thể chỉnh trong capture form. Vắng mặt/null thì khớp trên mọi trang (tương thích ngược). Điều này ngăn một spec được pin ở màn hình này render sang màn hình khác có layout tạo ra `cssSelector`/`xpath` trùng nhau.
+`pageUrl` là một path glob giới hạn spec vào một page/route (`*` khớp một segment đường dẫn, `**` khớp qua nhiều segment; query và hash được bỏ qua). Nó được tự động điền bằng path lúc capture và có thể chỉnh trong capture form. Khi không có/null thì khớp trên mọi trang (tương thích ngược). Điều này ngăn một spec được pin ở màn hình này render sang màn hình khác có layout tạo ra `cssSelector`/`xpath` trùng nhau.
 
 ## SpecMeta
 
@@ -115,10 +115,10 @@ Optional: `testId`, `ariaLabel`, `id` (đều nullable), `textContent` (nullable
 
 Các trường review tùy chọn (được đóng dấu bởi hành động **Mark reviewed** của extension, đều tương thích ngược):
 
-| Field | Type | Ghi chú |
+| Trường | Kiểu | Ghi chú |
 |-------|------|-------|
-| `reviewedAt` | date-time | thời điểm nội dung spec được con người review lần cuối; vắng mặt = chưa từng review. Điều khiển tín hiệu stale so với `settings.stalenessThresholdDays`. |
-| `reviewedBy` | string | **token** người review do tác giả khai báo. Mặc định là cùng token không-PII mà `createdBy` dùng (ví dụ `manual`/`agent`), có thể chỉnh trong form. **Được commit vào `.specs/` (Git) và có trong các export bundle — không đặt PII/email vào đây.** |
+| `reviewedAt` | date-time | thời điểm nội dung spec được con người review lần cuối; khi không có = chưa từng review. Điều khiển tín hiệu stale so với `settings.stalenessThresholdDays`. |
+| `reviewedBy` | string | **token** người review do tác giả khai báo. Mặc định là cùng token không-PII mà `createdBy` dùng (ví dụ `manual`/`agent`), có thể chỉnh trong form. **Được commit vào `.specs/` (Git) và có trong các export bundle, đừng đặt PII/email vào đây.** |
 
 ## DisplayMode
 
@@ -128,18 +128,18 @@ Các trường review tùy chọn (được đóng dấu bởi hành động **M
 
 Cài đặt hiển thị mặc định theo nhóm (team-level), không bắt buộc. Khi có, nó làm baseline cho việc những spec nào bị ẩn trước khi áp dụng override cá nhân (xem visibility cascade trong `docs/system-architecture.md`).
 
-| Field | Type | Required | Ghi chú |
+| Trường | Kiểu | Bắt buộc | Ghi chú |
 |-------|------|----------|-------|
 | `version` | string | yes | ví dụ `"1.0"` |
 | `hidden` | string[] | yes | danh sách phẳng các facet key (có thể là mảng rỗng) |
 
-Facet key là các string dạng `tag:<name>`, `file:<filename>`, `spec:<id>`, hoặc `url:<glob>`. Một spec khớp với facet nếu nó có tag đó, nằm trong file đó, có id đó, hoặc xuất hiện trên trang có path khớp glob (`*` = một segment, `**` = qua nhiều segment). Facet `url:` là cổng chặn ở cấp trang (wins over everything).
+Facet key là các string dạng `tag:<name>`, `file:<filename>`, `spec:<id>`, hoặc `url:<glob>`. Một spec khớp với facet nếu nó có tag đó, nằm trong file đó, có id đó, hoặc xuất hiện trên trang có path khớp glob (`*` = một segment, `**` = qua nhiều segment). Facet `url:` là cổng chặn ở cấp trang (được ưu tiên hơn mọi facet khác).
 
-Khi `.specs/views.json` không có, sidecar trả về default rỗng `{ "version": "1.0", "hidden": [] }` trên `GET /views`. Tất cả spec đều hiển thị trừ khi user đặt override cá nhân. Team default được chỉnh sửa qua trang Options của extension (per connection) và ghi vào `.specs/views.json` qua `PUT /views` (schema-validated, atomic, pretty-printed). Sidecar watch `.specs/` nên thay đổi trigger SSE (watch đang có cover luôn `views.json`).
+Khi `.specs/views.json` không có, sidecar trả về default rỗng `{ "version": "1.0", "hidden": [] }` trên `GET /views`. Tất cả spec đều hiển thị trừ khi user đặt override cá nhân. Team default được chỉnh sửa qua trang Options của extension (per connection) và ghi vào `.specs/views.json` qua `PUT /views` (schema-validated, atomic, pretty-printed). Sidecar theo dõi (watch) `.specs/` nên mọi thay đổi đều kích hoạt SSE (cơ chế watch bao gồm cả `views.json`).
 
 ## GuidesConfig (`.specs/guides.json`)
 
-Các tour onboarding có tên (tùy chọn): lối đi tuần tự qua các spec đã gắn trên trang. Mỗi guide làm nổi bật phần tử của từng bước và hiển thị nội dung đã bản địa hóa. Tệp này giữ các guide **của nhóm** (commit vào Git); extension còn giữ guide **cá nhân** riêng tư trong `storage.sync` (không bao giờ ghi vào đây).
+Các tour onboarding có tên (tùy chọn): lối đi tuần tự qua các spec đã gắn trên trang. Mỗi guide làm nổi bật phần tử của từng bước và hiển thị nội dung đã bản địa hóa. File này giữ các guide **của nhóm** (commit vào Git); extension còn giữ guide **cá nhân** riêng tư trong `storage.sync` (không bao giờ ghi vào đây).
 
 | Trường | Kiểu | Bắt buộc | Ghi chú |
 |--------|------|----------|---------|
@@ -166,7 +166,7 @@ Cổng governance tùy chọn: danh sách spec id bắt buộc phải tồn tạ
 
 | Trường | Kiểu | Bắt buộc | Ghi chú |
 |--------|------|----------|---------|
-| `id` | string | có | duy nhất trong tệp; pattern `^[a-z0-9-]+$`, `maxLength` 100 |
+| `id` | string | có | duy nhất trong file; pattern `^[a-z0-9-]+$`, `maxLength` 100 |
 | `name` | string | có | nhãn UI dạng plain (KHÔNG phải LocalizedString), không rỗng, `maxLength` 200 |
 | `description` | string | không | mô tả plain, `maxLength` 2000 |
 | `steps` | string[] | có | danh sách spec id theo thứ tự; có thể rỗng, `maxItems` 200, mỗi phần tử `maxLength` 200 |
@@ -180,7 +180,7 @@ Cổng governance tùy chọn: danh sách spec id bắt buộc phải tồn tạ
 }
 ```
 
-`name` là chuỗi plain (không bản địa hóa) theo thiết kế: nó là nhãn ngắn, còn **nội dung** từng bước bản địa hóa qua spec được tham chiếu. Guide có `steps` **rỗng** khi khởi chạy sẽ chạy qua mọi spec khớp trên trang theo thứ tự mặc định (theo tên tệp nguồn, rồi thứ tự trong tệp, dự án cục bộ xếp cuối), nên một guide dùng được mà không cần tùy biến. Các step id không còn phân giải được (spec bị đổi tên/xóa, hoặc không có trên trang hiện tại) bị bỏ khi khởi chạy và được đánh dấu trong trình chỉnh sửa.
+`name` là chuỗi plain (không bản địa hóa) theo thiết kế: nó là nhãn ngắn, còn **nội dung** từng bước bản địa hóa qua spec được tham chiếu. Guide có `steps` **rỗng** khi khởi chạy sẽ chạy qua mọi spec khớp trên trang theo thứ tự mặc định (theo tên file nguồn, rồi thứ tự trong file, dự án cục bộ xếp cuối), nên một guide dùng được mà không cần tùy biến. Các step id không còn phân giải được (spec bị đổi tên/xóa, hoặc không có trên trang hiện tại) bị bỏ khi khởi chạy và được đánh dấu trong trình chỉnh sửa.
 
 Khi `.specs/guides.json` không có, sidecar trả về default rỗng `{ "version": "1.0", "guides": [] }` trên `GET /guides`. Guide được tạo trong extension (trình chỉnh sửa ở popup / thanh bên) và ghi qua `PUT /guides` (schema-validated, atomic, pretty-printed), hoặc lưu vào dự án cục bộ / lưu trữ cá nhân. Các giới hạn ở trên nằm trong SSOT nên cả hai validator đều kế thừa; guide cá nhân còn tôn trọng quota per-item của `storage.sync` (ghi bị từ chối sẽ báo lỗi thay vì âm thầm bỏ).
 

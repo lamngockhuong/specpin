@@ -4,7 +4,7 @@
 > nếu hai bản lệch nhau, ưu tiên bản tiếng Anh. Các thuật ngữ kỹ thuật, lệnh,
 > đường dẫn và tên file được giữ nguyên tiếng Anh.
 
-Các chuẩn được rút ra từ cấu hình tooling thực tế và các convention quan sát được trong monorepo Specpin. Mọi quy tắc đều phản ánh những gì codebase đã thực thi, không phải các hướng dẫn lý tưởng.
+Các chuẩn được rút ra từ cấu hình tooling thực tế và các convention quan sát được trong monorepo Specpin. Mọi quy tắc đều phản ánh những gì codebase thực sự bắt buộc, không phải quy ước mang tính lý tưởng.
 
 ## File Naming
 
@@ -76,7 +76,7 @@ Một tool duy nhất xử lý lint, format và import organize. Không có ESLi
 }
 ```
 
-**Formatter:** khớp với style Prettier trước đây, nên diff khi migrate giữ ở mức nhỏ:
+**Formatter:** khớp với style Prettier trước đây, nên diff khi migrate vẫn nhỏ:
 
 ```jsonc
 "formatter": {
@@ -184,7 +184,7 @@ apps/cli/
   go.sum
 ```
 
-**Quy tắc `internal/`**: code trong `internal/` không thể được import bởi module bên ngoài (Go thực thi).
+**Quy tắc `internal/`**: code trong `internal/` không thể bị module bên ngoài import (do Go bắt buộc ở cấp ngôn ngữ).
 
 ### Coding Conventions
 
@@ -194,7 +194,7 @@ if err != nil {
     return fmt.Errorf("context: %w", err)
 }
 ```
-Luôn wrap error kèm context bằng `%w` (có thể unwrap).
+Luôn bọc error kèm context bằng `%w` (để sau này unwrap được).
 
 **Không có global mutable state**: server giữ toàn bộ state, truyền qua struct field hoặc function param.
 
@@ -299,7 +299,7 @@ go test ./...
 
 ## Git Commit Standards
 
-**Format**: Conventional Commits (thực thi bởi review, không phải git hook).
+**Format**: Conventional Commits (được kiểm soát qua review, không phải bằng git hook).
 
 ```
 <type>(<scope>): <subject>
@@ -337,7 +337,7 @@ chore(deps): bump wxt to 0.20
 - Tất cả typecheck (tsc --noEmit theo từng package)
 - Tất cả test (Vitest TS, Go stdlib testing)
 - Tất cả build (turbo build + make build CLI)
-- Schema cross-validation (ajv + Go validator đồng thuận trên fixture)
+- Schema cross-validation (ajv và Go validator cho kết quả nhất quán trên fixture)
 - Schema drift check (bản embedded copy khớp với bản canonical)
 
 **CI config**: `.github/workflows/ci.yml` (hai job: JS, Go).
@@ -429,7 +429,7 @@ chore(deps): bump wxt to 0.20
 **Node/pnpm:**
 - `pnpm-lock.yaml` được commit (lock build có thể tái lập).
 - Workspace protocol cho internal dep (`"workspace:*"`).
-- Trường `engines` được thực thi (`node >= 22`).
+- Trường `engines` được áp dụng bắt buộc (`node >= 22`).
 - `onlyBuiltDependencies: ["esbuild"]` để bỏ qua các native build không cần thiết.
 
 **Go:**
@@ -461,7 +461,7 @@ chore(deps): bump wxt to 0.20
 
 ## Unresolved Conventions (Deferred)
 
-- **Tuning hybrid fingerprint scorer**: WEIGHTS table trong `packages/fingerprint-core/src/score.ts` là điểm tuning duy nhất (signal weight, threshold). v1 scorer đã ship và hoạt động, nhưng weight cần tuning dogfood từ dữ liệu production refactor.
+- **Tuning hybrid fingerprint scorer**: WEIGHTS table trong `packages/fingerprint-core/src/score.ts` là điểm tuning duy nhất (signal weight, threshold). v1 scorer đã ship và hoạt động, nhưng weight cần tuning dogfood từ dữ liệu production refactor. Tool offline (`pnpm --filter @specpin/fingerprint-core tune [corpus.json]`, `scripts/tune-weights.ts`) chạy lại một drift corpus đã export rồi gợi ý weight; xem hướng dẫn contributor từng bước trong [scorer-tuning.md](./scorer-tuning.md).
 - **Định dạng prompt cho AI-assisted capture**: không có LLM integration trong MVP, hoãn sang 1.1.
 - **Yêu cầu đóng gói cho Safari**: chờ Apple làm rõ về MV3 parity.
 

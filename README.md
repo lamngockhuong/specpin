@@ -212,6 +212,7 @@ go test ./...
 - [`docs/ai-authoring.md`](./docs/ai-authoring.md) - authoring specs with a coding agent via the bundled `@specpin/cli` skill
 - [`docs/schema-reference.md`](./docs/schema-reference.md) - the v1 spec format
 - [`docs/code-standards.md`](./docs/code-standards.md) - TS/Go conventions, tooling config, schema management
+- [`docs/scorer-tuning.md`](./docs/scorer-tuning.md) - contributor guide for tuning the match scorer from an exported drift corpus
 - [`docs/design-system.md`](./docs/design-system.md) - extension UI mockups + shared color/font token workflow
 - [`docs/deployment-guide.md`](./docs/deployment-guide.md) - website Pages deploy + extension/CLI release pipeline
 - [`docs/project-roadmap.md`](./docs/project-roadmap.md) - shipped capabilities + planned features

@@ -345,6 +345,16 @@ const ja: Record<keyof Messages, string> = {
   "options.corpusCleared": "コーパスを消去しました。",
   "options.corpusEmpty": "コーパスは空です。エクスポートする項目がありません。",
   "options.confirmClearCorpus": "ローカルのマッチングコーパスを消去しますか？元に戻せません。",
+  "options.corpusKindSupervised": "再ピン留め",
+  "options.corpusKindPassive": "自動記録",
+  "options.corpusConfirmed": "確認済み",
+  "options.corpusPrev": "以前は {strategy} {confidence}",
+  "options.corpusSpec": "spec: {id}",
+  "options.corpusScorerPicked": "スコアラーは候補 #{n}/{count} を選択",
+  "options.corpusScorerAbstained": "スコアラーは判定なし（候補 {count} 件）",
+  "options.corpusDetails": "詳細",
+  "options.confirmDeleteCorpusEntry": "このコーパス項目を削除しますか？元に戻せません。",
+  "options.corpusEntryDeleted": "項目を削除しました。",
   "match.correct": "正しい",
 
   // Support & Feedback card.

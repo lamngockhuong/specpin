@@ -19,7 +19,9 @@ export {
   type Signal,
   type SignalScores,
   scoreCandidate,
+  scoreFingerprintPair,
   signalScores,
+  signalScoresBetween,
   THRESHOLDS,
   WEIGHTS,
 } from "./score.js";

@@ -6,7 +6,7 @@
 
 ## Vấn đề
 
-Các team kỹ thuật mất ngữ cảnh giữa việc code làm gì (implementation) và tại sao nó làm vậy (business rule, acceptance criteria, edge case). Spec nằm rải rác trên Jira, Confluence, Notion, các thread Slack, hoặc bị chôn vùi trong những PR đã cũ. Developer phải reverse-engineer ý định từ code, nhân viên support phải escalate thay vì kiểm tra spec, và những thay đổi về sản phẩm khiến các quyết định cũ trở nên mồ côi mà không còn dấu vết audit nào.
+Các team kỹ thuật mất ngữ cảnh giữa việc code làm gì (implementation) và tại sao nó làm vậy (business rule, acceptance criteria, edge case). Spec nằm rải rác trên Jira, Confluence, Notion, các thread Slack, hoặc bị chôn vùi trong những PR đã cũ. Developer phải reverse-engineer ý định từ code, nhân viên support phải escalate thay vì kiểm tra spec, và những thay đổi về sản phẩm bỏ lại các quyết định cũ không còn dấu vết, không có audit trail nào.
 
 Các giải pháp hiện có thì hoặc sinh code từ spec (coupling chặt, dễ vỡ) hoặc tài liệu hóa code sau khi đã ship (cũ kỹ, lệch pha). Không giải pháp nào giữ được tri thức business gắn liền với chính interface đang chạy.
 

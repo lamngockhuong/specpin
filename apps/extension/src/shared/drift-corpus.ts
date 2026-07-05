@@ -164,6 +164,22 @@ async function pushEntries(entries: DriftEntry[]): Promise<void> {
   await browser.storage.local.set({ [CORPUS_KEY]: corpus });
 }
 
+/** Remove one stored entry and return what remains. Delete-by-value (entries
+ *  carry no id): drops the first entry deep-equal to `entry`. Exact duplicates are
+ *  interchangeable, so removing any one identical copy is correct. Serialized
+ *  against appends so a racing passive capture cannot clobber the write. */
+export function deleteCorpusEntry(entry: DriftEntry): Promise<DriftEntry[]> {
+  const target = JSON.stringify(entry);
+  return serialize(async () => {
+    const corpus = await getCorpus();
+    const idx = corpus.findIndex((e) => JSON.stringify(e) === target);
+    if (idx === -1) return corpus;
+    corpus.splice(idx, 1);
+    await browser.storage.local.set({ [CORPUS_KEY]: corpus });
+    return corpus;
+  });
+}
+
 /** Append a supervised (re-pin / confirm) entry. Redacts fingerprints and stamps
  *  `ts` at write time; serialized against other corpus writes. */
 export function appendEntry(entry: Omit<SupervisedDriftEntry, "ts">): Promise<void> {

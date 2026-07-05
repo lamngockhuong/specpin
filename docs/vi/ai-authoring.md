@@ -2,7 +2,7 @@
 
 > Bản tiếng Anh là nguồn chuẩn: [`../ai-authoring.md`](../ai-authoring.md). Nếu hai bản lệch nhau, ưu tiên bản tiếng Anh. Các lệnh, đường dẫn và tên file giữ nguyên tiếng Anh.
 
-Specpin không thêm LLM nào vào CLI. `specpin generate` chỉ là stub. Việc soạn spec bằng AI do **coding agent của bạn** (Claude Code, Cursor, Codex, v.v.) thực hiện thông qua một skill di động đóng gói trong `@specpin/cli`. Agent đọc mã nguồn UI, ghi các file `.specs/*.spec.json` hợp lệ schema, đăng ký vào manifest, rồi chạy `specpin validate`. CLI Go chỉ phục vụ và kiểm tra.
+Specpin không thêm LLM nào vào CLI. `specpin generate` chỉ là stub. Việc soạn spec bằng AI do **coding agent của bạn** (Claude Code, Cursor, Codex, v.v.) thực hiện thông qua một skill di động đóng gói trong `@specpin/cli`. Agent đọc mã nguồn UI, ghi các file `.specs/*.spec.json` hợp lệ schema, đăng ký vào manifest, rồi chạy `specpin validate`. CLI Go chỉ chạy server (serve) và kiểm tra (validate).
 
 Điều này đảo ngược mô hình quen thuộc "CLI có sẵn agent": ở đây host agent là người soạn, còn CLI là trình kiểm tra offline và server.
 
@@ -30,10 +30,10 @@ Không cần auth, key hay cấu hình model: sidecar chỉ chạy localhost và
 2. **Soạn**: agent chọn element mục tiêu và, mặc định, dựng fingerprint từ các signal element đã có sẵn (một `data-testid` / `data-spec-id` đang tồn tại, một `id` không phải dạng generated, một `aria-label`, hoặc một selector duy nhất) mà KHÔNG sửa source của ứng dụng. Nó ghi một file `<area>.spec.json` với `title` / `description` đánh key theo locale, `businessRules` tuỳ chọn, một `fingerprint`, và `meta.source: "ai-generated"`. Thêm `data-spec-id` để có anchor chính xác chỉ là opt-in tuỳ chọn, khi dự án muốn.
    - Các trường provenance tùy chọn mà agent có thể thêm (đều tương thích ngược):
      `links` (URL ticket/doc/PR, chỉ `http`/`https`), `verifiedBy` (đường dẫn test tương đối
-     theo repo — **mang tính khai báo**: `specpin validate` kiểm tra chúng *tồn tại*, nó không
+     theo repo, **mang tính khai báo**: `specpin validate` kiểm tra chúng *tồn tại*, nó không
      chạy chúng hay ngụ ý chúng pass, nên chỉ liệt kê file thật), và `status`
      (`draft`/`approved`/`deprecated`; bỏ qua để trung tính). **Không** tự soạn
-     `meta.reviewedAt`/`reviewedBy` — những thứ đó do con người đóng dấu qua hành động
+     `meta.reviewedAt`/`reviewedBy`: những trường đó do con người đóng dấu qua hành động
      Mark-reviewed của extension, và `reviewedBy` là một token không-PII được
      commit vào Git/exports (không bao giờ là email/danh tính).
 3. **Đăng ký**: thêm file mới vào `manifest.json` `specFiles[]`.
@@ -48,7 +48,7 @@ Xem trọn vòng lặp, gồm cả đường capture thủ công, trong [`run-gu
 
 Demo đóng gói mang một spec do AI soạn bằng cách theo skill này: [`examples/demo-react-app/.specs/nav.spec.json`](../../examples/demo-react-app/.specs/nav.spec.json) gắn một spec lên nút "Log out" trên nav qua anchor `data-spec-id="nav-logout"`, và pass `specpin validate` (exit 0). Demo app dùng `data-spec-id` trên các element theo convention, nên ví dụ này minh hoạ đường anchor chính xác dạng **opt-in**: thêm attribute, phản chiếu vào `fingerprint.testId`, điền các field bắt buộc còn lại, đăng ký, kiểm tra. Dự án không muốn động vào source thì dựng fingerprint từ markup có sẵn thay vì vậy (xem fingerprint strategy trong skill).
 
-## Lan can an toàn
+## Rào chắn an toàn
 
 - Output được đánh dấu `meta.source: "ai-generated"` và cần được con người review trước khi ship.
 - Agent phải neo mọi business rule vào mã thật hoặc yêu cầu đã nêu, không bịa.

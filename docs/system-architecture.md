@@ -49,7 +49,7 @@ The matcher's signature and `MatchResult` shape are stable across tiers; the sco
 
 ### Matching drift corpus (local, opt-in)
 
-To tune the scorer against real drift, the extension can collect a local training corpus (`storage.local`, default **OFF**, capped ring-buffer, exportable + clearable from Options, never uploaded). Two sources: **supervised** — a re-pin records the `(old → new)` fingerprint pair (ground truth); and **passive** — when a spec goes orphaned or mid-scored at match time, it snapshots the candidate fingerprints the scorer weighed (a tentative `chosenByScorer` label, never treated as truth). Fingerprints only — no HTML — with `textContent` redacted (emails + long digit runs) at write time. Lives in `apps/extension/src/shared/drift-corpus.ts`.
+To tune the scorer against real drift, the extension can collect a local training corpus (`storage.local`, default **OFF**, capped ring-buffer, exportable + clearable from Options, never uploaded). Two sources: **supervised** (a re-pin records the `(old → new)` fingerprint pair, ground truth) and **passive** (when a spec goes orphaned or mid-scored at match time, it snapshots the candidate fingerprints the scorer weighed, a tentative `chosenByScorer` label, never treated as truth). Fingerprints only (no HTML), with `textContent` redacted (emails + long digit runs) at write time. Lives in `apps/extension/src/shared/drift-corpus.ts`.
 
 ## Multi-project registry
 

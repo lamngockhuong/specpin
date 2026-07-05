@@ -180,20 +180,53 @@
       /* Manual-import batch list: one card per import. */
       #localBatches { margin-top: 16px; }
 
-      #addResult, #localResult {
+      #addResult, #localResult, #corpusResult {
         display: none;
         margin-top: 18px; padding: 12px 14px;
         border: 1px solid transparent;
         border-radius: var(--sp-radius-control);
         white-space: pre-wrap;
       }
-      #addResult.ok, #localResult.ok {
+      #addResult.ok, #localResult.ok, #corpusResult.ok {
         display: block; color: var(--sp-success-text);
         background: var(--sp-success-bg); border-color: var(--sp-success-border);
       }
-      #addResult.err, #localResult.err {
+      #addResult.err, #localResult.err, #corpusResult.err {
         display: block; color: var(--sp-error-text);
         background: var(--sp-error-bg); border-color: var(--sp-error-border);
+      }
+
+      /* Matching-corpus entry list: one compact, scrollable row per stored entry
+         with a per-row delete. Capped height so 500 entries stay browsable. */
+      #corpusList { margin-top: 12px; }
+      .corpus-list {
+        list-style: none; margin: 0; padding: 0;
+        max-height: 420px; overflow-y: auto;
+        border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
+      }
+      .corpus-item { padding: 10px 12px; border-bottom: 1px solid var(--sp-border); }
+      .corpus-item:last-child { border-bottom: none; }
+      .corpus-head { display: flex; align-items: center; gap: 8px; }
+      .corpus-kind {
+        flex: none; font-size: 12px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.03em; padding: 2px 7px; border-radius: 999px;
+        border: 1px solid var(--sp-border); color: var(--sp-text-3);
+      }
+      .corpus-kind-supervised { color: var(--sp-accent); border-color: var(--sp-accent); }
+      .corpus-tag { flex: none; font-size: 12px; font-weight: 600; color: var(--sp-success-text); }
+      .corpus-summary {
+        flex: 1; min-width: 0; font: 14px/1.4 var(--sp-font-mono); color: var(--sp-text-2);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .corpus-head button { flex: none; }
+      .corpus-meta { margin-top: 4px; color: var(--sp-text-3); font: 13px/1.5 var(--sp-font-mono); word-break: break-all; }
+      /* Collapsed-by-default raw entry (redacted JSON), toggled by Details. */
+      .corpus-detail {
+        margin: 8px 0 0; padding: 10px 12px;
+        max-height: 260px; overflow: auto;
+        background: var(--sp-control); color: var(--sp-text-2);
+        border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
+        font: 12px/1.5 var(--sp-font-mono); white-space: pre;
       }
       code {
         font: 14px/1 var(--sp-font-mono);
@@ -380,6 +413,7 @@
             </p>
             <label class="inline"><input id="corpusEnabled" type="checkbox" /> <span data-i18n="options.corpusOptIn">Collect matching drift data on this device</span></label>
             <p class="lead" id="corpusCount" style="margin-top: 12px"></p>
+            <div id="corpusList"></div>
             <button id="corpusExport" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusExport">Export corpus (JSON)</button>
             <button id="corpusClear" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusClear">Clear corpus</button>
             <div id="corpusResult"></div>

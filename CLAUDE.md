@@ -97,10 +97,19 @@ Binds `127.0.0.1` only (auto-picked port unless `--port`); every request needs `
 `docs/` holds the project documentation set (keep in sync when behavior, architecture, or standards change):
 
 - `system-architecture.md` - components + invariants; `codebase-summary.md` - per-package map; `code-standards.md` - TS/Go conventions + schema workflow; `project-overview-pdr.md` - product scope/PDR; `project-roadmap.md` - shipped capabilities + planned features.
-- `run-guide.md` - full init -> serve -> load -> connect -> render -> capture loop; `schema-reference.md` - v1 spec format; `design-system.md` - extension UI tokens (mockups in `apps/extension/designs/`).
+- `run-guide.md` - full init -> serve -> load -> connect -> render -> capture loop; `schema-reference.md` - v1 spec format; `design-system.md` - extension UI tokens (mockups in `apps/extension/designs/`); `scorer-tuning.md` - contributor guide for tuning the match scorer (WEIGHTS in `packages/fingerprint-core/src/score.ts`) from an exported drift corpus via `pnpm --filter @specpin/fingerprint-core tune`.
+
+### Vietnamese translation style (docs/vi/ and i18n)
+
+English is the source of truth; `docs/vi/` and the `vi` i18n catalog are translations that must stay in sync when the English source changes. Translate for a native Vietnamese reader, not word-for-word:
+
+- Convey the meaning, then phrase it the way it would be written natively. Rework the sentence structure instead of mirroring English clause order.
+- Avoid stiff literal calques. Examples to not repeat: "nói bằng lời thường" (use "Giải thích đơn giản"), "các nút vặn" for knobs/params (use "các tham số điều chỉnh"), "nhẹ weight đi" (use "giảm weight").
+- Keep technical terms and code identifiers in English (e.g. `scorer`, `fingerprint`, `WEIGHTS`, `commit`, `weight`); do not force-translate jargon into awkward Vietnamese.
+- Prefer concise, idiomatic wording over a grammatically-correct-but-clunky rendering. When a translation "sounds translated", rewrite it.
 
 ## Status
 
 Released and live on the Chrome Web Store (extension ID `kkfmoieoahdjneagognaoedggkiiolkn`, <https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn>). Firefox Add-ons publication is pending (build-from-source only for now). Active development continues.
 
-For the shipped-capability list, planned work, and the decision log (including dropped ideas such as the overlay + inline-badge renderers), see `docs/project-roadmap.md` — the single source of truth for project status.
+For the shipped-capability list, planned work, and the decision log (including dropped ideas such as the overlay + inline-badge renderers), see `docs/project-roadmap.md`, the single source of truth for project status.
