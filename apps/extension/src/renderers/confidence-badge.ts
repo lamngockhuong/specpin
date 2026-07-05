@@ -97,7 +97,7 @@ export function confidenceBadge(meta?: RenderMeta): string {
 export const CONFIDENCE_BADGE_CSS = `
 .sp-conf {
   display: inline-block; vertical-align: middle;
-  font: 600 9px/1 var(--sp-font-mono); letter-spacing: 0.06em; text-transform: uppercase;
+  font: 600 11px/1 var(--sp-font-mono); letter-spacing: 0.06em; text-transform: uppercase;
   padding: 3px 6px; border-radius: 5px; border: 1px solid var(--sp-border);
   color: var(--sp-text-3);
 }

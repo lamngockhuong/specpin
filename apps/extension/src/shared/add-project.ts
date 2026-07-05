@@ -1,7 +1,7 @@
 import { type MessageKey, t } from "../i18n/index.js";
 import { clearDraft, loadDraft, saveDraft } from "./draft-store.js";
 import { ensureRemotePermission } from "./host-permission.js";
-import { escapeAttr, escapeHtml } from "./html.js";
+import { escapeAttr, escapeHtml, setTrustedHtml } from "./html.js";
 import { normalizeSidecarUrl } from "./local-url.js";
 import { type CreateLocalProjectResult, sendToBackground } from "./messaging.js";
 
@@ -78,7 +78,7 @@ export function mountAddProject(
   onCreated: () => void | Promise<void>,
   surface: string,
 ): AddProjectHandle {
-  container.innerHTML = template();
+  setTrustedHtml(container, template());
   container.hidden = true;
   const draftKey = `${DRAFT_KEY_PREFIX}:${surface}`;
 

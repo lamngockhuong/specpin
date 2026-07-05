@@ -1,7 +1,7 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { localizeSpec } from "../content/localize-spec.js";
 import { plural, t } from "../i18n/index.js";
-import { escapeHtml } from "../shared/html.js";
+import { escapeHtml, setTrustedHtml } from "../shared/html.js";
 import { renderMarkdownBlock } from "../shared/markdown.js";
 import { PROVENANCE_CSS, provenanceSectionHtml } from "../shared/provenance.js";
 import { createShadowHost } from "../shared/shadow.js";
@@ -38,7 +38,7 @@ ${SHADOW_PREAMBLE}
   width: min(560px, 100%); max-height: 80vh; overflow-y: auto;
   background: var(--sp-surface);
   color: var(--sp-text);
-  font: 13px/1.5 var(--sp-font-ui);
+  font: 15px/1.5 var(--sp-font-ui);
   border: 1px solid var(--sp-border);
   border-radius: var(--sp-radius-card);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
@@ -51,16 +51,16 @@ ${SHADOW_PREAMBLE}
 }
 .head:active { cursor: grabbing; }
 .eyebrow {
-  font: 600 10px/1 var(--sp-font-mono); letter-spacing: 0.14em;
+  font: 600 12px/1 var(--sp-font-mono); letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--sp-text-3);
 }
-.title { margin: 8px 0 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.title { margin: 8px 0 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
 .summary { color: var(--sp-text-2); margin: 4px 0 16px; }
 .close {
   flex: none; width: 30px; height: 30px; cursor: pointer;
   background: var(--sp-control); color: var(--sp-text);
   border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
-  font: 16px/1 var(--sp-font-ui);
+  font: 18px/1 var(--sp-font-ui);
 }
 .close:hover { background: var(--sp-elevated); }
 .close:focus-visible { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
@@ -75,16 +75,16 @@ ${SHADOW_PREAMBLE}
 .card[data-review="true"] { border-color: var(--sp-warning-border); }
 .card .tag {
   display: inline-block; margin-bottom: 8px;
-  font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  font: 700 11px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--sp-warning); background: var(--sp-warning-bg);
   border: 1px solid var(--sp-warning-border); border-radius: 5px; padding: 4px 6px;
 }
 .card .project {
   display: block; margin-bottom: 6px;
-  font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  font: 700 11px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--sp-text-3);
 }
-.card .t { font-weight: 700; font-size: 14px; color: var(--sp-text); }
+.card .t { font-weight: 700; font-size: 16px; color: var(--sp-text); }
 .card .d { color: var(--sp-text-2); margin-top: 4px; }
 .card ul { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .card ol { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
@@ -135,15 +135,17 @@ export class ModalRenderer implements SpecRenderer {
     root.className = "root";
     // role="dialog" without aria-modal: this panel is intentionally non-modal,
     // so it must not tell assistive tech the rest of the page is inert.
-    root.innerHTML =
+    setTrustedHtml(
+      root,
       `<div class="backdrop">` +
-      `<div class="dialog" role="dialog" aria-labelledby="${TITLE_ID}">` +
-      `<div class="head"><div>` +
-      `<div class="eyebrow">${escapeHtml(t("common.specpin"))}</div>` +
-      `<h2 class="title" id="${TITLE_ID}">${escapeHtml(t("common.specsOnThisPage"))}</h2>` +
-      `</div><button class="close" type="button" aria-label="${escapeHtml(t("common.close"))}">&times;</button></div>` +
-      `<div class="summary"></div><div class="list"></div>` +
-      `</div></div>`;
+        `<div class="dialog" role="dialog" aria-labelledby="${TITLE_ID}">` +
+        `<div class="head"><div>` +
+        `<div class="eyebrow">${escapeHtml(t("common.specpin"))}</div>` +
+        `<h2 class="title" id="${TITLE_ID}">${escapeHtml(t("common.specsOnThisPage"))}</h2>` +
+        `</div><button class="close" type="button" aria-label="${escapeHtml(t("common.close"))}">&times;</button></div>` +
+        `<div class="summary"></div><div class="list"></div>` +
+        `</div></div>`,
+    );
     shadow.appendChild(root);
 
     this.host = host;
@@ -175,18 +177,20 @@ export class ModalRenderer implements SpecRenderer {
       ? `<span class="tag">${escapeHtml(t("common.needsReview"))}</span>`
       : "";
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
-    card.innerHTML =
+    setTrustedHtml(
+      card,
       tag +
-      confidenceBadge(meta) +
-      projectCaptionHtml(meta) +
-      `<div class="t">${escapeHtml(text.title)}</div>` +
-      `<div class="d">${renderMarkdownBlock(text.description, meta?.pageOrigin)}</div>` +
-      rulesListHtml(text.businessRules, meta?.pageOrigin) +
-      provenanceSectionHtml(spec, {
-        pageOrigin: meta?.pageOrigin,
-        thresholdDays: meta?.stalenessThresholdDays,
-        locale: meta?.locale,
-      });
+        confidenceBadge(meta) +
+        projectCaptionHtml(meta) +
+        `<div class="t">${escapeHtml(text.title)}</div>` +
+        `<div class="d">${renderMarkdownBlock(text.description, meta?.pageOrigin)}</div>` +
+        rulesListHtml(text.businessRules, meta?.pageOrigin) +
+        provenanceSectionHtml(spec, {
+          pageOrigin: meta?.pageOrigin,
+          thresholdDays: meta?.stalenessThresholdDays,
+          locale: meta?.locale,
+        }),
+    );
     const onHighlight = meta?.onHighlight;
     // Jump to the element (scroll + outline) but keep the panel open: only the
     // corner close button dismisses it. Drag the panel aside if it covers the

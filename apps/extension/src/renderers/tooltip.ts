@@ -4,7 +4,7 @@ import { showToast } from "../content/toast.js";
 import { t } from "../i18n/index.js";
 import { copyText } from "../shared/clipboard.js";
 import { buildSpecLink } from "../shared/deep-link.js";
-import { escapeHtml } from "../shared/html.js";
+import { escapeHtml, setTrustedHtml } from "../shared/html.js";
 import { renderMarkdownBlock } from "../shared/markdown.js";
 import { PROVENANCE_CSS, provenanceSectionHtml } from "../shared/provenance.js";
 import { createShadowHost } from "../shared/shadow.js";
@@ -55,7 +55,7 @@ ${SHADOW_PREAMBLE}
 .badge {
   position: absolute; width: ${BADGE_SIZE}px; height: ${BADGE_SIZE}px; border-radius: 50%;
   background: var(--sp-accent); color: var(--sp-accent-on);
-  font: 600 10px/${BADGE_SIZE}px var(--sp-font-ui);
+  font: 600 12px/${BADGE_SIZE}px var(--sp-font-ui);
   text-align: center; cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--sp-accent-glow);
   pointer-events: auto; user-select: none;
@@ -74,7 +74,7 @@ ${SHADOW_PREAMBLE}
      layer, so equal z-index makes it win on paint order. */
   position: absolute; z-index: 2147483647; box-sizing: border-box; width: min(360px, 90vw);
   background: var(--sp-elevated); color: var(--sp-text);
-  font: 13px/1.45 var(--sp-font-ui);
+  font: 15px/1.45 var(--sp-font-ui);
   padding: 11px 13px;
   border: 1px solid var(--sp-border);
   border-radius: var(--sp-radius-control);
@@ -85,8 +85,8 @@ ${SHADOW_PREAMBLE}
    elements it covers. Body text stays selectable; only the header grabs. */
 .tip.pinned .project, .tip.pinned h4 { cursor: move; user-select: none; }
 .tip.dragging { box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45); }
-.tip .project { display: block; margin: 0 0 4px; font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sp-text-3); }
-.tip h4 { margin: 0 0 4px; padding-right: 18px; font-size: 13px; font-weight: 700; color: var(--sp-text); }
+.tip .project { display: block; margin: 0 0 4px; font: 700 11px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sp-text-3); }
+.tip h4 { margin: 0 0 4px; padding-right: 18px; font-size: 15px; font-weight: 700; color: var(--sp-text); }
 .tip .sp-conf { margin: 0 0 6px; }
 .tip .d { color: var(--sp-text-2); margin: 0 0 6px; }
 .tip ul { margin: 4px 0 0; padding-left: 16px; color: var(--sp-text-3); }
@@ -94,36 +94,36 @@ ${SHADOW_PREAMBLE}
 .tip li { margin: 2px 0; }
 ${MARKDOWN_BODY_CSS}
 ${PROVENANCE_CSS}
-.tip .tags { margin-top: 6px; color: var(--sp-accent); font-family: var(--sp-font-mono); font-size: 11px; }
+.tip .tags { margin-top: 6px; color: var(--sp-accent); font-family: var(--sp-font-mono); font-size: 13px; }
 .tip .pin-close {
   position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
   display: grid; place-items: center; padding: 0;
   background: transparent; border: none; cursor: pointer;
-  color: var(--sp-text-3); font: 600 14px/1 var(--sp-font-ui); border-radius: 4px;
+  color: var(--sp-text-3); font: 600 16px/1 var(--sp-font-ui); border-radius: 4px;
 }
 .tip .pin-close:hover { background: var(--sp-border); color: var(--sp-text); }
 .tip .pin-edit {
   margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
   background: var(--sp-control); color: var(--sp-text); border: 1px solid var(--sp-border);
-  border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
+  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
 }
 .tip .pin-edit:hover { filter: brightness(0.97); }
 .tip .pin-copy {
   margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
   background: var(--sp-control); color: var(--sp-text); border: 1px solid var(--sp-border);
-  border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
+  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
 }
 .tip .pin-copy:hover { filter: brightness(0.97); }
 .tip .pin-delete {
   margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
   background: var(--sp-error-bg); color: var(--sp-error-text); border: 1px solid var(--sp-error-border);
-  border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
+  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
 }
 .tip .pin-delete:hover { filter: brightness(0.97); }
 .tip .pin-open {
   margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
   background: var(--sp-accent); color: var(--sp-accent-on); border: none;
-  border-radius: var(--sp-radius-control); font: 600 12px/1.2 var(--sp-font-ui);
+  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
 }
 .tip.show { display: block; }
 ${CONFIDENCE_BADGE_CSS}
@@ -320,7 +320,7 @@ export class TooltipRenderer implements SpecRenderer {
     // the existing Edit flow). "Correct" shows only when the corpus opt-in gave us
     // an onConfirm callback, so it stays hidden for users who never opted in.
     const canConfirm = pin.scored && !!this.onConfirm;
-    tip.innerHTML =
+    const tipHtml =
       (pinned
         ? `<button type="button" class="pin-close" aria-label="${escapeHtml(t("common.close"))}">×</button>`
         : "") +
@@ -349,6 +349,7 @@ export class TooltipRenderer implements SpecRenderer {
       (pinned
         ? `<button type="button" class="pin-open">${escapeHtml(t("tooltip.openInPanel"))}</button>`
         : "");
+    setTrustedHtml(tip, tipHtml);
     tip.classList.toggle("pinned", pinned);
     if (pinned) {
       this.pinnedAnchor = anchor;

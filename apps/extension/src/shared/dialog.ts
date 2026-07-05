@@ -69,13 +69,13 @@ const DIALOG_CSS = `
   border: 1px solid var(--sp-border);
   border-radius: var(--sp-radius-card);
   padding: 24px;
-  font: 13px/1.5 var(--sp-font-ui);
+  font: 15px/1.5 var(--sp-font-ui);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
 }
 .sp-dlg-msg { margin: 0 0 14px; font-weight: 600; }
 .sp-dlg-input {
   width: 100%; box-sizing: border-box; padding: 10px 12px;
-  font: 13px/1.4 var(--sp-font-ui);
+  font: 15px/1.4 var(--sp-font-ui);
   color: var(--sp-text); background: var(--sp-elevated);
   border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
 }
@@ -87,7 +87,7 @@ const DIALOG_CSS = `
 .sp-dlg-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .sp-dlg-btn {
   padding: 10px 18px;
-  font: 600 13px/1 var(--sp-font-ui);
+  font: 600 15px/1 var(--sp-font-ui);
   border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
   background: var(--sp-control); color: var(--sp-text); cursor: pointer;
   transition: background 0.12s, border-color 0.12s;

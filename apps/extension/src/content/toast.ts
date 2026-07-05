@@ -24,7 +24,7 @@ ${SHADOW_PREAMBLE}
   border: 1px solid var(--sp-accent-hover);
   box-shadow: 0 6px 20px var(--sp-accent-glow), 0 4px 12px rgba(0, 0, 0, 0.22);
   font-family: var(--sp-font-ui);
-  font-size: 13px; font-weight: 600; line-height: 1.4;
+  font-size: 15px; font-weight: 600; line-height: 1.4;
   opacity: 0; transform: translateY(-8px);
   transition: opacity ${FADE_MS}ms ease, transform ${FADE_MS}ms ease;
 }

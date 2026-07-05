@@ -14,7 +14,7 @@
         margin: 0;
         min-height: 100vh;
         padding: 40px 20px;
-        font: 14px/1.5 var(--sp-font-ui);
+        font: 16px/1.5 var(--sp-font-ui);
         color: var(--sp-text);
         background:
           radial-gradient(110% 70% at 50% 0%, var(--sp-grad-top), var(--sp-grad-bottom)) fixed;
@@ -39,11 +39,11 @@
       }
       .rail-brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 14px; }
       .rail-brand .logo { width: 26px; height: 26px; display: block; }
-      .rail-brand h1 { font-size: 16px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+      .rail-brand h1 { font-size: 18px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
       .nav-item {
         display: flex; align-items: center; gap: 10px; width: 100%;
         margin-top: 2px; padding: 9px 10px;
-        font: 600 13px/1.2 var(--sp-font-ui);
+        font: 600 15px/1.2 var(--sp-font-ui);
         text-align: left; color: var(--sp-text-2);
         background: transparent; border: 0; border-radius: var(--sp-radius-control);
         box-shadow: none;
@@ -70,14 +70,14 @@
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-card);
       }
-      h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
-      h3 { font-size: 15px; font-weight: 700; margin: 24px 0 10px; }
+      h2 { font-size: 22px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+      h3 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; }
       p.lead { color: var(--sp-text-2); margin: 8px 0 24px; }
       label { display: block; margin: 18px 0 6px; font-weight: 600; color: var(--sp-text); }
       label.inline { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; font-weight: 500; }
       input[type="text"], input[type="password"] {
         width: 100%; padding: 11px 12px;
-        font: 13px/1.4 var(--sp-font-mono);
+        font: 15px/1.4 var(--sp-font-mono);
         color: var(--sp-text);
         background: var(--sp-elevated);
         border: 1px solid var(--sp-border);
@@ -86,7 +86,7 @@
       input::placeholder { color: var(--sp-text-3); }
       select {
         width: 100%; padding: 11px 12px;
-        font: 13px/1.4 var(--sp-font-ui);
+        font: 15px/1.4 var(--sp-font-ui);
         color: var(--sp-text);
         background: var(--sp-elevated);
         border: 1px solid var(--sp-border);
@@ -100,7 +100,7 @@
       }
       input[type="file"] {
         width: 100%; padding: 9px 12px;
-        font: 12px/1.4 var(--sp-font-mono);
+        font: 14px/1.4 var(--sp-font-mono);
         color: var(--sp-text-2);
         background: var(--sp-elevated);
         border: 1px solid var(--sp-border);
@@ -108,7 +108,7 @@
       }
       input[type="file"]::file-selector-button {
         margin-right: 10px; padding: 6px 10px;
-        font: 600 12px/1 var(--sp-font-ui);
+        font: 600 14px/1 var(--sp-font-ui);
         color: var(--sp-text);
         background: var(--sp-control);
         border: 1px solid var(--sp-border);
@@ -117,7 +117,7 @@
       }
       textarea {
         width: 100%; min-height: 160px; padding: 11px 12px; resize: vertical;
-        font: 12px/1.5 var(--sp-font-mono);
+        font: 14px/1.5 var(--sp-font-mono);
         color: var(--sp-text);
         background: var(--sp-elevated);
         border: 1px solid var(--sp-border);
@@ -130,7 +130,7 @@
       }
       button {
         width: 100%; margin-top: 24px; padding: 12px 14px;
-        font: 700 14px/1 var(--sp-font-ui);
+        font: 700 16px/1 var(--sp-font-ui);
         border: 1px solid var(--sp-accent);
         background: var(--sp-accent);
         color: var(--sp-accent-on);
@@ -142,7 +142,7 @@
       button:hover { background: var(--sp-accent-hover); border-color: var(--sp-accent-hover); }
       button.secondary {
         width: auto; margin: 0; padding: 7px 12px;
-        font: 600 12px/1 var(--sp-font-ui);
+        font: 600 14px/1 var(--sp-font-ui);
         background: var(--sp-control); color: var(--sp-text);
         border-color: var(--sp-border); box-shadow: none;
       }
@@ -159,12 +159,12 @@
       .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sp-text-3); flex: none; }
       .dot.ok { background: var(--sp-success-dot); }
       .dot.err { background: var(--sp-error-text); }
-      .conn-meta { color: var(--sp-text-3); font: 12px/1.5 var(--sp-font-mono); margin-top: 6px; word-break: break-all; }
+      .conn-meta { color: var(--sp-text-3); font: 14px/1.5 var(--sp-font-mono); margin-top: 6px; word-break: break-all; }
       .conn-actions { display: flex; gap: 8px; flex: none; align-items: center; }
       /* Per-project on/off toggle inside a connection row. */
       /* Self-contained (does not borrow label.inline, whose margin/specificity
          pushed the toggle out of line with the action buttons). */
-      .conn-toggle { display: inline-flex; align-items: center; gap: 8px; margin: 0; line-height: 1; font-size: 12px; font-weight: 600; color: var(--sp-text-2); white-space: nowrap; }
+      .conn-toggle { display: inline-flex; align-items: center; gap: 8px; margin: 0; line-height: 1; font-size: 14px; font-weight: 600; color: var(--sp-text-2); white-space: nowrap; }
 
       /* On/off switch is shared via src/shared/switch.css (.switch). */
       /* Dim a disabled project but keep its controls usable. */
@@ -173,7 +173,7 @@
         margin-top: 10px; padding: 9px 11px;
         color: var(--sp-warning); background: var(--sp-warning-bg);
         border: 1px solid var(--sp-warning-border); border-radius: var(--sp-radius-control);
-        font-size: 12px;
+        font-size: 14px;
       }
       .empty { color: var(--sp-text-3); font-style: italic; }
 
@@ -196,30 +196,30 @@
         background: var(--sp-error-bg); border-color: var(--sp-error-border);
       }
       code {
-        font: 12px/1 var(--sp-font-mono);
+        font: 14px/1 var(--sp-font-mono);
         background: var(--sp-control); color: var(--sp-text-2);
         padding: 2px 5px; border-radius: 4px;
       }
 
       /* Inline edit form inside each connection row. */
       .conn-edit { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--sp-border); }
-      .conn-edit label { margin: 12px 0 4px; font-size: 12px; font-weight: 600; }
+      .conn-edit label { margin: 12px 0 4px; font-size: 14px; font-weight: 600; }
       .conn-edit label:first-child { margin-top: 0; }
-      .conn-edit input { font-size: 12px; }
+      .conn-edit input { font-size: 14px; }
       .conn-edit .conn-actions { margin-top: 14px; }
-      .conn-edit .ok { color: var(--sp-success-text); margin-top: 10px; font-size: 12px; }
-      .conn-edit .err { color: var(--sp-error-text); margin-top: 10px; font-size: 12px; white-space: pre-wrap; }
+      .conn-edit .ok { color: var(--sp-success-text); margin-top: 10px; font-size: 14px; }
+      .conn-edit .err { color: var(--sp-error-text); margin-top: 10px; font-size: 14px; white-space: pre-wrap; }
 
       /* Team-default visibility editor inside each connection row. */
       .team-views { margin-top: 12px; }
       .team-views > summary { cursor: pointer; font-weight: 600; color: var(--sp-text-2); }
-      .team-views .muted { color: var(--sp-text-3); font-size: 12px; margin: 8px 0; }
+      .team-views .muted { color: var(--sp-text-3); font-size: 14px; margin: 8px 0; }
       .views-editor {
         width: 100%; margin-bottom: 8px;
-        font: 12px/1.5 var(--sp-font-mono);
+        font: 14px/1.5 var(--sp-font-mono);
       }
-      .team-views .ok { color: var(--sp-success-text); margin-top: 8px; font-size: 12px; }
-      .team-views .err { color: var(--sp-error-text); margin-top: 8px; font-size: 12px; }
+      .team-views .ok { color: var(--sp-success-text); margin-top: 8px; font-size: 14px; }
+      .team-views .err { color: var(--sp-error-text); margin-top: 8px; font-size: 14px; }
 
       /* Support & Feedback: two external link buttons in a responsive grid. */
       .support-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
@@ -228,7 +228,7 @@
         padding: 12px 14px;
         color: var(--sp-text);
         text-decoration: none;
-        font: 600 13px/1 var(--sp-font-ui);
+        font: 600 15px/1 var(--sp-font-ui);
         background: var(--sp-elevated);
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-control);

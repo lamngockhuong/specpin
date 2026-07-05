@@ -1,7 +1,7 @@
 import type { DisplayMode } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import type { LauncherPosition } from "../shared/config.js";
-import { escapeHtml } from "../shared/html.js";
+import { escapeHtml, setTrustedHtml } from "../shared/html.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
@@ -19,7 +19,7 @@ ${SHADOW_PREAMBLE}
 .pill {
   position: fixed; right: 16px; bottom: 16px; z-index: 2147483647;
   display: inline-flex; align-items: center; gap: 8px;
-  font: 600 12px/1 var(--sp-font-ui);
+  font: 600 14px/1 var(--sp-font-ui);
   color: var(--sp-text);
   background: var(--sp-surface);
   border: 1px solid var(--sp-border);
@@ -31,7 +31,7 @@ ${SHADOW_PREAMBLE}
 .pill:hover { transform: translateY(-1px); border-color: var(--sp-accent); }
 .pill:focus-visible { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sp-accent); flex: none; }
-.count { color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-mono); }
+.count { color: var(--sp-text-3); font: 600 13px/1 var(--sp-font-mono); }
 .count:empty { display: none; }
 .chev {
   width: 14px; height: 14px; flex: none; background: var(--sp-text-3);
@@ -80,11 +80,13 @@ export function mountLauncher(
   const label = t("common.reopenPanel");
   btn.title = label;
   btn.setAttribute("aria-label", label);
-  btn.innerHTML =
+  setTrustedHtml(
+    btn,
     `<span class="dot"></span>` +
-    `<span class="label">${escapeHtml(t("common.specpin"))}</span>` +
-    `<span class="count"></span>` +
-    `<span class="chev"></span>`;
+      `<span class="label">${escapeHtml(t("common.specpin"))}</span>` +
+      `<span class="count"></span>` +
+      `<span class="chev"></span>`,
+  );
   shadow.appendChild(btn);
 
   // Write a clamped top-left. Bounds are passed in so the drag loop can compute
