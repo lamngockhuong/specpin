@@ -343,7 +343,7 @@ You can dismiss the sidebar (its **x** button) or the modal (its **x** button on
 
 ## Use without a sidecar (Manual import)
 
-To view specs without running `specpin serve`, open the extension Options page and load them under **Manual specs**. There are two ways to import:
+To view specs without running `specpin serve`, open the extension Options page, go to the **Spec** section, and switch to the **Manual** tab. There are two ways to import:
 
 **From files (no JSON assembly).** Click the file picker, select `manifest.json` plus one or more `*.spec.json` files from your `.specs/` directory, then **Load from files**. The extension assembles and validates them in-page.
 

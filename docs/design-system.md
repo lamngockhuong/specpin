@@ -157,3 +157,8 @@ for s in 16 32 48 128; do rsvg-convert -w $s -h $s designs/specpin-icon.svg -o p
   (`.md-btn`) reuse the existing control tokens (`--sp-elevated`, `--sp-border`,
   `--sp-accent`, `--sp-accent-glow`); the active tab uses the accent fill. No new
   tokens were introduced, so they theme automatically with everything else.
+- The Options page **Spec source switch** (`.seg` / `.seg-btn`) is a full-width
+  WAI-ARIA tablist over `--sp-control` (track) with `--sp-surface` for the active
+  tab. It must reset the page's global `button` styles (width, margin, accent
+  fill and glow), which would otherwise leak into the tab buttons; it adds no new
+  tokens, so it themes automatically.
