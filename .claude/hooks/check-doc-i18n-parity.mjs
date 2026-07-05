@@ -85,6 +85,8 @@ function mirrorPath(cfg, locale, logical) {
 
 // Return the set of repo-relative paths changed on this branch: committed
 // (merge-base..HEAD) plus all uncommitted work (staged, unstaged, untracked).
+// NOTE: this git + base-branch logic is duplicated in remind-ui-docs.mjs;
+// keep the two copies in sync (extract to a shared lib if a third hook needs it).
 function changedFiles() {
   const changed = new Set();
 
