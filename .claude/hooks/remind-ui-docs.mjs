@@ -22,9 +22,14 @@
 // prints whether the given range would fire — handy for testing.
 
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
+// Where the last-notified gap is remembered so the reminder fires once per
+// distinct UI-without-doc changeset instead of every turn. Untracked (gitignored)
+// and best-effort: any read/write failure just means we fall back to notifying.
+const STATE_FILE = `${projectDir}/.claude/.ui-docs-reminder-state`;
 
 // A changed path is "UI" if it matches any of these; "doc" if it matches a doc
 // root. Keep UI scoped to the EXTENSION surface so editing the marketing site or
@@ -95,6 +100,12 @@ function findUiWithoutDocs(changed) {
   return docTouched ? [] : uiHits;
 }
 
+// Stable key for a gap: the sorted UI hits. Same set across turns -> same key,
+// so we can tell a "new" gap from one the user was already reminded about.
+function gapKey(uiHits) {
+  return [...uiHits].sort().join("\n");
+}
+
 function report(uiHits) {
   const list = uiHits.map((p) => `  • ${p}`).join("\n");
   return [
@@ -125,7 +136,32 @@ try {
 if (payload.stop_hook_active) process.exit(0); // avoid re-emitting within a stop cycle
 
 const hits = findUiWithoutDocs(changedFiles());
-if (hits.length === 0) process.exit(0);
+if (hits.length === 0) {
+  // Gap resolved (docs updated, or the UI change left the branch). Forget the
+  // last key so if the same gap reappears later it notifies again.
+  try {
+    rmSync(STATE_FILE, { force: true });
+  } catch {
+    /* best effort */
+  }
+  process.exit(0);
+}
+
+// Dedupe across turns: only notify when this gap differs from the last one we
+// reminded about. Same changeset on the next Stop -> stay silent.
+const key = gapKey(hits);
+let prevKey = "";
+try {
+  prevKey = readFileSync(STATE_FILE, "utf8");
+} catch {
+  /* no prior state: treat as a new gap */
+}
+if (key === prevKey) process.exit(0);
+try {
+  writeFileSync(STATE_FILE, key);
+} catch {
+  /* if we can't persist, still notify (fail toward reminding) */
+}
 
 // Non-blocking: surface a reminder to the user, then allow the stop.
 process.stdout.write(JSON.stringify({ systemMessage: report(hits) }));
