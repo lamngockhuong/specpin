@@ -85,7 +85,7 @@ See [Connecting Projects](/usage/connecting-projects/) for details.
 
 ## Manual specs (no sidecar)
 
-The Options page has a **Manual specs (no sidecar)** section where you can import specs without running `specpin serve`. Load specs from files (pick `manifest.json` + one or more `*.spec.json`) or paste a bundle JSON.
+The Options page's **Spec** section has a **Manual** tab where you can import specs without running `specpin serve`. Load specs from files (pick `manifest.json` + one or more `*.spec.json`) or paste a bundle JSON.
 
 Each import appends a batch. Loaded batches appear below the buttons, one card per import, with **Export**, **Rename**, and **Remove** actions. Click **Clear all manual specs** to empty the list.
 

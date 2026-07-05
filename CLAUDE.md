@@ -99,6 +99,20 @@ Binds `127.0.0.1` only (auto-picked port unless `--port`); every request needs `
 - `system-architecture.md` - components + invariants; `codebase-summary.md` - per-package map; `code-standards.md` - TS/Go conventions + schema workflow; `project-overview-pdr.md` - product scope/PDR; `project-roadmap.md` - shipped capabilities + planned features.
 - `run-guide.md` - full init -> serve -> load -> connect -> render -> capture loop; `schema-reference.md` - v1 spec format; `design-system.md` - extension UI tokens (mockups in `apps/extension/designs/`); `scorer-tuning.md` - contributor guide for tuning the match scorer (WEIGHTS in `packages/fingerprint-core/src/score.ts`) from an exported drift corpus via `pnpm --filter @specpin/fingerprint-core tune`.
 
+### Keeping docs in sync with UI changes
+
+When an extension UI change alters user-visible behavior or appearance, update the docs in the SAME change. Purely internal refactors (no visible effect) need no doc update.
+
+Map UI edit -> doc(s) to review (always update the `vi`/`ja` mirrors too):
+
+| UI change | Docs to review |
+|-----------|----------------|
+| Options / popup / side-panel flow, nav, controls, or capture/guide behavior | `docs/run-guide.md` (+ `docs/vi/`) and `apps/web/src/content/docs/usage/*.md` (+ `vi/`, `ja/`) |
+| Visual system: tokens, colors, a reusable component/pattern (e.g. a new control) | `docs/design-system.md` (+ `docs/vi/`) |
+| New/changed user-facing capability | `docs/project-roadmap.md` (shipped list, if the capability warrants it) |
+
+Safety net (not a substitute for the above): a non-blocking `Stop` hook (`.claude/hooks/remind-ui-docs.mjs`) reminds at end of turn when UI files changed but no doc did. A separate blocking hook (`check-doc-i18n-parity.mjs`) enforces that an edited source doc's existing locale mirrors are updated too (`docs/` has a `vi` mirror; the website docs have `vi` and `ja`).
+
 ### Vietnamese translation style (docs/vi/ and i18n)
 
 English is the source of truth; `docs/vi/` and the `vi` i18n catalog are translations that must stay in sync when the English source changes. Translate for a native Vietnamese reader, not word-for-word:

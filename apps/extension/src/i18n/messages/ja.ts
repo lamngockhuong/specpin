@@ -223,12 +223,14 @@ const ja: Record<keyof Messages, string> = {
   // Options page (static HTML + dynamic rows).
   "options.pageTitle": "Specpin 設定",
   // サイドバーのナビゲーションラベル (下のセクション見出しの短縮形)。
-  "options.navProjects": "プロジェクト",
+  "options.navSpec": "Spec",
   "options.navAppearance": "外観",
   "options.navToolbar": "ツールバー",
-  "options.navManual": "手動spec",
   "options.navCorpus": "マッチング",
   "options.navSupport": "サポート",
+  // Spec ペイン内のセグメントコントロール: ライブ sidecar と貼り付けバンドル。
+  "options.specTabLive": "ライブ",
+  "options.specTabManual": "手動",
   "options.connectedProjects": "接続済みプロジェクト",
   "options.connectedLead":
     "各プロジェクトで <code>specpin serve</code> を実行し、下にそのURLとtokenを追加してください。spec は、プロジェクトのmanifestの <code>domains</code> にそのページが含まれている場合にのみ表示されます。",

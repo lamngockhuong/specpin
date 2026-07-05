@@ -156,3 +156,8 @@ chạy `sync-tokens.mjs` + `render.sh` như bình thường.
   form capture dùng lại các token điều khiển sẵn có (`--sp-elevated`, `--sp-border`,
   `--sp-accent`, `--sp-accent-glow`); tab đang chọn dùng nền accent. Không thêm
   token mới nào, nên chúng tự theme cùng mọi thứ khác.
+- **Nút chuyển nguồn Spec** (`.seg` / `.seg-btn`) ở trang Options là một tablist
+  WAI-ARIA trải hết chiều ngang, nền track dùng `--sp-control` còn tab đang chọn
+  dùng `--sp-surface`. Nó phải reset các style `button` toàn cục của trang (width,
+  margin, nền accent và glow) vì nếu không chúng sẽ lọt vào các nút tab; không
+  thêm token mới nên tự theme cùng mọi thứ.
