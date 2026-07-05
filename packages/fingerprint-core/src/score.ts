@@ -1,4 +1,4 @@
-import type { ElementFingerprint } from "@specpin/spec-schema";
+import type { ElementFingerprint, PositionHint } from "@specpin/spec-schema";
 import {
   domPathFor,
   nearbyLabels,
@@ -78,20 +78,29 @@ function suffixRatio(a: string[], b: string[]): number {
   return matched / max;
 }
 
-function positionProximity(fp: ElementFingerprint, el: Element): number {
-  const pos = positionHint(el);
-  const maxSiblings = Math.max(fp.positionHint.siblingCount, pos.siblingCount, 1);
-  const delta = Math.abs(fp.positionHint.index - pos.index);
+/** Sibling-position proximity ∈ [0,1] between two position hints: 1 at the same
+ *  index, decaying with the index gap relative to the larger sibling count. */
+function positionProximityBetween(a: PositionHint, b: PositionHint): number {
+  const maxSiblings = Math.max(a.siblingCount, b.siblingCount, 1);
+  const delta = Math.abs(a.index - b.index);
   return Math.max(0, 1 - delta / maxSiblings);
 }
 
-function attributeFraction(fp: ElementFingerprint, el: Element): number {
-  const keys = Object.keys(fp.attributes);
+/** Fraction of `a`'s whitelisted attributes whose value `b` reproduces exactly. */
+function attributeFractionBetween(a: Record<string, string>, b: Record<string, string>): number {
+  const keys = Object.keys(a);
   if (keys.length === 0) return 0;
-  const elAttrs = whitelistedAttributes(el);
   let matched = 0;
-  for (const k of keys) if (elAttrs[k] === fp.attributes[k]) matched += 1;
+  for (const k of keys) if (b[k] === a[k]) matched += 1;
   return matched / keys.length;
+}
+
+function positionProximity(fp: ElementFingerprint, el: Element): number {
+  return positionProximityBetween(fp.positionHint, positionHint(el));
+}
+
+function attributeFraction(fp: ElementFingerprint, el: Element): number {
+  return attributeFractionBetween(fp.attributes, whitelistedAttributes(el));
 }
 
 /**
@@ -138,13 +147,19 @@ function applicableSignals(fp: ElementFingerprint): Signal[] {
   return out;
 }
 
-/** Weighted score ∈ [0,1], normalized over the fingerprint's applicable signals. */
-function combine(fp: ElementFingerprint, scores: SignalScores): number {
+/** Weighted score ∈ [0,1], normalized over the fingerprint's applicable signals.
+ *  `weights` defaults to the shipped {@link WEIGHTS}; the offline tuner passes a
+ *  candidate table to evaluate a hypothesis without editing the source. */
+function combine(
+  fp: ElementFingerprint,
+  scores: SignalScores,
+  weights: Record<Signal, number> = WEIGHTS,
+): number {
   let weighted = 0;
   let totalWeight = 0;
   for (const s of applicableSignals(fp)) {
-    weighted += WEIGHTS[s] * scores[s];
-    totalWeight += WEIGHTS[s];
+    weighted += weights[s] * scores[s];
+    totalWeight += weights[s];
   }
   return totalWeight === 0 ? 0 : weighted / totalWeight;
 }
@@ -152,6 +167,38 @@ function combine(fp: ElementFingerprint, scores: SignalScores): number {
 /** Weighted, applicability-normalized similarity of one element to a fingerprint. */
 export function scoreCandidate(fp: ElementFingerprint, el: Element): number {
   return combine(fp, signalScores(fp, el));
+}
+
+/**
+ * Raw per-signal similarity between two stored fingerprints, mirroring
+ * {@link signalScores} but with a fingerprint (not a live element) as the target.
+ * The offline counterpart for replaying/tuning the scorer against an exported
+ * drift corpus, where only fingerprints (never the live DOM) are available.
+ */
+export function signalScoresBetween(a: ElementFingerprint, b: ElementFingerprint): SignalScores {
+  return {
+    textContent: jaccard(tokenize(a.textContent), tokenize(b.textContent)),
+    nearbyLabels: jaccard(
+      tokenize((a.nearbyLabels ?? []).join(" ")),
+      tokenize((b.nearbyLabels ?? []).join(" ")),
+    ),
+    attributes: attributeFractionBetween(a.attributes, b.attributes),
+    tagName: a.tagName === b.tagName ? 1 : 0,
+    domPath: suffixRatio(a.domPath, b.domPath),
+    positionHint: positionProximityBetween(a.positionHint, b.positionHint),
+  };
+}
+
+/** Weighted similarity of fingerprint `b` to fingerprint `a`, normalized over
+ *  `a`'s applicable signals (`a` is the reference, as the stored fingerprint is
+ *  at match time). `weights` defaults to the shipped table; pass a candidate
+ *  table to score a tuning hypothesis. The offline twin of {@link scoreCandidate}. */
+export function scoreFingerprintPair(
+  a: ElementFingerprint,
+  b: ElementFingerprint,
+  weights: Record<Signal, number> = WEIGHTS,
+): number {
+  return combine(a, signalScoresBetween(a, b), weights);
 }
 
 export interface ScoredCandidate {

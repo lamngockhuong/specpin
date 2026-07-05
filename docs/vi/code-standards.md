@@ -461,7 +461,7 @@ chore(deps): bump wxt to 0.20
 
 ## Unresolved Conventions (Deferred)
 
-- **Tuning hybrid fingerprint scorer**: WEIGHTS table trong `packages/fingerprint-core/src/score.ts` là điểm tuning duy nhất (signal weight, threshold). v1 scorer đã ship và hoạt động, nhưng weight cần tuning dogfood từ dữ liệu production refactor.
+- **Tuning hybrid fingerprint scorer**: WEIGHTS table trong `packages/fingerprint-core/src/score.ts` là điểm tuning duy nhất (signal weight, threshold). v1 scorer đã ship và hoạt động, nhưng weight cần tuning dogfood từ dữ liệu production refactor. Để tune, export drift corpus từ trang Options của extension rồi replay offline bằng `pnpm --filter @specpin/fingerprint-core tune [corpus.json]` (`scripts/tune-weights.ts`): nó báo mức "sống sót" từng signal qua các re-pin correction, tỉ lệ abstain do DELTA-gate trên các passive candidate set, và một gợi ý weight bằng coordinate-ascent. Chỉ re-pin là ground truth (nhãn passive chỉ là tentative), nên gợi ý là giả thuyết khởi đầu cần kiểm chứng qua `score.test.ts`, không phải đáp án tự áp dụng.
 - **Định dạng prompt cho AI-assisted capture**: không có LLM integration trong MVP, hoãn sang 1.1.
 - **Yêu cầu đóng gói cho Safari**: chờ Apple làm rõ về MV3 parity.
 

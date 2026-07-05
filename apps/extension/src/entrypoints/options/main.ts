@@ -17,7 +17,10 @@ import { confirmDialog } from "../../shared/dialog.js";
 import { downloadBytes } from "../../shared/download.js";
 import {
   clearCorpus,
+  type DriftEntry,
+  deleteCorpusEntry,
   exportCorpusJson,
+  getCorpus,
   getCorpusCount,
   getCorpusEnabled,
   setCorpusEnabled,
@@ -66,6 +69,7 @@ const badgeNumbering = byId("badgeNumbering") as HTMLInputElement;
 const uiLocale = byId("uiLocale") as HTMLSelectElement;
 const corpusEnabled = byId("corpusEnabled") as HTMLInputElement;
 const corpusCount = byId("corpusCount");
+const corpusList = byId("corpusList");
 const corpusResult = byId("corpusResult");
 
 function showResult(target: HTMLElement, ok: boolean, text: string): void {
@@ -787,10 +791,136 @@ byId("clearLocal").addEventListener("click", async () => {
   await refresh();
 });
 
-// Reflect the local matching-corpus state: opt-in checkbox + live entry count.
+// Reflect the local matching-corpus state: opt-in checkbox, live entry count, and
+// the per-entry list (read once, reused for both count and list).
 async function refreshCorpus(): Promise<void> {
   corpusEnabled.checked = await getCorpusEnabled();
-  corpusCount.textContent = t("options.corpusCount", { count: await getCorpusCount() });
+  const entries = await getCorpus();
+  corpusCount.textContent = t("options.corpusCount", { count: entries.length });
+  renderCorpusList(entries);
+}
+
+/** One-line element hint from a fingerprint: tag plus its strongest locating
+ *  signal (test-id > id > css selector). Values are redacted at write time. */
+function fingerprintSummary(fp: DriftEntry["old"]): string {
+  const anchor = fp.testId ? `[data-testid="${fp.testId}"]` : fp.id ? `#${fp.id}` : fp.cssSelector;
+  return `${fp.tagName} · ${anchor}`;
+}
+
+/** Data-only meta line for a corpus row: for passive entries the spec id (so two
+ *  drifts of the SAME spec are recognizable), then project, page path (when
+ *  known), local time, and a kind-specific tail - re-pin: the prior match tier;
+ *  auto-capture: which candidate the scorer would have picked (or abstained), of
+ *  how many. Every value is a redacted fingerprint or local metadata. */
+function corpusMetaText(entry: DriftEntry): string {
+  const parts: string[] = [];
+  // specId is the passive dedupe key: identical rows are the same spec captured
+  // at different times, so surface it to tell them apart from a different spec.
+  if (entry.kind === "passive") parts.push(t("options.corpusSpec", { id: entry.specId }));
+  parts.push(entry.project || t("options.untitled"));
+  if (entry.pageUrl) parts.push(entry.pageUrl);
+  parts.push(new Date(entry.ts).toLocaleString());
+  if (entry.kind === "supervised") {
+    parts.push(
+      t("options.corpusPrev", {
+        strategy: entry.prevStrategy,
+        confidence: entry.prevConfidence.toFixed(2),
+      }),
+    );
+  } else {
+    const count = entry.candidates.length;
+    // chosenByScorer is a 0-based index (tentative guess); show it 1-based, or
+    // note the scorer abstained. Distinguishes two snapshots whose DOM differed.
+    parts.push(
+      entry.chosenByScorer === undefined
+        ? t("options.corpusScorerAbstained", { count })
+        : t("options.corpusScorerPicked", { n: entry.chosenByScorer + 1, count }),
+    );
+  }
+  return parts.join(" · ");
+}
+
+/** Build one corpus row with DOM nodes only (no innerHTML): a kind badge, an
+ *  element summary, a delete button, and a meta line. Fingerprint values are
+ *  redacted at write time and set via textContent, so a crafted page path or
+ *  selector is never an injection sink (parallel to connectionRow/batchRow). */
+function corpusRow(entry: DriftEntry): HTMLElement {
+  const li = document.createElement("li");
+  li.className = "corpus-item";
+
+  const head = document.createElement("div");
+  head.className = "corpus-head";
+
+  const badge = document.createElement("span");
+  badge.className = `corpus-kind corpus-kind-${entry.kind}`;
+  badge.textContent =
+    entry.kind === "supervised"
+      ? t("options.corpusKindSupervised")
+      : t("options.corpusKindPassive");
+  head.appendChild(badge);
+
+  // A "Correct" affirmation (new === old) is worth flagging apart from a re-pin.
+  if (entry.kind === "supervised" && entry.confirmed) {
+    const tag = document.createElement("span");
+    tag.className = "corpus-tag";
+    tag.textContent = t("options.corpusConfirmed");
+    head.appendChild(tag);
+  }
+
+  const summary = document.createElement("span");
+  summary.className = "corpus-summary";
+  summary.textContent = fingerprintSummary(entry.old);
+  head.appendChild(summary);
+
+  // Full entry (already redacted at write time) as pretty JSON, collapsed by
+  // default. This is where two same-spec snapshots actually differ: the old +
+  // candidate fingerprints the scorer weighed. textContent, so never an HTML sink.
+  const detail = document.createElement("pre");
+  detail.className = "corpus-detail";
+  detail.hidden = true;
+  detail.textContent = JSON.stringify(entry, null, 2);
+
+  const details = document.createElement("button");
+  details.className = "secondary";
+  details.textContent = t("options.corpusDetails");
+  details.addEventListener("click", () => {
+    detail.hidden = !detail.hidden;
+  });
+  head.appendChild(details);
+
+  const del = document.createElement("button");
+  del.className = "secondary";
+  del.textContent = t("guide.delete");
+  del.addEventListener("click", async () => {
+    if (!(await confirmDialog({ message: t("options.confirmDeleteCorpusEntry"), danger: true })))
+      return;
+    await deleteCorpusEntry(entry);
+    await refreshCorpus();
+    showResult(corpusResult, true, t("options.corpusEntryDeleted"));
+  });
+  head.appendChild(del);
+  li.appendChild(head);
+
+  const meta = document.createElement("div");
+  meta.className = "corpus-meta";
+  meta.textContent = corpusMetaText(entry);
+  li.appendChild(meta);
+  li.appendChild(detail);
+
+  return li;
+}
+
+/** Render the stored corpus entries, newest first, one row each. Empty is left
+ *  blank: the count line above already reads "0 entries stored." */
+function renderCorpusList(entries: DriftEntry[]): void {
+  corpusList.replaceChildren();
+  if (entries.length === 0) return;
+  const list = document.createElement("ul");
+  list.className = "corpus-list";
+  // Reverse a copy so the newest entry (appended last) shows first, without
+  // mutating the caller's array.
+  for (const entry of [...entries].reverse()) list.appendChild(corpusRow(entry));
+  corpusList.appendChild(list);
 }
 
 corpusEnabled.addEventListener("change", async () => {

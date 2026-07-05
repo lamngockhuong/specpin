@@ -18,12 +18,14 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "tune": "tsx scripts/tune-weights.ts"
   },
   "dependencies": {
     "@specpin/spec-schema": "workspace:*"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "4.1.9"
+    "@vitest/coverage-v8": "4.1.9",
+    "tsx": "4.23.0"
   }
 }
