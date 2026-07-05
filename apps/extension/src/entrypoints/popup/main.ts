@@ -25,6 +25,7 @@ import "../../shared/guide-editor.css";
 import "../../shared/scope-toggle.css";
 import "../../shared/surface-health.css";
 import "../../shared/surface-digest.css";
+import "../../shared/surface-states.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
 import { clearDraft, loadDraft, saveDraft } from "../../shared/draft-store.js";
 import { mountGuideSection } from "../../shared/guide-section.js";
@@ -56,7 +57,7 @@ import {
   renderLocalePicker,
   renderProjects,
   renderStatus,
-  setListControlsHidden,
+  setSurfaceState,
   sourceBadge,
 } from "../../shared/surface-renderers.js";
 
@@ -189,6 +190,11 @@ async function refresh(): Promise<void> {
   matchedIds = match.ids;
   lastReport = match.report;
   renderStatus(status, origin, specs.specs.length);
+  // Full-surface states: the empty state (Option A) when no project serves this
+  // page, else the paused state when Specpin is off. Every renderer below still
+  // runs but its element is hidden by the body class, so no ordering special-case
+  // is needed.
+  setSurfaceState(status, origin, specs.enabled);
   renderHealthSummary(byId("health"), lastReport ? pageHealth(lastReport) : null, specs.enabled);
   renderProjects(status, origin);
   await guideSection.refresh({
@@ -200,9 +206,6 @@ async function refresh(): Promise<void> {
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The popup stays compact: group-level filters only (per-spec lives in the panel).
   renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh);
-  // When off, the list collapses to the "off" message: hide controls that only
-  // act on the (now-hidden) spec list, plus the create affordance + its panel.
-  setListControlsHidden(!specs.enabled);
   scopeToggle.render();
   fragileScan.render();
   // Export is per project serving THIS page (one click exports one project); the
@@ -225,6 +228,9 @@ byId("capture").addEventListener("click", () => {
   // actOnActiveTab keeps the popup open and shows why capture could not start.
   void actOnActiveTab({ type: "START_CAPTURE" }, () => window.close());
 });
+// The empty-state "New project" opens the same inline add-project form as the
+// header button, via the shared action rather than a synthetic header-button click.
+byId("es-new").addEventListener("click", () => projectActions.toggleAddProject());
 void wireDisplayModePicker(byId("mode") as HTMLSelectElement);
 byId("locale").addEventListener("change", async (e) => {
   activeLocale = (e.target as HTMLSelectElement).value;

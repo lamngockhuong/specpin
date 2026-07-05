@@ -425,6 +425,22 @@ const vi: Record<keyof Messages, string> = {
   "prov.reviewedBy": "Đã rà soát {when} bởi {who}",
   "prov.stale": "Cũ",
   "prov.staleTitle": "Chưa rà soát trong hơn {days} ngày",
+  // Trạng thái rỗng "Không có dự án phục vụ trang này".
+  "emptyState.title": "Chưa có spec nào cho trang này",
+  "emptyState.subtitle": "Tạo một dự án cho trang web này để bắt đầu gắn spec lên các phần tử.",
+  "emptyState.panelSubtitle":
+    "Tạo một dự án để gắn spec sống lên các phần tử của trang web này. Mọi thứ bạn ghi lại được lưu dưới dạng JSON trong repo của bạn.",
+  "emptyState.newProject": "+ Dự án mới",
+  "emptyState.startTitle": "Bắt đầu spec cho trang này",
+  "emptyState.step1Title": "Tạo một dự án",
+  "emptyState.step1Body": "Một thư mục .specs/ gắn với origin của trang web này.",
+  "emptyState.step2Title": "Ghi spec đầu tiên",
+  "emptyState.step2Body": "Nhấp vào phần tử bất kỳ để gắn quy tắc hoặc mô tả lên đó.",
+  // Trạng thái tạm dừng "Specpin đang tắt" (trang có dự án nhưng spec đang bị ẩn).
+  "offState.title": "Specpin đang tắt",
+  "offState.hiddenOne": "{count} spec đang ẩn trên trang này",
+  "offState.hiddenOther": "{count} spec đang ẩn trên trang này",
+  "offState.subtitle": "Bật lại ở công tắc phía trên.",
 };
 
 export default vi;

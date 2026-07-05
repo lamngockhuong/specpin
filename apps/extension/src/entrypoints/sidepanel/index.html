@@ -265,6 +265,15 @@
         box-shadow: 0 0 0 4px var(--sp-accent-glow);
       }
       #capture:hover { background: var(--sp-accent-hover); border-color: var(--sp-accent-hover); filter: none; }
+
+      /* Empty / paused states: the docked panel is full-height, so center the
+         message in the space below the header (and, when paused, below the toggle)
+         instead of leaving it stranded at the top. Scoped to the panel; the compact
+         popup keeps its top-aligned layout. The add-project form (opened by "New
+         project") flows in below. */
+      body.no-project, body.paused { display: flex; flex-direction: column; }
+      body.no-project .header, body.paused .header, body.paused .toggle-row { flex: none; }
+      body.no-project #empty-state, body.paused #off-state { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; }
     </style>
   </head>
   <body>
@@ -302,6 +311,54 @@
     </div>
     <div class="row meta"><span id="count" class="pill"></span></div>
     <ul id="projects"></ul>
+    <!-- Shown by setEmptyState() when no project serves this page; body.no-project
+         then collapses the spec-operating controls below. Option B: a guided
+         two-step start (the panel has the vertical room the popup lacks). #es-new
+         opens the add-project form (delegates to the header "+ New project"). Step 2
+         (capture) is guidance only: capture needs a project, and once one serves the
+         page this state is gone. -->
+    <div id="empty-state" class="empty-state" hidden>
+      <div class="es-hero">
+        <span class="es-ring">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </span>
+        <div class="es-title" data-i18n="emptyState.title">No specs cover this page yet</div>
+        <div class="es-sub" data-i18n="emptyState.panelSubtitle">Set up a project to pin living specs onto this site's elements. Everything you capture is saved as JSON in your repo.</div>
+      </div>
+      <div class="es-steps">
+        <div class="es-steps-title" data-i18n="emptyState.startTitle">Start specs for this page</div>
+        <div class="es-step">
+          <span class="es-num">1</span>
+          <div class="es-steptext">
+            <b data-i18n="emptyState.step1Title">Create a project</b>
+            <span data-i18n="emptyState.step1Body">A .specs/ folder rooted at this site's origin.</span>
+          </div>
+        </div>
+        <div class="es-step">
+          <span class="es-num">2</span>
+          <div class="es-steptext">
+            <b data-i18n="emptyState.step2Title">Capture your first spec</b>
+            <span data-i18n="emptyState.step2Body">Click any element to pin a rule or description onto it.</span>
+          </div>
+        </div>
+      </div>
+      <div class="es-actions">
+        <button type="button" id="es-new" class="es-btn" data-i18n="emptyState.newProject">+ New project</button>
+      </div>
+    </div>
+    <!-- Shown by setSurfaceState() when a project serves the page but Specpin is
+         off; body.paused collapses the spec-operating controls (the toggle above
+         stays, as the way back on). -->
+    <div id="off-state" class="empty-state" hidden>
+      <div class="es-hero">
+        <span class="es-ring es-ring-muted">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </span>
+        <div class="es-title" data-i18n="offState.title">Specpin is off</div>
+        <div class="es-count" id="off-count" hidden></div>
+        <div class="es-sub" data-i18n="offState.subtitle">Turn it back on above.</div>
+      </div>
+    </div>
     <div id="digest" class="digest" hidden></div>
     <div class="row locale-row" id="locale-row" hidden>
       <label for="locale" data-i18n="common.languageLabel">Language</label>

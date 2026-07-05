@@ -435,6 +435,22 @@ const ja: Record<keyof Messages, string> = {
   "prov.reviewedBy": "{who} が {when} にレビュー",
   "prov.stale": "古い",
   "prov.staleTitle": "{days} 日以上レビューされていません",
+  // 「このページを提供するプロジェクトがありません」の空状態。
+  "emptyState.title": "このページにはまだ仕様がありません",
+  "emptyState.subtitle": "このサイト用のプロジェクトを作成して、要素に仕様をピン留めしましょう。",
+  "emptyState.panelSubtitle":
+    "プロジェクトを作成して、このサイトの要素に生きた仕様をピン留めできます。記録した内容はすべてリポジトリ内に JSON として保存されます。",
+  "emptyState.newProject": "+ 新規プロジェクト",
+  "emptyState.startTitle": "このページの仕様を始める",
+  "emptyState.step1Title": "プロジェクトを作成",
+  "emptyState.step1Body": "このサイトの origin をルートとする .specs/ フォルダー。",
+  "emptyState.step2Title": "最初の仕様を記録",
+  "emptyState.step2Body": "任意の要素をクリックして、ルールや説明をピン留めします。",
+  // 一時停止状態「Specpin はオフです」(プロジェクトはあるが仕様が非表示)。
+  "offState.title": "Specpin はオフです",
+  "offState.hiddenOne": "このページで {count} 件の仕様が非表示です",
+  "offState.hiddenOther": "このページで {count} 件の仕様が非表示です",
+  "offState.subtitle": "上のスイッチをオンに戻してください。",
 };
 
 export default ja;

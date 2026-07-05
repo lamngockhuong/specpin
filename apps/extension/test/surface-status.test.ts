@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ManualBatchSummary } from "../src/shared/connection-types.js";
 import type { ConnectionStatus, StatusResult } from "../src/shared/messaging.js";
-import { renderProjects, renderStatus } from "../src/shared/surface-renderers.js";
+import { noServingProject, renderProjects, renderStatus } from "../src/shared/surface-renderers.js";
 
 // The header carries only the informational states (Not configured / No project
 // for this page) and the page-total spec count; per-project connection health
@@ -102,6 +102,37 @@ describe("renderStatus header", () => {
   it("shows 'Not configured' when nothing is set up", () => {
     renderStatus({ configured: false, enabled: false }, "https://x.test", 0);
     expect(statusText()).toBe("Not configured");
+  });
+
+  // An empty local project (a write target with no specs yet) is still a project,
+  // so the header must not report the source gap even though originSpecCount is 0.
+  it("blanks the status text when an empty local project serves the page", () => {
+    const local = batch({ specCount: 0, domains: [] });
+    renderStatus(status([], [local]), "https://x.test", 0);
+    expect(statusText()).toBe("");
+  });
+});
+
+// Drives the empty state (and thus whether the on/off toggle and other controls
+// show). It keys off project existence, NOT the spec count: the global on/off
+// zeroes the spec list and a fresh project has no specs yet, but neither means
+// "no project" - so the toggle must stay reachable in both cases.
+describe("noServingProject", () => {
+  beforeEach(setupDom);
+
+  it("is false when a sidecar serves the origin", () => {
+    const a = conn({ matchesAllSites: true });
+    expect(noServingProject(status([a]), "https://x.test")).toBe(false);
+  });
+
+  it("is false when a local project serves the origin even with no specs yet", () => {
+    const local = batch({ specCount: 0, domains: [] });
+    expect(noServingProject(status([], [local]), "https://x.test")).toBe(false);
+  });
+
+  it("is true when only a project bound to another domain exists", () => {
+    const elsewhere = conn({ domains: ["other.test"] });
+    expect(noServingProject(status([elsewhere]), "https://x.test")).toBe(true);
   });
 });
 

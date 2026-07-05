@@ -27,6 +27,7 @@ import "../../shared/guide-editor.css";
 import "../../shared/scope-toggle.css";
 import "../../shared/surface-health.css";
 import "../../shared/surface-digest.css";
+import "../../shared/surface-states.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
 import { copyText } from "../../shared/clipboard.js";
 import { buildSpecLink } from "../../shared/deep-link.js";
@@ -63,7 +64,7 @@ import {
   renderLocalePicker,
   renderProjects,
   renderStatus,
-  setListControlsHidden,
+  setSurfaceState,
   sourceBadge,
   tierBadge,
 } from "../../shared/surface-renderers.js";
@@ -397,14 +398,16 @@ async function refresh(): Promise<void> {
   lastReport = match.report;
   reportById = new Map((lastReport ?? []).map((e) => [e.id, e]));
   renderStatus(status, origin, specs.specs.length);
+  // Full-surface states: the guided empty state (Option B) when no project serves
+  // this page, else the paused state when Specpin is off. Every renderer below
+  // still runs but its element is hidden by the body class, so no ordering
+  // special-case is needed.
+  setSurfaceState(status, origin, specs.enabled);
   renderHealthSummary(byId("health"), lastReport ? pageHealth(lastReport) : null, specs.enabled);
   renderProjects(status, origin);
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The side panel has the room for per-spec rows in addition to group filters.
   renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh, true);
-  // When off, the list collapses to the "off" message: hide controls that only
-  // act on the (now-hidden) spec list, plus the create affordance + its panel.
-  setListControlsHidden(!specs.enabled);
   scopeToggle.render();
   fragileScan.render();
   // Export is per project serving THIS page (one click exports one project); the
@@ -454,6 +457,9 @@ byId("capture").addEventListener("click", async () => {
   // while the panel remains docked alongside.
   await actOnActiveTab({ type: "START_CAPTURE" });
 });
+// The empty-state "New project" opens the same inline add-project form as the
+// header button, via the shared action rather than a synthetic header-button click.
+byId("es-new").addEventListener("click", () => projectActions.toggleAddProject());
 void wireDisplayModePicker(byId("mode") as HTMLSelectElement);
 byId("locale").addEventListener("change", async (e) => {
   activeLocale = (e.target as HTMLSelectElement).value;
