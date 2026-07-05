@@ -23,6 +23,9 @@ export default defineConfig({
       components: {
         Footer: "./src/components/Footer.astro",
         Header: "./src/components/Header.astro",
+        // Adds <ClientRouter /> for smooth client-side navigation (no full-page
+        // reload / white flash between pages). See the component's header.
+        Head: "./src/components/Head.astro",
       },
       logo: { src: "./src/assets/specpin-icon.svg", alt: "Specpin" },
       favicon: "/favicon.svg",

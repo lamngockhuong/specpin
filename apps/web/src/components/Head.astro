@@ -1,0 +1,20 @@
+---
+/*
+ * Site <head> override.
+ *
+ * Extends Starlight's default Head (all meta/OG/favicon tags stay intact via
+ * <Default>) and appends Astro's <ClientRouter /> so navigation between pages
+ * is a soft, client-side swap instead of a full document reload. This removes
+ * the white flash between pages and makes the site feel like one app rather
+ * than a set of independent documents.
+ *
+ * Starlight's own scripts (theme provider, sidebar, tabs) are built to survive
+ * these transitions, so no extra rerun handling is needed here. Registered via
+ * the `components.Head` slot in astro.config.mjs.
+ */
+import Default from "@astrojs/starlight/components/Head.astro";
+import { ClientRouter } from "astro:transitions";
+---
+
+<Default><slot /></Default>
+<ClientRouter />
