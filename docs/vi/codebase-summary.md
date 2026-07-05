@@ -4,7 +4,7 @@
 > nếu hai bản lệch nhau, ưu tiên bản tiếng Anh. Các thuật ngữ kỹ thuật, lệnh,
 > đường dẫn và tên file được giữ nguyên tiếng Anh.
 
-Monorepo Specpin (~4,620 LOC: 83 file TS, 17 file Go) hiện thực một lớp spec Git-native cho các web UI. Ba package (spec-schema, fingerprint-core, api-client), hai app (Go sidecar CLI, WXT browser extension), một demo.
+Monorepo Specpin (~4,620 LOC: 83 file TS, 17 file Go) triển khai một lớp spec Git-native cho các web UI. Ba package (spec-schema, fingerprint-core, api-client), hai app (Go sidecar CLI, WXT browser extension), một demo.
 
 ## Package Dependencies
 
@@ -53,7 +53,7 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 **Key files:**
 - `src/capture.ts` - `captureFingerprint(element)` (145 dòng). Trích xuất anchors (test-id, aria, id, data-spec-id), cssSelector, xpath, domPath, text, attrs, labels, position, framework hint.
 - `src/match.ts` - `matchElement(fingerprint, root)`. Exact anchors (1.0) -> unique cssSelector (0.7) -> hybrid scorer trên các hit css mơ hồ hoặc một tập candidate có giới hạn (`strategy:"scored"`), nếu không thì `needsReview`. Trả về `MatchResult` (thêm breakdown `signals` tùy chọn cho một scored match).
-- `src/score.ts` - hybrid weighted scorer: bảng `WEIGHTS`/`THRESHOLDS`, `signalScores`, `rankCandidates`, `pickBest` (biên độ + bỏ qua khi không có signal nội dung), `generateCandidates` (tập có giới hạn). Tầng thận trọng HIGH>=0.85 / MID 0.6-0.85(needsReview) / còn lại no-match.
+- `src/score.ts` - hybrid weighted scorer: bảng `WEIGHTS`/`THRESHOLDS`, `signalScores`, `rankCandidates`, `pickBest` (biên độ + không đưa ra kết quả khi không có signal nội dung), `generateCandidates` (tập có giới hạn). Tầng thận trọng HIGH>=0.85 / MID 0.6-0.85(needsReview) / còn lại no-match.
 - `src/selector.ts` - `buildCssSelector(element)` (98 dòng). Sinh selector tối ưu, ưu tiên class hơn nth-child khi unique.
 - `src/xpath.ts` - `buildXPath(element)` (38 dòng). Đường dẫn dự phòng khi CSS mơ hồ.
 - `src/detect-framework.ts` - `detectFramework()` (39 dòng). Heuristics cho React, Vue, Angular, Svelte.
@@ -97,7 +97,7 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 cmd/
   root.go       - cobra root command (33 lines)
   init.go       - `specpin init` scaffold manifest (62 lines)
-  serve.go      - `specpin serve` entrypoint (115 lines)
+  serve.go      - entrypoint `specpin serve`: --port/--host/--token, mặc định loopback + cảnh báo khi không phải loopback
   report.go     - `specpin report` kiểm tra freshness/stats/required của spec cho các CI gate (điều kiện --fail-on, output --json)
   generate.go   - stub: trỏ người dùng tới skill soạn spec bằng AI (không có LLM)
 skill/          - nguồn chuẩn của skill @specpin/cli (SKILL.md + references/) dạy
@@ -109,17 +109,17 @@ internal/
     schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views/Guides/Required` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
-    server.go   - HTTP handlers: CRUD + SSE hub + GET/PUT /views + GET/PUT /guides (370+ lines)
+    server.go   - HTTP handlers: CRUD + SSE hub (kèm heartbeat ~20s) + GET/PUT /views + GET/PUT /guides; ETag trên GET /specs + If-Match 409 khi ghi spec đã cũ (370+ lines)
     middleware.go - token auth + CORS (89 lines)
     hub.go      - SSE broadcast hub (102 lines)
   store/
-    store.go    - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON)
+    store.go    - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON; ghi được serialize qua sync.Mutex + optimistic concurrency bằng bundle ETag/If-Match)
   watch/
     watch.go    - fsnotify watcher, triggers SSE (87 lines)
 ```
 
 **Key flows:**
-- `serve`: tự chọn port rảnh (hoặc --port), in URL+token, bind 127.0.0.1, khởi động HTTP+SSE, watch `.specs/`.
+- `serve`: giải quyết token (--token / SPECPIN_TOKEN / random), tự chọn port rảnh (hoặc --port), bind `--host` (mặc định loopback; nếu không phải loopback thì in cảnh báo về việc lộ ra mạng + hướng dẫn dùng HTTPS-proxy), in URL+token, khởi động HTTP+SSE, watch `.specs/`. Cách dùng từ xa được mô tả trong run-guide ("Serve on a remote machine"): dùng HTTPS qua reverse proxy, còn binary Go giữ nguyên HTTP thuần.
 - `init`: tạo `.specs/manifest.json` với giá trị mặc định.
 - Middleware: mọi request cần `Authorization: Bearer <token>`. CORS chỉ chấp nhận origin `chrome-extension://`, `moz-extension://`, `safari-web-extension://`. Từ chối web origin.
 - Store: ghi giới hạn trong `.specs/`, path-traversal guard (fix review H1). File ops atomic (temp + rename). JSON pretty-printed (indent 2 space) cho Git diff sạch. `GET /views` trả về `.specs/views.json` hoặc default rỗng `{version:"1.0",hidden:[]}` khi không có; `PUT /views` validate rồi ghi. `GET /guides` / `PUT /guides` phản chiếu điều này cho `.specs/guides.json` (default rỗng `{version:"1.0",guides:[]}`); spec scanner bỏ qua `guides.json` (không phải `*.spec.json`).
@@ -168,7 +168,7 @@ src/
     resolve-guide.ts  - thuần: giải quyết step id của một guide -> các DOM element đã match (bỏ cái chưa giải quyết, giữ thứ tự) + thứ tự mặc định RT-H4
   renderers/
     registry.ts       - interface `SpecRenderer` + registry
-    tooltip.ts / sidebar.ts / modal.ts - ba display mode đã hiện thực (tooltip: pin + open-in-panel)
+    tooltip.ts / sidebar.ts / modal.ts - ba display mode đã triển khai (tooltip: pin + open-in-panel)
     launcher.ts       - pill nổi để mở lại, hiện khi một sidebar/modal đã ẩn thu gọn (host riêng theo mode, mở lại qua `onSetDismissed`)
   sources/
     registry.ts       - interface `SpecSource` + selection
@@ -178,12 +178,13 @@ src/
     shadow.ts / html.ts        - cô lập Shadow DOM + safe HTML escaping
     theme.ts                   - Theme = "system"|"light"|"dark", applyTheme(el, theme), applyStoredTheme(), watchThemeChanges()
     messaging.ts               - protocol message được type (bao gồm OPEN_SPEC_IN_PANEL, SET_PERSONAL_VISIBILITY, SAVE_TEAM_VIEWS, SET_THEME, SET_UI_LOCALE, broadcastToTabs; tạo nội dung cục bộ: CREATE_LOCAL_PROJECT/RENAME_LOCAL_PROJECT (privileged), GET_WRITE_TARGETS, GET_EXPORT_BUNDLES (privileged); guides: GET_GUIDES_FOR_ORIGIN, GET_TEAM_GUIDES, START_GUIDE, SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE/DELETE_GUIDE (privileged))
-    guide-editor.ts (+ .css)   - modal biên soạn dùng chung: name + description + include/sắp thứ tự các bước + bộ chọn Save-to (sidecar/local/personal), định tuyến SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE
+    guide-editor.ts (+ .css)   - modal biên soạn dùng chung: name + description + include/sắp thứ tự các bước + bộ chọn Save-to (sidecar/local/personal), định tuyến SAVE_TEAM_GUIDE/SAVE_PERSONAL_GUIDE; lưu bản chỉnh sửa đang dở vào storage.session đánh key theo origin+guide-id (xóa khi đóng/lưu)
+    draft-store.ts             - load/save/clearDraft trên storage.session (đặt namespace "specpin:draft:"); khôi phục input popup chưa gửi qua một lần blur-dismiss, tự xóa khi trình duyệt khởi động lại; no-op êm nếu storage.session không có
     guide-section.ts (+ .css)  - danh sách khởi chạy guide dùng chung (tour mặc định + Start/Edit/Delete per-guide + New) cho popup + side panel
     connection-types.ts        - Connection / ConnectionStatus / TaggedSpec / TaggedGuide không phụ thuộc browser; MANUAL_CONNECTION_ID giờ là id bare legacy/dành riêng
     local-id.ts                - prefix `manual:<batchId>` + predicate isLocalConnectionId / localBatchId / localConnId (thay cho các phép so sánh bằng tag bare)
     local-url.ts               - guard URL sidecar chỉ-localhost được tách ra (dùng chung bởi Options + add-project; guard SSRF/phishing)
-    add-project.ts (+ .css)    - form inline "+ New project" dùng chung (Local qua CREATE_LOCAL_PROJECT, Sidecar qua ADD_CONNECTION); mount bởi popup + side panel
+    add-project.ts (+ .css)    - form inline "+ New project" dùng chung (Local qua CREATE_LOCAL_PROJECT, Sidecar qua ADD_CONNECTION); mount bởi popup + side panel; lưu input đang dở (bỏ token, RT-SA6) vào storage.session theo từng surface để popup bị đóng khôi phục lại được
     export-bundle.ts           - bundleToFiles(batch): dựng lại manifest.json + *.spec.json mỗi group (fileGroups, $schema, bỏ _file, tên file chống zip-slip)
     zip-store.ts               - bộ ghi zip STORE (không nén) không phụ thuộc + crc32
     download.ts / export-download.ts - tải về qua Blob object-URL + glue zip-và-tải (popup/panel/Options)
@@ -194,7 +195,7 @@ src/
     surface-states.css         - các trạng thái toàn bề mặt dùng chung cho popup + side panel: empty state (không có dự án -> CTA tạo dự án; hai bước có hướng dẫn ở panel) + paused state (Specpin off -> panel "N spec đang ẩn"). body.no-project / body.paused thu gọn phần chrome thao tác spec bằng CSS
     provenance.ts              - render + logic provenance dùng chung cho cả 4 reader surface: các helper HTML-string (status badge, links qua classifyHref, "linked tests" mang tính khai báo, reviewed+stale) + resolveStalenessThreshold (chặn khoảng [1,3650], mặc định 90) + formatRelativeTime (Intl.RelativeTimeFormat) + PROVENANCE_CSS. provenanceSectionHtml(spec, opts) trả về "" cho một spec không có provenance (render legacy giống hệt từng byte)
     surface-data.ts            - lọc spec dùng chung: specMatchesQuery() (predicate title/file/tags/description); pageHealth() (bucket exact/scored/fuzzy/needsReview/orphaned)
-    drift-corpus.ts            - corpus khớp cục bộ (opt-in, mặc định TẮT): ring-buffer storage.local (cap 500), entry supervised + passive, che free-text lúc ghi, export/clear JSON. Nạp qua RECORD_DRIFT / RECORD_DRIFT_PASSIVE không đặc quyền (background kiểm cổng opt-in)
+    drift-corpus.ts            - corpus khớp cục bộ (opt-in, mặc định TẮT): ring-buffer storage.local (cap 500), entry supervised + passive, lược bỏ free-text lúc ghi, export/clear JSON. Nạp qua RECORD_DRIFT / RECORD_DRIFT_PASSIVE không đặc quyền (background kiểm cổng opt-in)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
     locales.ts                 - SUPPORTED=["en","vi"], UiLocale, resolveUiLocale (stored -> browser UI -> "en")
@@ -208,9 +209,9 @@ src/
 - Capture: picker highlight các element; khi click, form soạn title/description/rules per locale và chọn target project qua `GET_WRITE_TARGETS` (sidecar + local, gắn nhãn theo loại; mục tiêu duy nhất tự chọn; vô hiệu khi không cái nào phục vụ page). Khi save, validate rồi định tuyến theo connectionId: mục tiêu `manual:<batchId>` ghi vào `storage.local` (giới hạn origin + re-validate ở background), còn lại POST tới sidecar và reload.
 - Xoá spec: một spec ghi được (sidecar hoặc cục bộ) có thể xoá từ tooltip đã ghim (`pin-delete`) hoặc spec card trong side panel (`spec-delete`) sau một hộp xác nhận nguy hiểm; `DELETE_SPEC` không đặc quyền + định tuyến theo origin (cùng mô hình tin cậy với `UPDATE_SPEC`), đi tới `registry.deleteSpec` (sidecar) hoặc `deleteLocalSpec` -> `removeLocalSpecById` (cục bộ, có kiểm tra `batchServesOrigin`); Delete ở side panel uỷ thác cho trang qua `DELETE_SPEC_HERE`.
 - Tạo nội dung cục bộ: manual spec sửa được tại chỗ (tooltip + side-panel card, tái dùng `CaptureForm`); `+ New project` (popup/panel) tạo một dự án cục bộ hoặc kết nối sidecar; Export zip theo group per-batch (popup/panel + Options) dựng lại shape `.specs/` trên đĩa để round-trip qua re-import / `specpin serve`.
-- Renderers: hiện thực `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); đọc localized text qua `localizeSpec`, và caption project khi nhiều hơn một đóng góp cho page. Tooltip renderer: click badge để pin tip mở (một lúc một cái), nút đóng, action "Open in side panel" highlight card side-panel tương ứng (best-effort auto-open trên Chrome, Firefox không thể mở sidebar lập trình).
+- Renderers: triển khai `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); đọc localized text qua `localizeSpec`, và caption project khi nhiều hơn một đóng góp cho page. Tooltip renderer: click badge để pin tip mở (một lúc một cái), nút đóng, action "Open in side panel" highlight card side-panel tương ứng (best-effort auto-open trên Chrome, Firefox không thể mở sidebar lập trình).
 - Sources: pluggable. Đã ship: `SidecarSource` + một nguồn cục bộ (Manual) ghi được (import, tạo trong extension, capture, sửa, export zip theo group). FileSystem Access hoãn lại.
-- Visibility: `isVisible(spec, url, state)` gộp team defaults từ `.specs/views.json` (qua `GET /views`) và personal overrides từ `chrome.storage.sync`. `url:` page gate thắng tất cả; `spec:<id>` force-show là hard rescue. Filter UI (popup + side panel) cung cấp facet checklists (Tags / Files / This page) + per-spec eye toggle; Reset xóa personal overrides. Options page soạn team defaults (ghi qua `PUT /views`).
+- Visibility: `isVisible(spec, url, state)` gộp team defaults từ `.specs/views.json` (qua `GET /views`) và personal overrides từ `chrome.storage.sync`. `url:` page gate được ưu tiên hơn tất cả; `spec:<id>` force-show là hard rescue. Filter UI (popup + side panel) cung cấp facet checklists (Tags / Files / This page) + per-spec eye toggle; Reset xóa personal overrides. Options page soạn team defaults (ghi qua `PUT /views`).
 
 **Build:**
 - `pnpm build` - WXT build cho chrome-mv3 -> `.output/chrome-mv3/`.

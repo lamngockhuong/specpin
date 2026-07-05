@@ -459,7 +459,7 @@ chore(deps): bump wxt to 0.20
 
 ## Unresolved Conventions (Deferred)
 
-- **Hybrid fingerprint scorer tuning**: WEIGHTS table in `packages/fingerprint-core/src/score.ts` is the single tuning point (signal weights, thresholds). v1 scorer shipped and functional, but weights require dogfood tuning from production refactor data. To tune, export a drift corpus from the extension Options page and replay it offline with `pnpm --filter @specpin/fingerprint-core tune [corpus.json]` (`scripts/tune-weights.ts`): it reports per-signal survival across re-pin corrections, the DELTA-gate abstain rate on passive candidate sets, and a coordinate-ascent weight suggestion. Only re-pins are ground truth (passive labels are tentative), so the suggestion is a starting hypothesis to validate against `score.test.ts`, not an auto-applied answer.
+- **Hybrid fingerprint scorer tuning**: WEIGHTS table in `packages/fingerprint-core/src/score.ts` is the single tuning point (signal weights, thresholds). v1 scorer shipped and functional, but weights require dogfood tuning from production refactor data. The offline tuner (`pnpm --filter @specpin/fingerprint-core tune [corpus.json]`, `scripts/tune-weights.ts`) replays an exported drift corpus and suggests weights; see the step-by-step contributor guide in [scorer-tuning.md](./scorer-tuning.md).
 - **AI-assisted capture prompt format**: no LLM integration in MVP, defer to 1.1.
 - **Safari packaging requirements**: awaiting Apple MV3 parity clarity.
 

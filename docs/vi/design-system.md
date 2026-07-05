@@ -9,7 +9,7 @@ của browser extension, đồng thời là single source of truth cho màu sắ
 chúng. File nguồn nằm trong `apps/extension/designs/`. Các file `.pen` chỉ là design
 reference (không phải code được ship), nhưng `design-tokens.json` giờ cũng điều khiển
 cả UI được ship: nó sinh ra lớp CSS-variable mà các surface đang chạy trong
-`apps/extension/src` tiêu thụ (xem mục "Tokens trong UI được ship" bên dưới), nhờ vậy
+`apps/extension/src` sử dụng (xem mục "Tokens trong UI được ship" bên dưới), nhờ vậy
 mockup và code dùng chung một palette.
 
 Aesthetic: "branded teal" - teal accent `#2DD4BF`, một radial top-glow gradient trên

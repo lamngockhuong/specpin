@@ -51,10 +51,10 @@ bearer token on `serve`.
    an optional opt-in, only when the project wants it.
    - Optional provenance fields the agent may add (all backward-compatible):
      `links` (ticket/doc/PR URLs, `http`/`https` only), `verifiedBy` (repo-relative
-     test paths — **declarative**: `specpin validate` checks they *exist*, it does
+     test paths, **declarative**: `specpin validate` checks they *exist*, it does
      not run them or imply they pass, so only list real files), and `status`
      (`draft`/`approved`/`deprecated`; omit for neutral). Do **not** author
-     `meta.reviewedAt`/`reviewedBy` — those are stamped by a human via the
+     `meta.reviewedAt`/`reviewedBy`: those are stamped by a human via the
      extension's Mark-reviewed action, and `reviewedBy` is a non-PII token
      committed to Git/exports (never an email/identity).
 3. **Register**: add the new file to `manifest.json` `specFiles[]`.
