@@ -27,7 +27,7 @@ const vi: Record<keyof Messages, string> = {
   "common.cancel": "Hủy",
   "common.ok": "OK",
   "common.close": "Đóng",
-  "common.hidePanel": "Ẩn khung bên",
+  "common.hidePanel": "Ẩn thanh bên",
   "common.reopenPanel": "Hiện spec Specpin",
   "common.and": "và",
   "common.clickToHighlight": "Nhấp để làm nổi bật trên trang",
@@ -69,7 +69,7 @@ const vi: Record<keyof Messages, string> = {
   "common.scopeAll": "Tất cả",
   "common.scopeAria": "Hiển thị spec của trang này hoặc tất cả spec",
   "common.markerTeam": "nhóm",
-  "common.markerTeamTitle": "Bị ẩn bởi mặc định của nhóm",
+  "common.markerTeamTitle": "Ẩn theo mặc định của nhóm",
   "common.markerYou": "bạn",
   "common.markerYouTitle": "Tùy chỉnh cá nhân của bạn",
   "common.viewChangelog": "Xem changelog",
@@ -77,7 +77,7 @@ const vi: Record<keyof Messages, string> = {
   // Popup-only.
   "popup.openSidepanel": "Mở dạng thanh bên ⇥",
   "popup.newProject": "Dự án mới",
-  "popup.exportLocal": "Xuất specs cục bộ",
+  "popup.exportLocal": "Xuất spec cục bộ",
   "popup.exportPickProject": "Xuất dự án nào?",
 
   // Shared "+ New project" inline form (popup + side panel).
@@ -237,8 +237,8 @@ const vi: Record<keyof Messages, string> = {
   "options.testAddProject": "Kiểm tra & thêm dự án",
   "options.appearance": "Giao diện",
   "options.appearanceLead":
-    "Giao diện của chính Specpin trông như thế nào. Áp dụng cho mọi bề mặt Specpin (popup, thanh bên, cài đặt, và tooltip/thanh bên/hộp thoại trong trang).",
-  "options.theme": "Chủ đề",
+    "Giao diện của chính Specpin trông như thế nào. Áp dụng cho mọi giao diện của Specpin (popup, thanh bên, trang cài đặt và tooltip/thanh bên/hộp thoại hiển thị trong trang).",
+  "options.theme": "Chế độ hiển thị",
   "options.badgeNumberingLabel": "Đánh số badge spec (hiện vị trí thay cho chữ S)",
   "options.themeSystem": "Theo hệ thống",
   "options.themeLight": "Sáng",
@@ -326,9 +326,9 @@ const vi: Record<keyof Messages, string> = {
   "options.allCleared": "Đã xóa tất cả spec thủ công.",
 
   // Matching corpus card (local, opt-in) + confirm loop.
-  "options.corpusTitle": "Kho khớp (cục bộ, tự chọn)",
+  "options.corpusTitle": "Kho dữ liệu khớp (cục bộ, tự chọn)",
   "options.corpusLead":
-    "Thu thập dữ liệu khớp cục bộ để giúp tinh chỉnh việc khớp phần tử của Specpin. Mặc định tắt, chỉ lưu trên thiết bị này, không bao giờ tải lên; văn bản nhạy cảm (email, chuỗi số dài) được che giấu.",
+    "Thu thập dữ liệu khớp cục bộ để giúp tinh chỉnh việc khớp phần tử của Specpin. Mặc định tắt, chỉ lưu trên thiết bị này, không bao giờ tải lên; văn bản nhạy cảm (email, chuỗi số dài) được che.",
   "options.corpusOptIn": "Thu thập dữ liệu sai lệch khi khớp trên thiết bị này",
   "options.corpusCount": "Đã lưu {count} mục.",
   "options.corpusExport": "Xuất kho (JSON)",
@@ -341,7 +341,7 @@ const vi: Record<keyof Messages, string> = {
 
   // Support & Feedback card.
   "options.supportFeedback": "Hỗ trợ & Phản hồi",
-  "options.supportLead": "Gặp lỗi hoặc có câu hỏi? Liên hệ dự án trên GitHub.",
+  "options.supportLead": "Nếu bạn gặp lỗi hoặc có câu hỏi, hãy liên hệ dự án trên GitHub.",
   "options.reportIssue": "Báo lỗi",
   "options.askQuestion": "Đặt câu hỏi",
   "options.changelog": "Có gì mới",

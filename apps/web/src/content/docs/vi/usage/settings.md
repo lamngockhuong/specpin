@@ -7,17 +7,17 @@ Mở trang Options từ popup hoặc side panel (nhấp vào biểu tượng bá
 
 ## Giao diện
 
-Các cài đặt này kiểm soát giao diện của chính Specpin. Chúng áp dụng cho mọi bề mặt Specpin (popup, side panel, options và tooltip/thanh bên/hộp thoại trong trang).
+Các cài đặt này kiểm soát giao diện của chính Specpin. Chúng áp dụng cho mọi giao diện của Specpin (popup, side panel, options và tooltip/thanh bên/hộp thoại hiển thị trong trang).
 
-### Chủ đề
+### Chế độ hiển thị
 
 Chọn cách Specpin hiển thị:
 
 - **Theo hệ thống**: Theo tùy chọn sáng/tối của hệ điều hành của bạn.
-- **Sáng**: Luôn sử dụng chủ đề sáng.
-- **Tối**: Luôn sử dụng chủ đề tối.
+- **Sáng**: Luôn dùng chế độ sáng.
+- **Tối**: Luôn dùng chế độ tối.
 
-Chủ đề thay đổi ngay lập tức trên tất cả các bề mặt Specpin đang mở.
+Chế độ hiển thị thay đổi ngay lập tức trên mọi giao diện Specpin đang mở.
 
 ### Đánh số badge
 
