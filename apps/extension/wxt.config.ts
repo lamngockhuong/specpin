@@ -83,5 +83,17 @@ export default defineConfig({
     ...(manifestVersion === 3
       ? { action: { default_icon: iconSet } }
       : { browser_action: { default_icon: iconSet } }),
+    // The bundled Inter woff2 (public/fonts/) must be web-accessible so the
+    // content script can register it on the host document for the shadow-DOM
+    // renderers (see shared/inter-font.ts). MV3 uses the object form with match
+    // patterns; MV2 (Firefox) uses a flat resource list. The extension's own
+    // pages load the font directly and do not need this entry.
+    ...(manifestVersion === 3
+      ? {
+          web_accessible_resources: [
+            { resources: ["fonts/*"], matches: ["http://*/*", "https://*/*"] },
+          ],
+        }
+      : { web_accessible_resources: ["fonts/*"] }),
   }),
 });

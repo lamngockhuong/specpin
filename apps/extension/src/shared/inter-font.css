@@ -1,0 +1,20 @@
+/* Bundled Inter web font for the extension PAGES (popup, options, side panel).
+ *
+ * design-tokens.json names `Inter` as the UI face, but the web font was not
+ * shipped, so `var(--sp-font-ui)` fell back to system-ui. This bundles the real
+ * face: a single latin variable woff2 (weights 100-900) in public/fonts/, which
+ * WXT copies to the extension root, so the root-absolute path resolves to
+ * chrome-extension://<id>/fonts/... on every extension page.
+ *
+ * The family name matches the unquoted `Inter` in the token stack (CSS matches
+ * family names regardless of quoting), so no token change is needed. Shadow-DOM
+ * renderers register the same face document-side via the CSS Font Loading API
+ * (see shared/inter-font.ts); @font-face inside a shadow root is not honored by
+ * Chromium. Both paths degrade to system-ui if the font fails to load. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin-variable.woff2") format("woff2");
+}

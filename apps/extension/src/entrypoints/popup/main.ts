@@ -11,6 +11,7 @@ import { chromeApi } from "../../shared/chrome-api.js";
 import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
+import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
 import "../../shared/switch.css";

@@ -38,8 +38,10 @@ const kebab = (key) =>
     .toLowerCase();
 
 // Shared (theme-agnostic) declarations, emitted once in :root. Font stacks list
-// the canonical face first, then resilient fallbacks; web fonts are not bundled
-// yet (tracked as a 1.1 follow-up), so these degrade gracefully.
+// the canonical face first, then resilient fallbacks. The Inter UI face is now
+// bundled (public/fonts/ + @font-face in shared/inter-font.css for pages and a
+// document-side FontFace in shared/inter-font.ts for shadow-DOM renderers); the
+// system-ui fallback still covers surfaces where the bundled font fails to load.
 const sharedDecls = [
   `  --sp-accent: ${tokens.brand.base};`,
   `  --sp-accent-hover: ${tokens.brand.hover};`,
