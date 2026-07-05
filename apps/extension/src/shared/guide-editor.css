@@ -20,12 +20,12 @@
   border: 1px solid var(--sp-border);
   border-radius: var(--sp-radius-card);
   padding: 20px;
-  font: 13px / 1.5 var(--sp-font-ui);
+  font: 15px / 1.5 var(--sp-font-ui);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
 }
 .ge-title {
   margin: 0 0 14px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
 }
 .ge-field {
@@ -43,7 +43,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
-  font: 13px / 1.4 var(--sp-font-ui);
+  font: 15px / 1.4 var(--sp-font-ui);
   color: var(--sp-text);
   background: var(--sp-elevated);
   border: 1px solid var(--sp-border);
@@ -63,7 +63,7 @@
 }
 .ge-hint {
   color: var(--sp-text-3);
-  font-size: 12px;
+  font-size: 14px;
   margin-bottom: 8px;
 }
 .ge-steps {
@@ -103,7 +103,7 @@
 .ge-btn,
 .ge-icon {
   cursor: pointer;
-  font: 13px / 1 var(--sp-font-ui);
+  font: 15px / 1 var(--sp-font-ui);
   color: var(--sp-text);
   background: var(--sp-control);
   border: 1px solid var(--sp-border);
@@ -118,7 +118,7 @@
   height: 26px;
   padding: 0;
   line-height: 1;
-  font-size: 13px;
+  font-size: 15px;
 }
 .ge-add-btn:hover,
 .ge-btn:hover,
@@ -151,7 +151,7 @@
 }
 .ge-result {
   margin-top: 10px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .ge-result.err {
   color: var(--sp-error-text);

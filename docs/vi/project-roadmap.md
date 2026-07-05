@@ -128,7 +128,7 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access và exten
 - Bản tóm tắt thay đổi: popup + side panel hiển thị "N thay đổi kể từ lần xem trước" kèm danh sách tiêu đề spec mới/đã sửa, với nút "Đánh dấu đã xem". Bản tóm tắt được tính từ snapshot hash nội dung theo từng dự án trong `storage.local` (title + description + business rules trên mọi locale). Lần xem đầu tiên hoặc dự án vừa kết nối được seed âm thầm (không gây nhiễu "tất cả đều mới").
 
 **Lõi độ tin cậy matching (hybrid scorer + drift corpus) đã giao (2026-07-02)** trên nhánh `feat/matching-reliability-core`:
-- Hybrid weighted scorer trong `packages/fingerprint-core/src/score.ts`: khi exact + unique-css thất bại, chấm điểm các hit của selector mơ hồ hoặc một tập candidate có giới hạn từ DOM sống theo text/labels/attrs/tag/cấu trúc/vị trí (trọng số chuẩn hóa trên các signal mà fingerprint mang theo). Các tầng thận trọng — HIGH (≥0.85) render tự tin, MID (0.6-0.85) render + `needsReview`, dưới đó là no-match — với biên độ top-2 (δ 0.1), không bao giờ ghi đè exact/css, và bỏ qua khi không có signal nội dung định danh. Thêm `strategy:"scored"` + breakdown `signals` tùy chọn vào `MatchResult` (bổ sung; caller hiện có không bị ảnh hưởng). Tập candidate có giới hạn (200) kèm số `considered` báo cáo; độ trễ được perf-test.
+- Hybrid weighted scorer trong `packages/fingerprint-core/src/score.ts`: khi exact + unique-css thất bại, chấm điểm các hit của selector mơ hồ hoặc một tập candidate có giới hạn từ DOM sống theo text/labels/attrs/tag/cấu trúc/vị trí (trọng số chuẩn hóa trên các signal mà fingerprint mang theo). Các tầng thận trọng (HIGH (≥0.85) render tự tin, MID (0.6-0.85) render + `needsReview`, dưới đó là no-match) với biên độ top-2 (δ 0.1), không bao giờ ghi đè exact/css, và bỏ qua khi không có signal nội dung định danh. Thêm `strategy:"scored"` + breakdown `signals` tùy chọn vào `MatchResult` (bổ sung; caller hiện có không bị ảnh hưởng). Tập candidate có giới hạn (200) kèm số `considered` báo cáo; độ trễ được perf-test.
 - Bề mặt tầng scored: badge **Scored match** riêng biệt (độ tin cậy + gợi ý "vì sao match" theo signal nổi trội), MID đọc như kiểu fuzzy cảnh báo; tóm tắt sức khỏe trang có thêm bucket `scored`; pill trên thẻ side-panel. Chuỗi EN+VI+JA.
 - Drift corpus cục bộ (`apps/extension/src/shared/drift-corpus.ts`, opt-in mặc định TẮT, ring-buffer `storage.local` giới hạn 500): cặp re-pin supervised `(cũ→mới)` + một xác nhận "Correct", và snapshot passive các candidate fingerprint cho spec mồ côi/MID (nhãn `chosenByScorer` tạm thời). Chỉ fingerprint, `textContent` được che (email + chuỗi số dài) lúc ghi; cửa sổ dedupe theo `(project,specId,pageUrl)` cho passive. Thẻ Options: toggle opt-in, số mục trực tiếp, export JSON (tải về cục bộ), xóa (kèm xác nhận). Message mới không đặc quyền `RECORD_DRIFT` / `RECORD_DRIFT_PASSIVE` (khởi từ content, background kiểm cổng opt-in). Không đổi schema/sidecar/`.specs/`.
 
@@ -175,7 +175,7 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access và exten
 - Lazy-load renderer (code-split tooltip/sidebar/modal, nạp khi dùng lần đầu)
 
 **Đánh bóng UX:**
-- Đóng gói web font (Inter, JetBrains Mono) dưới dạng asset `@font-face`; design system của UI được ship hiện tham chiếu chúng qua các fallback stack (`system-ui` / `ui-monospace`) nên không đảm bảo có typography theo branding khi máy thiếu font
+- Đóng gói font code JetBrains Mono dưới dạng asset `@font-face`; nó vẫn fallback về `ui-monospace` khi máy thiếu font. (Font UI Inter - **đã giao**: latin variable woff2 trong `public/fonts/`, nạp trên các trang qua `shared/inter-font.css` và đăng ký cấp document cho renderer shadow-DOM qua `shared/inter-font.ts`.)
 - Cải thiện trực quan cho chế độ capture (chất lượng highlight, style form)
 - UI tùy chỉnh phím tắt
 - Cài đặt nâng cao cho trang options của extension
@@ -284,7 +284,7 @@ Dự kiến sau khi release public:
 
 | Ngày | Quyết định | Lý do |
 |------|----------|-------|
-| 2026-07-03 | Bỏ renderer overlay + inline-badge (giữ giá trị enum ở dạng reserved cho forward-compat) | Overlay trùng với modal đã ship + spotlight của Guide mode; inline-badge trùng với badge element của tooltip — không có giá trị riêng so với thứ đang ship |
+| 2026-07-03 | Bỏ renderer overlay + inline-badge (giữ giá trị enum ở dạng reserved cho forward-compat) | Overlay trùng với modal đã ship + spotlight của Guide mode; inline-badge trùng với badge element của tooltip, không có giá trị riêng so với thứ đang ship |
 | 2026-06-25 | Thu hẹp phạm vi bản phát hành đầu (hoãn nguồn FS/Manual, modal/overlay/badge, hybrid scorer, Safari, AI) | Giao end-to-end demo được nhanh hơn, kiểm chứng giá trị cốt lõi trước khi đánh bóng |
 | 2026-06-25 | Ngôn ngữ CLI: Go (không phải Node) | Một binary tĩnh duy nhất, không phụ thuộc runtime, phù hợp cho localhost server hơn Bun/Deno |
 | 2026-06-25 | Fingerprint: exact anchors + cssSelector trước, weighted scorer hoãn lại | Bản phát hành đầu đủ cho demo, hybrid scorer cần corpus thực tế để tinh chỉnh |

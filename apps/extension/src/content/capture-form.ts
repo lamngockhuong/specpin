@@ -12,7 +12,7 @@ import { t } from "../i18n/index.js";
 import { copyText } from "../shared/clipboard.js";
 import { dataSpecIdSnippet } from "../shared/data-spec-id.js";
 import { anyDialogOpen, promptDialog } from "../shared/dialog.js";
-import { escapeAttr, escapeHtml } from "../shared/html.js";
+import { appendTrustedHtml, escapeAttr, escapeHtml, setTrustedHtml } from "../shared/html.js";
 import { insertLink, prefixLines, toggleWrap } from "../shared/markdown-input.js";
 import type { WriteTarget } from "../shared/messaging.js";
 import { createShadowHost } from "../shared/shadow.js";
@@ -236,15 +236,15 @@ ${SHADOW_PREAMBLE}
   border: 1px solid var(--sp-border);
   border-radius: var(--sp-radius-card);
   padding: 28px;
-  font: 13px/1.5 var(--sp-font-ui);
+  font: 15px/1.5 var(--sp-font-ui);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
 }
-.card h3 { margin: 0 0 18px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.card h3 { margin: 0 0 18px; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
 label { display: block; font-weight: 600; margin: 16px 0 6px; color: var(--sp-text); }
-.hint { color: var(--sp-text-3); font-weight: 400; font-size: 11px; }
+.hint { color: var(--sp-text-3); font-weight: 400; font-size: 13px; }
 input, textarea, select {
   width: 100%; padding: 10px 12px;
-  font: 13px/1.4 var(--sp-font-ui);
+  font: 15px/1.4 var(--sp-font-ui);
   color: var(--sp-text);
   background: var(--sp-elevated);
   border: 1px solid var(--sp-border);
@@ -261,7 +261,7 @@ textarea { min-height: 64px; resize: vertical; }
 .lang-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 .lang-tab {
   flex: 0 0 auto; width: auto; padding: 6px 12px;
-  font: 600 12px/1 var(--sp-font-ui);
+  font: 600 14px/1 var(--sp-font-ui);
   color: var(--sp-text-2);
   background: var(--sp-elevated);
   border: 1px solid var(--sp-border);
@@ -277,7 +277,7 @@ textarea { min-height: 64px; resize: vertical; }
 .md-toolbar { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 4px; }
 .md-btn {
   flex: 0 0 auto; width: auto; min-width: 30px; padding: 5px 8px;
-  font: 600 12px/1 var(--sp-font-ui);
+  font: 600 14px/1 var(--sp-font-ui);
   color: var(--sp-text-2);
   background: var(--sp-elevated);
   border: 1px solid var(--sp-border);
@@ -301,7 +301,7 @@ textarea { min-height: 64px; resize: vertical; }
 .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 button {
   padding: 10px 18px;
-  font: 600 13px/1 var(--sp-font-ui);
+  font: 600 15px/1 var(--sp-font-ui);
   border: 1px solid var(--sp-border);
   border-radius: var(--sp-radius-control);
   background: var(--sp-control); color: var(--sp-text);
@@ -325,7 +325,7 @@ button.primary:hover { background: var(--sp-accent-hover); border-color: var(--s
 .errors ul { margin: 4px 0 0; padding-left: 16px; }
 #sp-relink { margin-top: 8px; width: 100%; }
 .relink-note {
-  display: none; margin-top: 8px; font-size: 11px; color: var(--sp-text-3);
+  display: none; margin-top: 8px; font-size: 13px; color: var(--sp-text-3);
 }
 .relink-note.show { display: block; }
 .weak-hint {
@@ -336,11 +336,11 @@ button.primary:hover { background: var(--sp-accent-hover); border-color: var(--s
   color: var(--sp-text-2);
 }
 .weak-hint[hidden] { display: none; }
-.weak-hint strong { display: block; color: var(--sp-warning); font-size: 12px; }
-.weak-hint p { margin: 6px 0; font-size: 12px; }
+.weak-hint strong { display: block; color: var(--sp-warning); font-size: 14px; }
+.weak-hint p { margin: 6px 0; font-size: 14px; }
 .weak-hint .weak-snippet {
   display: block; margin: 6px 0; padding: 8px 10px;
-  font: 500 12px/1.4 var(--sp-font-mono);
+  font: 500 14px/1.4 var(--sp-font-mono);
   color: var(--sp-text); background: var(--sp-elevated);
   border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
   word-break: break-all;
@@ -383,10 +383,13 @@ export class CaptureForm {
     let current = options.defaultLocale || locales[0] || "en";
 
     const targets = options.targets ?? [];
-    wrap.innerHTML = this.template(options.defaultFile, locales, current, targets, {
-      editing,
-      relinkable: editing && !!options.onRelink,
-    });
+    setTrustedHtml(
+      wrap,
+      this.template(options.defaultFile, locales, current, targets, {
+        editing,
+        relinkable: editing && !!options.onRelink,
+      }),
+    );
     shadow.appendChild(wrap);
     this.host = host;
 
@@ -405,7 +408,7 @@ export class CaptureForm {
     // Links sub-form: "Add link" appends an empty row; a delegated handler removes
     // a row via its × button. The rows are the source of truth read at save.
     q<HTMLButtonElement>("#sp-add-link").addEventListener("click", () => {
-      linksBox.insertAdjacentHTML("beforeend", linkRowHtml());
+      appendTrustedHtml(linksBox, linkRowHtml());
     });
     linksBox.addEventListener("click", (e) => {
       (e.target as HTMLElement).closest(".link-remove")?.closest(".link-row")?.remove();
@@ -426,7 +429,7 @@ export class CaptureForm {
         "\n",
       );
       for (const link of options.initial.links ?? [])
-        linksBox.insertAdjacentHTML("beforeend", linkRowHtml(link.label, link.url));
+        appendTrustedHtml(linksBox, linkRowHtml(link.label, link.url));
       // Mark-reviewed prefill: the spec's existing reviewer, else the non-PII
       // createdBy token — never a resolved user identity/email.
       const reviewedByEl = q<HTMLInputElement>("#sp-reviewed-by");
@@ -826,7 +829,7 @@ export class CaptureForm {
   private showErrors(box: HTMLElement, messages: string[]): void {
     const ul = box.querySelector("ul");
     if (!ul) return;
-    ul.innerHTML = messages.map((m) => `<li>${escapeHtml(m)}</li>`).join("");
+    setTrustedHtml(ul, messages.map((m) => `<li>${escapeHtml(m)}</li>`).join(""));
     box.classList.add("show");
   }
 

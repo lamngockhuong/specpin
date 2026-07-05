@@ -16,7 +16,7 @@
   margin-bottom: 6px;
 }
 .guides-title {
-  font: 600 11px / 1 var(--sp-font-mono);
+  font: 600 13px / 1 var(--sp-font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--sp-text-3);
@@ -29,7 +29,7 @@
   padding: 8px 10px;
   margin-bottom: 6px;
   cursor: pointer;
-  font: 600 13px / 1 var(--sp-font-ui);
+  font: 600 15px / 1 var(--sp-font-ui);
   color: var(--sp-text);
   background: var(--sp-control);
   border: 1px solid var(--sp-border);
@@ -63,7 +63,7 @@
   flex: none;
   cursor: pointer;
   padding: 5px 10px;
-  font: 13px / 1 var(--sp-font-ui);
+  font: 15px / 1 var(--sp-font-ui);
   color: var(--sp-text);
   background: var(--sp-control);
   border: 1px solid var(--sp-border);

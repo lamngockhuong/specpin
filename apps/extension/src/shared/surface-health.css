@@ -8,7 +8,7 @@
 }
 .health-line {
   color: var(--sp-text-2);
-  font: 500 12px / 1.4 var(--sp-font-ui);
+  font: 500 14px / 1.4 var(--sp-font-ui);
 }
 
 /* Fragile-spec list: a collapsible group (`<details class="filter-group scan">`,
@@ -16,7 +16,7 @@
    The group's margin + summary styling come from the shared `.filter-group`
    rules; only the list body sizing and row styling are scan-specific. */
 .scan {
-  font-size: 12px;
+  font-size: 14px;
 }
 #scan-results {
   margin-top: 4px;
@@ -33,7 +33,7 @@
   display: block;
   margin: 4px 0;
   padding: 6px 8px;
-  font: 500 11px / 1.4 var(--sp-font-mono);
+  font: 500 13px / 1.4 var(--sp-font-mono);
   color: var(--sp-text-2);
   background: var(--sp-control);
   border: 1px solid var(--sp-border);
@@ -41,5 +41,5 @@
   word-break: break-all;
 }
 .scan-copy {
-  font-size: 11px;
+  font-size: 13px;
 }

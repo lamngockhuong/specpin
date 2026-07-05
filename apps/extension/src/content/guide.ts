@@ -1,6 +1,6 @@
 import { t } from "../i18n/index.js";
 import { MARKDOWN_BODY_CSS, rulesListHtml } from "../renderers/renderer.js";
-import { escapeHtml } from "../shared/html.js";
+import { escapeHtml, setTrustedHtml } from "../shared/html.js";
 import { renderMarkdownBlock } from "../shared/markdown.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
@@ -38,17 +38,17 @@ ${SHADOW_PREAMBLE}
   position: fixed; z-index: 2147483647; pointer-events: auto;
   width: min(${POPOVER_WIDTH}px, calc(100vw - 24px));
   background: var(--sp-surface); color: var(--sp-text);
-  font: 13px/1.5 var(--sp-font-ui);
+  font: 15px/1.5 var(--sp-font-ui);
   border: 1px solid var(--sp-border); border-radius: var(--sp-radius-card);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
   padding: 16px;
 }
 .eyebrow {
-  font: 600 10px/1 var(--sp-font-mono); letter-spacing: 0.14em;
+  font: 600 12px/1 var(--sp-font-mono); letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--sp-text-3);
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
 }
-.title { margin: 8px 0 0; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.title { margin: 8px 0 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
 .d { color: var(--sp-text-2); margin-top: 6px; }
 .d:empty { display: none; }
 .rules { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
@@ -56,9 +56,9 @@ ${SHADOW_PREAMBLE}
 .miss { color: var(--sp-warning); margin-top: 8px; }
 ${MARKDOWN_BODY_CSS}
 .foot { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
-.count { font: 600 11px/1 var(--sp-font-mono); color: var(--sp-text-3); margin-right: auto; }
+.count { font: 600 13px/1 var(--sp-font-mono); color: var(--sp-text-3); margin-right: auto; }
 button {
-  cursor: pointer; font: 13px/1 var(--sp-font-ui);
+  cursor: pointer; font: 15px/1 var(--sp-font-ui);
   padding: 7px 12px; border-radius: var(--sp-radius-control);
   border: 1px solid var(--sp-border); background: var(--sp-control); color: var(--sp-text);
 }
@@ -68,7 +68,7 @@ button[disabled] { opacity: 0.5; cursor: default; }
 button.primary { background: var(--sp-accent); color: var(--sp-accent-contrast, #fff); border-color: var(--sp-accent); }
 .x {
   flex: none; width: 22px; height: 22px; padding: 0; line-height: 1;
-  font-size: 14px; border-radius: var(--sp-radius-control);
+  font-size: 16px; border-radius: var(--sp-radius-control);
 }
 `;
 
@@ -198,19 +198,23 @@ export class GuideController {
     // The guide's own name is committed/personal text, so it MUST be escaped
     // before innerHTML (RT-C2); the spec's description/rules go through the
     // escape-first Markdown renderers, same as every other renderer.
-    this.pop.innerHTML =
+    setTrustedHtml(
+      this.pop,
       `<div class="eyebrow"><span>${escapeHtml(opts.guideName)}</span>` +
-      `<button class="x" type="button" aria-label="${escapeHtml(t("guide.close"))}">&times;</button></div>` +
-      `<h2 class="title">${escapeHtml(text.title)}</h2>` +
-      `<div class="d">${renderMarkdownBlock(text.description, opts.pageOrigin)}</div>` +
-      `<ul class="rules">${rulesListInner(text.businessRules, opts.pageOrigin)}</ul>` +
-      missingNoteHtml(step) +
-      `<div class="foot">` +
-      `<span class="count">${escapeHtml(t("guide.stepCounter", { current: this.index + 1, total }))}</span>` +
-      `<button class="prev" type="button"${isFirst ? " disabled" : ""}>${escapeHtml(t("guide.prev"))}</button>` +
-      (isLast ? "" : `<button class="skip" type="button">${escapeHtml(t("guide.skip"))}</button>`) +
-      `<button class="next primary" type="button">${escapeHtml(isLast ? t("guide.done") : t("guide.next"))}</button>` +
-      `</div>`;
+        `<button class="x" type="button" aria-label="${escapeHtml(t("guide.close"))}">&times;</button></div>` +
+        `<h2 class="title">${escapeHtml(text.title)}</h2>` +
+        `<div class="d">${renderMarkdownBlock(text.description, opts.pageOrigin)}</div>` +
+        `<ul class="rules">${rulesListInner(text.businessRules, opts.pageOrigin)}</ul>` +
+        missingNoteHtml(step) +
+        `<div class="foot">` +
+        `<span class="count">${escapeHtml(t("guide.stepCounter", { current: this.index + 1, total }))}</span>` +
+        `<button class="prev" type="button"${isFirst ? " disabled" : ""}>${escapeHtml(t("guide.prev"))}</button>` +
+        (isLast
+          ? ""
+          : `<button class="skip" type="button">${escapeHtml(t("guide.skip"))}</button>`) +
+        `<button class="next primary" type="button">${escapeHtml(isLast ? t("guide.done") : t("guide.next"))}</button>` +
+        `</div>`,
+    );
 
     const signal = this.ac?.signal;
     this.pop.querySelector(".x")?.addEventListener("click", () => this.stop(), { signal });

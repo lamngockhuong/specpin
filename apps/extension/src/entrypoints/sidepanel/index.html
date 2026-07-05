@@ -15,7 +15,7 @@
         min-height: 100vh;
         margin: 0;
         padding: 16px;
-        font: 13px/1.5 var(--sp-font-ui);
+        font: 15px/1.5 var(--sp-font-ui);
         color: var(--sp-text);
         background:
           radial-gradient(120% 50% at 50% 0%, var(--sp-grad-top), var(--sp-grad-bottom)) fixed;
@@ -23,9 +23,9 @@
       .header { display: flex; align-items: center; gap: 8px; }
       .logo { width: 22px; height: 22px; display: block; }
       /* .icon-btn (header settings gear) lives in shared/icon-btn.css. */
-      h1 { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+      h1 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
       .pill {
-        font: 500 11px/1 var(--sp-font-mono);
+        font: 500 13px/1 var(--sp-font-mono);
         color: var(--sp-text-3);
         background: var(--sp-control);
         border: 1px solid var(--sp-border);
@@ -65,7 +65,7 @@
       #projects .pdot.ok { background: var(--sp-success-dot); }
       #projects .pdot.err { background: var(--sp-error-text); }
       #projects .pname { font-weight: 600; color: var(--sp-text); }
-      #projects .pcount { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; }
+      #projects .pcount { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 13px; }
 
       /* Language + Display mode: matching label rows sharing one select look. */
       .locale-row, .mode-row { margin-top: 12px; }
@@ -76,7 +76,7 @@
       #locale, #mode {
         width: 128px;
         padding: 7px 10px;
-        font: 500 12px/1 var(--sp-font-ui);
+        font: 500 14px/1 var(--sp-font-ui);
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-control);
         background: var(--sp-control);
@@ -94,15 +94,15 @@
       .filters { margin-top: 14px; }
       .filters[hidden] { display: none; }
       .filter-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-      .filter-title { font: 600 11px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--sp-text-3); }
-      .filter-reset { font-size: 11px; }
+      .filter-title { font: 600 13px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--sp-text-3); }
+      .filter-reset { font-size: 13px; }
       .filter-group { margin-top: 6px; }
       .filter-group > summary { cursor: pointer; font-weight: 600; color: var(--sp-text-2); padding: 4px 0; }
       .filter-row { display: flex; align-items: center; gap: 8px; padding: 4px 0 4px 6px; }
       .filter-row input { flex: none; margin: 0; cursor: pointer; }
       .filter-name { flex: 1; color: var(--sp-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .filter-count { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; }
-      .filter-marker { font: 600 9px/1 var(--sp-font-mono); text-transform: uppercase; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--sp-border); color: var(--sp-text-3); }
+      .filter-count { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 13px; }
+      .filter-marker { font: 600 11px/1 var(--sp-font-mono); text-transform: uppercase; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--sp-border); color: var(--sp-text-3); }
       .filter-marker-you { color: var(--sp-accent); border-color: var(--sp-accent); }
 
       /* Card header: title flexes + wraps, action cluster stays flush-right. Flex
@@ -113,7 +113,7 @@
       /* Per-spec action buttons: Copy link / Delete / Edit / Hide (eye) on each card. */
       #specs .spec-copy, #specs .spec-delete, #specs .spec-edit, #specs .spec-vis {
         background: transparent; border: none; cursor: pointer; padding: 2px;
-        color: var(--sp-text-3); font: 600 11px/1 var(--sp-font-ui); white-space: nowrap;
+        color: var(--sp-text-3); font: 600 13px/1 var(--sp-font-ui); white-space: nowrap;
       }
       #specs .spec-copy:hover { color: var(--sp-accent); }
       #specs .spec-vis:hover { color: var(--sp-text); }
@@ -133,12 +133,12 @@
       #specs > li.spec:hover { border-color: var(--sp-accent); transform: translateY(-1px); }
       #specs .project {
         display: block; margin-bottom: 6px;
-        font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+        font: 700 11px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
         color: var(--sp-text-3);
       }
       #specs .t {
         flex: 1; min-width: 0;
-        font-weight: 700; font-size: 14px; color: var(--sp-text);
+        font-weight: 700; font-size: 16px; color: var(--sp-text);
         display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
         overflow-wrap: anywhere;
       }
@@ -147,7 +147,7 @@
          which mounts under #guides, is styled too - matching the popup. */
       .src {
         flex: none;
-        font: 600 9px/1 var(--sp-font-mono);
+        font: 600 11px/1 var(--sp-font-mono);
         text-transform: uppercase; letter-spacing: 0.04em;
         padding: 2px 5px; border-radius: 4px;
         border: 1px solid var(--sp-border); color: var(--sp-text-3);
@@ -161,22 +161,22 @@
       #orphaned { margin-top: 14px; }
       #orphaned[hidden] { display: none; }
       #orphaned .orphaned-title {
-        font: 600 11px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em;
+        font: 600 13px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em;
         color: var(--sp-warning);
       }
-      #orphaned .orphaned-hint { color: var(--sp-text-3); font-size: 11px; margin-top: 4px; }
+      #orphaned .orphaned-hint { color: var(--sp-text-3); font-size: 13px; margin-top: 4px; }
       #orphaned ul { list-style: none; margin: 8px 0 0; padding: 0; }
       #orphaned li {
         border: 1px dashed var(--sp-border); border-radius: var(--sp-radius-card);
         padding: 10px 12px; margin-bottom: 8px; opacity: 0.85;
       }
-      #orphaned .t { font-weight: 700; font-size: 13px; color: var(--sp-text-2); }
-      #orphaned .muted { color: var(--sp-text-3); font-size: 11px; margin-top: 3px; }
+      #orphaned .t { font-weight: 700; font-size: 15px; color: var(--sp-text-2); }
+      #orphaned .muted { color: var(--sp-text-3); font-size: 13px; margin-top: 3px; }
 
       /* Per-card match-tier badge (fuzzy only; exact is silent). */
       #specs .tier {
         flex: none;
-        font: 600 9px/1 var(--sp-font-mono);
+        font: 600 11px/1 var(--sp-font-mono);
         text-transform: uppercase; letter-spacing: 0.04em;
         padding: 2px 5px; border-radius: 4px;
         border: 1px solid var(--sp-border); color: var(--sp-text-3);
@@ -187,7 +187,7 @@
       /* Spec search box: client-side filter over the loaded list. */
       #search {
         width: 100%; margin-top: 12px; padding: 8px 10px;
-        font: 500 12px/1.3 var(--sp-font-ui);
+        font: 500 14px/1.3 var(--sp-font-ui);
         color: var(--sp-text); background: var(--sp-control);
         border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
       }
@@ -204,7 +204,7 @@
         background: var(--sp-control); border: 1px solid var(--sp-border);
         word-break: break-word;
       }
-      #specs .file { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; margin-top: 6px; }
+      #specs .file { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 13px; margin-top: 6px; }
       #specs .rules { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-2); }
       #specs .rules li { margin: 3px 0; }
       /* Provenance block (status / links / linked tests / reviewed). Mirrors
@@ -247,7 +247,7 @@
       .actions[hidden] { display: none; }
       button {
         padding: 9px 10px;
-        font: 600 13px/1 var(--sp-font-ui);
+        font: 600 15px/1 var(--sp-font-ui);
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-control);
         background: var(--sp-control);

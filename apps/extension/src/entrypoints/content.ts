@@ -30,6 +30,7 @@ import type { TaggedSpec } from "../shared/connection-types.js";
 import { parseSpecLink } from "../shared/deep-link.js";
 import { confirmDialog } from "../shared/dialog.js";
 import { getCorpusEnabled } from "../shared/drift-corpus.js";
+import { registerInterFont } from "../shared/inter-font.js";
 import { isLocalConnectionId } from "../shared/local-id.js";
 import {
   type MatchReportEntry,
@@ -57,6 +58,10 @@ function defaultFileName(): string {
 export default defineContentScript({
   matches: ["http://*/*", "https://*/*"],
   async main() {
+    // Make the bundled Inter face available to the shadow-DOM renderers (best
+    // effort; falls back to system-ui where the host CSP blocks the font).
+    registerInterFont();
+
     let session: RenderSession | null = null;
     let manifest: Manifest | null = null;
     let specs: TaggedSpec[] = [];

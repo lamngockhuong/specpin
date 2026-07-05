@@ -1,7 +1,7 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { LOCALE_CHANGE_EVENT, localizeSpec } from "../content/localize-spec.js";
 import { plural, t } from "../i18n/index.js";
-import { escapeHtml } from "../shared/html.js";
+import { escapeHtml, setTrustedHtml } from "../shared/html.js";
 import { renderMarkdownBlock } from "../shared/markdown.js";
 import { PROVENANCE_CSS, provenanceSectionHtml } from "../shared/provenance.js";
 import { createShadowHost } from "../shared/shadow.js";
@@ -33,7 +33,7 @@ ${SHADOW_PREAMBLE}
   background:
     radial-gradient(120% 40% at 50% 0%, var(--sp-grad-top), var(--sp-grad-bottom));
   color: var(--sp-text);
-  font: 13px/1.5 var(--sp-font-ui);
+  font: 15px/1.5 var(--sp-font-ui);
   border-left: 1px solid var(--sp-border);
   box-shadow: -8px 0 28px rgba(0, 0, 0, 0.18);
   overflow-y: auto; padding: 20px; box-sizing: border-box;
@@ -42,23 +42,23 @@ ${SHADOW_PREAMBLE}
   position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; cursor: pointer;
   background: var(--sp-control); color: var(--sp-text);
   border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
-  font: 16px/1 var(--sp-font-ui);
+  font: 18px/1 var(--sp-font-ui);
 }
 .dismiss:hover { background: var(--sp-elevated); }
 .dismiss:focus-visible { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
 .eyebrow {
   display: flex; align-items: center; gap: 7px;
-  font: 600 10px/1 var(--sp-font-mono); letter-spacing: 0.14em;
+  font: 600 12px/1 var(--sp-font-mono); letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--sp-text-3);
 }
 .eyebrow::before {
   content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--sp-accent);
 }
-.title { margin: 10px 0 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.title { margin: 10px 0 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
 .locale { margin: 10px 0 0; }
 .locale[hidden] { display: none; }
 .locale select {
-  font: 500 12px/1 var(--sp-font-ui);
+  font: 500 14px/1 var(--sp-font-ui);
   color: var(--sp-text);
   background: var(--sp-control);
   border: 1px solid var(--sp-border);
@@ -68,7 +68,7 @@ ${SHADOW_PREAMBLE}
 .summary { display: flex; align-items: center; gap: 10px; margin: 6px 0 16px; color: var(--sp-text-2); }
 .review-pill {
   display: none;
-  font: 600 11px/1 var(--sp-font-ui);
+  font: 600 13px/1 var(--sp-font-ui);
   color: var(--sp-warning);
   background: var(--sp-warning-bg);
   border: 1px solid var(--sp-warning-border);
@@ -94,7 +94,7 @@ ${SHADOW_PREAMBLE}
 .card[data-review="true"] { border-color: var(--sp-warning-border); }
 .card .tag {
   display: inline-block; margin-bottom: 8px;
-  font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  font: 700 11px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--sp-warning);
   background: var(--sp-warning-bg);
   border: 1px solid var(--sp-warning-border);
@@ -102,10 +102,10 @@ ${SHADOW_PREAMBLE}
 }
 .card .project {
   display: block; margin-bottom: 6px;
-  font: 700 9px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  font: 700 11px/1 var(--sp-font-mono); letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--sp-text-3);
 }
-.card .t { font-weight: 700; font-size: 14px; color: var(--sp-text); }
+.card .t { font-weight: 700; font-size: 16px; color: var(--sp-text); }
 .card .d { color: var(--sp-text-2); margin-top: 4px; }
 .card ul { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
 .card ol { margin: 8px 0 0; padding-left: 16px; color: var(--sp-text-3); }
@@ -147,15 +147,17 @@ export class SidebarRenderer implements SpecRenderer {
     const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES, theme);
     const panel = this.doc.createElement("div");
     panel.className = "panel";
-    panel.innerHTML =
+    setTrustedHtml(
+      panel,
       `<button class="dismiss" type="button" aria-label="${escapeHtml(t("common.hidePanel"))}" title="${escapeHtml(t("common.hidePanel"))}">&times;</button>` +
-      `<div class="eyebrow">${escapeHtml(t("common.specpin"))}</div>` +
-      `<h3 class="title">${escapeHtml(t("common.specsOnThisPage"))}</h3>` +
-      `<div class="locale" hidden></div>` +
-      `<div class="summary"><span class="count">${escapeHtml(
-        plural(0, "common.specsFoundOne", "common.specsFoundOther"),
-      )}</span>` +
-      `<span class="review-pill"></span></div>`;
+        `<div class="eyebrow">${escapeHtml(t("common.specpin"))}</div>` +
+        `<h3 class="title">${escapeHtml(t("common.specsOnThisPage"))}</h3>` +
+        `<div class="locale" hidden></div>` +
+        `<div class="summary"><span class="count">${escapeHtml(
+          plural(0, "common.specsFoundOne", "common.specsFoundOther"),
+        )}</span>` +
+        `<span class="review-pill"></span></div>`,
+    );
     const list = this.doc.createElement("div");
     panel.appendChild(list);
     shadow.appendChild(panel);
@@ -185,7 +187,10 @@ export class SidebarRenderer implements SpecRenderer {
           `<option value="${escapeHtml(l)}"${l === current ? " selected" : ""}>${escapeHtml(l)}</option>`,
       )
       .join("");
-    this.localeBox.innerHTML = `<select aria-label="${escapeHtml(t("common.languageLabel"))}">${options}</select>`;
+    setTrustedHtml(
+      this.localeBox,
+      `<select aria-label="${escapeHtml(t("common.languageLabel"))}">${options}</select>`,
+    );
     this.localeBox.hidden = false;
     const select = this.localeBox.querySelector("select");
     select?.addEventListener("change", () => {
@@ -214,18 +219,20 @@ export class SidebarRenderer implements SpecRenderer {
       ? `<span class="tag">${escapeHtml(t("common.needsReview"))}</span>`
       : "";
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
-    card.innerHTML =
+    setTrustedHtml(
+      card,
       tag +
-      confidenceBadge(meta) +
-      projectCaptionHtml(meta) +
-      `<div class="t">${escapeHtml(text.title)}</div>` +
-      `<div class="d">${renderMarkdownBlock(text.description, meta?.pageOrigin)}</div>` +
-      rulesListHtml(text.businessRules, meta?.pageOrigin) +
-      provenanceSectionHtml(spec, {
-        pageOrigin: meta?.pageOrigin,
-        thresholdDays: meta?.stalenessThresholdDays,
-        locale: meta?.locale,
-      });
+        confidenceBadge(meta) +
+        projectCaptionHtml(meta) +
+        `<div class="t">${escapeHtml(text.title)}</div>` +
+        `<div class="d">${renderMarkdownBlock(text.description, meta?.pageOrigin)}</div>` +
+        rulesListHtml(text.businessRules, meta?.pageOrigin) +
+        provenanceSectionHtml(spec, {
+          pageOrigin: meta?.pageOrigin,
+          thresholdDays: meta?.stalenessThresholdDays,
+          locale: meta?.locale,
+        }),
+    );
     const onHighlight = meta?.onHighlight;
     card.addEventListener("click", () => onHighlight?.(target));
     list.appendChild(card);

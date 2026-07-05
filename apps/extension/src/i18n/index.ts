@@ -1,5 +1,6 @@
 import { browser } from "#imports";
 import { UI_LOCALE_KEY } from "../shared/config.js";
+import { setTrustedHtml } from "../shared/html.js";
 import { resolveUiLocale, type UiLocale } from "./locales.js";
 import en, { type Messages } from "./messages/en.js";
 import ja from "./messages/ja.js";
@@ -64,11 +65,11 @@ export function hydrateI18n(root: ParentNode = document): void {
     if (key) el.textContent = t(key as MessageKey);
   }
   // Rich text with inline markup (e.g. a paragraph containing <code>/<strong>).
-  // Catalog values are authored in-repo and trusted (no user data), so assigning
-  // innerHTML here is safe; never use this for runtime/spec-derived strings.
+  // Catalog values are authored in-repo and trusted (no user data), so parsing
+  // them here is safe; never use this for runtime/spec-derived strings.
   for (const el of root.querySelectorAll<HTMLElement>("[data-i18n-html]")) {
     const key = el.dataset.i18nHtml;
-    if (key) el.innerHTML = t(key as MessageKey);
+    if (key) setTrustedHtml(el, t(key as MessageKey));
   }
   for (const el of root.querySelectorAll<HTMLElement>("[data-i18n-placeholder]")) {
     const key = el.dataset.i18nPlaceholder;

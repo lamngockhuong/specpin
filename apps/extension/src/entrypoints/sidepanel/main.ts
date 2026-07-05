@@ -9,9 +9,11 @@ import {
 } from "../../i18n/index.js";
 import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
+import { appendTrustedHtml, setTrustedHtml } from "../../shared/html.js";
 import { renderInlineMarkdown, renderMarkdownBlock } from "../../shared/markdown.js";
 import { provenanceSectionHtml } from "../../shared/provenance.js";
 import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
+import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
 import "../../shared/scrollbar.css";
 import "../../shared/switch.css";
@@ -249,7 +251,7 @@ function renderSpecs(res: SpecsForOrigin): void {
       // every leaf and emits an allowlisted tag set, so the side panel keeps its
       // "no untrusted string via innerHTML" property (the input is spec text, the
       // output is a fully module-controlled trusted fragment).
-      d.innerHTML = renderMarkdownBlock(description, pageOrigin);
+      setTrustedHtml(d, renderMarkdownBlock(description, pageOrigin));
       li.appendChild(d);
     }
 
@@ -259,9 +261,9 @@ function renderSpecs(res: SpecsForOrigin): void {
       for (const rule of spec.businessRules) {
         const item = document.createElement("li");
         // Trusted fragment (see description note above): inline Markdown only.
-        item.innerHTML = renderInlineMarkdown(
-          resolveLocalized(rule, activeLocale, defaultLocale),
-          pageOrigin,
+        setTrustedHtml(
+          item,
+          renderInlineMarkdown(resolveLocalized(rule, activeLocale, defaultLocale), pageOrigin),
         );
         rules.appendChild(item);
       }
@@ -270,19 +272,15 @@ function renderSpecs(res: SpecsForOrigin): void {
 
     // Provenance block (status / links / linked tests / reviewed). The helper
     // emits a module-controlled, fully escaped trusted fragment (same property as
-    // the Markdown blocks above), so a <template> parse + append is safe and adds
-    // its own `.prov` wrapper (no extra node). Empty string → nothing appended, so
-    // a spec with no provenance renders exactly as before.
+    // the Markdown blocks above), so a parse + append is safe and adds its own
+    // `.prov` wrapper (no extra node). Empty string → nothing appended, so a spec
+    // with no provenance renders exactly as before.
     const provHtml = provenanceSectionHtml(spec, {
       pageOrigin,
       thresholdDays: spec.stalenessThresholdDays,
       locale: activeLocale,
     });
-    if (provHtml) {
-      const tpl = document.createElement("template");
-      tpl.innerHTML = provHtml;
-      li.appendChild(tpl.content);
-    }
+    if (provHtml) appendTrustedHtml(li, provHtml);
 
     const file = document.createElement("div");
     file.className = "file";

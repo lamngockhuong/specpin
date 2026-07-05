@@ -13,7 +13,7 @@
         width: 400px;
         margin: 0;
         padding: 16px;
-        font: 13px/1.45 var(--sp-font-ui);
+        font: 15px/1.45 var(--sp-font-ui);
         color: var(--sp-text);
         background:
           radial-gradient(120% 80% at 50% 0%, var(--sp-grad-top), var(--sp-grad-bottom));
@@ -21,9 +21,9 @@
       .header { display: flex; align-items: center; gap: 8px; }
       .logo { width: 22px; height: 22px; display: block; }
       /* .icon-btn (header settings gear) lives in shared/icon-btn.css. */
-      h1 { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+      h1 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
       .pill {
-        font: 500 11px/1 var(--sp-font-mono);
+        font: 500 13px/1 var(--sp-font-mono);
         color: var(--sp-text-3);
         background: var(--sp-control);
         border: 1px solid var(--sp-border);
@@ -64,7 +64,7 @@
       #projects .pdot.ok { background: var(--sp-success-dot); }
       #projects .pdot.err { background: var(--sp-error-text); }
       #projects .pname { font-weight: 600; color: var(--sp-text); }
-      #projects .pcount { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; }
+      #projects .pcount { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 13px; }
 
       /* Language + Display mode: matching label rows sharing one select look. */
       .locale-row, .mode-row { margin-top: 12px; }
@@ -75,7 +75,7 @@
       #locale, #mode {
         width: 128px;
         padding: 7px 10px;
-        font: 500 12px/1 var(--sp-font-ui);
+        font: 500 14px/1 var(--sp-font-ui);
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-control);
         background: var(--sp-control);
@@ -92,15 +92,15 @@
       .filters { margin-top: 12px; }
       .filters[hidden] { display: none; }
       .filter-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-      .filter-title { font: 600 11px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--sp-text-3); }
-      .filter-reset { font-size: 11px; }
+      .filter-title { font: 600 13px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--sp-text-3); }
+      .filter-reset { font-size: 13px; }
       .filter-group { margin-top: 6px; }
       .filter-group > summary { cursor: pointer; font-weight: 600; color: var(--sp-text-2); padding: 4px 0; list-style: revert; }
       .filter-row { display: flex; align-items: center; gap: 8px; padding: 4px 0 4px 6px; }
       .filter-row input { flex: none; margin: 0; cursor: pointer; }
       .filter-name { flex: 1; color: var(--sp-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .filter-count { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; }
-      .filter-marker { font: 600 9px/1 var(--sp-font-mono); text-transform: uppercase; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--sp-border); color: var(--sp-text-3); }
+      .filter-count { color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 13px; }
+      .filter-marker { font: 600 11px/1 var(--sp-font-mono); text-transform: uppercase; padding: 2px 4px; border-radius: 4px; border: 1px solid var(--sp-border); color: var(--sp-text-3); }
       .filter-marker-you { color: var(--sp-accent); border-color: var(--sp-accent); }
 
       /* Page match-health + fragile-scan CSS is shared via shared/surface-health.css
@@ -110,7 +110,7 @@
       /* Spec search box: client-side filter over the loaded list. */
       #search {
         width: 100%; margin-top: 12px; padding: 8px 10px;
-        font: 500 12px/1.3 var(--sp-font-ui);
+        font: 500 14px/1.3 var(--sp-font-ui);
         color: var(--sp-text); background: var(--sp-control);
         border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
       }
@@ -133,7 +133,7 @@
         --pin: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>');
       }
       li .t { grid-column: 2; min-width: 0; font-weight: 600; color: var(--sp-text); display: flex; align-items: center; gap: 6px; }
-      li .muted { grid-column: 2; min-width: 0; color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      li .muted { grid-column: 2; min-width: 0; color: var(--sp-text-3); font-family: var(--sp-font-mono); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
       /* Per-tab project rows override the base list item: flex row, no pin marker.
          Placed after the base `li` rules so specificity ascends in source order. */
@@ -143,7 +143,7 @@
       /* Provenance badge: which source a spec came from (sidecar vs manual). */
       .src {
         flex: none;
-        font: 600 9px/1 var(--sp-font-mono);
+        font: 600 11px/1 var(--sp-font-mono);
         text-transform: uppercase; letter-spacing: 0.04em;
         padding: 2px 5px; border-radius: 4px;
         border: 1px solid var(--sp-border); color: var(--sp-text-3);
@@ -158,7 +158,7 @@
       .actions[hidden] { display: none; }
       button {
         padding: 9px 10px;
-        font: 600 13px/1 var(--sp-font-ui);
+        font: 600 15px/1 var(--sp-font-ui);
         border: 1px solid var(--sp-border);
         border-radius: var(--sp-radius-control);
         background: var(--sp-control);

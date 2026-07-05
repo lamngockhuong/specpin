@@ -39,6 +39,7 @@ import {
 import { applyTheme, watchThemeChanges } from "../../shared/theme.js";
 import { parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
 import { initOptionsNav } from "./nav.js";
+import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
 import "../../shared/switch.css";
 import "../../shared/guide-section.css";
