@@ -35,8 +35,9 @@ This page covers common issues when using Specpin and how to fix them.
 
 **Fix:**
 
-1. Check `.specs/manifest.json` in the project and add the current page's domain (e.g., `localhost:3000`, `example.com`) to the `domains` array.
-2. Or enable **Apply to all sites** for that project in the Options page (use with caution: specs will appear on every site you visit).
+1. In this state the popup shows a **+ New project** prompt (the side panel shows a short two-step). Click it to create a local project or connect a sidecar for this page.
+2. Or check `.specs/manifest.json` in the project and add the current page's domain (e.g., `localhost:3000`, `example.com`) to the `domains` array.
+3. Or enable **Apply to all sites** for that project in the Options page (use with caution: specs will appear on every site you visit).
 
 ### Connection test fails with CORS or origin error
 
@@ -50,7 +51,7 @@ This page covers common issues when using Specpin and how to fix them.
 
 **Possible causes:**
 
-1. **Specpin is off.** The popup will show "Specpin is off." Turn it on with the toggle in the popup or press `Alt+Shift+S`.
+1. **Specpin is off.** The popup shows a **Specpin is off** panel with a count of how many specs are hidden here. Turn it on with the toggle in the popup or press `Alt+Shift+S`.
 2. **The project is disabled.** Check the Options page and make sure the project has **Enabled** next to it. Click the toggle to enable it.
 3. **The project's `domains` do not match the page.** See [Connection Issues](#connection-issues) above.
 4. **The specs are hidden by filters.** Check the **Filter** section in the popup or side panel. Uncheck any filters that might be hiding specs. Click **Reset** to clear personal overrides.
@@ -173,7 +174,7 @@ The extension will capture a fresh fingerprint and save it back to `.specs/`. Th
 
 ### Is my data sent anywhere?
 
-Not to us. Specpin is local-first: by default the sidecar binds to `127.0.0.1` and the extension connects over localhost. If you opt into a remote sidecar, specs go only to that host — one you run yourself. No Specpin-operated server ever sees your specs or your page. See [Security and Privacy](/concepts/security-and-privacy/) for full details.
+Not to us. Specpin is local-first: by default the sidecar binds to `127.0.0.1` and the extension connects over localhost. If you opt into a remote sidecar, specs go only to that host - one you run yourself. No Specpin-operated server ever sees your specs or your page. See [Security and Privacy](/concepts/security-and-privacy/) for full details.
 
 ### Do I need the CLI to use Specpin?
 
@@ -196,7 +197,7 @@ Yes. Specs are stored as JSON files in `.specs/`, but you do not need to commit 
 
 ### Can I connect to a sidecar on a different machine?
 
-Yes. Run the sidecar on the remote host behind an HTTPS reverse proxy (keep it on loopback with a co-located proxy, or use `--host` plus a firewall), pin a stable `--token`, and connect the extension to the `https://` proxy URL. Remote connections must use HTTPS — plaintext `http://` to a remote host is blocked. See [Serve on a remote machine](/sidecar/cli/#serve-on-a-remote-machine) for details.
+Yes. Run the sidecar on the remote host behind an HTTPS reverse proxy (keep it on loopback with a co-located proxy, or use `--host` plus a firewall), pin a stable `--token`, and connect the extension to the `https://` proxy URL. Remote connections must use HTTPS - plaintext `http://` to a remote host is blocked. See [Serve on a remote machine](/sidecar/cli/#serve-on-a-remote-machine) for details.
 
 ### Where can I get help?
 
