@@ -49,9 +49,9 @@ Lưu cài đặt kết nối, đặc tả dự án cục bộ và tùy chọn gi
 
 **Những gì nó KHÔNG làm**: gửi lịch sử duyệt web của bạn đi đâu, theo dõi các trang bạn truy cập, hay lưu lịch sử duyệt web.
 
-### `alarms` - Giữ kết nối luôn sống
+### `alarms` - Giữ kết nối luôn hoạt động
 
-Chạy một alarm keepalive mỗi phút để service worker nền luôn sống nhằm duy trì kết nối live-reload (Server-Sent Events) tới sidecar cục bộ. Trình duyệt sẽ kết thúc service worker khi rảnh; alarm đánh thức nó để giữ luồng đặc tả luôn kết nối.
+Chạy một alarm keepalive mỗi phút để service worker nền luôn hoạt động nhằm duy trì kết nối live-reload (Server-Sent Events) tới sidecar cục bộ. Trình duyệt sẽ kết thúc service worker khi rảnh; alarm đánh thức nó để giữ luồng đặc tả luôn kết nối.
 
 ### `contextMenus` - Menu chuột phải
 

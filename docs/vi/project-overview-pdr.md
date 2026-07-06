@@ -12,7 +12,7 @@ Các giải pháp hiện có thì hoặc sinh code từ spec (coupling chặt, d
 
 ## Specpin là gì (và KHÔNG phải là gì)
 
-Specpin pin các business specification (rule, mô tả, acceptance criteria) trực tiếp lên các element của một web UI đang chạy. Nó **KHÔNG phải là một spec-driven code generator** (không liên quan tới GitHub Spec Kit / OpenSpec). Nó không sinh ra application code từ spec. Nó là một lớp tri thức gắn tài liệu sống, được version hóa bằng Git, vào những interface bạn đã có sẵn. Interface vốn đã biết mọi thứ nằm ở đâu; Specpin trao cho nó một trí nhớ.
+Specpin pin các business specification (rule, mô tả, acceptance criteria) trực tiếp lên các element của một web UI đang chạy. Nó **KHÔNG phải là một spec-driven code generator** (không liên quan tới GitHub Spec Kit / OpenSpec). Nó không sinh ra application code từ spec. Nó là một lớp tri thức gắn tài liệu luôn cập nhật, được version hóa bằng Git, vào những interface bạn đã có sẵn. Interface vốn đã biết mọi thứ nằm ở đâu; Specpin trao cho nó một trí nhớ.
 
 Spec tồn tại dưới dạng JSON bên trong thư mục `.specs/` của repo consumer, được liên kết tới các element thông qua những fingerprint bền bỉ, và render ngay trong trình duyệt qua các display mode dạng pluggable (tooltip, sidebar, modal). Mọi thứ đều local-first và Git-native: được version hóa, review qua PR, và diff được.
 
@@ -22,11 +22,11 @@ Spec tồn tại dưới dạng JSON bên trong thư mục `.specs/` của repo 
 - **QA engineer** xác minh acceptance criteria trực tiếp trên UI đang chạy mà không phải lục tìm trong các ticket.
 - **Product manager** rà soát các tính năng đã ship so với ý định ban đầu, viết spec mới ngay trên interface.
 - **Team support** hiểu hành vi của các edge case mà không cần escalate lên team kỹ thuật.
-- **Thành viên mới** học các domain rule bằng cách khám phá UI sống với ngữ cảnh đính kèm.
+- **Thành viên mới** học các domain rule bằng cách khám phá UI đang chạy với ngữ cảnh đính kèm.
 
 ## Mục tiêu
 
-1. **Lớp spec zero-drift**: spec sống trong cùng repo với code, version cùng nhau, review cùng nhau qua PR.
+1. **Lớp spec zero-drift**: spec nằm trong cùng repo với code, version cùng nhau, review cùng nhau qua PR.
 2. **Authoring lấy interface làm gốc**: capture spec bằng cách click vào element mục tiêu trên UI đang chạy, không phải đoán CSS selector hay viết tài liệu trừu tượng.
 3. **Render dạng pluggable**: tooltip (xem nhanh), sidebar (đọc tập trung), modal (review tập trung). Hiện ship tooltip, sidebar, và modal kéo thả được.
 4. **Matching bền bỉ**: fingerprint sống sót qua các đợt refactor. Các anchor exact (test-id, aria, data-spec-id) match trước; hybrid weighted scoring làm fallback khi layout thay đổi.

@@ -7,7 +7,7 @@
 <h1 align="center">Specpin</h1>
 
 <p align="center">
-  Ghim tài liệu đặc tả nghiệp vụ "sống" lên đúng các phần tử của web UI đang chạy.<br>
+  Ghim đặc tả nghiệp vụ hệ thống lên các phần tử trên giao diện web đang chạy.<br>
   Gắn liền với Git, ưu tiên cục bộ, không phụ thuộc framework. <strong>Không sinh code.</strong>
 </p>
 
@@ -61,7 +61,7 @@
 
 Specpin gắn **đặc tả nghiệp vụ** (quy tắc, mô tả, tiêu chí nghiệm thu) trực tiếp lên các phần tử của một web UI *đang chạy*, rồi hiển thị chúng ngay trong trình duyệt khi bạn rê chuột hoặc duyệt trang.
 
-Specpin **không phải** công cụ sinh code từ đặc tả (không liên quan tới GitHub Spec Kit / OpenSpec): nó không sinh ra bất kỳ code ứng dụng nào. Đây là một lớp tri thức ghim tài liệu "sống", được quản lý phiên bản bằng Git, lên đúng giao diện bạn đã có sẵn. Giao diện vốn đã biết mọi thứ nằm ở đâu; Specpin trao cho nó một bộ nhớ.
+Specpin **không phải** công cụ sinh code từ đặc tả (không liên quan tới GitHub Spec Kit / OpenSpec): nó không sinh ra bất kỳ code ứng dụng nào. Đây là một lớp tri thức ghim tài liệu luôn cập nhật, được quản lý phiên bản bằng Git, lên đúng giao diện bạn đã có sẵn. Giao diện vốn đã biết mọi thứ nằm ở đâu; Specpin trao cho nó một bộ nhớ.
 
 - **Gắn liền với Git.** Đặc tả được lưu dưới dạng JSON trong thư mục `.specs/` của repo: có phiên bản, review được qua PR, và xem diff được.
 - **Ưu tiên cục bộ.** Một sidecar Go nhỏ phục vụ đặc tả qua API localhost có xác thực token; theo mặc định không có gì rời khỏi máy của bạn. Các nhóm có thể tùy chọn chạy chính sidecar đó trên máy chủ của riêng họ phía sau một reverse proxy HTTPS (xem hướng dẫn chạy).
