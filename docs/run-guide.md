@@ -143,7 +143,9 @@ The **staleness threshold** (how old a review may be before a spec shows as *sta
 
 Press `Alt+Shift+U` to toggle **coverage mode**: dashed ghost "+" markers appear on every *undocumented interactive element* on the page (buttons, links with href, inputs/select/textarea, ARIA widget roles like button/link/checkbox/tab/menuitem/combobox/slider, elements with `onclick`, `tabindex >= 0`, or `contenteditable`). Hidden elements, display:none, zero-size, disabled, or `aria-disabled` elements are never marked.
 
-The mode state persists across page reloads (off by default, so a page stays byte-identical when the mode is off). The popup and side panel show a one-line **coverage summary**: "N interactive · M documented · K gaps". When there are gaps, a **"Capture all gaps (K)"** button lets you bulk-capture them all at once (see Bulk capture below).
+Coverage only appears on a page that a project actually serves (a connected sidecar or a local project matching the origin) — it points you at gaps you can *author into*, so on a site with no project both the on-page markers and the popup/side-panel summary stay silent even while the mode is globally on.
+
+The mode state persists across page reloads (off by default, so a page stays byte-identical when the mode is off). On a served page the popup and side panel show a one-line **coverage summary**: "N interactive · M documented · K gaps". When there are gaps, a **"Capture all gaps (K)"** button lets you bulk-capture them all at once (see Bulk capture below).
 
 Each marker has two quick actions:
 
