@@ -10,10 +10,10 @@ Specpin lets you author specs directly on the page, no leaving the browser.
 Enter capture mode, click an element, and fill the form.
 
 1. Click **+ Capture spec** in the popup or side panel, or press `Alt+Shift+C`.
-2. Hover over the page. A highlight frame appears around elements as you move.
+2. Hover over the page. A highlight frame appears around elements as you move. A small on-screen HUD at the bottom-center shows an instruction prompt.
 3. Click the element you want to spec.
 4. The capture form opens. Fill the fields (see below).
-5. Click **Save spec**.
+5. Click **Save spec**. The form closes via the **X** icon in the modal header (top-right) or by pressing **Escape**. Clicking outside the modal no longer closes it.
 
 The spec writes to the chosen project and appears immediately on the element.
 
@@ -73,7 +73,7 @@ The edit form has a **Mark reviewed** action that stamps the spec's review date 
 When editing a spec, you can point it at a different element:
 
 1. Click **Re-link element** in the edit form.
-2. The form hides. Hover over the page and click the new element.
+2. The form hides. The element picker HUD appears at the bottom-center. Hover over the page and click the new element.
 3. The form reopens with your edits intact and the new fingerprint applied. Click **Save changes** to apply.
 
 ## Right-click menu
@@ -98,9 +98,9 @@ Capture multiple specs at once in a coordinated workflow.
 
 ### Multi-select picker
 
-1. Elements appear with hover highlights as you move the cursor.
+1. Elements appear with hover highlights as you move the cursor. An on-screen HUD at the bottom-center shows a live count ("N selected") and **Done** / **Cancel** buttons.
 2. Click elements to toggle them into/out of the selection. Each selected element gets a persistent green outline.
-3. Press **Enter** to confirm and proceed to the form. Press **Esc** to cancel and return to the page.
+3. The **Done** button is disabled until at least one element is selected. Press **Enter** or click **Done** to confirm and proceed to the form. Press **Esc** or click **Cancel** to cancel and return to the page.
 
 ### Bulk capture form
 
@@ -111,7 +111,7 @@ After selecting elements, the capture form opens with:
    - **Title** (auto-derived from visible text → aria-label → title attr → placeholder → humanized tag/role, editable inline).
    - A remove button (×) to drop that row.
    - Rows with duplicate titles are flagged so you can disambiguate them.
-3. Shared fields are applied to all specs. Each row's description is pre-filled from its title (bulk capture collects titles, not separate descriptions).
+3. Shared fields are applied to all specs. Each row's description is pre-filled from its title (bulk capture collects titles, not separate descriptions). The bulk form closes via the **X** icon in the modal header or **Escape**. Clicking outside the modal no longer closes it.
 
 ### Saving bulk captures
 
@@ -136,7 +136,7 @@ Selecting a template pre-fills **empty fields only**. It never overwrites text y
 When viewing a spec you can edit (tooltip badge or side-panel card), a **Duplicate to element** action appears. On the side-panel card it lives in the **⋯** (more actions) menu as **Clone**.
 
 1. Click **Duplicate to element**.
-2. The element picker appears. Click the new element on the page.
+2. The element picker appears (with the on-screen HUD to guide you). Click the new element on the page.
 3. The capture form opens, pre-filled with the source spec's content: title, description, business rules, and tags.
 4. The cloned spec gets:
    - A **fresh fingerprint** (matched to the new element).

@@ -3,8 +3,18 @@
 // Capture-phase listeners with stopPropagation/preventDefault run only while
 // active, so the host page is untouched outside capture mode.
 
+import type { Theme } from "../shared/theme.js";
+import { PickerHud, type PickerHudVariant } from "./picker-hud.js";
+
 const HIGHLIGHT_ID = "specpin-capture-highlight";
 const SELECTION_ID = "specpin-capture-selection";
+
+/** Per-session picker options: which HUD instruction to show and the forced theme
+ *  for the HUD host (threaded from the content script). */
+export interface PickerOptions {
+  hud?: PickerHudVariant;
+  theme?: Theme;
+}
 
 export class CapturePicker {
   private active = false;
@@ -18,6 +28,7 @@ export class CapturePicker {
   private selected: Element[] = [];
   private onDone: ((els: Element[]) => void) | null = null;
   private selectionLayer: HTMLElement | null = null;
+  private hud: PickerHud | null = null;
 
   constructor(doc: Document = document) {
     this.doc = doc;
@@ -30,12 +41,19 @@ export class CapturePicker {
   /** Begin picking. `onCancel` fires when the picker is dismissed WITHOUT a pick
    *  (Escape), so callers can release any "capture in progress" state instead of
    *  leaking it (a stuck flag would freeze re-rendering). */
-  start(onPick: (el: Element) => void, onCancel?: () => void): void {
+  start(onPick: (el: Element) => void, onCancel?: () => void, opts?: PickerOptions): void {
     if (this.active) return;
     this.active = true;
     this.onPick = onPick;
     this.onCancel = onCancel ?? null;
     this.ensureHighlight();
+    this.hud = new PickerHud(this.doc);
+    this.hud.mount({
+      multi: false,
+      variant: opts?.hud ?? "capture",
+      theme: opts?.theme,
+      onCancel: () => this.cancelPick(),
+    });
     this.doc.addEventListener("mousemove", this.onMove, true);
     this.doc.addEventListener("click", this.onClick, true);
     this.doc.addEventListener("keydown", this.onKey, true);
@@ -49,7 +67,7 @@ export class CapturePicker {
    *  or out of the selection (a persistent outline marks the picked ones); Enter
    *  finishes with `onDone(selected)`; Escape cancels via `onCancel`. `start` (the
    *  single-shot flow) is untouched — this is purely additive. */
-  startMulti(onDone: (els: Element[]) => void, onCancel?: () => void): void {
+  startMulti(onDone: (els: Element[]) => void, onCancel?: () => void, opts?: PickerOptions): void {
     if (this.active) return;
     this.active = true;
     this.multi = true;
@@ -58,6 +76,14 @@ export class CapturePicker {
     this.onCancel = onCancel ?? null;
     this.ensureHighlight();
     this.ensureSelectionLayer();
+    this.hud = new PickerHud(this.doc);
+    this.hud.mount({
+      multi: true,
+      variant: "bulk",
+      theme: opts?.theme,
+      onDone: () => this.finishMulti(),
+      onCancel: () => this.cancelPick(),
+    });
     this.doc.addEventListener("mousemove", this.onMove, true);
     this.doc.addEventListener("click", this.onClick, true);
     this.doc.addEventListener("keydown", this.onKey, true);
@@ -88,6 +114,41 @@ export class CapturePicker {
     this.highlight = null;
     this.selectionLayer?.remove();
     this.selectionLayer = null;
+    this.hud?.destroy();
+    this.hud = null;
+  }
+
+  // Abort the pick (Escape or the HUD Cancel button route here). Guarded on
+  // `active` so the HUD button and a key press cannot double-teardown.
+  private cancelPick(): void {
+    if (!this.active) return;
+    const cancel = this.onCancel;
+    this.teardown();
+    cancel?.();
+  }
+
+  // Finish a multi-pick with whatever is currently selected (Enter or the HUD
+  // Done button route here). Same `active` guard against double-finish.
+  private finishMulti(): void {
+    if (!this.active) return;
+    const done = this.onDone;
+    const picked = this.selected.slice();
+    this.teardown();
+    done?.(picked);
+  }
+
+  // True when an element is one of Specpin's own overlay hosts (the HUD, hover
+  // highlight, or selection layer). Shadow-DOM retargets events to their host at
+  // the document level, so the host's `specpin-` id identifies them.
+  private isOwnUiElement(el: Element | null): boolean {
+    return !!el && el.id.startsWith("specpin-");
+  }
+
+  // Same test for an event's (retargeted) target. The picker must NOT suppress
+  // these, or its own HUD buttons would never receive the click (the capture-phase
+  // suppressor would stopPropagation first).
+  private isOwnUi(event: Event): boolean {
+    return this.isOwnUiElement(event.target as Element | null);
   }
 
   private ensureHighlight(): void {
@@ -152,14 +213,17 @@ export class CapturePicker {
     // (e.g. `specpin-capture-highlight`, or `specpin-coverage-host` when coverage
     // mode is also on) — so a stray click never selects Specpin's UI as a page el.
     if (this.selectionLayer?.contains(el)) return;
-    if (el.id.startsWith("specpin-")) return;
+    if (this.isOwnUiElement(el)) return;
     const idx = this.selected.indexOf(el);
     if (idx >= 0) this.selected.splice(idx, 1);
     else this.selected.push(el);
     this.paintSelection();
+    this.hud?.setCount(this.selected.length);
   }
 
   private onMove = (event: Event): void => {
+    // Don't chase our own overlay hosts (HUD/highlight) with the hover box.
+    if (this.isOwnUi(event)) return;
     const el = event.target as Element | null;
     if (!el || !this.highlight || el === this.highlight) return;
     const rect = el.getBoundingClientRect();
@@ -175,6 +239,9 @@ export class CapturePicker {
   };
 
   private onClick = (event: Event): void => {
+    // A click on the HUD (or any Specpin overlay host) is not a page pick: let it
+    // through so the HUD's own button handlers fire.
+    if (this.isOwnUi(event)) return;
     event.preventDefault();
     event.stopPropagation();
     const el = event.target as Element | null;
@@ -188,6 +255,9 @@ export class CapturePicker {
   };
 
   private suppress = (event: Event): void => {
+    // Never suppress presses on our own overlay hosts (the HUD buttons), only on
+    // page elements being captured.
+    if (this.isOwnUi(event)) return;
     event.preventDefault();
     event.stopPropagation();
   };
@@ -196,18 +266,13 @@ export class CapturePicker {
     const key = (event as KeyboardEvent).key;
     if (key === "Escape") {
       event.preventDefault();
-      const cancel = this.onCancel;
-      this.teardown();
-      cancel?.();
+      this.cancelPick();
       return;
     }
     // Enter finishes multi-select with whatever is currently picked (possibly none).
     if (this.multi && key === "Enter") {
       event.preventDefault();
-      const done = this.onDone;
-      const picked = this.selected.slice();
-      this.teardown();
-      done?.(picked);
+      this.finishMulti();
     }
   };
 }

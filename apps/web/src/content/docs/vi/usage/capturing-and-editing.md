@@ -10,10 +10,10 @@ Specpin cho phép bạn soạn spec trực tiếp trên trang mà không cần r
 Vào chế độ ghi, nhấp vào một phần tử và điền vào biểu mẫu.
 
 1. Nhấp **+ Ghi spec** trong popup hoặc side panel, hoặc nhấn `Alt+Shift+C`.
-2. Rê chuột qua trang. Một khung làm nổi bật xuất hiện xung quanh các phần tử khi bạn di chuyển.
+2. Rê chuột qua trang. Một khung làm nổi bật xuất hiện xung quanh các phần tử khi bạn di chuyển. Một HUD nhỏ ở giữa phía dưới màn hình hiển thị hướng dẫn.
 3. Nhấp vào phần tử bạn muốn gắn spec.
 4. Biểu mẫu ghi mở ra. Điền các trường (xem bên dưới).
-5. Nhấp **Lưu spec**.
+5. Nhấp **Lưu spec**. Biểu mẫu đóng bằng icon **X** trên phần đầu modal (góc trên bên phải) hoặc bằng phím **Escape**. Click ra ngoài modal không còn đóng biểu mẫu nữa.
 
 Spec được ghi vào dự án đã chọn và xuất hiện ngay lập tức trên phần tử.
 
@@ -73,7 +73,7 @@ Biểu mẫu sửa có hành động **Đánh dấu đã review** đóng dấu n
 Khi sửa một spec, bạn có thể trỏ nó vào một phần tử khác:
 
 1. Nhấp **Liên kết lại phần tử** trong biểu mẫu sửa.
-2. Biểu mẫu ẩn đi. Rê chuột qua trang và nhấp vào phần tử mới.
+2. Biểu mẫu ẩn đi. HUD bộ chọn phần tử xuất hiện ở giữa phía dưới. Rê chuột qua trang và nhấp vào phần tử mới.
 3. Biểu mẫu mở lại với các chỉnh sửa của bạn còn nguyên và fingerprint mới được áp dụng. Nhấp **Lưu thay đổi** để áp dụng.
 
 ## Menu nhấp chuột phải
@@ -98,9 +98,9 @@ Ghi nhiều spec cùng một lúc trong một luồng công việc.
 
 ### Bộ chọn multi-select
 
-1. Các element xuất hiện với highlight khi bạn di chuyển con trỏ.
+1. Các element xuất hiện với highlight khi bạn di chuyển con trỏ. Một HUD trên màn hình ở giữa phía dưới hiển thị số lượng đang chọn ("N đã chọn") và các nút **Xong** / **Hủy**.
 2. Nhấp element để toggle chúng vào/ra khỏi lựa chọn. Mỗi element đã chọn nhận một viền xanh lá cây cố định.
-3. Nhấn **Enter** để xác nhận và chuyển tới biểu mẫu. Nhấn **Esc** để hủy và quay lại trang.
+3. Nút **Xong** bị vô hiệu hóa cho đến khi chọn ít nhất một element. Nhấn **Enter** hoặc click **Xong** để xác nhận và chuyển tới biểu mẫu. Nhấn **Esc** hoặc click **Hủy** để hủy và quay lại trang.
 
 ### Biểu mẫu ghi hàng loạt
 
@@ -111,7 +111,7 @@ Sau khi chọn element, biểu mẫu ghi mở ra với:
    - **Tiêu đề** (tự động suy ra từ text hiển thị → aria-label → title attr → placeholder → humanized tag/role, có thể sửa inline).
    - Nút xóa (×) để loại bỏ dòng đó.
    - Các dòng có tiêu đề trùng lặp bị cờ để bạn có thể phân biệt.
-3. Các trường dùng chung được áp dụng vào tất cả spec. Description của mỗi dòng được điền sẵn từ tiêu đề của nó (ghi hàng loạt thu thập tiêu đề, không phải description riêng).
+3. Các trường dùng chung được áp dụng vào tất cả spec. Description của mỗi dòng được điền sẵn từ tiêu đề của nó (ghi hàng loạt thu thập tiêu đề, không phải description riêng). Biểu mẫu hàng loạt đóng bằng icon **X** trên phần đầu modal hoặc **Escape**. Click ra ngoài modal không còn đóng biểu mẫu nữa.
 
 ### Lưu bản ghi hàng loạt
 
@@ -136,7 +136,7 @@ Chọn một mẫu điền sẵn **chỉ các trường trống**. Nó không ba
 Khi xem một spec bạn có thể sửa (badge tooltip hoặc thẻ side panel), hành động **Nhân bản sang element** xuất hiện. Trên thẻ side panel, nút này nằm trong menu **⋯** với nhãn **Nhân bản**.
 
 1. Nhấp **Nhân bản sang element**.
-2. Bộ chọn element xuất hiện. Nhấp element mới trên trang.
+2. Bộ chọn element xuất hiện (cùng với HUD trên màn hình để hướng dẫn). Nhấp element mới trên trang.
 3. Biểu mẫu ghi mở ra, được điền sẵn với nội dung spec nguồn: tiêu đề, mô tả, quy tắc nghiệp vụ, và tag.
 4. Spec nhân bản nhận:
    - Một **fingerprint mới** (khớp với element mới).

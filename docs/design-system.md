@@ -31,10 +31,12 @@ the exact same structure and differ only in color.
 
 ## On-page visual patterns
 
-Two reusable patterns overlay the page's own content:
+Reusable patterns that overlay the page's own content:
 
 - **Spec badge**: A blue or amber "S" (or number) circle, 16px, positioned to avoid overlapping content. Marks an element with a spec. Rendered in a Shadow DOM host, positioned by the badge-position solver, respects reduced-motion.
 - **Ghost marker**: A dashed circular outline with a centered "+" icon, 16-20px depending on content fit. Marks an undocumented interactive element (coverage mode). Also rendered in a Shadow DOM host, positioned by the same badge-position solver, respects reduced-motion. Visually distinct from the spec badge with a dashed border instead of solid. Its palette is deliberately theme-independent (a light chip: slate dashed ring, muted "+", soft shadow) rather than following the extension UI theme, because it overlays the host page's own background: a dark-theme marker would paint a near-black blob on a light page.
+- **Picker HUD**: A fixed-position banner at the bottom-center of the page, displayed during element picking (capture, re-link, clone, bulk multi-select). Shows contextual instructions ("Click an element to capture", "N selected" count in bulk mode, Done/Cancel buttons). Rendered in an isolated Shadow DOM with theme-aware styling via `--sp-*` tokens. Pointer events are limited to its interactive buttons so the rest of the page remains clickable. Respects reduced-motion.
+- **Icon buttons**: Shared inline-SVG icon set from `src/shared/icons.ts` (12x12 viewBox, stroking currentColor). Icons include: close (X), plus (+), check, play, pencil, trash. Used for the modal header close button (X), guide-row Start/Edit/Delete actions (play/pencil/trash icons), HUD Done/Cancel buttons, and the Options matching-corpus per-entry Delete (trash icon). Always paired with `aria-label` and `title` for accessibility and tooltip on hover.
 
 Rendered PNGs: `<surface>.light.png` and `<surface>.dark.png`. `overview.png` is
 a 2x4 montage (columns = light | dark). The tooltip renderer

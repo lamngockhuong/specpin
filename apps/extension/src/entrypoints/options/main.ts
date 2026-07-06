@@ -28,6 +28,7 @@ import {
 import { downloadExportBundles } from "../../shared/export-download.js";
 import { guideRowElement } from "../../shared/guide-section.js";
 import { ensureRemotePermission } from "../../shared/host-permission.js";
+import { createIconButton } from "../../shared/icons.js";
 import { localConnId } from "../../shared/local-id.js";
 import { normalizeSidecarUrl } from "../../shared/local-url.js";
 import {
@@ -907,10 +908,7 @@ function corpusRow(entry: DriftEntry): HTMLElement {
   });
   head.appendChild(details);
 
-  const del = document.createElement("button");
-  del.className = "secondary";
-  del.textContent = t("guide.delete");
-  del.addEventListener("click", async () => {
+  const del = createIconButton(document, "secondary", "trash", t("guide.delete"), async () => {
     if (!(await confirmDialog({ message: t("options.confirmDeleteCorpusEntry"), danger: true })))
       return;
     await deleteCorpusEntry(entry);

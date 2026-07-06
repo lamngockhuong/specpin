@@ -265,7 +265,19 @@ ${SHADOW_PREAMBLE}
   font: 15px/1.5 var(--sp-font-ui);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
 }
-.card h3 { margin: 0 0 18px; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 18px; }
+.card h3 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+/* Header close (X): flat icon button, top-right of the card. Class selectors
+   outrank the block's broad button/button:hover rules, so it stays transparent
+   and content-sized instead of the padded, filled default. */
+.card-close {
+  flex: 0 0 auto; width: 28px; height: 28px; min-width: 0; padding: 0; margin: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; border-radius: var(--sp-radius-control);
+  color: var(--sp-text-3); cursor: pointer;
+}
+.card-close:hover { color: var(--sp-text); background: var(--sp-control); filter: none; }
+.card-close:focus-visible { outline: none; border-color: var(--sp-accent); box-shadow: 0 0 0 3px var(--sp-accent-glow); }
 label { display: block; font-weight: 600; margin: 16px 0 6px; color: var(--sp-text); }
 .hint { color: var(--sp-text-3); font-weight: 400; font-size: 13px; }
 input, textarea, select {
@@ -669,10 +681,10 @@ export class CaptureForm {
       }
     };
     this.doc.addEventListener("keydown", this.escHandler, true);
-    q<HTMLButtonElement>("#sp-cancel").addEventListener("click", cancel);
-    wrap.addEventListener("click", (e) => {
-      if (e.target === wrap) cancel();
-    });
+    // Close via the header X or Escape only. Backdrop click intentionally does
+    // NOT dismiss: the form holds unsaved authoring, so a stray outside click must
+    // never discard it.
+    q<HTMLButtonElement>("#sp-close").addEventListener("click", cancel);
 
     // Read the current link rows into label/url pairs (empties dropped in build).
     const readLinkRows = (): Link[] =>
@@ -814,7 +826,10 @@ export class CaptureForm {
       : "";
     return `
       <div class="card">
-        <h3>${escapeHtml(opts.editing ? t("capture.titleEdit") : t("capture.titleCapture"))}</h3>
+        <div class="card-head">
+          <h3>${escapeHtml(opts.editing ? t("capture.titleEdit") : t("capture.titleCapture"))}</h3>
+          <button type="button" id="sp-close" class="card-close" aria-label="${escapeAttr(t("common.close"))}" title="${escapeAttr(t("common.close"))}">${iconSvg("close", 16)}</button>
+        </div>
         ${targetField}
         <label>${escapeHtml(t("template.label"))}</label>
         <select id="sp-template">
@@ -871,7 +886,6 @@ export class CaptureForm {
         </div>
         <div class="errors"><strong>${escapeHtml(t("capture.couldNotSave"))}</strong><ul></ul></div>
         <div class="actions">
-          <button id="sp-cancel">${escapeHtml(t("common.cancel"))}</button>
           <button id="sp-save" class="primary">${escapeHtml(opts.editing ? t("capture.saveChanges") : t("capture.saveSpec"))}</button>
         </div>
       </div>`;

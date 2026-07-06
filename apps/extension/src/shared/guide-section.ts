@@ -1,6 +1,7 @@
 import { t } from "../i18n/index.js";
 import { confirmDialog } from "./dialog.js";
 import { openGuideEditor } from "./guide-editor.js";
+import { createIconButton } from "./icons.js";
 import {
   type GuideMutationResult,
   type GuidesForOrigin,
@@ -166,27 +167,33 @@ export function guideRowElement(
     name.appendChild(badge);
   }
   li.appendChild(name);
+  // Actions render as icon buttons; the text label moves to aria-label + title so
+  // the screen-reader name and hover tooltip are preserved. Delete keeps `.danger`
+  // (its color rides currentColor, so the trash icon turns danger-red too).
   if (handlers.onStart) {
-    const start = document.createElement("button");
-    start.type = "button";
-    start.className = "guides-start";
-    start.textContent = t("guide.start");
-    start.addEventListener("click", handlers.onStart);
-    li.appendChild(start);
+    li.appendChild(
+      createIconButton(
+        document,
+        "guides-start icon-btn",
+        "play",
+        t("guide.start"),
+        handlers.onStart,
+      ),
+    );
   }
   if (handlers.onEdit) {
-    const edit = document.createElement("button");
-    edit.type = "button";
-    edit.className = "link";
-    edit.textContent = t("guide.edit");
-    edit.addEventListener("click", handlers.onEdit);
-    li.appendChild(edit);
+    li.appendChild(
+      createIconButton(document, "link icon-btn", "pencil", t("guide.edit"), handlers.onEdit),
+    );
   }
-  const del = document.createElement("button");
-  del.type = "button";
-  del.className = "link danger";
-  del.textContent = t("guide.delete");
-  del.addEventListener("click", handlers.onDelete);
-  li.appendChild(del);
+  li.appendChild(
+    createIconButton(
+      document,
+      "link danger icon-btn",
+      "trash",
+      t("guide.delete"),
+      handlers.onDelete,
+    ),
+  );
   return li;
 }

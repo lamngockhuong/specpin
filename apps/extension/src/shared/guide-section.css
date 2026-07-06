@@ -88,6 +88,40 @@
 .guides-item .link.danger {
   color: var(--sp-error-text);
 }
+/* Icon action buttons (Start / Edit / Delete): square, centered. Overrides the
+   text padding on .guides-start and, on the Options page, the broad `button {}`
+   full-width rule (the two-class selector outranks it). The icon strokes
+   currentColor, so .danger still tints Delete red. */
+.guides-item .icon-btn {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--sp-radius-control);
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+/* Flat (link) icon buttons - Edit/Delete - gain a hover + pressed background so
+   the click target is obvious (the bordered Start button has its own hover). The
+   danger Delete hovers to a soft error tint. */
+.guides-item .link.icon-btn:hover {
+  background: var(--sp-control);
+}
+.guides-item .link.icon-btn:active {
+  background: var(--sp-elevated);
+}
+.guides-item .link.danger.icon-btn:hover {
+  background: var(--sp-error-bg);
+}
+.guides-item .icon-btn:focus-visible {
+  outline: none;
+  border-color: var(--sp-accent);
+  box-shadow: 0 0 0 3px var(--sp-accent-glow);
+}
 .guides-default:focus-visible,
 .guides-start:focus-visible {
   outline: none;
