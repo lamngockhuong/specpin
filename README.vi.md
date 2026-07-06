@@ -52,7 +52,7 @@
 </p>
 
 <p align="center">
-  <img src="apps/extension/designs/overview.png" alt="Giao diện extension Specpin ở chế độ sáng và tối" width="760" />
+  <img src="apps/extension/store-assets/readme-hero.png" alt="Specpin: một spec được ghim lên phần tử UI đang chạy, kèm side panel liệt kê mọi spec trên trang" width="760" />
 </p>
 
 ---
