@@ -13,6 +13,7 @@ import { copyText } from "../shared/clipboard.js";
 import { dataSpecIdSnippet } from "../shared/data-spec-id.js";
 import { anyDialogOpen, promptDialog } from "../shared/dialog.js";
 import { appendTrustedHtml, escapeAttr, escapeHtml, setTrustedHtml } from "../shared/html.js";
+import { iconSvg } from "../shared/icons.js";
 import { insertLink, prefixLines, toggleWrap } from "../shared/markdown-input.js";
 import type { WriteTarget } from "../shared/messaging.js";
 import { createShadowHost } from "../shared/shadow.js";
@@ -124,7 +125,7 @@ function linkRowHtml(label = "", url = ""): string {
     `<div class="link-row">` +
     `<input class="link-label" placeholder="${escapeAttr(t("capture.linkLabelPlaceholder"))}" value="${escapeAttr(label)}" />` +
     `<input class="link-url" placeholder="${escapeAttr(t("capture.linkUrlPlaceholder"))}" value="${escapeAttr(url)}" />` +
-    `<button type="button" class="link-remove" aria-label="${escapeAttr(t("capture.linkRemove"))}" title="${escapeAttr(t("capture.linkRemove"))}">×</button>` +
+    `<button type="button" class="link-remove" aria-label="${escapeAttr(t("capture.linkRemove"))}" title="${escapeAttr(t("capture.linkRemove"))}">${iconSvg("close", 12)}</button>` +
     `</div>`
   );
 }
@@ -317,6 +318,7 @@ textarea { min-height: 64px; resize: vertical; }
 .link-row .link-url { flex: 1 1 auto; }
 .link-row .link-remove {
   flex: 0 0 auto; width: auto; min-width: 34px; padding: 0 10px;
+  display: flex; align-items: center; justify-content: center;
   background: var(--sp-control); color: var(--sp-text-2);
 }
 #sp-add-link.add-link { width: auto; margin-top: 2px; padding: 6px 12px; }

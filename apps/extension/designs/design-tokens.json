@@ -7,6 +7,13 @@
     "glow": "#2DD4BF66"
   },
   "overlay": "#020C0A99",
+  "_overlayChipComment": "Ghost-marker (coverage) chip palette. Theme-independent on purpose: these overlay the host page's own background, not extension chrome, so they must NOT invert with the extension UI theme (a dark-theme chip paints a near-black blob on a light page). Emitted once in :root like brand/accent.",
+  "overlayChip": {
+    "bg": "rgba(255, 255, 255, 0.92)",
+    "border": "#94A3B8",
+    "text": "#475569",
+    "dismiss": "#64748B"
+  },
   "font": {
     "ui": "Inter",
     "mono": "JetBrains Mono"

@@ -53,6 +53,12 @@ const sharedDecls = [
   `  --sp-radius-control: ${tokens.radius.control}px;`,
 ];
 if (tokens.overlay) sharedDecls.push(`  --sp-overlay-bg: ${tokens.overlay};`);
+// Overlay-chip neutrals are theme-independent (they sit over the host page, not
+// extension chrome), so they belong in the shared :root block, not a theme axis.
+if (tokens.overlayChip) {
+  for (const [key, val] of Object.entries(tokens.overlayChip))
+    sharedDecls.push(`  --sp-overlay-chip-${kebab(key)}: ${val};`);
+}
 
 // Per-theme color declarations (one block per theme axis value).
 const themeDecls = (mode) =>

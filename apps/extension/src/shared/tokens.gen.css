@@ -12,6 +12,10 @@
   --sp-radius-card: 16px;
   --sp-radius-control: 10px;
   --sp-overlay-bg: #020C0A99;
+  --sp-overlay-chip-bg: rgba(255, 255, 255, 0.92);
+  --sp-overlay-chip-border: #94A3B8;
+  --sp-overlay-chip-text: #475569;
+  --sp-overlay-chip-dismiss: #64748B;
 
   --sp-bg: #F2FBF9;
   --sp-surface: #FFFFFF;

@@ -3,6 +3,7 @@ import { resolveLocalized } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import type { TaggedGuide, TaggedSpec } from "./connection-types.js";
 import { clearDraft, loadDraft, saveDraft } from "./draft-store.js";
+import { createIcon } from "./icons.js";
 import { type GuideMutationResult, sendToBackground, type WriteTarget } from "./messaging.js";
 import { slugify } from "./slug.js";
 import { sourceBadge } from "./surface-renderers.js";
@@ -177,7 +178,7 @@ export function openGuideEditor(opts: GuideEditorOptions): void {
       down.addEventListener("click", () => {
         swap(i, i + 1);
       });
-      const rm = iconBtn(doc, "×", t("guide.removeStep"));
+      const rm = iconBtn(doc, createIcon(doc, "close", 13), t("guide.removeStep"));
       rm.addEventListener("click", () => {
         order.splice(i, 1);
         renderSteps();
@@ -354,11 +355,12 @@ function labelledTextarea(
   return { wrap, area };
 }
 
-function iconBtn(doc: Document, glyph: string, label: string): HTMLButtonElement {
+function iconBtn(doc: Document, glyph: string | Node, label: string): HTMLButtonElement {
   const btn = doc.createElement("button");
   btn.type = "button";
   btn.className = "ge-icon";
-  btn.textContent = glyph;
+  if (typeof glyph === "string") btn.textContent = glyph;
+  else btn.appendChild(glyph);
   btn.setAttribute("aria-label", label);
   btn.title = label;
   return btn;
