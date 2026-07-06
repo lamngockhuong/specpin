@@ -507,6 +507,16 @@ const ja: Record<keyof Messages, string> = {
   // パネルのカード、書き込み可能な場合のみ表示)。
   "clone.duplicate": "要素に複製",
   "clone.duplicateShort": "複製",
+
+  // 要素ピッカーHUD: 要素を選択中にページ上へ表示される案内バー。フローごとに
+  // 案内が異なり、一括モードでは選択数と「完了」ボタンを追加。
+  "picker.hudLabel": "要素ピッカー",
+  "picker.hint.capture": "ページ上の要素をクリックして仕様を記録します。",
+  "picker.hint.clone": "この仕様の複製先となる要素をクリックします。",
+  "picker.hint.relink": "この仕様をリンクする新しい要素をクリックします。",
+  "picker.hint.bulk": "要素をクリックして選択し、「完了」を押します。",
+  "picker.selectedCount": "{count} 件選択",
+  "picker.done": "完了",
 };
 
 export default ja;

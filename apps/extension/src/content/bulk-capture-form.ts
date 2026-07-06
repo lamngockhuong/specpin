@@ -12,7 +12,7 @@ import type { ElementFingerprint, Spec, SpecStatus } from "@specpin/spec-schema"
 import { formatErrors, validateSpec } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import { escapeAttr, escapeHtml, setTrustedHtml } from "../shared/html.js";
-import { createIcon } from "../shared/icons.js";
+import { createIcon, iconSvg } from "../shared/icons.js";
 import type { WriteTarget } from "../shared/messaging.js";
 import { createShadowHost } from "../shared/shadow.js";
 import { slugify } from "../shared/slug.js";
@@ -76,7 +76,18 @@ const STYLES = `${SHADOW_PREAMBLE}
   padding: 28px; font: 15px/1.5 var(--sp-font-ui);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
 }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 h2 { margin: 0 0 4px; font-size: 18px; }
+/* Header close (X): flat icon button. Class selectors outrank the shared button
+   rules so it stays transparent and content-sized. */
+.card-close {
+  flex: 0 0 auto; margin: 0 0 4px; padding: 4px; width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: none; border-radius: var(--sp-radius-control);
+  color: var(--sp-text-2); cursor: pointer;
+}
+.card-close:hover { color: var(--sp-text); background: var(--sp-control); }
+.card-close:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--sp-accent-glow); }
 .sub { margin: 0 0 16px; color: var(--sp-text-2); font-size: 13px; }
 label { display: block; margin: 12px 0 4px; font-weight: 600; font-size: 13px; }
 .hint { font-weight: 400; color: var(--sp-text-2); }
@@ -102,12 +113,11 @@ textarea { min-height: 90px; resize: vertical; }
 .errors { margin-top: 12px; color: var(--sp-danger, #dc2626); font-size: 13px; white-space: pre-wrap; }
 .errors:empty { display: none; }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
-button.primary, button.ghost {
+button.primary {
   padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer;
   border-radius: var(--sp-radius-control); border: 1px solid var(--sp-border);
-}
-button.primary { background: var(--sp-accent, #4f46e5); color: #fff; border-color: transparent; }
-button.ghost { background: transparent; color: var(--sp-text); }`;
+  background: var(--sp-accent, #4f46e5); color: #fff; border-color: transparent;
+}`;
 
 export class BulkCaptureForm {
   private host: HTMLElement | null = null;
@@ -207,10 +217,9 @@ export class BulkCaptureForm {
       }
     };
     this.doc.addEventListener("keydown", this.escHandler, true);
-    q<HTMLButtonElement>(".cancel").addEventListener("click", cancel);
-    wrap.addEventListener("click", (e) => {
-      if (e.target === wrap) cancel();
-    });
+    // Close via the header X or Escape only. Backdrop click does NOT dismiss: the
+    // batch holds unsaved rows, so a stray outside click must never discard them.
+    q<HTMLButtonElement>(".card-close").addEventListener("click", cancel);
 
     // Build the shared fields into a CaptureFields template, then per row swap in
     // that row's title (used as both title and a seed description, since the schema
@@ -312,7 +321,8 @@ export class BulkCaptureForm {
         : `<label>${escapeHtml(t("capture.targetFile"))}</label><input class="shared-file" value="${escapeAttr(defaultFile)}" />`;
     return (
       `<div class="card" role="dialog" aria-modal="true">` +
-      `<h2>${escapeHtml(t("bulk.title"))}</h2>` +
+      `<div class="card-head"><h2>${escapeHtml(t("bulk.title"))}</h2>` +
+      `<button type="button" class="card-close" aria-label="${escapeAttr(t("common.close"))}" title="${escapeAttr(t("common.close"))}">${iconSvg("close", 16)}</button></div>` +
       `<p class="sub">${escapeHtml(t("bulk.selectedCount", { count }))} · ${escapeHtml(t("bulk.sharedHint"))}</p>` +
       targetField +
       `<label>${escapeHtml(t("template.label"))}</label>` +
@@ -337,7 +347,6 @@ export class BulkCaptureForm {
       `<div class="rows"></div>` +
       `<div class="errors"></div>` +
       `<div class="actions">` +
-      `<button type="button" class="ghost cancel">${escapeHtml(t("common.cancel"))}</button>` +
       `<button type="button" class="primary save">${escapeHtml(t("bulk.save"))}</button>` +
       `</div></div>`
     );

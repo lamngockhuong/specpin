@@ -19,6 +19,13 @@ const STROKE_WIDTH = "1.6";
 const ICON_PATHS = {
   close: "M3.5 3.5 8.5 8.5M8.5 3.5 3.5 8.5",
   plus: "M6 2.5V9.5M2.5 6H9.5",
+  check: "M2.5 6.3 5 8.8 9.5 3.5",
+  play: "M4.5 3.2V8.8L9 6Z",
+  pencil: "M8.1 2.7 9.3 3.9 4.5 8.7 3 9 3.3 7.5Z",
+  // Trash can (Feather "trash-2" scaled to the 12 grid): wide lid, rounded handle
+  // tab, body with rounded bottom corners, and two ribs. Reads clearly small.
+  trash:
+    "M1.5 3H10.5M9.5 3V10a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V3M4.5 3V2a1 1 0 0 1 1-1H6.5a1 1 0 0 1 1 1V3M5 5.5V8.5M7 5.5V8.5",
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;
@@ -30,6 +37,27 @@ export function iconSvg(name: IconName, size = 12): string {
     `<svg viewBox="${VIEW_BOX}" width="${size}" height="${size}" fill="none" aria-hidden="true">` +
     `<path d="${ICON_PATHS[name]}" stroke="currentColor" stroke-width="${STROKE_WIDTH}" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`
   );
+}
+
+/** Build an icon-only `<button>`: the label becomes both the accessible name
+ *  (`aria-label`) and the hover tooltip (`title`), and the icon strokes
+ *  `currentColor` so a variant class (e.g. `.danger`) still tints it. Shared by
+ *  the guide-row actions and the Options corpus-entry delete. */
+export function createIconButton(
+  doc: Document,
+  className: string,
+  name: IconName,
+  label: string,
+  onClick: () => void,
+): HTMLButtonElement {
+  const btn = doc.createElement("button");
+  btn.type = "button";
+  btn.className = className;
+  btn.setAttribute("aria-label", label);
+  btn.title = label;
+  btn.appendChild(createIcon(doc, name, 16));
+  btn.addEventListener("click", onClick);
+  return btn;
 }
 
 /** The same icon as a detached SVG node, for createElement call sites. */

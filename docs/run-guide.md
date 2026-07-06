@@ -119,7 +119,7 @@ Team admins can set project-wide defaults in the Options page (**Team visibility
 
 ## 10. Capture a new spec (with translations)
 
-Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, then fill the form. The form has a row of **language tabs** (one per locale, plus a **+** tab to add one): click a tab to author that language's title/description/rules, then switch tabs to add a translation - switching tabs keeps what you already entered. The default language requires a title and description. The description and business-rules fields have a small **Markdown toolbar** (description: bold / italic / link / bullet / numbered; rules: bold / italic / link); each button inserts Markdown into the textarea around your selection. Below the display mode the form has optional **provenance** inputs: a **Status** select (draft / approved / deprecated; leave blank for none), a **Links** sub-form (repeatable label + `http`/`https` URL rows, "Add link" / × to remove), and **Linked tests** (one repo-relative test path per line - a *declared* link that `specpin validate` checks exists, never runs). The **Save to** picker lists every writable project serving the page, labelled by kind (`sidecar` or `local`); pick one (a lone target is selected automatically, and capture is disabled with an explanation when no project serves the page). On save the spec is validated and written: a sidecar target writes the chosen `.spec.json` (pretty-printed) so it shows up in `git diff`; a local target writes it into `browser.storage.local` (origin-bounded, never a sidecar). Captured specs carry `meta.source: "manual"`. The authored Markdown renders as formatted text in every display mode (see [schema-reference](./schema-reference.md#formatting-markdown-subset) for the supported subset). If the element you pinned has no stable anchor, the form shows a **Fragile anchor** hint with a copyable `data-spec-id="…"` snippet - add that attribute to your source to upgrade the match to exact (suggest-only; Specpin never edits source).
+Click **+ Capture spec** in the popup (or press `Alt+Shift+C`), click an element, then fill the form. A small on-screen HUD appears at the bottom-center of the page while the element picker is active, showing an instruction prompt so you always know what to do next. The form has a row of **language tabs** (one per locale, plus a **+** tab to add one): click a tab to author that language's title/description/rules, then switch tabs to add a translation - switching tabs keeps what you already entered. The default language requires a title and description. The description and business-rules fields have a small **Markdown toolbar** (description: bold / italic / link / bullet / numbered; rules: bold / italic / link); each button inserts Markdown into the textarea around your selection. Below the display mode the form has optional **provenance** inputs: a **Status** select (draft / approved / deprecated; leave blank for none), a **Links** sub-form (repeatable label + `http`/`https` URL rows, "Add link" / × to remove), and **Linked tests** (one repo-relative test path per line - a *declared* link that `specpin validate` checks exists, never runs). The **Save to** picker lists every writable project serving the page, labelled by kind (`sidecar` or `local`); pick one (a lone target is selected automatically, and capture is disabled with an explanation when no project serves the page). On save the spec is validated and written: a sidecar target writes the chosen `.spec.json` (pretty-printed) so it shows up in `git diff`; a local target writes it into `browser.storage.local` (origin-bounded, never a sidecar). Captured specs carry `meta.source: "manual"`. The authored Markdown renders as formatted text in every display mode (see [schema-reference](./schema-reference.md#formatting-markdown-subset) for the supported subset). If the element you pinned has no stable anchor, the form shows a **Fragile anchor** hint with a copyable `data-spec-id="…"` snippet - add that attribute to your source to upgrade the match to exact (suggest-only; Specpin never edits source). The capture and edit forms close via the **X** icon in the modal header (top-right) or by pressing **Escape**; clicking outside the modal no longer closes it to prevent accidental loss of unsaved work.
 
 ### Right-click menu
 
@@ -129,7 +129,7 @@ When Specpin is on, the page right-click menu has a **Specpin** submenu with fou
 
 Open a spec for editing from either surface: click a tooltip badge to pin it and hit **Edit spec**, or open a side-panel card's **⋯** (more actions) menu and choose **Edit**. The same form opens pre-filled with the spec's content for every authored language (including the provenance fields - status, links, and linked tests); change the title, description, business rules, tags, display mode, or provenance and click **Save changes**. The spec keeps its `id` and provenance (`createdBy`/`createdAt`/`source`) and preserves any prior review stamp; only `updatedAt` is bumped. Clearing a link or the linked-tests list removes it (it is not silently kept). In edit mode a **Mark reviewed** action stamps `meta.reviewedAt` to now plus a reviewer token (`reviewedBy`, prefilled with the spec's non-PII `createdBy` token, editable) and saves through the same path - the reviewer field is **committed to `.specs/` and included in exports, so it must not contain PII/emails**. A spec whose last review is older than its project's staleness threshold shows a **Stale** indicator on every surface. The change writes back through the owning sidecar and live-updates the page via SSE, the same as editing the `.spec.json` on disk.
 
-To point a spec at a different element, click **Re-link element** in the edit form, then click the new element on the page; the form reopens with your edits intact and the new fingerprint applied on save. Local (Manual) specs are now editable the same way; the edit writes back to `browser.storage.local` instead of a sidecar. (Side panel Edit drives the in-page form, so keep the panel docked next to the page it describes.)
+To point a spec at a different element, click **Re-link element** in the edit form, then click the new element on the page (the element picker HUD appears to guide you); the form reopens with your edits intact and the new fingerprint applied on save. Local (Manual) specs are now editable the same way; the edit writes back to `browser.storage.local` instead of a sidecar. (Side panel Edit drives the in-page form, so keep the panel docked next to the page it describes.)
 
 To delete a writable spec, use **Delete spec** on the pinned tooltip or **Delete** from a side-panel card's **⋯** menu, then confirm. A sidecar spec is removed from its `.spec.json` on disk (recover it from Git if needed); a local spec is removed from `browser.storage.local`. Deletion is origin-bounded exactly like editing (a page can only delete specs on a project that serves it), and the page re-renders without the spec via SSE. Side panel Delete drives the same in-page confirm, so keep the panel docked next to the page.
 
@@ -143,7 +143,7 @@ The **staleness threshold** (how old a review may be before a spec shows as *sta
 
 Press `Alt+Shift+U` to toggle **coverage mode**: dashed ghost "+" markers appear on every *undocumented interactive element* on the page (buttons, links with href, inputs/select/textarea, ARIA widget roles like button/link/checkbox/tab/menuitem/combobox/slider, elements with `onclick`, `tabindex >= 0`, or `contenteditable`). Hidden elements, display:none, zero-size, disabled, or `aria-disabled` elements are never marked.
 
-Coverage only appears on a page that a project actually serves (a connected sidecar or a local project matching the origin) — it points you at gaps you can *author into*, so on a site with no project both the on-page markers and the popup/side-panel summary stay silent even while the mode is globally on.
+Coverage only appears on a page that a project actually serves (a connected sidecar or a local project matching the origin) - it points you at gaps you can *author into*, so on a site with no project both the on-page markers and the popup/side-panel summary stay silent even while the mode is globally on.
 
 The mode state persists across page reloads (off by default, so a page stays byte-identical when the mode is off). On a served page the popup and side panel show a one-line **coverage summary**: "N interactive · M documented · K gaps". When there are gaps, a **"Capture all gaps (K)"** button lets you bulk-capture them all at once (see Bulk capture below).
 
@@ -165,9 +165,9 @@ Capture multiple specs in one workflow.
 
 **Multi-select picker:**
 
-1. Elements appear with hover highlights.
+1. Elements appear with hover highlights. An on-screen HUD at the bottom-center shows a live count ("N selected") and **Done** / **Cancel** buttons.
 2. Click elements to toggle them into/out of the selection (each selected element gets a persistent green outline).
-3. Press **Enter** to confirm and move to the form; press **Esc** to cancel.
+3. The **Done** button is disabled until at least one element is selected. Press **Enter** or click **Done** to confirm and move to the form; press **Esc** or click **Cancel** to abort.
 
 **Bulk form:**
 
@@ -176,7 +176,7 @@ Capture multiple specs in one workflow.
    - **Title** (auto-derived from visible text → aria-label → title attr → placeholder → humanized tag/role, editable inline).
    - A remove button (×) per row.
    - Rows with colliding titles are flagged so you can disambiguate them.
-3. All shared fields are applied to every spec.
+3. All shared fields are applied to every spec. The bulk form closes via the **X** icon in the modal header or **Escape**; clicking outside the modal no longer closes it.
 
 **Submit and error handling:**
 
@@ -199,7 +199,7 @@ Selecting a template prefills **empty fields only**: it never overwrites text yo
 When viewing an editable spec (a tooltip badge or side-panel card), a **Duplicate to element** action appears (shown only when you have write permission for that spec's project). On the side-panel card it lives in the **⋯** (more actions) menu as **Clone**.
 
 1. Click **Duplicate to element**.
-2. The element picker appears. Click the target element.
+2. The element picker appears (with the on-screen HUD to guide you). Click the target element.
 3. The capture form opens, prefilled with the source spec's content (title, description, business rules, tags).
 4. The new spec receives a **fresh fingerprint**, a new `id` (re-derived from the title on save), and **provenance reset**:
    - `status` → `draft`
@@ -211,15 +211,15 @@ This ensures an approved source spec never launders an unreviewed copy into "app
 
 A **guide** is a step-by-step walkthrough over the specs already on a page: it spotlights each element in turn and shows that spec's content in a popover with **Back / Skip / Next** (the last step is **Done**), a step counter, and `←` / `→` / `Esc` keyboard control. It is launched on demand and does not replace the normal tooltip/sidebar/modal rendering.
 
-**Launch.** The popup and side panel have a **Guides** section: click **Start guided tour** to walk every matched spec in default order (no setup needed), or **Start** next to a named guide to run its curated steps. `Alt+Shift+G` starts the default tour from the keyboard (press again to stop). From the popup the tour launches and the popup closes so the page is unobscured; the side panel stays open.
+**Launch.** The popup and side panel have a **Guides** section: click **Start guided tour** to walk every matched spec in default order (no setup needed), or click the play icon next to a named guide to run its curated steps. `Alt+Shift+G` starts the default tour from the keyboard (press again to stop). From the popup the tour launches and the popup closes so the page is unobscured; the side panel stays open.
 
-**Curate.** Click **+ New guide** (or **Edit** on a guide) to open the editor: give it a name (and optional description), add the page's specs as ordered steps (use the ↑ / ↓ buttons to reorder, × to remove), and choose where to save it in the **Save to** picker:
+**Curate.** Click **+ New guide** (or the pencil icon to edit a guide) to open the editor: give it a name (and optional description), add the page's specs as ordered steps (use the ↑ / ↓ buttons to reorder, × to remove), and choose where to save it in the **Save to** picker:
 
 - a **sidecar** project - committed to that repo's `.specs/guides.json` and shared with the team via Git;
 - a **local** project - stored in the extension alongside that local project;
 - **Personal** - private to you, synced across your machines, never written to Git.
 
-Leave the steps empty to save a guide that always walks every matched spec in default order. A step whose spec is no longer on the page is flagged in the editor (and skipped at launch). Delete a guide from the same list, or manage a connection's team guides (list + delete) from the Options page under **Team guides**.
+Leave the steps empty to save a guide that always walks every matched spec in default order. A step whose spec is no longer on the page is flagged in the editor (and skipped at launch). Delete a guide by clicking the trash icon in the same list, or manage a connection's team guides (list + delete via trash icons) from the Options page under **Team guides**.
 
 A guide built for a page reflects whatever specs match it at launch; if a teammate changes the specs mid-tour, the tour stops cleanly and the normal rendering returns.
 

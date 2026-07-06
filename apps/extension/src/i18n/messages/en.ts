@@ -505,6 +505,16 @@ const en = {
   "clone.duplicate": "Duplicate to element",
   // Compact label for the side-panel card action; "clone.duplicate" is its tooltip.
   "clone.duplicateShort": "Clone",
+
+  // Element-picker HUD: the on-screen banner shown while picking an element.
+  // Each flow gets its own instruction; bulk adds a live count + Done control.
+  "picker.hudLabel": "Element picker",
+  "picker.hint.capture": "Click an element on the page to capture a spec.",
+  "picker.hint.clone": "Click the element to clone this spec onto.",
+  "picker.hint.relink": "Click the new element to link this spec to.",
+  "picker.hint.bulk": "Click elements to select them, then Done.",
+  "picker.selectedCount": "{count} selected",
+  "picker.done": "Done",
 } satisfies Record<string, string>;
 
 export type Messages = typeof en;

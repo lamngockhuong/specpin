@@ -497,6 +497,16 @@ const vi: Record<keyof Messages, string> = {
   // side panel, chỉ hiện khi có quyền ghi).
   "clone.duplicate": "Nhân bản sang phần tử",
   "clone.duplicateShort": "Nhân bản",
+
+  // HUD chọn phần tử: dải hướng dẫn hiện trên trang khi đang chọn phần tử. Mỗi
+  // luồng có hướng dẫn riêng; chế độ hàng loạt thêm bộ đếm và nút Xong.
+  "picker.hudLabel": "Bộ chọn phần tử",
+  "picker.hint.capture": "Nhấp vào một phần tử trên trang để ghi spec.",
+  "picker.hint.clone": "Nhấp vào phần tử muốn nhân bản spec này sang.",
+  "picker.hint.relink": "Nhấp vào phần tử mới để liên kết spec này tới.",
+  "picker.hint.bulk": "Nhấp chọn các phần tử, rồi bấm Xong.",
+  "picker.selectedCount": "Đã chọn {count}",
+  "picker.done": "Xong",
 };
 
 export default vi;

@@ -597,6 +597,7 @@ export default defineContentScript({
         // Picker dismissed (Escape) before any element was picked: release the
         // capture flag so re-rendering is not frozen (RT-FM6 exit path).
         endCapture,
+        { theme },
       );
     }
 
@@ -645,7 +646,7 @@ export default defineContentScript({
     // form. Additive to single capture; never over a running tour / open form.
     function startBulkCapture(): void {
       if (!tryBeginAuthoring()) return;
-      picker.startMulti((els) => void openBulkForm(els), endCapture);
+      picker.startMulti((els) => void openBulkForm(els), endCapture, { theme });
     }
 
     // "Capture all gaps" bridge from the coverage view: scan the current gaps fresh
@@ -724,6 +725,7 @@ export default defineContentScript({
         picker.start(
           (el) => resolve(captureFingerprint(el)),
           () => resolve(null),
+          { hud: "relink", theme },
         );
       });
     }
@@ -792,17 +794,21 @@ export default defineContentScript({
       const source = specs.find((s) => s.id === sourceSpecId);
       if (!source) return;
       if (!tryBeginAuthoring()) return;
-      picker.start((el) => {
-        fetchWriteTargets().then(
-          (targets) =>
-            openCaptureFormForElement(el, targets, {
-              prefill: cloneFields(source),
-              defaultFile: source._file ?? defaultFileName(),
-            }),
-          // Background not ready: release the authoring flow instead of freezing.
-          endCapture,
-        );
-      }, endCapture);
+      picker.start(
+        (el) => {
+          fetchWriteTargets().then(
+            (targets) =>
+              openCaptureFormForElement(el, targets, {
+                prefill: cloneFields(source),
+                defaultFile: source._file ?? defaultFileName(),
+              }),
+            // Background not ready: release the authoring flow instead of freezing.
+            endCapture,
+          );
+        },
+        endCapture,
+        { hud: "clone", theme },
+      );
     }
 
     // Confirm loop: affirm that a scored match resolved to the right element. Feeds
