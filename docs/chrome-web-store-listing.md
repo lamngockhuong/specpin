@@ -57,16 +57,16 @@ Developer Tools
 Specpin
 
 **Summary (Thông tin tóm tắt):**
-Ghim đặc tả nghiệp vụ sống lên các phần tử của giao diện web đang chạy. Git-native, ưu tiên cục bộ, không phụ thuộc framework.
+Ghim đặc tả nghiệp vụ hệ thống lên các phần tử trên giao diện web đang chạy. Git-native, ưu tiên cục bộ, không phụ thuộc framework.
 
 **Description (Mô tả):**
 Specpin gắn đặc tả nghiệp vụ (quy tắc, mô tả, tiêu chí chấp nhận) trực tiếp lên các phần tử của một giao diện web đang chạy, rồi hiển thị chúng ngay trong trình duyệt khi bạn rê chuột hoặc duyệt trang.
 
-Specpin KHÔNG phải công cụ sinh code từ đặc tả: nó không tạo ra mã ứng dụng nào. Đây là một lớp tri thức ghim tài liệu sống, được quản lý phiên bản bằng Git, lên chính giao diện bạn đang có. Đặc tả nằm dưới dạng JSON trong thư mục `.specs/` của repo và được phục vụ cho tiện ích bởi một sidecar Go cục bộ nhỏ qua localhost có xác thực token. Theo mặc định, không có gì rời khỏi máy của bạn.
+Specpin KHÔNG phải công cụ sinh code từ đặc tả: nó không tạo ra mã ứng dụng nào. Đây là một lớp tri thức ghim tài liệu luôn cập nhật, được quản lý phiên bản bằng Git, lên chính giao diện bạn đang có. Đặc tả nằm dưới dạng JSON trong thư mục `.specs/` của repo và được phục vụ cho tiện ích bởi một sidecar Go cục bộ nhỏ qua localhost có xác thực token. Theo mặc định, không có gì rời khỏi máy của bạn.
 
 Tính năng:
 
-- Ghim đặc tả lên phần tử sống: đối sánh vân tay đa tín hiệu bền bỉ (test-id, aria, selector, xpath, văn bản, vị trí) để đặc tả vẫn khớp sau khi refactor, giới hạn theo trang bằng URL glob.
+- Ghim đặc tả lên phần tử thực trên trang: đối sánh vân tay đa tín hiệu bền bỉ (test-id, aria, selector, xpath, văn bản, vị trí) để đặc tả vẫn khớp sau khi refactor, giới hạn theo trang bằng URL glob.
 
 - Độ tin cậy đối sánh và tình trạng trang: xem mỗi đặc tả khớp thế nào (anchor chính xác hay selector), rà soát các match dễ vỡ, và thêm thuộc tính data-spec-id để khớp chính xác.
 

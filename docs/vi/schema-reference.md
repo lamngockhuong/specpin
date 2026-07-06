@@ -207,4 +207,4 @@ Ba cách lấy schema, theo mức độ tiện dần:
   `https://cdn.jsdelivr.net/npm/@specpin/spec-schema/schema/v1.json`.
 
 Versioning: `/schema/v1.json` ổn định cho schema v1. Breaking change sau này sẽ thêm
-`/schema/v2.json` và giữ v1 sống cho các repo cũ.
+`/schema/v2.json` và duy trì v1 cho các repo cũ.

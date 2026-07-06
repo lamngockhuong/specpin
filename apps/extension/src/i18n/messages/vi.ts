@@ -441,7 +441,7 @@ const vi: Record<keyof Messages, string> = {
   "emptyState.title": "Chưa có spec nào cho trang này",
   "emptyState.subtitle": "Tạo một dự án cho trang web này để bắt đầu gắn spec lên các phần tử.",
   "emptyState.panelSubtitle":
-    "Tạo một dự án để gắn spec sống lên các phần tử của trang web này. Mọi thứ bạn ghi lại được lưu dưới dạng JSON trong repo của bạn.",
+    "Tạo một dự án để gắn spec luôn cập nhật lên các phần tử của trang web này. Mọi thứ bạn ghi lại được lưu dưới dạng JSON trong repo của bạn.",
   "emptyState.newProject": "+ Dự án mới",
   "emptyState.startTitle": "Bắt đầu spec cho trang này",
   "emptyState.step1Title": "Tạo một dự án",
