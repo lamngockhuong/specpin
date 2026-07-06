@@ -348,6 +348,13 @@ export default defineContentScript({
     // (and tear down any overlay carried over from a project page we navigated off).
     async function renderCoverage(): Promise<void> {
       if (!coverageEnabled) return;
+      // The master switch (SET_ENABLED) hides every Specpin surface, ghost markers
+      // included. Tear down any overlay left over from the enabled state so turning
+      // Specpin off on the page drops the markers in lock-step with the spec badges.
+      if (!enabled) {
+        destroyCoverageOverlay();
+        return;
+      }
       if (!(await originServesProject())) {
         destroyCoverageOverlay();
         return;
@@ -1062,6 +1069,10 @@ export default defineContentScript({
           // even when coverage mode has not been toggled on this session. Returns
           // a Promise (the sendMessage response), like GET_MATCHED_IDS.
           return (async (): Promise<CoverageCounts | null> => {
+            // The master switch hides every surface (mirrors GET_MATCHED_IDS): report
+            // nothing so the popup/side-panel summary stays hidden while Specpin is
+            // off, matching the on-page markers.
+            if (!enabled) return null;
             // Same gate as the on-page overlay: with no project serving this origin
             // there is nowhere to author into, so report nothing — the surface hides
             // the summary, hint, and "Capture all gaps" button on a null result.
