@@ -6,7 +6,7 @@
 // Requires: rsvg-convert (librsvg) + ImageMagick `convert` (to flatten alpha to 24-bit).
 
 import { execFileSync } from "node:child_process";
-import { writeFileSync, rmSync } from "node:fs";
+import { rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -70,7 +70,18 @@ const out = join(DIR, "marquee-promo-1400x560.png");
 writeFileSync(svgPath, svg);
 execFileSync("rsvg-convert", ["-w", String(W), "-h", String(H), svgPath, "-o", rawPng]);
 // Flatten to 24-bit (no alpha), as the store requires.
-execFileSync("convert", [rawPng, "-background", BG, "-alpha", "remove", "-alpha", "off", "-type", "TrueColor", out]);
+execFileSync("convert", [
+  rawPng,
+  "-background",
+  BG,
+  "-alpha",
+  "remove",
+  "-alpha",
+  "off",
+  "-type",
+  "TrueColor",
+  out,
+]);
 rmSync(rawPng, { force: true });
 rmSync(svgPath, { force: true });
 console.log("built marquee-promo-1400x560.png (24-bit, no alpha)");

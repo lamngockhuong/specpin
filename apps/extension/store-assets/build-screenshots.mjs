@@ -105,8 +105,7 @@ const SHOTS = [
   },
 ];
 
-const esc = (s) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 // White map-pin logo on a teal squircle, scaled to `size` px at (x,y).
 function logo(x, y, size) {
@@ -129,10 +128,7 @@ function headlineSvg(lines) {
   const out = [];
   for (const line of lines) {
     const spans = line
-      .map(
-        (r) =>
-          `<tspan fill="${r.hl ? HL : "#fff"}">${esc(r.t)}</tspan>`,
-      )
+      .map((r) => `<tspan fill="${r.hl ? HL : "#fff"}">${esc(r.t)}</tspan>`)
       .join("");
     out.push(
       `<text x="${PAD}" y="${y}" xml:space="preserve" font-family="${FONT}" font-size="${size}" font-weight="800" letter-spacing="-1">${spans}</text>`,
@@ -255,4 +251,6 @@ for (const shot of SHOTS) {
   }
   console.log(`${has ? "composited" : "placeholder"}  ${shot.id}`);
 }
-console.log(`\n${SHOTS.length} shot(s) built. Drop raw captures in raw/<id>.png and re-run to composite.`);
+console.log(
+  `\n${SHOTS.length} shot(s) built. Drop raw captures in raw/<id>.png and re-run to composite.`,
+);
