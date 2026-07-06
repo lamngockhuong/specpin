@@ -3,9 +3,9 @@ title: Chính sách bảo mật
 description: Thực hành bảo mật và xử lý dữ liệu của Specpin. Ưu tiên cục bộ, không thu thập dữ liệu, không theo dõi, không dùng mã từ xa.
 ---
 
-**Cập nhật lần cuối**: Ngày 29 tháng 6 năm 2026
+**Cập nhật lần cuối**: Ngày 6 tháng 7 năm 2026
 
-Specpin cam kết bảo vệ quyền riêng tư của bạn. Chính sách này giải thích tiện ích trình duyệt thu thập (hoặc không thu thập) dữ liệu gì và dữ liệu đó được dùng ra sao.
+Specpin cam kết bảo vệ quyền riêng tư của bạn. Chính sách này giải thích tiện ích trình duyệt thu thập (hoặc không thu thập) dữ liệu gì và dữ liệu đó được dùng ra sao. Về analytics trên website tài liệu này, xem [Analytics của website](#analytics-của-website).
 
 ## Tóm tắt
 
@@ -125,6 +125,15 @@ Specpin tuân thủ:
 - California Consumer Privacy Act (CCPA) - bằng cách không thu thập dữ liệu nào
 
 Vì Specpin không thu thập bất kỳ dữ liệu cá nhân nào, không có dữ liệu nào để truy cập, export, sửa hay xóa ở phía chúng tôi. Tất cả dữ liệu ở trên thiết bị của bạn, hoàn toàn dưới quyền kiểm soát của bạn.
+
+## Analytics của website
+
+Chính sách bảo mật này mô tả **tiện ích trình duyệt Specpin**, vốn không thu thập gì. Website tài liệu của Specpin (`specpin.ohnice.app`) là một thành phần riêng và dùng **Google Analytics (GA4)** để đo lượt truy cập trang ở mức tổng hợp, giúp chúng tôi cải thiện tài liệu.
+
+- Analytics **chỉ tải sau khi bạn đồng ý** ở banner cookie. Nếu bạn từ chối (hoặc bỏ qua), không có script analytics nào được tải và không có cookie analytics nào được đặt.
+- Lựa chọn của bạn được lưu trong local storage của trình duyệt; xóa nó nếu muốn được hỏi lại.
+- Google Analytics 4 không ghi hay lưu địa chỉ IP đầy đủ.
+- Điều này chỉ áp dụng cho website. Bản thân tiện ích không bao giờ tải analytics, như mô tả ở trên.
 
 ## Liên hệ
 
