@@ -3,9 +3,9 @@ title: Privacy Policy
 description: Specpin's privacy and data-handling practices. Local-first, no data collection, no tracking, no remote code.
 ---
 
-**Last updated**: June 29, 2026
+**Last updated**: July 6, 2026
 
-Specpin is committed to protecting your privacy. This policy explains what data the browser extension collects (or does not collect) and how it is used.
+Specpin is committed to protecting your privacy. This policy explains what data the browser extension collects (or does not collect) and how it is used. For analytics on this documentation website, see [Website analytics](#website-analytics).
 
 ## Summary
 
@@ -125,6 +125,15 @@ Specpin complies with:
 - California Consumer Privacy Act (CCPA) - by collecting no data
 
 Because Specpin collects no personal data, there is no data to access, export, correct, or delete on our side. All data stays on your device, fully under your control.
+
+## Website analytics
+
+This privacy policy describes the **Specpin browser extension**, which collects nothing. The Specpin documentation website (`specpin.ohnice.app`) is a separate component and uses **Google Analytics (GA4)** to measure aggregate page visits so we can improve the docs.
+
+- Analytics load **only after you accept** the cookie banner. If you decline (or ignore it), no analytics script is loaded and no analytics cookies are set.
+- Your choice is remembered in your browser's local storage; clear it to be asked again.
+- Google Analytics 4 does not log or store full IP addresses.
+- This applies to the website only. The extension itself never loads analytics, as described above.
 
 ## Contact
 

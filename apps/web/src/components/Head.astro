@@ -11,10 +11,192 @@
  * Starlight's own scripts (theme provider, sidebar, tabs) are built to survive
  * these transitions, so no extra rerun handling is needed here. Registered via
  * the `components.Head` slot in astro.config.mjs.
+ *
+ * Google Analytics (GA4), consent-gated:
+ *  - Production builds only, so local dev/preview never pollute the property.
+ *  - Prior-blocking consent (GDPR-friendly): the gtag library is NOT requested
+ *    until the visitor clicks Accept. Decline loads nothing. The choice is
+ *    remembered in localStorage, so the banner shows once.
+ *  - The banner is injected into <body> (not the head) so it appears on splash
+ *    pages too, and re-runs on every `astro:page-load` so it survives
+ *    ClientRouter soft navigation (which swaps the body). loadGA() is guarded to
+ *    load the library at most once per session.
+ *  - IP anonymization is not configured: GA4 anonymizes IPs by default and
+ *    ignores the legacy `anonymize_ip` flag, so setting it would be a no-op.
+ * This analytics covers the docs/marketing site only, not the extension.
  */
 import Default from "@astrojs/starlight/components/Head.astro";
 import { ClientRouter } from "astro:transitions";
+
+const GA_MEASUREMENT_ID = "G-TZ7GRQC7LR";
+
+// Locale handling mirrors Footer.astro: `locale` is undefined for the English
+// root, "vi", or "ja"; `prefix` builds locale-scoped internal links.
+const { locale } = Astro.locals.starlightRoute;
+const prefix = locale ? `/${locale}` : "";
+
+// Translatable banner copy; falls back to English for any unmapped locale.
+const strings = {
+  en: {
+    msg: "We use Google Analytics to understand how the docs are used. Analytics cookies load only if you accept.",
+    more: "Privacy policy",
+    accept: "Accept",
+    decline: "Decline",
+    aria: "Cookie consent",
+  },
+  vi: {
+    msg: "Chúng tôi dùng Google Analytics để hiểu cách tài liệu được sử dụng. Cookie phân tích chỉ tải khi bạn đồng ý.",
+    more: "Chính sách bảo mật",
+    accept: "Đồng ý",
+    decline: "Từ chối",
+    aria: "Đồng ý cookie",
+  },
+  ja: {
+    msg: "ドキュメントの利用状況を把握するため Google Analytics を使用します。分析用 Cookie は許可した場合のみ読み込まれます。",
+    more: "プライバシーポリシー",
+    accept: "同意する",
+    decline: "拒否する",
+    aria: "Cookie の同意",
+  },
+};
+// Derive the privacy-policy link once from the prefix instead of hardcoding it
+// per locale.
+const t = {
+  ...(strings[locale as keyof typeof strings] ?? strings.en),
+  href: `${prefix}/help/privacy-policy/`,
+};
+
+// The consent + loader logic, built as a string so it can be injected verbatim
+// via set:html (avoids .astro's JSX-brace parsing of raw script bodies). The
+// localized copy is embedded as a JSON literal.
+const consentScript = `(function () {
+  var KEY = "specpin-analytics-consent";
+  var ID = ${JSON.stringify(GA_MEASUREMENT_ID)};
+  var T = ${JSON.stringify(t)};
+
+  function loadGA() {
+    if (window.__specpinGA) return;
+    window.__specpinGA = true;
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "https://www.googletagmanager.com/gtag/js?id=" + ID;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag("js", new Date());
+    gtag("config", ID);
+  }
+
+  function dismiss() {
+    var b = document.getElementById("specpin-consent");
+    if (b) b.remove();
+  }
+
+  function showBanner() {
+    if (document.getElementById("specpin-consent")) return;
+    var wrap = document.createElement("div");
+    wrap.id = "specpin-consent";
+    wrap.className = "specpin-consent";
+    wrap.setAttribute("role", "dialog");
+    wrap.setAttribute("aria-label", T.aria);
+    var p = document.createElement("p");
+    p.className = "specpin-consent__msg";
+    p.textContent = T.msg + " ";
+    var a = document.createElement("a");
+    a.href = T.href;
+    a.textContent = T.more;
+    p.appendChild(a);
+    var actions = document.createElement("div");
+    actions.className = "specpin-consent__actions";
+    var decline = document.createElement("button");
+    decline.type = "button";
+    decline.className = "specpin-consent__btn specpin-consent__btn--decline";
+    decline.textContent = T.decline;
+    var accept = document.createElement("button");
+    accept.type = "button";
+    accept.className = "specpin-consent__btn specpin-consent__btn--accept";
+    accept.textContent = T.accept;
+    actions.appendChild(decline);
+    actions.appendChild(accept);
+    wrap.appendChild(p);
+    wrap.appendChild(actions);
+    document.body.appendChild(wrap);
+    accept.addEventListener("click", function () {
+      try { localStorage.setItem(KEY, "granted"); } catch (e) {}
+      loadGA();
+      dismiss();
+    });
+    decline.addEventListener("click", function () {
+      try { localStorage.setItem(KEY, "denied"); } catch (e) {}
+      dismiss();
+    });
+  }
+
+  function init() {
+    var choice = null;
+    try { choice = localStorage.getItem(KEY); } catch (e) {}
+    if (choice === "granted") loadGA();
+    else if (choice === null) showBanner();
+  }
+
+  document.addEventListener("astro:page-load", init);
+})();`;
 ---
 
 <Default><slot /></Default>
 <ClientRouter />
+
+{import.meta.env.PROD && <script is:inline set:html={consentScript} />}
+
+<style is:global>
+  .specpin-consent {
+    position: fixed;
+    inset-inline: 1rem;
+    bottom: 1rem;
+    z-index: 9999;
+    max-width: 34rem;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--sl-color-text);
+    background: var(--sl-color-bg-nav, var(--sl-color-bg));
+    border: 1px solid var(--sl-color-hairline, var(--sl-color-gray-5));
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .specpin-consent__msg {
+    margin: 0;
+  }
+
+  .specpin-consent__actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .specpin-consent__btn {
+    cursor: pointer;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.875rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--sl-color-gray-5);
+    background: transparent;
+    color: var(--sl-color-text);
+  }
+
+  .specpin-consent__btn--accept {
+    color: var(--sl-color-text-invert);
+    background: var(--sl-color-accent);
+    border-color: var(--sl-color-accent);
+  }
+
+  .specpin-consent__btn--accept:hover {
+    background: var(--sl-color-accent-high);
+  }
+</style>
