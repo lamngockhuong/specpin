@@ -141,6 +141,8 @@ Mở một spec để sửa từ một trong hai nơi: click badge tooltip để
 
 Nhấn `Alt+Shift+U` để bật **chế độ coverage**: các dấu "+" dashed ghost xuất hiện trên mọi *element tương tác chưa được ghi* trên trang (button, link có href, input/select/textarea, ARIA widget role như button/link/checkbox/tab/menuitem/combobox/slider, element có `onclick`, `tabindex >= 0`, hoặc `contenteditable`). Element ẩn, `display:none`, không kích thước, disabled, hoặc `aria-disabled` không bao giờ được đánh dấu.
 
+Các dấu chỉ hiện trên trang mà có project đang phục vụ (một sidecar đã kết nối hoặc một project local khớp origin) — coverage chỉ cho bạn những gap có thể *ghi spec vào*, nên trên site chưa có project nào thì nó im lặng dù chế độ đang bật toàn cục.
+
 Trạng thái chế độ vẫn giữ qua lần reload trang (mặc định tắt, nên trang vẫn giống hệt khi chế độ tắt). Popup và side panel hiển thị một dòng **tóm tắt coverage**: "N tương tác · M ghi · K gap". Khi có gap, nút **"Ghi tất cả gap (K)"** cho phép bạn ghi hàng loạt toàn bộ chúng (xem mục Ghi hàng loạt bên dưới).
 
 Mỗi dấu có hai hành động nhanh:

@@ -255,7 +255,7 @@ export default defineContentScript({
         navTimer = null;
         rerender();
         // The new route has a different interactive set; re-scan coverage on it.
-        renderCoverage();
+        void renderCoverage();
       }, 100);
     };
 
@@ -291,7 +291,7 @@ export default defineContentScript({
       corpusEnabled = await getCorpusEnabled();
       rerender();
       // A spec add/remove changes the documented set, so re-scan coverage too.
-      renderCoverage();
+      await renderCoverage();
     }
 
     // Alt+Shift+N: flash the next matched-and-visible spec's element, wrapping to
@@ -319,12 +319,35 @@ export default defineContentScript({
       return set;
     }
 
+    // Tear down the ghost-marker overlay. One place so every teardown site (empty
+    // origin, coverage turned off, theme swap) drops the same state in lock-step.
+    function destroyCoverageOverlay(): void {
+      coverageOverlay?.destroy();
+      coverageOverlay = null;
+    }
+
     // (Re)scan for gaps and paint the ghost-marker overlay. No-op when coverage is
     // off. Reuses the cached per-origin ignore set (loaded when coverage turned on
     // and updated by ignoreGap). Called on toggle, refresh (SPECS_CHANGED), and
     // navigation; scroll/resize only reposition (no re-scan).
-    function renderCoverage(): void {
+    //
+    // Coverage flags undocumented controls so you can author specs on them — that
+    // only makes sense where some project can receive those specs. On a page no
+    // connected/local project serves there is nowhere to author into, so paint
+    // nothing (and tear down any overlay carried over from a project page we
+    // navigated away from). `GET_WRITE_TARGETS` is the same origin gate capture uses.
+    async function renderCoverage(): Promise<void> {
       if (!coverageEnabled) return;
+      let targets: WriteTarget[];
+      try {
+        targets = await fetchWriteTargets();
+      } catch {
+        return; // background not ready — a later refresh re-scans
+      }
+      if (targets.length === 0) {
+        destroyCoverageOverlay();
+        return;
+      }
       const { gaps } = findGaps(document, matchedElementSet(), coverageIgnore);
       coverageOverlay ??= new CoverageOverlay(document);
       coverageOverlay.render(gaps, {
@@ -354,7 +377,7 @@ export default defineContentScript({
         return; // malformed origin (e.g. about:) — nothing to persist
       }
       coverageIgnore.add(key);
-      renderCoverage();
+      await renderCoverage();
     }
 
     // Alt+Shift+U: flip coverage mode, persist it, and paint or tear down the
@@ -365,10 +388,9 @@ export default defineContentScript({
       await setCoverageEnabled(coverageEnabled);
       if (coverageEnabled) {
         coverageIgnore = new Set(await getCoverageIgnore(location.origin));
-        renderCoverage();
+        await renderCoverage();
       } else {
-        coverageOverlay?.destroy();
-        coverageOverlay = null;
+        destroyCoverageOverlay();
       }
     }
 
@@ -960,9 +982,8 @@ export default defineContentScript({
           rerender();
           // The overlay bakes its theme at host creation, so recreate it to switch.
           if (coverageEnabled) {
-            coverageOverlay?.destroy();
-            coverageOverlay = null;
-            renderCoverage();
+            destroyCoverageOverlay();
+            void renderCoverage();
           }
           break;
         case "SET_BADGE_NUMBERING":
@@ -977,7 +998,7 @@ export default defineContentScript({
           initI18n(resolveUiLocale(message.locale));
           rerender();
           // Marker action labels come from t(); repaint them in the new language.
-          renderCoverage();
+          void renderCoverage();
           break;
         case "HIGHLIGHT_ELEMENT": {
           // Resolve the spec id against the current render's matches and frame it.
