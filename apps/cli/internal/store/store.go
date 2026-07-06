@@ -101,6 +101,16 @@ func (s *Store) resolve(name string) (string, error) {
 	if filepath.IsAbs(clean) || strings.HasPrefix(clean, "..") {
 		return "", fmt.Errorf("%w: %q", ErrTraversal, name)
 	}
+	// .specs/ is flat: every caller passes a bare file name (<area>.spec.json,
+	// views.json, guides.json, required.json), and SpecFileNames lists only
+	// top-level entries, so a spec written into a subdirectory is unreachable by
+	// any reader. Reject a name with a path separator outright: it can only be an
+	// escape attempt (a subdir symlink) or a write no reader would ever surface.
+	// Both "/" and "\" are rejected so a Windows-style separator cannot slip past
+	// on a POSIX host where filepath.Clean leaves it literal.
+	if strings.ContainsAny(clean, `/\`) {
+		return "", fmt.Errorf("%w: path separator not allowed: %q", ErrTraversal, name)
+	}
 	full := filepath.Join(s.dir, clean)
 	rel, err := filepath.Rel(s.dir, full)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
