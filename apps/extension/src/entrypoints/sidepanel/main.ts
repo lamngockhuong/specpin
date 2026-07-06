@@ -21,6 +21,7 @@ import "../../shared/icon-btn.css";
 import "../../shared/link.css";
 import "../../shared/add-project.css";
 import "../../shared/project-menu.css";
+import "../../shared/overflow-menu.css";
 import "../../shared/surface-toast.css";
 import "../../shared/guide-section.css";
 import "../../shared/guide-editor.css";
@@ -39,6 +40,7 @@ import {
   sendToActiveTab,
   sendToBackground,
 } from "../../shared/messaging.js";
+import { type OverflowMenuItem, openOverflowMenu } from "../../shared/overflow-menu.js";
 import { wireProjectActions } from "../../shared/project-actions.js";
 import {
   activeTabUrl,
@@ -104,15 +106,42 @@ async function copyLink(specId: string): Promise<void> {
   if (await copyText(buildSpecLink(url, specId))) showSurfaceToast(t("common.linkCopied"));
 }
 
+// The background echoes a SET_PERSONAL_VISIBILITY write back as SPECS_CHANGED so
+// other surfaces (the in-page content script, a second popup, another machine)
+// re-render with the new visibility. This panel already applied its own toggle in
+// place, so it must ignore the echo it caused: a full refresh here would rebuild
+// the whole card list and flicker the hovered card's border. Count the echoes we
+// expect and drop exactly those - a lost echo self-clears after a second (never
+// wedges the guard), and a genuine change from elsewhere still refreshes.
+let selfVisibilityEchoes = 0;
+function expectSelfVisibilityEcho(): void {
+  selfVisibilityEchoes++;
+  setTimeout(() => {
+    if (selfVisibilityEchoes > 0) selfVisibilityEchoes--;
+  }, 1000);
+}
+
 // Per-spec eye toggle: a hard per-spec override that wins across axes (a spec
-// hidden by a tag can still be re-shown here). Persists then re-fetches.
+// hidden by a tag can still be re-shown here). Persists the override and syncs the
+// in-memory state + filter panel, but does NOT run a full refresh: the caller
+// updates the toggled card in place (class + label). A full re-render would tear
+// down and rebuild every card, replaying each one's border transition - the
+// flicker. `setSpecVisibility` is absolute (recomputed from the cleared state), so
+// repeated toggles stay correct without re-fetching.
 async function toggleSpec(
   spec: { id: string; tags?: string[]; file?: string },
   visible: boolean,
 ): Promise<void> {
   const next = setSpecVisibility(spec, currentPath, currentState, visible);
+  currentState = { teamHidden: currentState.teamHidden, personal: next };
+  // Set before the write so the guard is armed before the echo can arrive back.
+  expectSelfVisibilityEcho();
   await sendToBackground({ type: "SET_PERSONAL_VISIBILITY", visibility: next });
-  await refresh();
+  // Keep the filter panel's per-spec markers consistent with the eye toggle
+  // (separate DOM subtree from the spec cards, so no card flicker).
+  if (lastSpecs) {
+    renderFilterSection(byId("filters"), buildFilterModel(lastSpecs, currentPath), refresh, true);
+  }
 }
 
 /** Build a spec-card action button (Delete / Edit / Hide). The click stops
@@ -177,7 +206,6 @@ function renderSpecs(res: SpecsForOrigin): void {
 
     const facets = { id: spec.id, tags: spec.tags, file: spec._file };
     const visible = isVisible(facets, currentPath, state);
-    if (!visible) li.classList.add("spec-hidden");
 
     if (multiProject && spec.project) {
       const project = document.createElement("span");
@@ -189,7 +217,8 @@ function renderSpecs(res: SpecsForOrigin): void {
     // Header row: the title (with source + match-tier badges) flexes to fill and
     // wraps when long; the action cluster stays flush-right. They are flex
     // siblings, not overlapping layers, so a long title can never run under the
-    // actions (the fixed-offset overlap bug).
+    // actions (the fixed-offset overlap bug). The cluster is deliberately narrow -
+    // the eye toggle plus one kebab - so the title keeps the row's width.
     const head = document.createElement("div");
     head.className = "spec-head";
 
@@ -205,46 +234,70 @@ function renderSpecs(res: SpecsForOrigin): void {
     if (tier) title.appendChild(tier);
     head.appendChild(title);
 
-    // Actions, ordered Copy link / Delete / Edit / Hide left-to-right. Copy link
-    // is always present (any reader can share); Delete + Edit only when this origin
-    // can write the spec back; the eye toggle is always present.
     const actions = document.createElement("div");
     actions.className = "spec-actions";
 
-    actions.appendChild(
-      actionButton("spec-copy", t("common.copyLink"), t("common.copyLinkTitle"), () => {
-        void copyLink(spec.id);
-      }),
-    );
+    // The per-spec eye toggle stays inline: it is the frequent quick action, so
+    // show/hide this exact spec is one click (not two behind the kebab). It flips
+    // this one card in place (class + label) rather than triggering a full list
+    // refresh, so the other cards never repaint (no border-transition flicker).
+    let specVisible = visible;
+    const visBtn = actionButton("spec-vis", "", "", () => {
+      specVisible = !specVisible;
+      setVisLabel(specVisible);
+      void toggleSpec(facets, specVisible);
+    });
+    // Single-source the visible-state -> hidden-class + label/title mapping, used
+    // both on first paint and after each toggle.
+    const setVisLabel = (on: boolean): void => {
+      li.classList.toggle("spec-hidden", !on);
+      visBtn.textContent = on ? t("sidepanel.hide") : t("sidepanel.show");
+      visBtn.title = on ? t("sidepanel.hideThisSpec") : t("sidepanel.showThisSpec");
+    };
+    setVisLabel(specVisible);
+    actions.appendChild(visBtn);
 
+    // Everything else collapses behind a "..." menu so five Vietnamese-length
+    // labels never squeeze the title. Copy link is always present (any reader can
+    // share); Edit / Clone / Delete only when this origin can write the spec back.
+    // Those three delegate to the active tab's content script so the write (and
+    // Delete's destructive confirm) runs origin-routed in the page context, where
+    // the edit form + capture picker live. Delete is the destructive item, last.
+    const menuItems: OverflowMenuItem[] = [
+      {
+        label: t("common.copyLink"),
+        title: t("common.copyLinkTitle"),
+        onSelect: () => void copyLink(spec.id),
+      },
+    ];
     if (spec.writable) {
-      // Both Delete and Edit delegate to the active tab's content script so the
-      // write (and Delete's destructive confirm) runs origin-routed in the page
-      // context, where the edit form + capture picker also live.
-      actions.append(
-        actionButton("spec-delete", t("common.delete"), t("sidepanel.deleteThisSpec"), () => {
-          void actOnActiveTab({ type: "DELETE_SPEC_HERE", specId: spec.id });
-        }),
-        actionButton("spec-edit", t("common.edit"), t("sidepanel.editThisSpec"), () => {
-          void actOnActiveTab({ type: "EDIT_SPEC", specId: spec.id });
-        }),
-        actionButton("spec-clone", t("clone.duplicateShort"), t("clone.duplicate"), () => {
-          void actOnActiveTab({ type: "CLONE_SPEC", specId: spec.id });
-        }),
+      menuItems.push(
+        {
+          label: t("common.edit"),
+          title: t("sidepanel.editThisSpec"),
+          onSelect: () => void actOnActiveTab({ type: "EDIT_SPEC", specId: spec.id }),
+        },
+        {
+          label: t("clone.duplicateShort"),
+          title: t("clone.duplicate"),
+          onSelect: () => void actOnActiveTab({ type: "CLONE_SPEC", specId: spec.id }),
+        },
+        {
+          label: t("common.delete"),
+          title: t("sidepanel.deleteThisSpec"),
+          danger: true,
+          onSelect: () => void actOnActiveTab({ type: "DELETE_SPEC_HERE", specId: spec.id }),
+        },
       );
     }
-
-    // Per-spec eye toggle (side panel only): show/hide this exact spec.
-    actions.appendChild(
-      actionButton(
-        "spec-vis",
-        visible ? t("sidepanel.hide") : t("sidepanel.show"),
-        visible ? t("sidepanel.hideThisSpec") : t("sidepanel.showThisSpec"),
-        () => {
-          void toggleSpec(facets, !visible);
-        },
-      ),
+    // U+22EF (midline horizontal ellipsis) is the kebab glyph. actionButton wires
+    // the stopPropagation contract; its onClick toggles the shared menu against
+    // this button (referencing `kebab` is safe - the closure runs only on click).
+    const kebab = actionButton("spec-menu-btn", "⋯", t("common.moreActions"), () =>
+      openOverflowMenu(kebab, menuItems),
     );
+    kebab.setAttribute("aria-haspopup", "menu");
+    actions.appendChild(kebab);
 
     head.appendChild(actions);
     li.appendChild(head);
@@ -540,7 +593,12 @@ function highlightSpec(specId: string, attempt = 0): void {
 
 browser.runtime.onMessage.addListener((raw) => {
   const message = raw as Message;
-  if (message?.type === "SPECS_CHANGED") queueRefresh();
+  if (message?.type === "SPECS_CHANGED") {
+    // Drop the echo from this panel's own eye toggle (already applied in place);
+    // any other SPECS_CHANGED still refreshes.
+    if (selfVisibilityEchoes > 0) selfVisibilityEchoes--;
+    else queueRefresh();
+  }
   if (message?.type === "HIGHLIGHT_SPEC") highlightSpec(message.specId);
 });
 

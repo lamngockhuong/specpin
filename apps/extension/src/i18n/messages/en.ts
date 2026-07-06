@@ -36,6 +36,7 @@ const en = {
   // Deep-link "Copy link" affordance (side-panel card + tooltip pin).
   "common.copyLink": "Copy link",
   "common.copyLinkTitle": "Copy a shareable link to this spec",
+  "common.moreActions": "More actions",
   "common.linkCopied": "Link copied",
   "common.cannotActOnPage": "Can't do that on this page. Switch to the website tab first.",
   "common.specsOnThisPage": "Specs on this page",
