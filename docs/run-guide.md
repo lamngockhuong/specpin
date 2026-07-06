@@ -139,7 +139,73 @@ To delete a writable spec, use **Delete spec** on the pinned tooltip or **Delete
 
 The **staleness threshold** (how old a review may be before a spec shows as *stale*) is set per project via `manifest.json` `settings.stalenessThresholdDays` (1-3650), defaulting to **90** days. On a page serving several projects, each spec uses its own project's threshold. Local/manual projects have no manifest, so they always use the 90-day default (there is no per-local override yet).
 
-## 12. Guided tours (guide mode)
+## 12. Coverage mode (find undocumented interactive elements)
+
+Press `Alt+Shift+U` to toggle **coverage mode**: dashed ghost "+" markers appear on every *undocumented interactive element* on the page (buttons, links with href, inputs/select/textarea, ARIA widget roles like button/link/checkbox/tab/menuitem/combobox/slider, elements with `onclick`, `tabindex >= 0`, or `contenteditable`). Hidden elements, display:none, zero-size, disabled, or `aria-disabled` elements are never marked.
+
+The mode state persists across page reloads (off by default, so a page stays byte-identical when the mode is off). The popup and side panel show a one-line **coverage summary**: "N interactive · M documented · K gaps". When there are gaps, a **"Capture all gaps (K)"** button lets you bulk-capture them all at once (see Bulk capture below).
+
+Each marker has two quick actions:
+
+- **Capture**: Opens the capture form on that element.
+- **Ignore** (appears only when the element has a stable anchor): Dismisses the marker as a personal choice (stored in `storage.sync` per origin), so the gap stays hidden after reload and on other machines.
+
+The markers use the same collision-avoidance solver as spec badges, styled in an isolated Shadow DOM, and respect your reduced-motion preference.
+
+## 13. Bulk capture
+
+Capture multiple specs in one workflow.
+
+**Entry points:**
+
+1. Click the **Bulk capture** button in the popup or side panel (next to "+ Capture spec").
+2. From the coverage summary (when coverage mode has gaps), click **"Capture all gaps (K)"** to pre-load all undocumented elements.
+
+**Multi-select picker:**
+
+1. Elements appear with hover highlights.
+2. Click elements to toggle them into/out of the selection (each selected element gets a persistent green outline).
+3. Press **Enter** to confirm and move to the form; press **Esc** to cancel.
+
+**Bulk form:**
+
+1. A **Shared fields** section at the top: tags, business rules, status, and (if multiple projects serve the page) a target-project picker; otherwise a target file.
+2. A per-element list below, one row per selected element:
+   - **Title** (auto-derived from visible text → aria-label → title attr → placeholder → humanized tag/role, editable inline).
+   - A remove button (×) per row.
+   - Rows with colliding titles are flagged so you can disambiguate them.
+3. All shared fields are applied to every spec.
+
+**Submit and error handling:**
+
+- Click **Save specs** to write all rows as separate specs to one shared `.spec.json` file (one per page/route).
+- Specs are written sequentially. If a mid-batch failure occurs, succeeded rows are kept; the form stays open and marks which rows saved and which to retry.
+- Each spec's description is seeded from its row title (bulk collects titles, not separate descriptions).
+
+## 14. Templates (pre-fill common patterns)
+
+Both the capture form (single element) and the bulk form have a **"Start from template"** dropdown. Pre-built templates include:
+
+- **Form validation**: Prefills tags, business rules, and status for form validation specs.
+- **API error handling**: Prefills for error-handling specs.
+- **Auth flow**: Prefills for authentication-related specs.
+
+Selecting a template prefills **empty fields only** — it never overwrites text you already entered. No confirm dialog. There's no persistence or schema change; templates are fixed in the UI and localized to the extension's UI language.
+
+## 15. Clone ("Duplicate to element")
+
+When viewing an editable spec (a tooltip badge or side-panel card), a **Duplicate to element** action appears (shown only when you have write permission for that spec's project).
+
+1. Click **Duplicate to element**.
+2. The element picker appears. Click the target element.
+3. The capture form opens, prefilled with the source spec's content (title, description, business rules, tags).
+4. The new spec receives a **fresh fingerprint**, a new `id` (re-derived from the title on save), and **provenance reset**:
+   - `status` → `draft`
+   - `verifiedBy` and review stamp (`meta.reviewedAt`/`reviewedBy`) are dropped.
+
+This ensures an approved source spec never launders an unreviewed copy into "approved" — the cloned spec always starts as draft.
+
+## 16. Guided tours (guide mode)
 
 A **guide** is a step-by-step walkthrough over the specs already on a page: it spotlights each element in turn and shows that spec's content in a popover with **Back / Skip / Next** (the last step is **Done**), a step counter, and `←` / `→` / `Esc` keyboard control. It is launched on demand and does not replace the normal tooltip/sidebar/modal rendering.
 
@@ -155,7 +221,7 @@ Leave the steps empty to save a guide that always walks every matched spec in de
 
 A guide built for a page reflects whatever specs match it at launch; if a teammate changes the specs mid-tour, the tour stops cleanly and the normal rendering returns.
 
-## Connect several projects at once
+## 17. Connect several projects at once
 
 One extension can serve many projects. Run a sidecar per project on its own port (each prints its own token), and add each in Options:
 
@@ -168,7 +234,7 @@ cd /path/to/project-b && /path/to/bin/specpin serve --port 51002
 
 To demo this against the single demo app, run two sidecars over two `.specs/` directories on different ports; each page shows only the specs of the project(s) whose `domains` match its origin.
 
-## Serve on a remote machine
+## 18. Serve on a remote machine
 
 By default the sidecar is a single-user localhost tool. To share one `.specs/`
 with a team, run it on a shared host and connect the extension to it over
@@ -332,6 +398,7 @@ connection, so the default install carries no broad-host permission.
 | `Alt+Shift+S` | toggle Specpin on/off |
 | `Alt+Shift+M` | cycle display mode |
 | `Alt+Shift+C` | toggle capture mode (`Esc` cancels) |
+| `Alt+Shift+U` | toggle coverage mode (ghost markers on undocumented elements) |
 | `Alt+Shift+N` | cycle focus through matched specs (flash each, wrap around) |
 | `Alt+Shift+G` | start / stop the default guided tour (in-tour: `←` / `→` step, `Esc` exits) |
 

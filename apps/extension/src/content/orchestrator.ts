@@ -115,6 +115,9 @@ export function renderSession(
     /** When on, tooltip-mode badges show a 1-based reading-order number instead of
      *  "S" (Options opt-in, default OFF). */
     badgeNumbering?: boolean;
+    /** "Duplicate to element" callback (clone), threaded like onEdit; renderers
+     *  show it only when the spec is editable/writable. */
+    onClone?: (specId: string) => void;
   },
 ): RenderSession {
   const numbering = opts?.badgeNumbering ?? false;
@@ -241,6 +244,7 @@ export function renderSession(
       onEdit,
       onDelete,
       onConfirm: opts?.onConfirm,
+      onClone: opts?.onClone,
       // Editable only when this origin can write the spec back to its source
       // (sidecar serving the page, or a local batch serving it under the
       // applyToAllSites gate). The background sets `writable`; gating on it avoids

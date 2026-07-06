@@ -29,6 +29,13 @@ the exact same structure and differ only in color.
 | `sidebar.pen` | In-page sidebar | panel listing matched specs; `needsReview` specs get an amber border + tag |
 | `capture-form.pen` | Capture modal | title, description, business rules, tags, display mode, target file |
 
+## On-page visual patterns
+
+Two reusable patterns overlay the page's own content:
+
+- **Spec badge**: A blue or amber "S" (or number) circle, 16px, positioned to avoid overlapping content. Marks an element with a spec. Rendered in a Shadow DOM host, positioned by the badge-position solver, respects reduced-motion.
+- **Ghost marker**: A dashed square outline with a "+" glyph, muted color (`--sp-text-muted` over `--sp-surface`), 16-20px depending on content fit. Marks an undocumented interactive element (coverage mode). Also rendered in a Shadow DOM host, positioned by the same badge-position solver, respects reduced-motion. Visually distinct from the spec badge with a dashed border instead of solid.
+
 Rendered PNGs: `<surface>.light.png` and `<surface>.dark.png`. `overview.png` is
 a 2x4 montage (columns = light | dark). The tooltip renderer
 (`src/renderers/tooltip.ts`) has no mockup yet.

@@ -463,6 +463,48 @@ const ja: Record<keyof Messages, string> = {
   "offState.hiddenOne": "このページで {count} 件の仕様が非表示です",
   "offState.hiddenOther": "このページで {count} 件の仕様が非表示です",
   "offState.subtitle": "上のスイッチをオンに戻してください。",
+
+  // カバレッジモード: 仕様のない操作要素にゴーストマーカーを表示 (Alt+Shift+U)
+  // + popup / サイドパネルの件数行と各マーカーの操作。
+  "coverage.capture": "仕様を記録",
+  "coverage.ignore": "この要素を無視",
+  "coverage.summary": "操作要素 {interactive} · 記録済み {documented} · 未記録 {gaps}",
+  "coverage.hint": "Alt+Shift+U でページ上の未記録の要素を表示します。",
+  "coverage.captureAllGaps": "未記録をすべて記録 ({count})",
+
+  // 一括記録: 複数の要素を選択 → 共通フォーム → N 件の仕様。共通フィールドは
+  // すべての仕様に適用され、各行のタイトルは自動生成後にその場で編集できます。
+  "bulk.title": "一括記録",
+  "bulk.selectedCount": "{count} 個の要素",
+  "bulk.sharedHint":
+    "これらのフィールドは下のすべての仕様に適用されます。タイトルは各行で編集できます。",
+  "bulk.elementsTitle": "要素",
+  "bulk.rowRemove": "要素を削除",
+  "bulk.duplicateTitle": "他の行とタイトルが重複しています — 一意の名前にしてください",
+  "bulk.save": "すべて保存",
+  "bulk.rowOk": "保存しました",
+  "bulk.rowFailed": "失敗",
+  "bulk.partial":
+    "{total} 件中 {failed} 件を保存できませんでした。印の付いた行を修正して再度保存してください。",
+  "bulk.empty": "記録する要素がありません。",
+
+  // 組み込みの仕様テンプレート: 記録フォーム + 一括フォームを補完 (空欄のみ)。
+  // ルール本文は UI 言語に合わせてローカライズされます。
+  "template.label": "テンプレートから開始",
+  "template.none": "テンプレートなし",
+  "template.formValidation.label": "フォームのバリデーション",
+  "template.formValidation.rule1": "送信前に必須項目をすべて入力する必要があります。",
+  "template.formValidation.rule2": "不正な入力にはその場でエラーメッセージを表示します。",
+  "template.apiError.label": "API エラー処理",
+  "template.apiError.rule1": "リクエスト失敗時は空白ではなくユーザー向けのエラーを表示します。",
+  "template.apiError.rule2": "ページを再読み込みせずに操作を再試行できます。",
+  "template.authFlow.label": "認証フロー",
+  "template.authFlow.rule1": "未認証のユーザーはサインインへリダイレクトされます。",
+  "template.authFlow.rule2": "サインイン成功後、ユーザーは目的のページに戻ります。",
+
+  // クローン: 仕様の内容を新しく選んだ要素に複製 (ツールチップのピン + サイド
+  // パネルのカード、書き込み可能な場合のみ表示)。
+  "clone.duplicate": "要素に複製",
 };
 
 export default ja;

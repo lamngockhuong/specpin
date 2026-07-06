@@ -4,7 +4,7 @@ import { copyText } from "./clipboard.js";
 import type { ManualBatchSummary, TaggedSpec } from "./connection-types.js";
 import { dataSpecIdSnippet, fragileEntries } from "./data-spec-id.js";
 import { isLocalConnectionId } from "./local-id.js";
-import type { MatchReportEntry, StatusResult } from "./messaging.js";
+import type { CoverageCounts, MatchReportEntry, StatusResult } from "./messaging.js";
 import { connectionServesOrigin, manualSummaryServesOrigin } from "./origin-match.js";
 import {
   applyFacetToggle,
@@ -79,6 +79,43 @@ export function renderHealthSummary(
     orphaned: health.orphaned,
   });
   container.appendChild(line);
+}
+
+/** Render the one-line coverage summary (N interactive · M documented · K gaps)
+ *  into `container`, shared by the popup and side panel. Hidden when Specpin is
+ *  off, coverage is unknown (no content script), or the page has no interactive
+ *  elements — an empty summary is just noise. DOM-built (no innerHTML). */
+export function renderCoverageSummary(
+  container: HTMLElement,
+  coverage: CoverageCounts | null,
+  enabled: boolean,
+): void {
+  container.replaceChildren();
+  if (!enabled || !coverage || coverage.interactive === 0) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
+  const line = document.createElement("div");
+  line.className = "coverage-line";
+  line.textContent = t("coverage.summary", {
+    interactive: coverage.interactive,
+    documented: coverage.documented,
+    gaps: coverage.gaps,
+  });
+  const hint = document.createElement("div");
+  hint.className = "coverage-hint";
+  hint.textContent = t("coverage.hint");
+  container.append(line, hint);
+  // Bridge to bulk capture: when the page has gaps, offer to fill them all in one
+  // pass. The surface wires the click (delegated on the container) to the tab.
+  if (coverage.gaps > 0) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "coverage-capture-all";
+    btn.textContent = t("coverage.captureAllGaps", { count: coverage.gaps });
+    container.append(btn);
+  }
 }
 
 /** A compact match-tier badge for a spec card, aligned with the in-page badges:

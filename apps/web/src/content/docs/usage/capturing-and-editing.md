@@ -87,6 +87,64 @@ When Specpin is on, the page right-click menu has a **Specpin** submenu:
 
 The submenu is hidden while Specpin is off. Turn it back on from the popup or press `Alt+Shift+S`.
 
+## Bulk capture
+
+Capture multiple specs at once in a coordinated workflow.
+
+### Starting bulk capture
+
+1. Click **Bulk capture** in the popup or side panel (next to the "+ Capture spec" button).
+2. Or, from coverage mode (see "Coverage mode" in [Viewing Specs](/usage/viewing-specs/)), click **"Capture all gaps (N)"** to pre-load undocumented elements.
+
+### Multi-select picker
+
+1. Elements appear with hover highlights as you move the cursor.
+2. Click elements to toggle them into/out of the selection. Each selected element gets a persistent green outline.
+3. Press **Enter** to confirm and proceed to the form. Press **Esc** to cancel and return to the page.
+
+### Bulk capture form
+
+After selecting elements, the capture form opens with:
+
+1. **Shared fields** at the top: tags, business rules, status, and (if multiple projects serve the page) a project picker; otherwise a target file.
+2. A **per-element list** below: one row per selected element.
+   - **Title** (auto-derived from visible text → aria-label → title attr → placeholder → humanized tag/role, editable inline).
+   - A remove button (×) to drop that row.
+   - Rows with duplicate titles are flagged so you can disambiguate them.
+3. Shared fields are applied to all specs. Each row's description is pre-filled from its title (bulk capture collects titles, not separate descriptions).
+
+### Saving bulk captures
+
+Click **Save specs** to write all rows as separate specs to one shared `.spec.json` file (organized by page/route).
+
+If a write fails mid-batch, the form stays open and marks which rows succeeded and which to retry. Succeeded rows are kept in the file; you can fix the issues and re-submit the remaining rows.
+
+## Templates
+
+Both single-element capture and bulk capture forms have a **"Start from template"** dropdown.
+
+Pre-built templates include:
+
+- **Form validation**: Pre-fills tags, business rules, and status optimized for form validation specs.
+- **API error handling**: Pre-fills for error-handling specs.
+- **Auth flow**: Pre-fills for authentication-related specs.
+
+Selecting a template pre-fills **empty fields only**. It never overwrites text you've already entered. There's no confirm dialog. Templates are fixed in the UI and localized to your extension's UI language.
+
+## Duplicate to element (clone)
+
+When viewing a spec you can edit (tooltip badge or side-panel card), a **Duplicate to element** action appears.
+
+1. Click **Duplicate to element**.
+2. The element picker appears. Click the new element on the page.
+3. The capture form opens, pre-filled with the source spec's content: title, description, business rules, and tags.
+4. The cloned spec gets:
+   - A **fresh fingerprint** (matched to the new element).
+   - A new `id` (re-derived from the title on save).
+   - **Provenance reset**: status becomes `draft`, and review metadata (`verifiedBy`, `reviewedAt`, `reviewedBy`) is dropped.
+
+This ensures an approved source spec never silently clone into "approved" on a new element — the cloned spec always starts as draft and requires re-review.
+
 ## Export specs (local projects)
 
 Local projects can be exported as a `.specs.zip` bundle:

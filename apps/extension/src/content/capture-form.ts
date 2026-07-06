@@ -19,6 +19,7 @@ import { createShadowHost } from "../shared/shadow.js";
 import { slugify } from "../shared/slug.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
+import { SPEC_TEMPLATES, wireTemplateSelect } from "./spec-templates.js";
 
 const HOST_ID = "specpin-capture-host";
 
@@ -70,6 +71,11 @@ export interface CaptureFormOptions {
   onCancel?: () => void;
   /** Optional existing spec to edit: its locales preload so they are preserved. */
   initial?: Spec;
+  /** Optional content seed for CREATE mode (clone): preloads the same fields as
+   *  `initial` but does NOT enter edit mode, so the save mints a fresh id +
+   *  provenance and the file/target pickers stay visible. Ignored when `initial`
+   *  is set (edit wins). */
+  prefill?: Spec;
   /** Edit mode only: run the page picker and resolve a new fingerprint for the
    *  spec (or null if the user cancelled). When provided, a "Re-link element"
    *  action appears. The form hides itself while the picker runs, then restores
@@ -124,8 +130,9 @@ function linkRowHtml(label = "", url = ""): string {
 }
 
 /** A capture-target option label: project name plus its kind, so "CRM (local)"
- *  reads clearly against "My Sidecar (sidecar)" when both serve the page. */
-function targetLabel(target: WriteTarget): string {
+ *  reads clearly against "My Sidecar (sidecar)" when both serve the page. Shared
+ *  with the bulk-capture form's target picker. */
+export function targetLabel(target: WriteTarget): string {
   const name = target.project || target.id;
   const kind =
     target.kind === "local" ? t("capture.targetKindLocal") : t("capture.targetKindSidecar");
@@ -220,6 +227,24 @@ export function buildSpec(
   if (fields.status) spec.status = fields.status;
 
   return spec;
+}
+
+/** Build an editable `Spec` seed for cloning `source` onto a NEW element: keep the
+ *  authored content (title, description, business rules, tags, links) but drop the
+ *  provenance that asserted the *source* — `verifiedBy`, `meta.reviewedAt`/
+ *  `reviewedBy` — and reset `status` to draft so an approved source never launders
+ *  an unreviewed copy into "approved". The id is cleared so it re-derives from the
+ *  (possibly edited) title on save, and the fingerprint is left to the caller (the
+ *  clone picks a fresh element). Pure + testable. */
+export function cloneFields(source: Spec): Spec {
+  const clone: Spec = { ...source, id: "", status: "draft" };
+  if (clone.meta) {
+    clone.meta = { ...clone.meta };
+    delete clone.meta.reviewedAt;
+    delete clone.meta.reviewedBy;
+  }
+  delete clone.verifiedBy;
+  return clone;
 }
 
 const STYLES = `
@@ -367,6 +392,10 @@ export class CaptureForm {
     // Editing reuses the existing spec (id + provenance preserved); the fingerprint
     // is mutable so a re-link can repoint the spec without losing field edits.
     const editing = !!options.initial;
+    // Content to preload: an edit's own spec, else a clone's prefill seed. Edit
+    // preserves id/provenance (buildSpec gets `initial`); a prefill is CREATE mode
+    // (buildSpec gets no existing → fresh id + provenance), so only content loads.
+    const preload = options.initial ?? options.prefill ?? null;
     let activeFingerprint = fingerprint;
     const { host, shadow } = createShadowHost(this.doc, HOST_ID, STYLES, options.theme);
     const wrap = this.doc.createElement("div");
@@ -376,8 +405,8 @@ export class CaptureForm {
     // being edited, de-duplicated and default-first.
     const seeded = new Set<string>([options.defaultLocale, ...options.locales]);
     const byLocale: Record<string, LocaleContent> = {};
-    if (options.initial) {
-      for (const loc of localesOf(options.initial)) seeded.add(loc);
+    if (preload) {
+      for (const loc of localesOf(preload)) seeded.add(loc);
     }
     const locales = [...seeded].filter(Boolean);
     let current = options.defaultLocale || locales[0] || "en";
@@ -414,32 +443,47 @@ export class CaptureForm {
       (e.target as HTMLElement).closest(".link-remove")?.closest(".link-row")?.remove();
     });
 
-    // Preload content for editing an existing spec: per-locale text plus the
-    // locale-independent tags + display mode (else saving would wipe them).
-    if (options.initial) {
-      for (const loc of localesOf(options.initial))
-        byLocale[loc] = contentForLocale(options.initial, loc);
-      q<HTMLInputElement>("#sp-tags").value = (options.initial.tags ?? []).join(", ");
-      if (options.initial.preferredDisplayMode)
-        q<HTMLSelectElement>("#sp-mode").value = options.initial.preferredDisplayMode;
+    // Preload content for editing an existing spec OR cloning from a prefill seed:
+    // per-locale text plus the locale-independent tags + display mode (else saving
+    // would wipe them). A clone omits verifiedBy + review (cloneFields stripped
+    // them) so the copy starts as an unreviewed draft.
+    if (preload) {
+      for (const loc of localesOf(preload)) byLocale[loc] = contentForLocale(preload, loc);
+      q<HTMLInputElement>("#sp-tags").value = (preload.tags ?? []).join(", ");
+      if (preload.preferredDisplayMode)
+        q<HTMLSelectElement>("#sp-mode").value = preload.preferredDisplayMode;
       // Provenance: preload so an edit preserves them and clearing a field
       // overwrites (buildSpec never falls back to `existing` for these).
-      if (options.initial.status) q<HTMLSelectElement>("#sp-status").value = options.initial.status;
-      q<HTMLTextAreaElement>("#sp-verifiedby").value = (options.initial.verifiedBy ?? []).join(
-        "\n",
-      );
-      for (const link of options.initial.links ?? [])
+      if (preload.status) q<HTMLSelectElement>("#sp-status").value = preload.status;
+      q<HTMLTextAreaElement>("#sp-verifiedby").value = (preload.verifiedBy ?? []).join("\n");
+      for (const link of preload.links ?? [])
         appendTrustedHtml(linksBox, linkRowHtml(link.label, link.url));
       // Mark-reviewed prefill: the spec's existing reviewer, else the non-PII
-      // createdBy token — never a resolved user identity/email.
-      const reviewedByEl = q<HTMLInputElement>("#sp-reviewed-by");
-      reviewedByEl.value =
-        options.initial.meta?.reviewedBy ?? options.initial.meta?.createdBy ?? "manual";
-      const reviewedAt = options.initial.meta?.reviewedAt;
-      q<HTMLElement>("#sp-reviewed-status").textContent = reviewedAt
-        ? t("capture.reviewedOn", { date: reviewedAt })
-        : t("capture.notReviewed");
+      // createdBy token — never a resolved user identity/email. Only in edit mode:
+      // the review controls (#sp-reviewed-*) render only then, so a clone prefill
+      // (create mode) must not touch them.
+      if (editing) {
+        const reviewedByEl = q<HTMLInputElement>("#sp-reviewed-by");
+        reviewedByEl.value = preload.meta?.reviewedBy ?? preload.meta?.createdBy ?? "manual";
+        const reviewedAt = preload.meta?.reviewedAt;
+        q<HTMLElement>("#sp-reviewed-status").textContent = reviewedAt
+          ? t("capture.reviewedOn", { date: reviewedAt })
+          : t("capture.notReviewed");
+      }
     }
+
+    // Template dropdown: prefill empty fields only (tags / business rules / status)
+    // from a built-in pattern, in the active UI locale. Never overwrites text the
+    // author already entered (fill-empty), so it is safe to pick then edit.
+    wireTemplateSelect(
+      shadow.querySelector<HTMLSelectElement>("#sp-template"),
+      {
+        tags: q<HTMLInputElement>("#sp-tags"),
+        rules: rulesEl,
+        status: q<HTMLSelectElement>("#sp-status"),
+      },
+      t,
+    );
 
     const stashCurrent = (): void => {
       byLocale[current] = {
@@ -770,6 +814,11 @@ export class CaptureForm {
       <div class="card">
         <h3>${escapeHtml(opts.editing ? t("capture.titleEdit") : t("capture.titleCapture"))}</h3>
         ${targetField}
+        <label>${escapeHtml(t("template.label"))}</label>
+        <select id="sp-template">
+          <option value="">${escapeHtml(t("template.none"))}</option>
+          ${SPEC_TEMPLATES.map((tpl) => `<option value="${escapeAttr(tpl.id)}">${escapeHtml(t(tpl.labelKey))}</option>`).join("")}
+        </select>
         <label>${escapeHtml(t("capture.languageLabel"))} <span class="hint">${escapeHtml(t("capture.languageHint"))}</span></label>
         <div class="lang-tabs" role="tablist">${localeTabs}<button type="button" class="lang-tab add" data-locale="${ADD_LOCALE_VALUE}" aria-label="${escapeAttr(t("capture.addLanguageTab"))}" title="${escapeAttr(t("capture.addLanguageTab"))}">+</button></div>
         <label>${escapeHtml(t("capture.titleField"))}</label><input id="sp-title" placeholder="${escapeAttr(t("capture.titlePlaceholder"))}" />
@@ -861,7 +910,9 @@ function contentForLocale(spec: Spec, locale: string): LocaleContent {
   };
 }
 
-function randomSuffix(): string {
+/** A short random id suffix for a freshly captured spec. Shared with the bulk
+ *  form so every captured spec's id is unique even when titles collide. */
+export function randomSuffix(): string {
   const c = (globalThis as { crypto?: Crypto }).crypto;
   if (c?.randomUUID) return c.randomUUID().slice(0, 6);
   return Math.floor(Math.random() * 1e6).toString(36);

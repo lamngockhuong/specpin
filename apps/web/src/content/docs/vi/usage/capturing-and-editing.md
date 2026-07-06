@@ -87,6 +87,64 @@ Khi Specpin bật, menu nhấp chuột phải của trang có menu phụ **Specp
 
 Menu phụ bị ẩn khi Specpin tắt. Bật lại từ popup hoặc nhấn `Alt+Shift+S`.
 
+## Ghi hàng loạt
+
+Ghi nhiều spec cùng một lúc trong một luồng công việc.
+
+### Bắt đầu ghi hàng loạt
+
+1. Nhấp **Ghi hàng loạt** trong popup hoặc side panel (cạnh nút "+ Ghi spec").
+2. Hoặc, từ chế độ coverage (xem "Chế độ coverage" trong [Xem Spec](/vi/usage/viewing-specs/)), nhấp **"Ghi tất cả gap (N)"** để tải trước các element chưa được ghi.
+
+### Bộ chọn multi-select
+
+1. Các element xuất hiện với highlight khi bạn di chuyển con trỏ.
+2. Nhấp element để toggle chúng vào/ra khỏi lựa chọn. Mỗi element đã chọn nhận một viền xanh lá cây cố định.
+3. Nhấn **Enter** để xác nhận và chuyển tới biểu mẫu. Nhấn **Esc** để hủy và quay lại trang.
+
+### Biểu mẫu ghi hàng loạt
+
+Sau khi chọn element, biểu mẫu ghi mở ra với:
+
+1. **Trường dùng chung** ở trên: tag, quy tắc nghiệp vụ, trạng thái, và (nếu nhiều dự án phục vụ trang) bộ chọn dự án; nếu không thì là tệp đích.
+2. Một **danh sách per-element** bên dưới: một dòng cho mỗi element đã chọn.
+   - **Tiêu đề** (tự động suy ra từ text hiển thị → aria-label → title attr → placeholder → humanized tag/role, có thể sửa inline).
+   - Nút xóa (×) để loại bỏ dòng đó.
+   - Các dòng có tiêu đề trùng lặp bị cờ để bạn có thể phân biệt.
+3. Các trường dùng chung được áp dụng vào tất cả spec. Description của mỗi dòng được điền sẵn từ tiêu đề của nó (ghi hàng loạt thu thập tiêu đề, không phải description riêng).
+
+### Lưu bản ghi hàng loạt
+
+Nhấp **Lưu spec** để ghi tất cả dòng dưới dạng các spec riêng vào một tệp `.spec.json` dùng chung (được tổ chức theo page/route).
+
+Nếu một lần ghi thất bại giữa đường, biểu mẫu vẫn mở và đánh dấu dòng nào thành công và dòng nào cần thử lại. Các dòng đã thành công được giữ lại trong tệp; bạn có thể sửa các vấn đề và gửi lại các dòng còn lại.
+
+## Mẫu
+
+Cả biểu mẫu ghi element đơn lẻ và ghi hàng loạt đều có menu thả xuống **"Bắt đầu từ mẫu"**.
+
+Các mẫu tích sẵn gồm:
+
+- **Form validation**: Điền sẵn tag, quy tắc nghiệp vụ, và trạng thái tối ưu cho spec form validation.
+- **API error handling**: Điền sẵn cho các spec xử lý lỗi.
+- **Auth flow**: Điền sẵn cho các spec liên quan xác thực.
+
+Chọn một mẫu điền sẵn **chỉ các trường trống**. Nó không bao giờ ghi đè text bạn đã nhập. Không có dialog xác nhận. Mẫu được cố định trong UI và localize theo ngôn ngữ giao diện extension của bạn.
+
+## Nhân bản sang element
+
+Khi xem một spec bạn có thể sửa (badge tooltip hoặc thẻ side panel), hành động **Nhân bản sang element** xuất hiện.
+
+1. Nhấp **Nhân bản sang element**.
+2. Bộ chọn element xuất hiện. Nhấp element mới trên trang.
+3. Biểu mẫu ghi mở ra, được điền sẵn với nội dung spec nguồn: tiêu đề, mô tả, quy tắc nghiệp vụ, và tag.
+4. Spec nhân bản nhận:
+   - Một **fingerprint mới** (khớp với element mới).
+   - Một `id` mới (suy ra lại từ tiêu đề khi lưu).
+   - **Provenance được đặt lại**: status trở thành `draft`, và metadata review (`verifiedBy`, `reviewedAt`, `reviewedBy`) bị xóa.
+
+Điều này đảm bảo một spec nguồn approved không bao giờ im lặng sao chép thành "approved" trên một element mới — spec nhân bản luôn bắt đầu là draft và yêu cầu re-review.
+
 ## Xuất spec (dự án cục bộ)
 
 Dự án cục bộ có thể được xuất dưới dạng bundle `.specs.zip`:

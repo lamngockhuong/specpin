@@ -44,6 +44,7 @@ import {
   activeTabUrl,
   buildExportTargets,
   buildFilterModel,
+  fetchCoverage,
   fetchMatchState,
   fetchSurfaceState,
   orphanedSpecs,
@@ -59,6 +60,7 @@ import {
   mountFragileScan,
   mountScopeToggle,
   mutedRow,
+  renderCoverageSummary,
   renderFilterSection,
   renderHealthSummary,
   renderLocalePicker,
@@ -226,6 +228,9 @@ function renderSpecs(res: SpecsForOrigin): void {
         actionButton("spec-edit", t("common.edit"), t("sidepanel.editThisSpec"), () => {
           void actOnActiveTab({ type: "EDIT_SPEC", specId: spec.id });
         }),
+        actionButton("spec-clone", t("clone.duplicate"), t("clone.duplicate"), () => {
+          void actOnActiveTab({ type: "CLONE_SPEC", specId: spec.id });
+        }),
       );
     }
 
@@ -383,6 +388,7 @@ async function refresh(): Promise<void> {
   // Query the page's match state (ids + report) concurrently with the background
   // status/specs fetch (independent round trips); gate the assignment on `enabled`.
   const matchPromise = fetchMatchState();
+  const coveragePromise = fetchCoverage();
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
@@ -394,6 +400,7 @@ async function refresh(): Promise<void> {
   const digestReady = digest.render();
   // Skip the match state when off (the in-flight query resolves to null, discarded).
   const match = specs.enabled ? await matchPromise : { ids: null, report: null };
+  const coverage = specs.enabled ? await coveragePromise : null;
   matchedIds = match.ids;
   lastReport = match.report;
   reportById = new Map((lastReport ?? []).map((e) => [e.id, e]));
@@ -404,6 +411,7 @@ async function refresh(): Promise<void> {
   // special-case is needed.
   setSurfaceState(status, origin, specs.enabled);
   renderHealthSummary(byId("health"), lastReport ? pageHealth(lastReport) : null, specs.enabled);
+  renderCoverageSummary(byId("coverage"), coverage, specs.enabled);
   renderProjects(status, origin);
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The side panel has the room for per-spec rows in addition to group filters.
@@ -458,6 +466,16 @@ byId("capture").addEventListener("click", async () => {
   // Unlike the popup, the panel stays open: the user clicks the page element
   // while the panel remains docked alongside.
   await actOnActiveTab({ type: "START_CAPTURE" });
+});
+byId("bulk-capture").addEventListener("click", async () => {
+  await actOnActiveTab({ type: "START_BULK_CAPTURE" });
+});
+// "Capture all gaps" lives inside the coverage summary (rebuilt each refresh);
+// delegate its click on the stable container so no listener leaks per render.
+byId("coverage").addEventListener("click", async (e) => {
+  if ((e.target as HTMLElement).closest(".coverage-capture-all")) {
+    await actOnActiveTab({ type: "START_BULK_CAPTURE_GAPS" });
+  }
 });
 // The empty-state "New project" opens the same inline add-project form as the
 // header button, via the shared action rather than a synthetic header-button click.

@@ -453,6 +453,47 @@ const vi: Record<keyof Messages, string> = {
   "offState.hiddenOne": "{count} spec đang ẩn trên trang này",
   "offState.hiddenOther": "{count} spec đang ẩn trên trang này",
   "offState.subtitle": "Bật lại ở công tắc phía trên.",
+
+  // Chế độ coverage: đánh dấu các phần tử tương tác chưa có spec (Alt+Shift+U)
+  // + dòng đếm trong popup / side panel và các hành động trên từng marker.
+  "coverage.capture": "Ghi spec",
+  "coverage.ignore": "Bỏ qua chỗ này",
+  "coverage.summary":
+    "{interactive} phần tử tương tác · {documented} đã có spec · {gaps} còn thiếu",
+  "coverage.hint": "Nhấn Alt+Shift+U để đánh dấu các phần tử chưa có spec trên trang.",
+  "coverage.captureAllGaps": "Ghi tất cả chỗ thiếu ({count})",
+
+  // Ghi spec hàng loạt: chọn nhiều phần tử → một form dùng chung → N spec. Các
+  // trường dùng chung áp dụng cho mọi spec; tiêu đề mỗi dòng tự suy ra và sửa được.
+  "bulk.title": "Ghi spec hàng loạt",
+  "bulk.selectedCount": "{count} phần tử",
+  "bulk.sharedHint": "Các trường này áp dụng cho mọi spec bên dưới. Sửa tiêu đề ngay tại mỗi dòng.",
+  "bulk.elementsTitle": "Phần tử",
+  "bulk.rowRemove": "Bỏ phần tử",
+  "bulk.duplicateTitle": "Trùng tiêu đề với dòng khác — hãy đặt tên riêng",
+  "bulk.save": "Lưu tất cả",
+  "bulk.rowOk": "Đã lưu",
+  "bulk.rowFailed": "Lỗi",
+  "bulk.partial": "Không lưu được {failed}/{total}. Sửa các dòng được đánh dấu rồi lưu lại.",
+  "bulk.empty": "Không có phần tử nào để ghi.",
+
+  // Template spec dựng sẵn: điền vào form ghi + ghi hàng loạt (chỉ điền ô còn trống).
+  // Nội dung rule được dịch theo ngôn ngữ giao diện.
+  "template.label": "Dùng template",
+  "template.none": "Không dùng template",
+  "template.formValidation.label": "Kiểm tra biểu mẫu",
+  "template.formValidation.rule1": "Phải điền đủ các trường bắt buộc trước khi gửi.",
+  "template.formValidation.rule2": "Dữ liệu không hợp lệ hiển thị thông báo lỗi ngay tại chỗ.",
+  "template.apiError.label": "Xử lý lỗi API",
+  "template.apiError.rule1": "Yêu cầu thất bại phải báo lỗi cho người dùng, không để trống trơn.",
+  "template.apiError.rule2": "Có thể thử lại thao tác mà không cần tải lại trang.",
+  "template.authFlow.label": "Luồng xác thực",
+  "template.authFlow.rule1": "Người dùng chưa đăng nhập được chuyển tới trang đăng nhập.",
+  "template.authFlow.rule2": "Đăng nhập thành công đưa người dùng về đúng trang họ định vào.",
+
+  // Clone: sao chép nội dung spec sang một phần tử mới chọn (pin tooltip + thẻ
+  // side panel, chỉ hiện khi có quyền ghi).
+  "clone.duplicate": "Nhân bản sang phần tử",
 };
 
 export default vi;

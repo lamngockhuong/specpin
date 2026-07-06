@@ -89,6 +89,9 @@ export const THEME_KEY = "specpin:theme";
 /** Whether on-page spec badges show a reading-order number instead of "S".
  *  Default OFF preserves the "S" brand mark. */
 export const BADGE_NUMBERING_KEY = "specpin:badgeNumbering";
+/** Whether coverage mode is on: ghost markers over undocumented interactive
+ *  elements. Default OFF so a page is byte-identical to today unless invoked. */
+export const COVERAGE_ENABLED_KEY = "specpin:coverageEnabled";
 /** The user's chosen UI-chrome language (`"en" | "vi"`), or null to follow the
  *  browser/system UI language. Independent from the spec-content LOCALE_KEY. */
 export const UI_LOCALE_KEY = "specpin:uiLocale";
@@ -101,6 +104,11 @@ export const VISIBILITY_KEY = "specpin:visibility";
  *  an empty map drops the key. This is a per-user trust boundary distinct from
  *  team guides (RT-C1/H2): reads + writes key by a canonical, trusted origin. */
 export const GUIDES_KEY = "specpin:guides";
+/** Personal coverage ignore-list: gaps the user dismissed, private to them. In
+ *  `storage.sync` so it follows the profile across machines. Stored as an
+ *  origin-keyed map (`{ [origin]: string[] }`) of stable gap keys so an ignore is
+ *  scoped to the site it was made on; an empty map drops the key. */
+export const COVERAGE_IGNORE_KEY = "specpin:coverageIgnore";
 /** Where the user dragged the floating relaunch pill, or null for the default
  *  bottom-right corner. */
 export const LAUNCHER_POSITION_KEY = "specpin:launcherPosition";
@@ -230,6 +238,23 @@ export async function setBadgeNumbering(on: boolean): Promise<void> {
   await browser.storage.local.set({ [BADGE_NUMBERING_KEY]: true });
 }
 
+/** Whether coverage mode (ghost markers on undocumented interactive elements) is
+ *  on. Default OFF so a page carries no coverage cost unless invoked. */
+export async function getCoverageEnabled(): Promise<boolean> {
+  const stored = await browser.storage.local.get(COVERAGE_ENABLED_KEY);
+  return (stored[COVERAGE_ENABLED_KEY] as boolean | undefined) ?? false;
+}
+
+export async function setCoverageEnabled(on: boolean): Promise<void> {
+  // false is the default: drop the key so a default profile carries nothing
+  // (mirrors setBadgeNumbering).
+  if (!on) {
+    await browser.storage.local.remove(COVERAGE_ENABLED_KEY);
+    return;
+  }
+  await browser.storage.local.set({ [COVERAGE_ENABLED_KEY]: true });
+}
+
 /** The user's chosen UI-chrome language, or null to follow the browser/system UI
  *  language. Resolution to a concrete locale is done by `resolveUiLocale`. */
 export async function getUiLocale(): Promise<UiLocale | null> {
@@ -305,6 +330,48 @@ export async function setPersonalGuides(origin: string, guides: GuideDef[]): Pro
     return;
   }
   await browser.storage.sync.set({ [GUIDES_KEY]: map });
+}
+
+/** The user's coverage ignore-list for one canonical origin (empty when none).
+ *  Reads the origin-keyed `storage.sync` map; a malformed origin yields []. */
+export async function getCoverageIgnore(origin: string): Promise<string[]> {
+  const key = canonicalOrigin(origin);
+  if (!key) return [];
+  const stored = await browser.storage.sync.get(COVERAGE_IGNORE_KEY);
+  const map = stored[COVERAGE_IGNORE_KEY] as Record<string, string[]> | undefined;
+  const keys = map?.[key];
+  return Array.isArray(keys) ? keys : [];
+}
+
+/** Add one stable gap key to the origin's ignore-list (idempotent). Rejects a
+ *  malformed origin, mirroring setPersonalGuides. */
+export async function addCoverageIgnore(origin: string, gapKey: string): Promise<void> {
+  const key = canonicalOrigin(origin);
+  if (!key) throw new Error("invalid origin");
+  const stored = await browser.storage.sync.get(COVERAGE_IGNORE_KEY);
+  const map = { ...((stored[COVERAGE_IGNORE_KEY] as Record<string, string[]> | undefined) ?? {}) };
+  const list = map[key] ?? [];
+  if (list.includes(gapKey)) return;
+  map[key] = [...list, gapKey];
+  await browser.storage.sync.set({ [COVERAGE_IGNORE_KEY]: map });
+}
+
+/** Remove one stable gap key from the origin's ignore-list. An emptied origin
+ *  drops its entry; an empty map drops the whole key so a default profile carries
+ *  nothing (sync caps item size). Rejects a malformed origin. */
+export async function removeCoverageIgnore(origin: string, gapKey: string): Promise<void> {
+  const key = canonicalOrigin(origin);
+  if (!key) throw new Error("invalid origin");
+  const stored = await browser.storage.sync.get(COVERAGE_IGNORE_KEY);
+  const map = { ...((stored[COVERAGE_IGNORE_KEY] as Record<string, string[]> | undefined) ?? {}) };
+  const next = (map[key] ?? []).filter((k) => k !== gapKey);
+  if (next.length === 0) delete map[key];
+  else map[key] = next;
+  if (Object.keys(map).length === 0) {
+    await browser.storage.sync.remove(COVERAGE_IGNORE_KEY);
+    return;
+  }
+  await browser.storage.sync.set({ [COVERAGE_IGNORE_KEY]: map });
 }
 
 /** The user's dragged relaunch-pill position, or null for the default corner. */

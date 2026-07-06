@@ -5,6 +5,25 @@ description: Cách xem, tìm kiếm và lọc spec trên trang.
 
 Khi một dự án được kết nối, spec sẽ xuất hiện trên các phần tử khớp.
 
+## Chế độ coverage
+
+Nhấn `Alt+Shift+U` để toggle **chế độ coverage**. Khi bật, dấu "+" dashed ghost xuất hiện trên mọi *phần tử tương tác chưa được ghi* trên trang: button, link có `href`, input/select/textarea, ARIA widget role (button, link, checkbox, tab, menuitem, combobox, slider), phần tử có `onclick`, `tabindex >= 0`, hoặc `contenteditable`. Phần tử ẩn, `display:none`, không kích thước, disabled, hoặc `aria-disabled` không bao giờ bị đánh dấu.
+
+Trạng thái chế độ vẫn giữ qua lần reload trang (mặc định tắt, nên trang không đổi khi chế độ tắt).
+
+### Tóm tắt coverage
+
+Popup và side panel hiển thị một dòng **tóm tắt coverage**: "N tương tác · M ghi · K gap". Khi có gap, nút **"Ghi tất cả gap (K)"** khởi chạy ghi hàng loạt với các phần tử đó được tải sẵn.
+
+### Hành động nhanh trên dấu
+
+Mỗi dấu cung cấp hai hành động nhanh:
+
+- **Ghi**: Mở biểu mẫu ghi trên phần tử đó (giống như ghi phần tử đơn).
+- **Bỏ qua** (xuất hiện khi phần tử có neo ổn định — test-id, non-generated id, hoặc CSS selector duy nhất): Loại bỏ dấu như một quyết định cá nhân. Việc bỏ qua được lưu trong `storage.sync` theo origin, nên gap vẫn bị ẩn sau lần reload và trên các máy khác.
+
+Các dấu dùng cùng bộ tránh va chạm vị trí như spec badge, được cô lập trong Shadow DOM, và tôn trọng sở thích reduced-motion của bạn.
+
 ## Bật/tắt Specpin
 
 Nhấp vào công tắc ở đầu popup, hoặc nhấn `Alt+Shift+S`. Khi Specpin tắt, spec sẽ biến mất khỏi trang và popup hiển thị một panel tạm dừng (**Specpin đang tắt**) cho biết số spec đang bị ẩn trên trang này; bật lại bằng chính công tắc đó. Khi không có dự án nào phục vụ trang, popup thay vào đó hiển thị lời mời **+ New project** để bắt đầu. Cài đặt này được duy trì qua các phiên.

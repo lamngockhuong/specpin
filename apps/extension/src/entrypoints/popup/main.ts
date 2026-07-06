@@ -39,6 +39,7 @@ import { wireProjectActions } from "../../shared/project-actions.js";
 import {
   buildExportTargets,
   buildFilterModel,
+  fetchCoverage,
   fetchMatchState,
   fetchSurfaceState,
   pageHealth,
@@ -52,6 +53,7 @@ import {
   mountFragileScan,
   mountScopeToggle,
   mutedRow,
+  renderCoverageSummary,
   renderFilterSection,
   renderHealthSummary,
   renderLocalePicker,
@@ -178,6 +180,7 @@ async function refresh(): Promise<void> {
   // Query the page's match state (ids + report) concurrently with the background
   // status/specs fetch (independent round trips); gate the assignment on `enabled`.
   const matchPromise = fetchMatchState();
+  const coveragePromise = fetchCoverage();
   const { status, specs, origin, path, activeLocale: locale } = await fetchSurfaceState();
   activeLocale = locale;
   lastSpecs = specs;
@@ -187,6 +190,7 @@ async function refresh(): Promise<void> {
   // Skip the match state when off: the list collapses to the "off" message and the
   // toggle hides anyway (the in-flight query resolves to null and is discarded).
   const match = specs.enabled ? await matchPromise : { ids: null, report: null };
+  const coverage = specs.enabled ? await coveragePromise : null;
   matchedIds = match.ids;
   lastReport = match.report;
   renderStatus(status, origin, specs.specs.length);
@@ -196,6 +200,7 @@ async function refresh(): Promise<void> {
   // is needed.
   setSurfaceState(status, origin, specs.enabled);
   renderHealthSummary(byId("health"), lastReport ? pageHealth(lastReport) : null, specs.enabled);
+  renderCoverageSummary(byId("coverage"), coverage, specs.enabled);
   renderProjects(status, origin);
   await guideSection.refresh({
     origin,
@@ -227,6 +232,16 @@ byId("capture").addEventListener("click", () => {
   // Close (so the user can click the target element) only on delivery; otherwise
   // actOnActiveTab keeps the popup open and shows why capture could not start.
   void actOnActiveTab({ type: "START_CAPTURE" }, () => window.close());
+});
+byId("bulk-capture").addEventListener("click", () => {
+  void actOnActiveTab({ type: "START_BULK_CAPTURE" }, () => window.close());
+});
+// "Capture all gaps" lives inside the coverage summary (rebuilt each refresh);
+// delegate its click on the stable container so no listener leaks per render.
+byId("coverage").addEventListener("click", (e) => {
+  if ((e.target as HTMLElement).closest(".coverage-capture-all")) {
+    void actOnActiveTab({ type: "START_BULK_CAPTURE_GAPS" }, () => window.close());
+  }
 });
 // The empty-state "New project" opens the same inline add-project form as the
 // header button, via the shared action rather than a synthetic header-button click.
