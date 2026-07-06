@@ -49,6 +49,9 @@ export interface RenderMeta {
    *  loop). Records a supervised confirmation in the local corpus. Provided only
    *  when the corpus opt-in is ON, so the "Correct" action appears only then. */
   onConfirm?: (specId: string) => void;
+  /** Callback a renderer invokes to clone this spec onto a newly-picked element.
+   *  Threaded like onEdit; shown only when the spec is editable. */
+  onClone?: (specId: string) => void;
   /** False for read-only specs (Manual import); renderers hide the Edit + Delete
    *  affordances when false. Defaults to editable when omitted. */
   editable?: boolean;

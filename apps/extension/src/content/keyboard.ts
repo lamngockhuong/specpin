@@ -5,6 +5,7 @@
 //   Alt+Shift+C  toggle capture mode
 //   Alt+Shift+G  start (or stop) the default guide tour
 //   Alt+Shift+N  cycle focus through the matched specs (flash each in turn)
+//   Alt+Shift+U  toggle coverage mode (ghost markers on undocumented elements)
 // Note: while a tour is running it owns Left/Right/Esc itself (its own listener,
 // see GuideController); these Alt+Shift chords stay global.
 export interface KeyboardHandlers {
@@ -13,6 +14,7 @@ export interface KeyboardHandlers {
   onToggleCapture(): void;
   onToggleGuide(): void;
   onCycleSpec(): void;
+  onToggleCoverage(): void;
 }
 
 export function registerKeyboard(target: EventTarget, handlers: KeyboardHandlers): () => void {
@@ -39,6 +41,10 @@ export function registerKeyboard(target: EventTarget, handlers: KeyboardHandlers
       case "n":
         e.preventDefault();
         handlers.onCycleSpec();
+        break;
+      case "u":
+        e.preventDefault();
+        handlers.onToggleCoverage();
         break;
     }
   };

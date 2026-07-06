@@ -4,6 +4,7 @@
 // active, so the host page is untouched outside capture mode.
 
 const HIGHLIGHT_ID = "specpin-capture-highlight";
+const SELECTION_ID = "specpin-capture-selection";
 
 export class CapturePicker {
   private active = false;
@@ -11,6 +12,12 @@ export class CapturePicker {
   private onPick: ((el: Element) => void) | null = null;
   private onCancel: (() => void) | null = null;
   private readonly doc: Document;
+  // Multi-select mode (bulk capture): accumulate picks, toggle on re-click, finish
+  // on Enter. Additive to single-shot `start`; when `multi` is false these stay idle.
+  private multi = false;
+  private selected: Element[] = [];
+  private onDone: ((els: Element[]) => void) | null = null;
+  private selectionLayer: HTMLElement | null = null;
 
   constructor(doc: Document = document) {
     this.doc = doc;
@@ -38,6 +45,26 @@ export class CapturePicker {
     this.doc.addEventListener("mousedown", this.suppress, true);
   }
 
+  /** Begin multi-select picking (bulk capture): each click toggles the element in
+   *  or out of the selection (a persistent outline marks the picked ones); Enter
+   *  finishes with `onDone(selected)`; Escape cancels via `onCancel`. `start` (the
+   *  single-shot flow) is untouched — this is purely additive. */
+  startMulti(onDone: (els: Element[]) => void, onCancel?: () => void): void {
+    if (this.active) return;
+    this.active = true;
+    this.multi = true;
+    this.selected = [];
+    this.onDone = onDone;
+    this.onCancel = onCancel ?? null;
+    this.ensureHighlight();
+    this.ensureSelectionLayer();
+    this.doc.addEventListener("mousemove", this.onMove, true);
+    this.doc.addEventListener("click", this.onClick, true);
+    this.doc.addEventListener("keydown", this.onKey, true);
+    this.doc.addEventListener("pointerdown", this.suppress, true);
+    this.doc.addEventListener("mousedown", this.suppress, true);
+  }
+
   /** Tear down the picker. External stop (caller-driven) does not fire onCancel;
    *  the caller already owns its own state in that path. */
   stop(): void {
@@ -47,8 +74,11 @@ export class CapturePicker {
   private teardown(): void {
     if (!this.active) return;
     this.active = false;
+    this.multi = false;
     this.onPick = null;
     this.onCancel = null;
+    this.onDone = null;
+    this.selected = [];
     this.doc.removeEventListener("mousemove", this.onMove, true);
     this.doc.removeEventListener("click", this.onClick, true);
     this.doc.removeEventListener("keydown", this.onKey, true);
@@ -56,6 +86,8 @@ export class CapturePicker {
     this.doc.removeEventListener("mousedown", this.suppress, true);
     this.highlight?.remove();
     this.highlight = null;
+    this.selectionLayer?.remove();
+    this.selectionLayer = null;
   }
 
   private ensureHighlight(): void {
@@ -74,6 +106,59 @@ export class CapturePicker {
     this.highlight = box;
   }
 
+  private ensureSelectionLayer(): void {
+    const layer = this.doc.createElement("div");
+    layer.id = SELECTION_ID;
+    Object.assign(layer.style, {
+      position: "fixed",
+      inset: "0",
+      zIndex: "2147483645",
+      pointerEvents: "none",
+    } satisfies Partial<CSSStyleDeclaration>);
+    (this.doc.body ?? this.doc.documentElement).appendChild(layer);
+    this.selectionLayer = layer;
+  }
+
+  // Repaint one persistent outline per selected element from live rects. Distinct
+  // from the hover highlight (emerald vs indigo) so a picked element reads clearly.
+  private paintSelection(): void {
+    const layer = this.selectionLayer;
+    if (!layer) return;
+    layer.replaceChildren();
+    for (const el of this.selected) {
+      const rect = el.getBoundingClientRect();
+      const box = this.doc.createElement("div");
+      Object.assign(box.style, {
+        position: "fixed",
+        top: `${rect.top}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+        border: "2px solid #059669",
+        background: "rgba(5,150,105,0.14)",
+        borderRadius: "3px",
+        boxSizing: "border-box",
+        pointerEvents: "none",
+      } satisfies Partial<CSSStyleDeclaration>);
+      layer.appendChild(box);
+    }
+  }
+
+  // Add or remove an element from the multi-select set; ignores our own overlay
+  // nodes so a stray click on a highlight box never becomes a selection.
+  private toggleSelect(el: Element): void {
+    // Skip our own overlay nodes: the selection-layer boxes (no id, caught by
+    // contains) and any `specpin-*` host — a shadow-DOM click retargets to its host
+    // (e.g. `specpin-capture-highlight`, or `specpin-coverage-host` when coverage
+    // mode is also on) — so a stray click never selects Specpin's UI as a page el.
+    if (this.selectionLayer?.contains(el)) return;
+    if (el.id.startsWith("specpin-")) return;
+    const idx = this.selected.indexOf(el);
+    if (idx >= 0) this.selected.splice(idx, 1);
+    else this.selected.push(el);
+    this.paintSelection();
+  }
+
   private onMove = (event: Event): void => {
     const el = event.target as Element | null;
     if (!el || !this.highlight || el === this.highlight) return;
@@ -84,12 +169,19 @@ export class CapturePicker {
       width: `${rect.width}px`,
       height: `${rect.height}px`,
     });
+    // Keep the persistent selection outlines glued as the layout shifts under the
+    // cursor (cheap; the set is small).
+    if (this.multi) this.paintSelection();
   };
 
   private onClick = (event: Event): void => {
     event.preventDefault();
     event.stopPropagation();
     const el = event.target as Element | null;
+    if (this.multi) {
+      if (el) this.toggleSelect(el);
+      return;
+    }
     const pick = this.onPick;
     this.teardown();
     if (el && pick) pick(el);
@@ -101,11 +193,21 @@ export class CapturePicker {
   };
 
   private onKey = (event: Event): void => {
-    if ((event as KeyboardEvent).key === "Escape") {
+    const key = (event as KeyboardEvent).key;
+    if (key === "Escape") {
       event.preventDefault();
       const cancel = this.onCancel;
       this.teardown();
       cancel?.();
+      return;
+    }
+    // Enter finishes multi-select with whatever is currently picked (possibly none).
+    if (this.multi && key === "Enter") {
+      event.preventDefault();
+      const done = this.onDone;
+      const picked = this.selected.slice();
+      this.teardown();
+      done?.(picked);
     }
   };
 }

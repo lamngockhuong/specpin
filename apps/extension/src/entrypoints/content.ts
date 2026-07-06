@@ -1,9 +1,11 @@
 import { anchorStrength, captureFingerprint, matchElement } from "@specpin/fingerprint-core";
-import type { DisplayMode, ElementFingerprint, Manifest } from "@specpin/spec-schema";
+import type { DisplayMode, ElementFingerprint, Manifest, Spec } from "@specpin/spec-schema";
 import { browser, defineContentScript } from "#imports";
-import { CaptureForm } from "../content/capture-form.js";
+import { BulkCaptureForm, type BulkRowResult } from "../content/bulk-capture-form.js";
+import { CaptureForm, cloneFields } from "../content/capture-form.js";
 import { CapturePicker } from "../content/capture-mode.js";
 import { findMatchedSpec, isSpecpinOwned } from "../content/context-target.js";
+import { findGaps, stableGapKey } from "../content/coverage.js";
 import { GuideController } from "../content/guide.js";
 import { highlightElement } from "../content/highlight.js";
 import { registerKeyboard } from "../content/keyboard.js";
@@ -12,16 +14,21 @@ import { type RenderSession, renderSession } from "../content/orchestrator.js";
 import { resolveGuideSteps } from "../content/resolve-guide.js";
 import { showToast } from "../content/toast.js";
 import { initI18n, resolveUiLocale, t } from "../i18n/index.js";
+import { CoverageOverlay } from "../renderers/coverage-overlay.js";
 import { IMPLEMENTED_MODES } from "../renderers/registry.js";
 import { TooltipRenderer } from "../renderers/tooltip.js";
 import {
+  addCoverageIgnore,
   getBadgeNumbering,
+  getCoverageEnabled,
+  getCoverageIgnore,
   getDisplayMode,
   getLauncherPosition,
   getLocale,
   getTheme,
   getUiLocale,
   type LauncherPosition,
+  setCoverageEnabled,
   setDisplayMode,
   setLauncherPosition,
   setLocale,
@@ -33,6 +40,7 @@ import { getCorpusEnabled } from "../shared/drift-corpus.js";
 import { registerInterFont } from "../shared/inter-font.js";
 import { isLocalConnectionId } from "../shared/local-id.js";
 import {
+  type CoverageCounts,
   type MatchReportEntry,
   type Message,
   type SaveSpecResult,
@@ -73,6 +81,13 @@ export default defineContentScript({
     // rerender path stays synchronous. Read at startup + updated by
     // SET_BADGE_NUMBERING broadcasts from the Options page.
     let badgeNumbering = false;
+    // Coverage mode (Alt+Shift+U): ghost markers on undocumented interactive
+    // elements. A content-script overlay layered on the live page, independent of
+    // the spec render `session` (its own Shadow host). Off by default; the ignore
+    // set is the personal, per-origin dismiss list, loaded when coverage turns on.
+    let coverageEnabled = false;
+    let coverageOverlay: CoverageOverlay | null = null;
+    let coverageIgnore = new Set<string>();
     let forcedMode: DisplayMode | null = null;
     // Modes the user dismissed for this page session. The dismissed surface renders
     // as the floating relaunch pill instead of its panel; the flag survives
@@ -130,6 +145,7 @@ export default defineContentScript({
 
     const picker = new CapturePicker(document);
     const form = new CaptureForm(document);
+    const bulkForm = new BulkCaptureForm(document);
 
     const localesFor = (m: Manifest | null): string[] => {
       const declared = m?.settings?.locales;
@@ -174,6 +190,7 @@ export default defineContentScript({
                 captureDrift: corpusEnabled,
                 onConfirm: corpusEnabled ? confirmMatch : undefined,
                 badgeNumbering,
+                onClone: cloneSpecFlow,
               },
             )
           : null;
@@ -237,6 +254,8 @@ export default defineContentScript({
       navTimer = setTimeout(() => {
         navTimer = null;
         rerender();
+        // The new route has a different interactive set; re-scan coverage on it.
+        renderCoverage();
       }, 100);
     };
 
@@ -271,6 +290,8 @@ export default defineContentScript({
       // Cache the corpus opt-in so rerender (sync, hot) can gate passive capture.
       corpusEnabled = await getCorpusEnabled();
       rerender();
+      // A spec add/remove changes the documented set, so re-scan coverage too.
+      renderCoverage();
     }
 
     // Alt+Shift+N: flash the next matched-and-visible spec's element, wrapping to
@@ -283,6 +304,84 @@ export default defineContentScript({
       const el = session?.matches.get(ids[cycleIndex] as string);
       if (el) highlight(el);
     }
+
+    // The set of page elements a spec currently documents, matched live against
+    // the DOM over the page-scoped specs (same identity rule as GET_MATCHED_IDS,
+    // independent of the visibility cascade). Coverage subtracts this from the
+    // interactive elements to find the gaps.
+    function matchedElementSet(): Set<Element> {
+      const set = new Set<Element>();
+      for (const s of specs) {
+        if (!pageScopeAllows(s.fingerprint.pageUrl, location.href)) continue;
+        const m = matchElement(s.fingerprint, document);
+        if (m.el) set.add(m.el);
+      }
+      return set;
+    }
+
+    // (Re)scan for gaps and paint the ghost-marker overlay. No-op when coverage is
+    // off. Reuses the cached per-origin ignore set (loaded when coverage turned on
+    // and updated by ignoreGap). Called on toggle, refresh (SPECS_CHANGED), and
+    // navigation; scroll/resize only reposition (no re-scan).
+    function renderCoverage(): void {
+      if (!coverageEnabled) return;
+      const { gaps } = findGaps(document, matchedElementSet(), coverageIgnore);
+      coverageOverlay ??= new CoverageOverlay(document);
+      coverageOverlay.render(gaps, {
+        theme,
+        keyFor: stableGapKey,
+        actions: { onCapture: captureGap, onIgnore: ignoreGap },
+      });
+    }
+
+    // Author a spec on a gap element: reuse the single-capture form + write path.
+    // Honors the single-authoring-flow guard (never over a running tour / open form).
+    async function captureGap(el: Element): Promise<void> {
+      if (!tryBeginAuthoring()) return;
+      try {
+        openCaptureFormForElement(el, await fetchWriteTargets());
+      } catch {
+        endCapture(); // background not ready — release the flow instead of freezing
+      }
+    }
+
+    // Dismiss a gap: append its stable key to the personal, cross-machine ignore
+    // list (storage.sync), then re-scan so the marker + count drop immediately.
+    async function ignoreGap(_el: Element, key: string): Promise<void> {
+      try {
+        await addCoverageIgnore(location.origin, key);
+      } catch {
+        return; // malformed origin (e.g. about:) — nothing to persist
+      }
+      coverageIgnore.add(key);
+      renderCoverage();
+    }
+
+    // Alt+Shift+U: flip coverage mode, persist it, and paint or tear down the
+    // overlay. Loads the personal ignore list on turn-on so dismissed gaps stay
+    // hidden. Independent of the spec render session (separate Shadow host).
+    async function toggleCoverage(): Promise<void> {
+      coverageEnabled = !coverageEnabled;
+      await setCoverageEnabled(coverageEnabled);
+      if (coverageEnabled) {
+        coverageIgnore = new Set(await getCoverageIgnore(location.origin));
+        renderCoverage();
+      } else {
+        coverageOverlay?.destroy();
+        coverageOverlay = null;
+      }
+    }
+
+    // Reposition markers on scroll/resize without a re-scan (cheap; the gap set is
+    // unchanged). Debounced; a no-op when coverage is off.
+    let coverageRepositionTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleCoverageReposition = (): void => {
+      if (!coverageEnabled || !coverageOverlay || coverageRepositionTimer) return;
+      coverageRepositionTimer = setTimeout(() => {
+        coverageRepositionTimer = null;
+        coverageOverlay?.reposition();
+      }, 100);
+    };
 
     // How long the deep-link resolver keeps retrying for a late-rendering element
     // before it gives up (bounded so it never spins on a truly-absent element).
@@ -355,6 +454,17 @@ export default defineContentScript({
       flushPendingRerender();
     }
 
+    // Claim the single authoring/overlay flow (capture, bulk, clone). Returns false
+    // (a no-op) when a capture/edit form is open or a guide tour is running, so one
+    // authoring flow can never start on top of another. Pair with endCapture(). The
+    // toggle-picker capture path (startCapture) has its own semantics and does not
+    // use this.
+    function tryBeginAuthoring(): boolean {
+      if (captureActive || guideActive) return false;
+      captureActive = true;
+      return true;
+    }
+
     // Launch a guide tour. The single launch path for both START_GUIDE (from the
     // popup/side panel) and the keyboard shortcut (RT-M5): it refuses while a
     // capture/edit is open OR a guide already runs, suspends the render session,
@@ -413,14 +523,22 @@ export default defineContentScript({
     }
 
     // Open the capture form on a specific element (fingerprint + form wiring).
-    // Shared by the hover-pick flow (startCapture) and the right-click "Pin spec
-    // to this element" path (pinElement). The caller owns the captureActive flag.
-    function openCaptureFormForElement(el: Element, targets: WriteTarget[]): void {
+    // Shared by the hover-pick flow (startCapture), the right-click "Pin spec to
+    // this element" path (pinElement), and clone (via `opts.prefill`, which seeds a
+    // create-mode form with the source spec's content). The caller owns the
+    // captureActive flag. All routes share ONE SAVE_SPEC onSubmit so they cannot
+    // drift.
+    function openCaptureFormForElement(
+      el: Element,
+      targets: WriteTarget[],
+      opts?: { prefill?: Spec; defaultFile?: string },
+    ): void {
       const fingerprint = captureFingerprint(el);
       form.open(fingerprint, {
-        defaultFile: defaultFileName(),
+        defaultFile: opts?.defaultFile ?? defaultFileName(),
         locales: availableLocales,
         defaultLocale: manifest?.settings?.defaultLocale ?? locale,
+        prefill: opts?.prefill,
         targets,
         theme,
         onSubmit: async (file, spec, connectionId) => {
@@ -454,6 +572,67 @@ export default defineContentScript({
         // capture flag so re-rendering is not frozen (RT-FM6 exit path).
         endCapture,
       );
+    }
+
+    // Open the bulk-capture form on a set of elements. Assumes the caller already
+    // claimed the authoring flow (captureActive). Empty set → release + bail. One
+    // shared file + target for the whole batch; specs save sequentially with a
+    // per-row result (a mid-batch failure keeps the succeeded rows).
+    async function openBulkForm(elements: Element[]): Promise<void> {
+      if (elements.length === 0) {
+        endCapture();
+        return;
+      }
+      let targets: WriteTarget[];
+      try {
+        targets = await fetchWriteTargets();
+      } catch {
+        endCapture(); // background not ready — release the flow instead of freezing
+        return;
+      }
+      bulkForm.open(elements, {
+        defaultFile: defaultFileName(),
+        defaultLocale: manifest?.settings?.defaultLocale ?? locale,
+        targets,
+        theme,
+        onSubmitAll: async (specs, file, connectionId) => {
+          const results: BulkRowResult[] = [];
+          for (const spec of specs) {
+            const res = await sendToBackground<SaveSpecResult>({
+              type: "SAVE_SPEC",
+              file,
+              spec,
+              connectionId,
+            });
+            results.push({ ok: res.ok, error: res.errors?.[0] });
+          }
+          // All rows saved → the form closes itself; release the authoring flow so
+          // the SPECS_CHANGED refresh (which re-scans coverage) can rerender.
+          if (results.every((r) => r.ok)) endCapture();
+          return results;
+        },
+        onCancel: endCapture,
+      });
+    }
+
+    // Manual bulk capture: multi-select elements on the page, then fill one shared
+    // form. Additive to single capture; never over a running tour / open form.
+    function startBulkCapture(): void {
+      if (!tryBeginAuthoring()) return;
+      picker.startMulti((els) => void openBulkForm(els), endCapture);
+    }
+
+    // "Capture all gaps" bridge from the coverage view: scan the current gaps fresh
+    // (respecting the personal ignore list) and open the bulk form pre-loaded. The
+    // pre-check avoids a needless scan; tryBeginAuthoring claims after the await
+    // (re-checking the flag once the async scan settled).
+    async function captureAllGaps(): Promise<void> {
+      if (captureActive || guideActive) return;
+      const ignore = new Set(await getCoverageIgnore(location.origin));
+      const { gaps } = findGaps(document, matchedElementSet(), ignore);
+      if (gaps.length === 0) return;
+      if (!tryBeginAuthoring()) return;
+      await openBulkForm(gaps);
     }
 
     // Right-click "Pin spec to this element": capture the element recorded on the
@@ -577,6 +756,29 @@ export default defineContentScript({
       });
     }
 
+    // Clone a spec's content onto a NEW element: run the picker, capture a fresh
+    // fingerprint, then open the capture form in CREATE mode prefilled from the
+    // source (provenance reset to an unreviewed draft by cloneFields; the id
+    // re-derives from the title on save). Reuses the picker + form + SAVE_SPEC —
+    // no new write path. Gated on the source being writable (the surfaces only
+    // offer Duplicate then, mirroring Edit).
+    function cloneSpecFlow(sourceSpecId: string): void {
+      const source = specs.find((s) => s.id === sourceSpecId);
+      if (!source) return;
+      if (!tryBeginAuthoring()) return;
+      picker.start((el) => {
+        fetchWriteTargets().then(
+          (targets) =>
+            openCaptureFormForElement(el, targets, {
+              prefill: cloneFields(source),
+              defaultFile: source._file ?? defaultFileName(),
+            }),
+          // Background not ready: release the authoring flow instead of freezing.
+          endCapture,
+        );
+      }, endCapture);
+    }
+
     // Confirm loop: affirm that a scored match resolved to the right element. Feeds
     // a supervised confirmation (new === old) into the local corpus. The background
     // gates on the opt-in flag; this is only wired when corpusEnabled anyway.
@@ -658,7 +860,13 @@ export default defineContentScript({
       onToggleCapture: () => void startCapture(),
       onToggleGuide: toggleGuide,
       onCycleSpec: cycleSpec,
+      onToggleCoverage: () => void toggleCoverage(),
     });
+
+    // Coverage markers are document-absolute, but sticky/reflowed elements shift;
+    // reposition (no re-scan) on scroll/resize while coverage is on.
+    window.addEventListener("scroll", scheduleCoverageReposition, true);
+    window.addEventListener("resize", scheduleCoverageReposition);
 
     // Record the right-clicked element for the context-menu actions. Capture phase
     // so it runs before the menu opens. Specpin's own UI lives in `specpin-*`
@@ -710,6 +918,12 @@ export default defineContentScript({
         case "START_CAPTURE":
           void startCapture();
           break;
+        case "START_BULK_CAPTURE":
+          startBulkCapture();
+          break;
+        case "START_BULK_CAPTURE_GAPS":
+          void captureAllGaps();
+          break;
         case "START_GUIDE":
           launchGuide(message.steps, message.name);
           break;
@@ -721,6 +935,9 @@ export default defineContentScript({
           break;
         case "EDIT_SPEC":
           openEditForm(message.specId);
+          break;
+        case "CLONE_SPEC":
+          cloneSpecFlow(message.specId);
           break;
         case "DELETE_SPEC_HERE":
           void deleteSpecFlow(message.specId);
@@ -741,6 +958,12 @@ export default defineContentScript({
           // shadow host picks up the forced theme via data-theme.
           theme = message.theme;
           rerender();
+          // The overlay bakes its theme at host creation, so recreate it to switch.
+          if (coverageEnabled) {
+            coverageOverlay?.destroy();
+            coverageOverlay = null;
+            renderCoverage();
+          }
           break;
         case "SET_BADGE_NUMBERING":
           // Options already persisted the choice; re-render so on-page badges
@@ -753,6 +976,8 @@ export default defineContentScript({
           // renderers' chrome (badges, buttons, summaries) switches language.
           initI18n(resolveUiLocale(message.locale));
           rerender();
+          // Marker action labels come from t(); repaint them in the new language.
+          renderCoverage();
           break;
         case "HIGHLIGHT_ELEMENT": {
           // Resolve the spec id against the current render's matches and frame it.
@@ -800,6 +1025,22 @@ export default defineContentScript({
             report,
           });
         }
+        case "GET_COVERAGE": {
+          // Scan the live DOM for undocumented interactive elements. Loads the
+          // personal ignore list fresh so the count matches the on-page markers
+          // even when coverage mode has not been toggled on this session. Returns
+          // a Promise (the sendMessage response), like GET_MATCHED_IDS.
+          return (async (): Promise<CoverageCounts> => {
+            const ignore = new Set(await getCoverageIgnore(location.origin));
+            const scan = findGaps(document, matchedElementSet(), ignore);
+            return {
+              interactive: scan.interactive,
+              documented: scan.documented,
+              gaps: scan.gaps.length,
+              truncated: scan.truncated,
+            };
+          })();
+        }
       }
     });
 
@@ -807,18 +1048,29 @@ export default defineContentScript({
     // position, and UI-chrome language before the first render so renderers
     // translate and a reloaded page honors them instead of resetting. These reads
     // are independent, so fetch them concurrently (content init runs on every page).
-    const [storedMode, storedTheme, storedUiLocale, storedLauncherPosition, storedBadgeNumbering] =
-      await Promise.all([
-        getDisplayMode(),
-        getTheme(),
-        getUiLocale(),
-        getLauncherPosition(),
-        getBadgeNumbering(),
-      ]);
+    const [
+      storedMode,
+      storedTheme,
+      storedUiLocale,
+      storedLauncherPosition,
+      storedBadgeNumbering,
+      storedCoverageEnabled,
+    ] = await Promise.all([
+      getDisplayMode(),
+      getTheme(),
+      getUiLocale(),
+      getLauncherPosition(),
+      getBadgeNumbering(),
+      getCoverageEnabled(),
+    ]);
     forcedMode = storedMode;
     theme = storedTheme;
     launcherPosition = storedLauncherPosition;
     badgeNumbering = storedBadgeNumbering;
+    // Restore coverage mode so a reload keeps ghost markers on; load the personal
+    // ignore list first so dismissed gaps stay hidden on the first scan.
+    coverageEnabled = storedCoverageEnabled;
+    if (coverageEnabled) coverageIgnore = new Set(await getCoverageIgnore(location.origin));
     initI18n(resolveUiLocale(storedUiLocale));
     await refresh();
     // Seed after the first render so a stray early mutation doesn't trigger a

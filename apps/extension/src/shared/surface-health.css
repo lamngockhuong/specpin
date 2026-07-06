@@ -11,6 +11,35 @@
   font: 500 14px / 1.4 var(--sp-font-ui);
 }
 
+/* Runtime coverage summary (interactive · documented · gaps), rendered by
+   renderCoverageSummary right under the health line. Same muted treatment; the
+   hint spells out the Alt+Shift+U toggle for discoverability. */
+.coverage[hidden] {
+  display: none;
+}
+.coverage-line {
+  color: var(--sp-text-2);
+  font: 500 14px / 1.4 var(--sp-font-ui);
+}
+.coverage-hint {
+  margin-top: 2px;
+  color: var(--sp-text-3, var(--sp-text-2));
+  font: 400 12px / 1.4 var(--sp-font-ui);
+}
+.coverage-capture-all {
+  margin-top: 8px;
+  padding: 6px 12px;
+  font: 600 13px / 1 var(--sp-font-ui);
+  color: var(--sp-text);
+  background: var(--sp-control);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  cursor: pointer;
+}
+.coverage-capture-all:hover {
+  border-color: var(--sp-accent, #4f46e5);
+}
+
 /* Fragile-spec list: a collapsible group (`<details class="filter-group scan">`,
    summary "Fragile specs (N)") whose body lists one copyable snippet per spec.
    The group's margin + summary styling come from the shared `.filter-group`

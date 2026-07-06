@@ -462,6 +462,46 @@ const en = {
   "offState.hiddenOne": "{count} spec hidden on this page",
   "offState.hiddenOther": "{count} specs hidden on this page",
   "offState.subtitle": "Turn it back on above.",
+
+  // Coverage mode: ghost markers on undocumented interactive elements (Alt+Shift+U)
+  // + the popup / side-panel count line and per-marker actions.
+  "coverage.capture": "Capture spec",
+  "coverage.ignore": "Ignore this gap",
+  "coverage.summary": "{interactive} interactive · {documented} documented · {gaps} gaps",
+  "coverage.hint": "Alt+Shift+U marks undocumented elements on the page.",
+  "coverage.captureAllGaps": "Capture all gaps ({count})",
+
+  // Bulk capture: pick many elements → one shared-fields form → N specs. The
+  // shared fields apply to every spec; each row's title is auto-derived + editable.
+  "bulk.title": "Bulk capture",
+  "bulk.selectedCount": "{count} elements",
+  "bulk.sharedHint": "These fields apply to every spec below. Edit each title inline.",
+  "bulk.elementsTitle": "Elements",
+  "bulk.rowRemove": "Remove element",
+  "bulk.duplicateTitle": "Same title as another row — make it unique",
+  "bulk.save": "Save all",
+  "bulk.rowOk": "Saved",
+  "bulk.rowFailed": "Failed",
+  "bulk.partial": "{failed} of {total} couldn't be saved. Fix the flagged rows and save again.",
+  "bulk.empty": "No elements to capture.",
+
+  // Built-in spec templates: prefill the capture + bulk forms (fill-empty only).
+  // Rule bodies are localized so the prefill matches the UI language.
+  "template.label": "Start from template",
+  "template.none": "No template",
+  "template.formValidation.label": "Form validation",
+  "template.formValidation.rule1": "All required fields must be filled before submit.",
+  "template.formValidation.rule2": "Invalid input shows an inline error message.",
+  "template.apiError.label": "API error handling",
+  "template.apiError.rule1": "A failed request shows a user-facing error, not a blank state.",
+  "template.apiError.rule2": "The action can be retried without reloading the page.",
+  "template.authFlow.label": "Auth flow",
+  "template.authFlow.rule1": "Unauthenticated users are redirected to sign in.",
+  "template.authFlow.rule2": "A successful sign-in returns the user to their intended page.",
+
+  // Clone: duplicate a spec's content onto a newly-picked element (tooltip pin +
+  // side-panel card, gated on writable).
+  "clone.duplicate": "Duplicate to element",
 } satisfies Record<string, string>;
 
 export type Messages = typeof en;

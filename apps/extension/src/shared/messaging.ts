@@ -165,6 +165,18 @@ export type Message =
   // store, the extension's own pages) rejects the send, which the caller reads as
   // "unknown" and falls back to the full origin list.
   | { type: "GET_MATCHED_IDS" }
+  // Coverage counts for the active tab: popup/side panel -> content script, which
+  // scans the live DOM for undocumented interactive elements. Read-only; resolves
+  // to CoverageCounts, or null when no content script answers (unsupported tab).
+  | { type: "GET_COVERAGE" }
+  // Bulk capture: popup/side panel -> active tab content script. START_BULK_CAPTURE
+  // opens the multi-select picker; START_BULK_CAPTURE_GAPS pre-loads the bulk form
+  // with the page's current coverage gaps. Fire-and-forget.
+  | { type: "START_BULK_CAPTURE" }
+  | { type: "START_BULK_CAPTURE_GAPS" }
+  // Clone a spec onto a newly-picked element: side panel -> active tab content
+  // script, which runs the picker + prefilled capture form. Fire-and-forget.
+  | { type: "CLONE_SPEC"; specId: string }
   // Personal visibility override change: popup/side panel -> background, which
   // persists it to storage.sync (debounced) and broadcasts SPECS_CHANGED.
   | { type: "SET_PERSONAL_VISIBILITY"; visibility: PersonalVisibility }
@@ -396,6 +408,17 @@ export interface MatchReportEntry {
 export interface MatchedIds {
   ids: string[];
   report: MatchReportEntry[];
+}
+
+/** Runtime inverse-coverage counts for the active tab, returned by GET_COVERAGE.
+ *  `interactive` = visible + enabled interactive elements; `documented` = those a
+ *  spec matches; `gaps` = the undocumented, non-ignored remainder (the on-page
+ *  ghost-marker count). `truncated` flags that a huge DOM exceeded the scan cap. */
+export interface CoverageCounts {
+  interactive: number;
+  documented: number;
+  gaps: number;
+  truncated: boolean;
 }
 
 /** Send a message to the background service worker. */

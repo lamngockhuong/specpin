@@ -7,6 +7,7 @@ import type { TaggedSpec } from "./connection-types.js";
 import { localConnId } from "./local-id.js";
 import { stripMarkdown } from "./markdown.js";
 import {
+  type CoverageCounts,
   type MatchedIds,
   type MatchReportEntry,
   queryActiveTab,
@@ -106,6 +107,13 @@ export interface MatchState {
 export async function fetchMatchState(): Promise<MatchState> {
   const res = await queryActiveTab<MatchedIds>({ type: "GET_MATCHED_IDS" });
   return { ids: res ? new Set(res.ids) : null, report: res?.report ?? null };
+}
+
+/** Fetch the active tab's runtime coverage counts (interactive / documented /
+ *  gaps), or null when no content script could answer (unsupported tab) so the
+ *  surface hides the coverage line rather than showing a misleading zero. */
+export async function fetchCoverage(): Promise<CoverageCounts | null> {
+  return queryActiveTab<CoverageCounts>({ type: "GET_COVERAGE" });
 }
 
 /** Page-level match health derived from a `report`: totals per match tier plus

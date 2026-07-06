@@ -108,6 +108,12 @@ ${PROVENANCE_CSS}
   border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
 }
 .tip .pin-edit:hover { filter: brightness(0.97); }
+.tip .pin-clone {
+  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
+  background: var(--sp-control); color: var(--sp-text); border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
+}
+.tip .pin-clone:hover { filter: brightness(0.97); }
 .tip .pin-copy {
   margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
   background: var(--sp-control); color: var(--sp-text); border: 1px solid var(--sp-border);
@@ -151,6 +157,7 @@ export class TooltipRenderer implements SpecRenderer {
   private onEdit?: (specId: string) => void;
   private onDelete?: (specId: string) => void;
   private onConfirm?: (specId: string) => void;
+  private onClone?: (specId: string) => void;
   private readonly doc: Document;
   private reposition = () => this.positionAll();
   private readonly hostId: string;
@@ -209,6 +216,7 @@ export class TooltipRenderer implements SpecRenderer {
     if (meta?.onEdit) this.onEdit = meta.onEdit;
     if (meta?.onDelete) this.onDelete = meta.onDelete;
     if (meta?.onConfirm) this.onConfirm = meta.onConfirm;
+    if (meta?.onClone) this.onClone = meta.onClone;
     const text = localizeSpec(spec, meta?.locale, meta?.defaultLocale);
     const badge = this.doc.createElement("div");
     badge.className = "badge";
@@ -316,6 +324,7 @@ export class TooltipRenderer implements SpecRenderer {
       : "";
     const canEdit = pin.editable && !!this.onEdit;
     const canDelete = pin.editable && !!this.onDelete;
+    const canClone = pin.editable && !!this.onClone;
     // Confirm loop: a scored match can be affirmed (Correct) or re-pinned (Fix,
     // the existing Edit flow). "Correct" shows only when the corpus opt-in gave us
     // an onConfirm callback, so it stays hidden for users who never opted in.
@@ -340,6 +349,9 @@ export class TooltipRenderer implements SpecRenderer {
       (pinned && canDelete
         ? `<button type="button" class="pin-delete">${escapeHtml(t("tooltip.deleteSpec"))}</button>`
         : "") +
+      (pinned && canClone
+        ? `<button type="button" class="pin-clone">${escapeHtml(t("clone.duplicate"))}</button>`
+        : "") +
       (pinned && canConfirm
         ? `<button type="button" class="pin-correct">${escapeHtml(t("match.correct"))}</button>`
         : "") +
@@ -359,6 +371,10 @@ export class TooltipRenderer implements SpecRenderer {
       });
       tip.querySelector(".pin-delete")?.addEventListener("click", () => {
         this.onDelete?.(pin.specId);
+      });
+      tip.querySelector(".pin-clone")?.addEventListener("click", () => {
+        this.onClone?.(pin.specId);
+        this.unpin();
       });
       tip.querySelector(".pin-correct")?.addEventListener("click", () => {
         this.onConfirm?.(pin.specId);
