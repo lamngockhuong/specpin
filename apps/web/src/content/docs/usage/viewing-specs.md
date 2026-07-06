@@ -5,6 +5,25 @@ description: How to view, search, and filter specs on a page.
 
 Once a project is connected, specs appear on matched elements.
 
+## Coverage mode
+
+Press `Alt+Shift+U` to toggle **coverage mode**. When on, dashed ghost "+" markers appear on every *undocumented interactive element* on the page: buttons, links with `href`, inputs/select/textarea, ARIA widget roles (button, link, checkbox, tab, menuitem, combobox, slider), elements with `onclick`, `tabindex >= 0`, or `contenteditable`. Hidden, display:none, zero-size, disabled, or `aria-disabled` elements are never marked.
+
+The mode state persists across page reloads (off by default, so pages remain unchanged when the mode is off).
+
+### Coverage summary
+
+The popup and side panel show a one-line **coverage summary**: "N interactive · M documented · K gaps". When there are gaps, a **"Capture all gaps (K)"** button launches bulk capture with those elements pre-selected.
+
+### Quick actions on markers
+
+Each marker offers two quick actions:
+
+- **Capture**: Opens the capture form on that element (same as single-element capture).
+- **Ignore** (appears only when the element has a stable anchor — a test-id, non-generated id, or unique CSS selector): Dismisses the marker as a personal decision. The ignore is stored in `storage.sync` per origin, so the gap stays hidden after reload and on other machines.
+
+The markers use the same collision-avoidance positioning as spec badges, are isolated in Shadow DOM, and respect your reduced-motion preference.
+
 ## Turn Specpin on/off
 
 Click the toggle at the top of the popup, or press `Alt+Shift+S`. When Specpin is off, specs disappear from the page and the popup shows a paused panel (**Specpin is off**) that tells you how many specs are hidden on this page; turn it back on from the same toggle. When no project serves the page at all, the popup instead shows a **+ New project** prompt to get started. The setting persists across sessions.

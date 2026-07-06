@@ -32,6 +32,13 @@ chỉ khác nhau ở màu.
 | `sidebar.pen` | Sidebar trong trang | panel liệt kê các spec đã match; spec `needsReview` được gắn viền amber + tag |
 | `capture-form.pen` | Capture modal | title, description, business rules, tags, display mode, target file |
 
+## Mô hình visual on-page
+
+Hai mô hình tái sử dụng overlay lên nội dung của trang:
+
+- **Spec badge**: Một vòng tròn "S" (hoặc số) xanh lam hoặc amber, 16px, được định vị để tránh overlap nội dung. Đánh dấu một element có spec. Được render trong Shadow DOM host, được định vị bằng bộ giải quyết badge-position, tôn trọng reduced-motion.
+- **Ghost marker**: Một viền hình vuông dashed với glyph "+", màu muted (`--sp-text-muted` trên `--sp-surface`), 16-20px tùy theo kích thước nội dung. Đánh dấu một element tương tác chưa được ghi (chế độ coverage). Cũng được render trong Shadow DOM host, được định vị bằng cùng bộ giải quyết badge-position, tôn trọng reduced-motion. Khác biệt với spec badge về hình thức: viền dashed thay vì solid.
+
 PNG đã render: `<surface>.light.png` và `<surface>.dark.png`. `overview.png` là một
 montage 2x4 (cột = light | dark). Tooltip renderer (`src/renderers/tooltip.ts`) chưa
 có mockup.
