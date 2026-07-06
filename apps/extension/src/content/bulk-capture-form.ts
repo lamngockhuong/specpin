@@ -12,6 +12,7 @@ import type { ElementFingerprint, Spec, SpecStatus } from "@specpin/spec-schema"
 import { formatErrors, validateSpec } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import { escapeAttr, escapeHtml, setTrustedHtml } from "../shared/html.js";
+import { createIcon } from "../shared/icons.js";
 import type { WriteTarget } from "../shared/messaging.js";
 import { createShadowHost } from "../shared/shadow.js";
 import { slugify } from "../shared/slug.js";
@@ -95,7 +96,8 @@ textarea { min-height: 90px; resize: vertical; }
 .row-status.fail { color: var(--sp-danger, #dc2626); }
 .row-remove {
   border: none; background: transparent; color: var(--sp-text-2);
-  cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px;
+  cursor: pointer; padding: 0 4px;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 .errors { margin-top: 12px; color: var(--sp-danger, #dc2626); font-size: 13px; white-space: pre-wrap; }
 .errors:empty { display: none; }
@@ -146,7 +148,7 @@ export class BulkCaptureForm {
       const remove = this.doc.createElement("button");
       remove.type = "button";
       remove.className = "row-remove";
-      remove.textContent = "×";
+      remove.appendChild(createIcon(this.doc, "close", 12));
       remove.title = t("bulk.rowRemove");
       remove.setAttribute("aria-label", t("bulk.rowRemove"));
       rowEl.append(input, flag, status, remove);

@@ -9,6 +9,7 @@
 // Each marker offers Capture (author a spec on the element) and — only when the
 // element yields a stable key — Ignore (dismiss the gap, personal + cross-machine).
 import { t } from "../i18n/index.js";
+import { createIcon } from "../shared/icons.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
@@ -40,21 +41,29 @@ const STYLES = `${SHADOW_PREAMBLE}
   display: flex; align-items: center; justify-content: center;
 }
 .cov-capture, .cov-ignore {
-  box-sizing: border-box; cursor: pointer; padding: 0; line-height: 1;
-  font: 600 13px/1 var(--sp-font, system-ui, sans-serif);
+  box-sizing: border-box; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
 }
+/* Theme-independent on purpose: the marker sits over the *host page* (any
+   background), not extension chrome, so it must not invert with the extension UI
+   theme. Following the dark theme here paints a near-black blob on a light page.
+   The --sp-overlay-chip-* tokens are defined once (no dark override), so the chip
+   reads the same on light and dark pages. */
 .cov-capture {
   width: ${MARKER_SIZE}px; height: ${MARKER_SIZE}px; border-radius: 50%;
-  border: 1.5px dashed var(--sp-border-strong, #94a3b8);
-  background: color-mix(in srgb, var(--sp-surface, #fff) 82%, transparent);
-  color: var(--sp-text-muted, #64748b);
+  border: 1.5px dashed var(--sp-overlay-chip-border);
+  background: var(--sp-overlay-chip-bg);
+  color: var(--sp-overlay-chip-text);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
 }
-.cov-capture:hover { border-color: var(--sp-accent, #4f46e5); color: var(--sp-accent, #4f46e5); }
+/* Accent is theme-independent too (one value, no dark override), so the teal
+   hover matches the spec badge without reintroducing a dark-theme inversion. */
+.cov-capture:hover { border-color: var(--sp-accent); color: var(--sp-accent); }
 .cov-ignore {
   position: absolute; top: -6px; right: -6px; width: 14px; height: 14px;
   border-radius: 50%; border: none; opacity: 0; transition: opacity 120ms ease;
-  background: var(--sp-text-muted, #64748b); color: var(--sp-surface, #fff);
-  font-size: 11px;
+  background: var(--sp-overlay-chip-dismiss); color: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.3);
 }
 .cov-marker:hover .cov-ignore, .cov-ignore:focus-visible { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .cov-ignore { transition: none; } }`;
@@ -139,7 +148,7 @@ export class CoverageOverlay {
     const capture = this.doc.createElement("button");
     capture.type = "button";
     capture.className = "cov-capture";
-    capture.textContent = "+";
+    capture.appendChild(createIcon(this.doc, "plus", 10));
     capture.title = t("coverage.capture");
     capture.setAttribute("aria-label", t("coverage.capture"));
     capture.addEventListener("click", (e) => {
@@ -154,7 +163,7 @@ export class CoverageOverlay {
       const ignore = this.doc.createElement("button");
       ignore.type = "button";
       ignore.className = "cov-ignore";
-      ignore.textContent = "×";
+      ignore.appendChild(createIcon(this.doc, "close", 9));
       ignore.title = t("coverage.ignore");
       ignore.setAttribute("aria-label", t("coverage.ignore"));
       ignore.addEventListener("click", (e) => {

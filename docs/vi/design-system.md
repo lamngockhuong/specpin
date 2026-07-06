@@ -37,7 +37,7 @@ chỉ khác nhau ở màu.
 Hai mô hình tái sử dụng overlay lên nội dung của trang:
 
 - **Spec badge**: Một vòng tròn "S" (hoặc số) xanh lam hoặc amber, 16px, được định vị để tránh overlap nội dung. Đánh dấu một element có spec. Được render trong Shadow DOM host, được định vị bằng bộ giải quyết badge-position, tôn trọng reduced-motion.
-- **Ghost marker**: Một viền hình vuông dashed với glyph "+", màu muted (`--sp-text-muted` trên `--sp-surface`), 16-20px tùy theo kích thước nội dung. Đánh dấu một element tương tác chưa được ghi (chế độ coverage). Cũng được render trong Shadow DOM host, được định vị bằng cùng bộ giải quyết badge-position, tôn trọng reduced-motion. Khác biệt với spec badge về hình thức: viền dashed thay vì solid.
+- **Ghost marker**: Một viền tròn dashed với icon "+" căn giữa, 16-20px tùy theo kích thước nội dung. Đánh dấu một element tương tác chưa được ghi (chế độ coverage). Cũng được render trong Shadow DOM host, được định vị bằng cùng bộ giải quyết badge-position, tôn trọng reduced-motion. Khác biệt với spec badge về hình thức: viền dashed thay vì solid. Bảng màu cố tình không phụ thuộc theme (một chip sáng: viền dashed màu slate, dấu "+" muted, đổ bóng nhẹ) thay vì đi theo theme giao diện của extension, vì nó nằm đè lên nền của trang host: nếu dùng màu theme tối, marker sẽ thành một khối gần như đen trên trang nền sáng.
 
 PNG đã render: `<surface>.light.png` và `<surface>.dark.png`. `overview.png` là một
 montage 2x4 (cột = light | dark). Tooltip renderer (`src/renderers/tooltip.ts`) chưa

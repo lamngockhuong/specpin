@@ -34,7 +34,7 @@ the exact same structure and differ only in color.
 Two reusable patterns overlay the page's own content:
 
 - **Spec badge**: A blue or amber "S" (or number) circle, 16px, positioned to avoid overlapping content. Marks an element with a spec. Rendered in a Shadow DOM host, positioned by the badge-position solver, respects reduced-motion.
-- **Ghost marker**: A dashed square outline with a "+" glyph, muted color (`--sp-text-muted` over `--sp-surface`), 16-20px depending on content fit. Marks an undocumented interactive element (coverage mode). Also rendered in a Shadow DOM host, positioned by the same badge-position solver, respects reduced-motion. Visually distinct from the spec badge with a dashed border instead of solid.
+- **Ghost marker**: A dashed circular outline with a centered "+" icon, 16-20px depending on content fit. Marks an undocumented interactive element (coverage mode). Also rendered in a Shadow DOM host, positioned by the same badge-position solver, respects reduced-motion. Visually distinct from the spec badge with a dashed border instead of solid. Its palette is deliberately theme-independent (a light chip: slate dashed ring, muted "+", soft shadow) rather than following the extension UI theme, because it overlays the host page's own background: a dark-theme marker would paint a near-black blob on a light page.
 
 Rendered PNGs: `<surface>.light.png` and `<surface>.dark.png`. `overview.png` is
 a 2x4 montage (columns = light | dark). The tooltip renderer

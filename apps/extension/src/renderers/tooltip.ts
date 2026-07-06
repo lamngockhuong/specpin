@@ -5,6 +5,7 @@ import { t } from "../i18n/index.js";
 import { copyText } from "../shared/clipboard.js";
 import { buildSpecLink } from "../shared/deep-link.js";
 import { escapeHtml, setTrustedHtml } from "../shared/html.js";
+import { iconSvg } from "../shared/icons.js";
 import { renderMarkdownBlock } from "../shared/markdown.js";
 import { PROVENANCE_CSS, provenanceSectionHtml } from "../shared/provenance.js";
 import { createShadowHost } from "../shared/shadow.js";
@@ -99,7 +100,7 @@ ${PROVENANCE_CSS}
   position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
   display: grid; place-items: center; padding: 0;
   background: transparent; border: none; cursor: pointer;
-  color: var(--sp-text-3); font: 600 16px/1 var(--sp-font-ui); border-radius: 4px;
+  color: var(--sp-text-3); border-radius: 4px;
 }
 .tip .pin-close:hover { background: var(--sp-border); color: var(--sp-text); }
 .tip .pin-edit {
@@ -331,7 +332,7 @@ export class TooltipRenderer implements SpecRenderer {
     const canConfirm = pin.scored && !!this.onConfirm;
     const tipHtml =
       (pinned
-        ? `<button type="button" class="pin-close" aria-label="${escapeHtml(t("common.close"))}">×</button>`
+        ? `<button type="button" class="pin-close" aria-label="${escapeHtml(t("common.close"))}">${iconSvg("close", 12)}</button>`
         : "") +
       (pin.project ? `<span class="project">${escapeHtml(pin.project)}</span>` : "") +
       `<h4>${escapeHtml(pin.text.title)}</h4>` +
