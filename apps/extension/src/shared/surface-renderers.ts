@@ -103,13 +103,17 @@ export function renderCoverageSummary(
     documented: coverage.documented,
     gaps: coverage.gaps,
   });
-  const hint = document.createElement("div");
-  hint.className = "coverage-hint";
-  hint.textContent = t("coverage.hint");
-  container.append(line, hint);
-  // Bridge to bulk capture: when the page has gaps, offer to fill them all in one
-  // pass. The surface wires the click (delegated on the container) to the tab.
+  container.append(line);
+  // The Alt+Shift+U hint + bulk-capture button only make sense while gaps remain:
+  // when every interactive element is documented (gaps === 0), telling the user to
+  // reveal undocumented elements marks nothing, so the hint reads as orphaned noise.
   if (coverage.gaps > 0) {
+    const hint = document.createElement("div");
+    hint.className = "coverage-hint";
+    hint.textContent = t("coverage.hint");
+    container.append(hint);
+    // Bridge to bulk capture: offer to fill all gaps in one pass. The surface
+    // wires the click (delegated on the container) to the tab.
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "coverage-capture-all";
