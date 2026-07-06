@@ -217,11 +217,11 @@ go test ./...
 
 ## Đóng góp
 
-Xem [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md). Trước khi mở PR, chạy đầy đủ cổng kiểm tra:
+Xem [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md). Một hook pre-commit (lefthook, tự cài khi chạy `pnpm install`) sẽ chạy Biome + typecheck trên các file đã stage; bỏ qua bằng `git commit --no-verify`. Trước khi mở PR, chạy đầy đủ cổng kiểm tra:
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm schema-validate
-cd apps/cli && make check-schema && go test ./...
+pnpm check       # lint + typecheck + test + schema-validate
+pnpm check:all   # chạy thêm cổng Go của apps/cli (make check-schema, go vet, go test)
 ```
 
 ## Trạng thái

@@ -14,11 +14,15 @@
     "lint:fix": "biome check --write .",
     "typecheck": "turbo run typecheck",
     "schema-validate": "turbo run schema-validate",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm schema-validate",
+    "check:all": "pnpm check && cd apps/cli && make check-schema && go vet ./... && go test ./...",
+    "prepare": "lefthook install || true"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.2",
     "happy-dom": "20.10.6",
+    "lefthook": "2.1.9",
     "turbo": "2.10.3",
     "typescript": "6.0.3",
     "vitest": "4.1.9"

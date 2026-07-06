@@ -1,0 +1,11 @@
+# Git hooks managed by lefthook (auto-installed by `pnpm install` via the
+# "prepare" script). Bypass any time with `git commit --no-verify`.
+pre-commit:
+  parallel: false
+  commands:
+    biome:
+      glob: "*.{js,ts,jsx,tsx,cjs,mjs,json,jsonc,css}"
+      run: pnpm biome check --write --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+    typecheck:
+      run: pnpm typecheck

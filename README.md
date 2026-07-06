@@ -228,11 +228,11 @@ manual `workflow_dispatch`, and tag-push fallbacks.
 
 ## Contributing
 
-See [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md). Before opening a PR, run the full gate:
+See [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md). A pre-commit hook (lefthook, auto-installed by `pnpm install`) runs Biome + typecheck on staged files; bypass with `git commit --no-verify`. Before opening a PR, run the full gate:
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm schema-validate
-cd apps/cli && make check-schema && go test ./...
+pnpm check       # lint + typecheck + test + schema-validate
+pnpm check:all   # also runs the apps/cli Go gate (make check-schema, go vet, go test)
 ```
 
 ## Status

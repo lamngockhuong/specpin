@@ -219,11 +219,11 @@ go test ./...
 
 ## コントリビューション
 
-[`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md)を参照してください。PRを開く前に、フルゲートを実行してください：
+[`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md)を参照してください。pre-commitフック（lefthook、`pnpm install`で自動インストール）がステージ済みファイルに対してBiome + typecheckを実行します。`git commit --no-verify`でスキップできます。PRを開く前に、フルゲートを実行してください：
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm schema-validate
-cd apps/cli && make check-schema && go test ./...
+pnpm check       # lint + typecheck + test + schema-validate
+pnpm check:all   # apps/cliのGoゲート（make check-schema, go vet, go test）も実行
 ```
 
 ## ステータス
