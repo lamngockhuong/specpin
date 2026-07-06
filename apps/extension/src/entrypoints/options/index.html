@@ -289,6 +289,23 @@
       }
       .team-views .ok { color: var(--sp-success-text); margin-top: 8px; font-size: 14px; }
       .team-views .err { color: var(--sp-error-text); margin-top: 8px; font-size: 14px; }
+      /* Team-guides manager reuses the shared .guides-list/.guides-item flex row
+         (name + Delete). In the wide Options panel those bare rows read as
+         floating text, so give the list the same bordered card + row dividers as
+         .corpus-list; the shared row layout still positions name and the Xóa link. */
+      .team-views .guides-list {
+        margin-top: 4px;
+        border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
+        overflow: hidden;
+      }
+      .team-views .guides-item,
+      .team-views .guides-list > .muted {
+        margin: 0; padding: 10px 12px;
+        border-bottom: 1px solid var(--sp-border);
+      }
+      .team-views .guides-item:last-child,
+      .team-views .guides-list > .muted:last-child { border-bottom: none; }
+      .team-views .guides-item:hover { background: var(--sp-elevated); }
 
       /* Support & Feedback: two external link buttons in a responsive grid. */
       .support-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
