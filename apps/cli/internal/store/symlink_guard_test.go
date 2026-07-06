@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -23,6 +24,24 @@ func TestReadRawRejectsSymlink(t *testing.T) {
 
 	if _, err := s.ReadRaw("evil.spec.json"); !errors.Is(err, ErrTraversal) {
 		t.Fatalf("want ErrTraversal for symlinked file, got %v", err)
+	}
+}
+
+// A name with a path separator is rejected before any filesystem access: .specs/
+// is flat, so a multi-segment name can only be an escape attempt (e.g. a subdir
+// symlink) or a nested write no reader would surface. Both "/" and "\" are
+// rejected so a Windows-style separator cannot slip past on a POSIX host.
+func TestResolveRejectsPathSeparator(t *testing.T) {
+	s := newTempStore(t)
+
+	if err := s.SaveSpec("sub/login.spec.json", json.RawMessage(validSpec), ""); !errors.Is(err, ErrTraversal) {
+		t.Fatalf("SaveSpec with slash: want ErrTraversal, got %v", err)
+	}
+	if _, err := s.ReadRaw("sub/manifest.json"); !errors.Is(err, ErrTraversal) {
+		t.Fatalf("ReadRaw with slash: want ErrTraversal, got %v", err)
+	}
+	if _, err := s.ReadRaw(`sub\manifest.json`); !errors.Is(err, ErrTraversal) {
+		t.Fatalf("ReadRaw with backslash: want ErrTraversal, got %v", err)
 	}
 }
 
