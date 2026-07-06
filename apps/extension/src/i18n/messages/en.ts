@@ -502,6 +502,8 @@ const en = {
   // Clone: duplicate a spec's content onto a newly-picked element (tooltip pin +
   // side-panel card, gated on writable).
   "clone.duplicate": "Duplicate to element",
+  // Compact label for the side-panel card action; "clone.duplicate" is its tooltip.
+  "clone.duplicateShort": "Clone",
 } satisfies Record<string, string>;
 
 export type Messages = typeof en;

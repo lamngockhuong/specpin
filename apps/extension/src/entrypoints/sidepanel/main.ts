@@ -228,7 +228,7 @@ function renderSpecs(res: SpecsForOrigin): void {
         actionButton("spec-edit", t("common.edit"), t("sidepanel.editThisSpec"), () => {
           void actOnActiveTab({ type: "EDIT_SPEC", specId: spec.id });
         }),
-        actionButton("spec-clone", t("clone.duplicate"), t("clone.duplicate"), () => {
+        actionButton("spec-clone", t("clone.duplicateShort"), t("clone.duplicate"), () => {
           void actOnActiveTab({ type: "CLONE_SPEC", specId: spec.id });
         }),
       );

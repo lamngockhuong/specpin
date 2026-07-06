@@ -110,14 +110,17 @@
          actions. Actions align to the top so they stay put as the title wraps. */
       #specs .spec-head { display: flex; align-items: flex-start; gap: 8px; }
       #specs .spec-actions { flex: none; display: flex; gap: 8px; }
-      /* Per-spec action buttons: Copy link / Delete / Edit / Hide (eye) on each card. */
-      #specs .spec-copy, #specs .spec-delete, #specs .spec-edit, #specs .spec-vis {
+      /* Per-spec action buttons: Copy link / Delete / Edit / Clone / Hide (eye) on
+         each card. All share the transparent text-link style so the action cluster
+         stays narrow and the title keeps room to wrap normally. */
+      #specs .spec-copy, #specs .spec-delete, #specs .spec-edit, #specs .spec-clone, #specs .spec-vis {
         background: transparent; border: none; cursor: pointer; padding: 2px;
         color: var(--sp-text-3); font: 600 13px/1 var(--sp-font-ui); white-space: nowrap;
       }
       #specs .spec-copy:hover { color: var(--sp-accent); }
       #specs .spec-vis:hover { color: var(--sp-text); }
       #specs .spec-edit:hover { color: var(--sp-accent); }
+      #specs .spec-clone:hover { color: var(--sp-accent); }
       #specs .spec-delete:hover { color: var(--sp-error-text); }
       #specs > li.spec.spec-hidden { opacity: 0.55; }
 

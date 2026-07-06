@@ -401,9 +401,10 @@ const vi: Record<keyof Messages, string> = {
   "guide.deleteFailed": "Không thể xóa hướng dẫn: {error}",
 
   // Options: per-connection team-guides management.
-  "options.teamGuidesSummary": "Hướng dẫn nhóm",
-  "options.teamGuidesNote": "Các hướng dẫn onboarding lưu trong .specs/guides.json.",
-  "options.noTeamGuides": "Chưa có hướng dẫn nhóm.",
+  "options.teamGuidesSummary": "Hướng dẫn dùng chung",
+  "options.teamGuidesNote":
+    "Các hướng dẫn onboarding được đặt tên và commit vào .specs/guides.json.",
+  "options.noTeamGuides": "Chưa có hướng dẫn dùng chung.",
 
   // Capture/edit form: provenance authoring + Mark-reviewed.
   "capture.statusLabel": "Trạng thái",
@@ -494,6 +495,7 @@ const vi: Record<keyof Messages, string> = {
   // Clone: sao chép nội dung spec sang một phần tử mới chọn (pin tooltip + thẻ
   // side panel, chỉ hiện khi có quyền ghi).
   "clone.duplicate": "Nhân bản sang phần tử",
+  "clone.duplicateShort": "Nhân bản",
 };
 
 export default vi;

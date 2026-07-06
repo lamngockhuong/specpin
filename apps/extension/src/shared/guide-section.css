@@ -72,7 +72,20 @@
 .guides-start:hover {
   background: var(--sp-elevated);
 }
-.guides .link.danger {
+/* Edit/Delete are borderless link buttons (link.css). Neutralize the Options
+   page's broad `button {}` / `button:hover` rules (full width, accent fill,
+   box-shadow/radius, top margin) so these stay flat, content-width text links
+   on any host page. The two-class selector outranks `button:hover`, so the flat
+   background holds on hover too - only `.link:hover`'s text color changes. */
+.guides-item .link {
+  flex: none;
+  width: auto;
+  margin: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+.guides-item .link.danger {
   color: var(--sp-error-text);
 }
 .guides-default:focus-visible,
