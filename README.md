@@ -52,7 +52,7 @@
 </p>
 
 <p align="center">
-  <img src="apps/extension/designs/overview.png" alt="Specpin extension UI in light and dark themes" width="760" />
+  <img src="apps/extension/store-assets/readme-hero.png" alt="Specpin: a spec pinned onto a live UI element, with the side panel listing every spec on the page" width="760" />
 </p>
 
 ---

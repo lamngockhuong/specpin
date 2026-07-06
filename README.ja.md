@@ -52,7 +52,7 @@
 </p>
 
 <p align="center">
-  <img src="apps/extension/designs/overview.png" alt="ライト・ダークテーマのSpecpin拡張機能UI" width="760" />
+  <img src="apps/extension/store-assets/readme-hero.png" alt="Specpin: 実行中のUI要素にピン留めされたspecと、ページ上の全specを一覧するサイドパネル" width="760" />
 </p>
 
 ---
