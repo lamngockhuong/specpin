@@ -190,11 +190,11 @@ Both the capture form (single element) and the bulk form have a **"Start from te
 - **API error handling**: Prefills for error-handling specs.
 - **Auth flow**: Prefills for authentication-related specs.
 
-Selecting a template prefills **empty fields only** — it never overwrites text you already entered. No confirm dialog. There's no persistence or schema change; templates are fixed in the UI and localized to the extension's UI language.
+Selecting a template prefills **empty fields only**: it never overwrites text you already entered. No confirm dialog. There's no persistence or schema change; templates are fixed in the UI and localized to the extension's UI language.
 
 ## 15. Clone ("Duplicate to element")
 
-When viewing an editable spec (a tooltip badge or side-panel card), a **Duplicate to element** action appears (shown only when you have write permission for that spec's project).
+When viewing an editable spec (a tooltip badge or side-panel card), a **Duplicate to element** action appears (shown only when you have write permission for that spec's project). On the side-panel card it shows as a compact **Clone** link, with the full name on hover.
 
 1. Click **Duplicate to element**.
 2. The element picker appears. Click the target element.
@@ -203,7 +203,7 @@ When viewing an editable spec (a tooltip badge or side-panel card), a **Duplicat
    - `status` → `draft`
    - `verifiedBy` and review stamp (`meta.reviewedAt`/`reviewedBy`) are dropped.
 
-This ensures an approved source spec never launders an unreviewed copy into "approved" — the cloned spec always starts as draft.
+This ensures an approved source spec never launders an unreviewed copy into "approved": the cloned spec always starts as draft.
 
 ## 16. Guided tours (guide mode)
 

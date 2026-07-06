@@ -133,7 +133,7 @@ Chọn một mẫu điền sẵn **chỉ các trường trống**. Nó không ba
 
 ## Nhân bản sang element
 
-Khi xem một spec bạn có thể sửa (badge tooltip hoặc thẻ side panel), hành động **Nhân bản sang element** xuất hiện.
+Khi xem một spec bạn có thể sửa (badge tooltip hoặc thẻ side panel), hành động **Nhân bản sang element** xuất hiện. Trên thẻ side panel, nút này hiển thị gọn là **Nhân bản**, tên đầy đủ hiện khi rê chuột.
 
 1. Nhấp **Nhân bản sang element**.
 2. Bộ chọn element xuất hiện. Nhấp element mới trên trang.
@@ -143,7 +143,7 @@ Khi xem một spec bạn có thể sửa (badge tooltip hoặc thẻ side panel)
    - Một `id` mới (suy ra lại từ tiêu đề khi lưu).
    - **Provenance được đặt lại**: status trở thành `draft`, và metadata review (`verifiedBy`, `reviewedAt`, `reviewedBy`) bị xóa.
 
-Điều này đảm bảo một spec nguồn approved không bao giờ im lặng sao chép thành "approved" trên một element mới — spec nhân bản luôn bắt đầu là draft và yêu cầu re-review.
+Điều này đảm bảo một spec nguồn approved không bao giờ im lặng sao chép thành "approved" trên một element mới: spec nhân bản luôn bắt đầu là draft và yêu cầu re-review.
 
 ## Xuất spec (dự án cục bộ)
 

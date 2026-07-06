@@ -24,9 +24,9 @@ The spec writes to the chosen project and appears immediately on the element.
 - **Description**: What the element does (required for the default language). Markdown supported.
 - **Business rules**: One rule per line (optional). Markdown supported (inline marks only).
 - **Tags**: Comma-separated (optional, e.g. `auth, critical`).
-- **Status**: Lifecycle state — draft, approved, or deprecated (optional; leave unset for neutral).
+- **Status**: Lifecycle state: draft, approved, or deprecated (optional; leave unset for neutral).
 - **Links**: Author-declared references to related tickets, docs, or PRs (optional). Each is a label plus an `http`/`https` URL.
-- **Linked tests**: Repo-relative test paths that declare this spec (optional). These are *declared* links, not test results — Specpin checks the paths exist during `specpin validate`, but never runs them.
+- **Linked tests**: Repo-relative test paths that declare this spec (optional). These are *declared* links, not test results. Specpin checks the paths exist during `specpin validate`, but never runs them.
 - **Display mode**: Use project default, tooltip, or sidebar.
 - **Target project**: Which project to save into. With more than one writable project serving the page, pick from the dropdown. With exactly one, it is selected automatically. With none, capture is disabled with an explanation.
 - **Target file**: The `.spec.json` file to write into (pre-filled, editable).
@@ -66,7 +66,7 @@ Edit writes back through the owning project (sidecar or local) and live-updates 
 
 ## Mark reviewed
 
-The edit form has a **Mark reviewed** action that stamps the spec's review date (`reviewedAt`) and a reviewer token (`reviewedBy`). Enter a **non-PII token** — a name or handle, not an email — because it is committed to Git and included in exports; the form warns you of this. The review date drives the **stale** indicator on rendered specs once it passes the project's staleness threshold.
+The edit form has a **Mark reviewed** action that stamps the spec's review date (`reviewedAt`) and a reviewer token (`reviewedBy`). Enter a **non-PII token** (a name or handle, not an email) because it is committed to Git and included in exports; the form warns you of this. The review date drives the **stale** indicator on rendered specs once it passes the project's staleness threshold.
 
 ## Re-link element (edit only)
 
@@ -133,7 +133,7 @@ Selecting a template pre-fills **empty fields only**. It never overwrites text y
 
 ## Duplicate to element (clone)
 
-When viewing a spec you can edit (tooltip badge or side-panel card), a **Duplicate to element** action appears.
+When viewing a spec you can edit (tooltip badge or side-panel card), a **Duplicate to element** action appears. On the side-panel card it shows as a compact **Clone** link, with the full name on hover.
 
 1. Click **Duplicate to element**.
 2. The element picker appears. Click the new element on the page.
@@ -143,7 +143,7 @@ When viewing a spec you can edit (tooltip badge or side-panel card), a **Duplica
    - A new `id` (re-derived from the title on save).
    - **Provenance reset**: status becomes `draft`, and review metadata (`verifiedBy`, `reviewedAt`, `reviewedBy`) is dropped.
 
-This ensures an approved source spec never silently clone into "approved" on a new element — the cloned spec always starts as draft and requires re-review.
+This ensures an approved source spec never silently clone into "approved" on a new element: the cloned spec always starts as draft and requires re-review.
 
 ## Export specs (local projects)
 

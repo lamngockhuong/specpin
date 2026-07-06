@@ -505,6 +505,7 @@ const ja: Record<keyof Messages, string> = {
   // クローン: 仕様の内容を新しく選んだ要素に複製 (ツールチップのピン + サイド
   // パネルのカード、書き込み可能な場合のみ表示)。
   "clone.duplicate": "要素に複製",
+  "clone.duplicateShort": "複製",
 };
 
 export default ja;
