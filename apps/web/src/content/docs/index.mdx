@@ -5,8 +5,8 @@ template: splash
 hero:
   tagline: Pin living business specs onto the elements of your running web UI. Git-native, local-first, framework-agnostic. No code generation.
   image:
-    file: ../../assets/specpin-icon.svg
-    alt: Specpin
+    file: ../../assets/home-hero.png
+    alt: Specpin specs rendering as a tooltip and side panel on a live web UI
   actions:
     - text: Get started
       link: /guide/getting-started/
@@ -23,6 +23,9 @@ hero:
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+import HeroSpecDemo from '../../components/HeroSpecDemo.astro';
+
+<HeroSpecDemo />
 
 <div class="browser-cta" not-content>
   <a class="browser-cta-item" href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
@@ -45,7 +48,7 @@ in-browser as you hover or browse. It is **not** a code generator: it pins
 living, Git-versioned documentation onto the interface you already have.
 
 <CardGrid>
-  <Card title="Pin specs onto live elements" icon="pin">
+  <Card title="Pin specs onto live elements" icon="puzzle">
     Resilient fingerprint matching (test-id, aria, selector, xpath, text,
     position) keeps specs attached to their elements across refactors.
   </Card>

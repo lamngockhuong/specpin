@@ -7,9 +7,10 @@ import starlightLinksValidator from "starlight-links-validator";
 export default defineConfig({
   site: "https://specpin.ohnice.app",
   base: "/",
-  // The only images are SVGs (logo, hero, favicon); they need no raster
-  // optimization, so skip the Sharp-backed image service entirely (keeps Sharp
-  // out of the dependency tree). Revisit if raster assets are added later.
+  // Images are SVGs (logo, favicon) plus the hero PNG screenshot. None need
+  // raster re-encoding, so skip the Sharp-backed image service entirely (keeps
+  // Sharp out of the dependency tree). Revisit if images need resizing/format
+  // conversion at build time.
   image: { service: passthroughImageService() },
   integrations: [
     starlight({

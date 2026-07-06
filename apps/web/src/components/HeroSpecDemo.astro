@@ -1,0 +1,182 @@
+---
+// Interactive hero touches that let the marketing site dogfood the product:
+//   1. A sample Specpin spec "pinned" to the hero wordmark: a small badge on the
+//      <h1> opens a popover styled with the site accent tokens, evoking (not
+//      cloning) the browser-extension tooltip.
+//   2. Click-to-zoom lightbox for the hero product screenshot.
+// Both share one animate-out-then-remove helper and one close choreography.
+//
+// The popover content is authored below and rendered into a hidden <template>
+// so Astro escapes it at build time (no runtime string-building) and localizes
+// it per Starlight locale; the client script clones the template on open.
+// Styles: `.spec-demo-*` and `.hero-lightbox` in src/styles/custom.css.
+const locale = Astro.currentLocale ?? "en";
+
+const strings = {
+  en: {
+    badge: "Open the spec pinned to this heading",
+    close: "Close",
+    title: "Specpin wordmark",
+    desc: "The product name, pinned as a living spec, right here on its own site.",
+    rules: [
+      "This popover is a demo of what the real extension renders on a page",
+      "In your app, specs live in .specs/ and match real elements",
+    ],
+    tags: ["demo", "meta"],
+    caption: "Demo of the browser extension",
+  },
+  vi: {
+    badge: "Mở spec được ghim vào tiêu đề này",
+    close: "Đóng",
+    title: "Chữ Specpin",
+    desc: "Tên sản phẩm, được ghim như một spec sống động, ngay trên chính website của nó.",
+    rules: [
+      "Popover này minh hoạ những gì extension thật hiển thị trên trang",
+      "Trong app của bạn, spec nằm ở .specs/ và khớp với phần tử thật",
+    ],
+    tags: ["demo", "meta"],
+    caption: "Minh hoạ tiện ích trình duyệt",
+  },
+  ja: {
+    badge: "この見出しにピン留めされた仕様を開く",
+    close: "閉じる",
+    title: "Specpin のロゴ文字",
+    desc: "製品名を、生きた仕様としてこのサイト自身にピン留めしています。",
+    rules: [
+      "このポップオーバーは、実際の拡張機能がページ上に表示する内容のデモです",
+      "実際のアプリでは仕様は .specs/ にあり、本物の要素と一致します",
+    ],
+    tags: ["demo", "meta"],
+    caption: "ブラウザ拡張機能のデモ",
+  },
+};
+
+const s = strings[locale as keyof typeof strings] ?? strings.en;
+---
+
+{/* Localized popover markup, escaped by Astro; cloned into the <h1> at runtime. */}
+<template class="spec-demo-template" data-badge-label={s.badge}>
+  <div class="spec-demo-pop" role="dialog" aria-label={s.title}>
+    <button type="button" class="spec-demo-close" aria-label={s.close}>✕</button>
+    <h3>{s.title}</h3>
+    <p>{s.desc}</p>
+    <ul>{s.rules.map((rule) => <li>{rule}</li>)}</ul>
+    <div class="spec-demo-tags">
+      {s.tags.map((tag) => <span class="spec-demo-tag">{tag}</span>)}
+    </div>
+    <div class="spec-demo-caption">{s.caption}</div>
+  </div>
+</template>
+
+<script>
+  // Fade an overlay out along its closing animation, then remove it. The
+  // timeout backstops the case where `animationend` never fires. Shared by the
+  // popover and the lightbox.
+  function animateOut(el: HTMLElement) {
+    el.classList.add("is-closing");
+    const done = () => el.remove();
+    el.addEventListener("animationend", done, { once: true });
+    setTimeout(done, 250);
+  }
+
+  function openLightbox(source: HTMLImageElement) {
+    const overlay = document.createElement("div");
+    overlay.className = "hero-lightbox";
+    const big = document.createElement("img");
+    big.src = source.currentSrc || source.src;
+    big.alt = source.alt;
+    overlay.appendChild(big);
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    let closing = false;
+    function close() {
+      if (closing) return;
+      closing = true;
+      document.removeEventListener("keydown", onKey);
+      animateOut(overlay);
+    }
+
+    overlay.addEventListener("click", close);
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(overlay);
+  }
+
+  function initSpecDemo() {
+    const found = document.querySelector<HTMLHeadingElement>(".hero h1");
+    const template = document.querySelector(".spec-demo-template");
+    if (
+      !found ||
+      !(template instanceof HTMLTemplateElement) ||
+      found.querySelector(".spec-demo-badge")
+    ) {
+      return;
+    }
+    // Non-null captures so the nested open/close closures keep the types
+    // (control-flow narrowing is not preserved across closure boundaries).
+    const heading: HTMLHeadingElement = found;
+    const tpl: HTMLTemplateElement = template;
+
+    heading.classList.add("has-spec-demo");
+    const badge = document.createElement("button");
+    badge.type = "button";
+    badge.className = "spec-demo-badge";
+    badge.textContent = "S";
+    badge.setAttribute("aria-label", tpl.dataset.badgeLabel ?? "");
+    badge.setAttribute("aria-expanded", "false");
+    heading.appendChild(badge);
+
+    let pop: HTMLElement | null = null;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        close();
+        badge.focus();
+      }
+    };
+    const onOutside = (e: MouseEvent) => {
+      if (pop && !pop.contains(e.target as Node) && e.target !== badge) close();
+    };
+
+    function close() {
+      if (!pop) return;
+      const current = pop;
+      pop = null;
+      badge.setAttribute("aria-expanded", "false");
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("click", onOutside, true);
+      animateOut(current);
+    }
+
+    function open() {
+      const clone = tpl.content.firstElementChild?.cloneNode(true);
+      if (!(clone instanceof HTMLElement)) return;
+      pop = clone;
+      heading.appendChild(pop);
+      badge.setAttribute("aria-expanded", "true");
+      pop.querySelector(".spec-demo-close")?.addEventListener("click", () => {
+        close();
+        badge.focus();
+      });
+      document.addEventListener("keydown", onKey);
+      // Defer the outside-click listener so the opening click doesn't close it.
+      setTimeout(() => document.addEventListener("click", onOutside, true), 0);
+    }
+
+    badge.addEventListener("click", () => (pop ? close() : open()));
+  }
+
+  // One delegated listener for the lightbox; added once when this script is
+  // first evaluated (only on pages that render this component) and survives
+  // ClientRouter navigations since `document` is never swapped.
+  document.addEventListener("click", (e) => {
+    const img = (e.target as Element | null)?.closest?.(".hero img");
+    if (img instanceof HTMLImageElement) openLightbox(img);
+  });
+
+  // Fires on initial load and after every ClientRouter navigation; the direct
+  // call covers the case where the event already fired before this ran.
+  document.addEventListener("astro:page-load", initSpecDemo);
+  initSpecDemo();
+</script>

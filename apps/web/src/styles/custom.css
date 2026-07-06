@@ -99,6 +99,246 @@
   background-clip: text;
   color: transparent;
 }
+.hero h1.has-spec-demo {
+  position: relative;
+}
+
+/* Self-demo spec badge pinned to the hero wordmark (see HeroSpecDemo.astro).
+   The hero <h1> clips its text to a gradient (color + text-fill transparent),
+   so every visible child below MUST restate color and -webkit-text-fill-color
+   or it inherits transparent and vanishes. */
+.spec-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: super;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-left: 0.4rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--specpin-accent);
+  color: #04221e;
+  -webkit-text-fill-color: #04221e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+}
+.spec-demo-badge:hover {
+  background: var(--specpin-accent-hover);
+}
+/* Radar-ping ring behind the badge to draw the eye. Animates transform +
+   opacity (compositor-accelerated) rather than a box-shadow spread, so it
+   doesn't repaint the hero every frame while it loops. */
+.spec-demo-badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--specpin-accent);
+  animation: spec-demo-pulse 2.4s ease-out infinite;
+}
+
+.spec-demo-pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 50;
+  width: min(340px, 88vw);
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: var(--sl-color-gray-6);
+  border: 1px solid var(--sl-color-gray-5);
+  box-shadow: 0 20px 50px -15px rgb(0 0 0 / 0.5);
+  text-align: left;
+  font-size: var(--sl-text-sm);
+  color: var(--sl-color-gray-2);
+  transform-origin: top left;
+  animation: spec-demo-pop-in 0.28s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+/* The popover renders inside the gradient <h1>, which forces
+   -webkit-text-fill-color: transparent onto every descendant. Reset it once for
+   the whole subtree so each element paints in its own `color`. */
+.spec-demo-pop,
+.spec-demo-pop * {
+  -webkit-text-fill-color: currentColor;
+}
+.spec-demo-pop.is-closing {
+  animation: spec-demo-pop-in 0.16s ease reverse both;
+}
+.spec-demo-pop h3 {
+  margin: 0 0 0.35rem;
+  font-size: var(--sl-text-base);
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+.spec-demo-pop p {
+  margin: 0 0 0.6rem;
+}
+.spec-demo-pop ul {
+  margin: 0 0 0.7rem;
+  padding-left: 1.1rem;
+}
+.spec-demo-pop li {
+  margin: 0.15rem 0;
+}
+.spec-demo-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.spec-demo-tag {
+  font-family: var(--sl-font-mono, monospace);
+  font-size: 0.72rem;
+  color: var(--specpin-accent);
+}
+.spec-demo-caption {
+  font-size: 0.7rem;
+  color: var(--sl-color-gray-3);
+  border-top: 1px solid var(--sl-color-gray-5);
+  padding-top: 0.5rem;
+}
+.spec-demo-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.15rem;
+  border: none;
+  background: transparent;
+  color: var(--sl-color-gray-2);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.spec-demo-close:hover {
+  color: var(--sl-color-white);
+}
+
+@keyframes spec-demo-pulse {
+  from {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+@keyframes spec-demo-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* On narrow viewports the hero stacks and the wordmark is short, so an
+   h1-anchored popover overflows the right edge (horizontal scroll). Pin it to
+   the viewport instead: fixed, inset left/right, centered, never wider than
+   the screen. Positioning uses insets (not transform) so the scale/translate
+   pop-in animation stays intact. */
+@media (max-width: 40rem) {
+  .spec-demo-pop {
+    position: fixed;
+    top: calc(var(--sl-nav-height, 3.5rem) + 1rem);
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    max-width: 24rem;
+    margin-inline: auto;
+    transform-origin: top center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spec-demo-badge::after {
+    animation: none;
+    opacity: 0;
+  }
+  .spec-demo-pop,
+  .spec-demo-pop.is-closing {
+    animation-duration: 0.01ms;
+  }
+}
+
+/* Hero product screenshot: let it fill the column and frame it like a window
+   so the dense in-page specs stay legible instead of shrinking to a thumbnail. */
+.hero img {
+  width: 100%;
+  max-width: none;
+  border-radius: 12px;
+  border: 1px solid var(--sl-color-gray-5);
+  box-shadow: 0 24px 60px -20px rgb(0 0 0 / 0.35);
+  cursor: zoom-in;
+}
+
+/* Full-screen lightbox opened by clicking the hero screenshot (see the
+   delegated listener in HeroSpecDemo.astro). Click backdrop or Esc closes. */
+.hero-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgb(0 0 0 / 0.8);
+  backdrop-filter: blur(4px);
+  cursor: zoom-out;
+  animation: hero-lightbox-fade 0.2s ease both;
+}
+.hero-lightbox img {
+  max-width: min(1360px, 95vw);
+  max-height: 90vh;
+  width: auto;
+  border-radius: 12px;
+  box-shadow: 0 24px 80px -10px rgb(0 0 0 / 0.6);
+  /* Springy overshoot easing for a lively pop-in. */
+  animation: hero-lightbox-pop 0.32s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+/* Closing: reverse quickly to nothing (added by the head script on dismiss). */
+.hero-lightbox.is-closing {
+  animation: hero-lightbox-fade 0.18s ease reverse both;
+}
+.hero-lightbox.is-closing img {
+  animation: hero-lightbox-pop 0.18s ease reverse both;
+}
+
+@keyframes hero-lightbox-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes hero-lightbox-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Honor reduced-motion: keep the lightbox, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-lightbox,
+  .hero-lightbox img,
+  .hero-lightbox.is-closing,
+  .hero-lightbox.is-closing img {
+    animation-duration: 0.01ms;
+  }
+}
 
 /* Primary CTA gets the accent fill + glow, matching the extension's CTA. */
 .hero .sl-link-button.primary {
