@@ -188,11 +188,11 @@ Cả form ghi (element đơn) và form hàng loạt đều có dropdown **"Bắt
 - **API error handling**: Điền sẵn cho các spec xử lý lỗi.
 - **Auth flow**: Điền sẵn cho các spec liên quan xác thực.
 
-Chọn một mẫu sẽ điền sẵn **chỉ các trường trống** — nó không bao giờ ghi đè text bạn đã nhập. Không có dialog xác nhận. Không có lưu hay thay đổi schema; mẫu được cố định trong UI và localize theo ngôn ngữ giao diện của extension.
+Chọn một mẫu sẽ điền sẵn **chỉ các trường trống**: nó không bao giờ ghi đè text bạn đã nhập. Không có dialog xác nhận. Không có lưu hay thay đổi schema; mẫu được cố định trong UI và localize theo ngôn ngữ giao diện của extension.
 
 ## 15. Nhân bản ("Sao chép sang element")
 
-Khi xem một spec có thể sửa (badge tooltip hoặc spec card trong side panel), hành động **Sao chép sang element** xuất hiện (chỉ hiển thị khi bạn có quyền ghi project của spec đó).
+Khi xem một spec có thể sửa (badge tooltip hoặc spec card trong side panel), hành động **Sao chép sang element** xuất hiện (chỉ hiển thị khi bạn có quyền ghi project của spec đó). Trên spec card ở side panel, nút này hiển thị gọn là **Nhân bản**, tên đầy đủ hiện khi rê chuột.
 
 1. Click **Sao chép sang element**.
 2. Bộ chọn element xuất hiện. Click element đích.
@@ -201,7 +201,7 @@ Khi xem một spec có thể sửa (badge tooltip hoặc spec card trong side pa
    - `status` → `draft`
    - `verifiedBy` và dấu review (`meta.reviewedAt`/`reviewedBy`) bị xóa.
 
-Điều này đảm bảo một spec nguồn approved không bao giờ "bán" bản sao chưa review thành "approved" — spec nhân bản luôn bắt đầu là draft.
+Điều này đảm bảo một spec nguồn approved không bao giờ "bán" bản sao chưa review thành "approved": spec nhân bản luôn bắt đầu là draft.
 
 ## 16. Tour hướng dẫn (guide mode)
 
