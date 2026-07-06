@@ -132,6 +132,10 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 - **Khớp có chấm điểm tin cậy** - bộ chấm điểm hybrid có trọng số dự phòng khi anchor chính xác thất bại, với các mức tin cậy, gợi ý "vì sao khớp", và tín hiệu cần-review
 - **Ba chế độ hiển thị** - tooltip, sidebar, và modal kéo thả được
 - **Capture thủ công** - click vào một phần tử và soạn đặc tả ngay tại chỗ, không cần rời trang
+- **Chế độ coverage** - một phím tắt (`Alt+Shift+U`) bật các dấu "+" mờ trên mọi phần tử tương tác chưa có đặc tả, kèm tóm tắt "N tương tác / M đã ghi / K còn thiếu" và nút "Capture tất cả chỗ thiếu"; các chỗ đã bỏ qua được ghi nhớ theo từng origin
+- **Bulk capture** - chọn nhiều phần tử cùng lúc và soạn chung trong một form (tag, quy tắc, status áp cho tất cả; tiêu đề riêng từng phần tử), ghi thành N spec trong một file
+- **Template đặc tả** - các mẫu dựng sẵn (Kiểm tra form, Xử lý lỗi API, Luồng xác thực) điền sẵn các trường trống trong form capture đơn và bulk
+- **Nhân bản spec** - "Nhân bản sang phần tử" sao chép nội dung một spec sang phần tử mới chọn với fingerprint mới và provenance được reset, nên spec đã approved không bao giờ biến thành bản chưa review
 - **Xoá spec tại chỗ** - xoá một spec ghi được từ tooltip hoặc side panel sau một hộp xác nhận nguy hiểm (spec sidecar khôi phục từ Git; spec cục bộ từ storage)
 - **Dự án cục bộ ghi được** - sửa, capture, tạo mới, và export nhóm dạng zip mà không cần sidecar đang chạy
 - **Kết nối nhiều dự án** - một extension phục vụ nhiều dự án cùng lúc, định tuyến tới từng trang theo origin
@@ -146,6 +150,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 - **Đặc tả định dạng Markdown** - mô tả và quy tắc nghiệp vụ mang một tập con Markdown an toàn (đậm, nghiêng, liên kết, danh sách), soạn qua thanh công cụ và hiển thị trên mọi bề mặt
 - **Tự chọn giao diện** - System / Light / Dark, design token hai chế độ
 - **i18n cho giao diện** - tiếng Anh + tiếng Việt + tiếng Nhật, độc lập với ngôn ngữ nội dung đặc tả
+- **Changelog trong ứng dụng** - liên kết "What's New" mở changelog được host, và một bản cập nhật đáng kể sẽ tự mở changelog
 - **Hỗ trợ & Phản hồi** - liên kết một chạm từ trang Tùy chọn tới GitHub Issues và Discussions của dự án
 - **Soạn spec bằng AI** - một skill đóng gói trong `@specpin/cli` dạy coding agent (Claude Code, Cursor, v.v.) soạn spec hợp lệ schema và điều khiển CLI; bản thân CLI không có LLM
 - **Nguồn gốc & tin cậy** - status tùy chọn (draft / approved / deprecated), link issue/PR, test liên kết (`verifiedBy`), và độ tươi review kèm chỉ báo cũ (stale)
