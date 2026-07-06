@@ -5,8 +5,8 @@ template: splash
 hero:
   tagline: Ghim đặc tả nghiệp vụ sống động lên các phần tử trên giao diện web đang chạy. Lưu trong Git, ưu tiên cục bộ, không phụ thuộc framework. Không sinh code.
   image:
-    file: ../../../assets/specpin-icon.svg
-    alt: Specpin
+    file: ../../../assets/home-hero.png
+    alt: Specpin hiển thị đặc tả dạng tooltip và side panel trên giao diện web đang chạy
   actions:
     - text: Bắt đầu
       link: /vi/guide/getting-started/
@@ -23,6 +23,9 @@ hero:
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+import HeroSpecDemo from '../../../components/HeroSpecDemo.astro';
+
+<HeroSpecDemo />
 
 <div class="browser-cta" not-content>
   <a class="browser-cta-item" href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
@@ -45,7 +48,7 @@ duyệt khi bạn rê chuột hoặc duyệt trang. Specpin **không** sinh code
 liệu sống động, được quản lý phiên bản bằng Git, lên chính giao diện bạn đang có.
 
 <CardGrid>
-  <Card title="Ghim đặc tả lên phần tử sống" icon="pin">
+  <Card title="Ghim đặc tả lên phần tử sống" icon="puzzle">
     Khớp bằng fingerprint ổn định (test-id, aria, selector, xpath, văn bản, vị
     trí) giúp đặc tả vẫn bám đúng phần tử qua các lần tái cấu trúc.
   </Card>

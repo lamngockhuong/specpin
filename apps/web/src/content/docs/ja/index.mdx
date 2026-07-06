@@ -5,8 +5,8 @@ template: splash
 hero:
   tagline: 動作中のウェブUIの要素に、生きたビジネス仕様を固定します。Git管理、ローカルファースト、フレームワーク非依存。コード生成なし。
   image:
-    file: ../../../assets/specpin-icon.svg
-    alt: Specpin
+    file: ../../../assets/home-hero.png
+    alt: 動作中のウェブUI上でツールチップとサイドパネルとして表示されるSpecpinの仕様
   actions:
     - text: はじめる
       link: /ja/guide/getting-started/
@@ -23,6 +23,9 @@ hero:
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
+import HeroSpecDemo from '../../../components/HeroSpecDemo.astro';
+
+<HeroSpecDemo />
 
 <div class="browser-cta" not-content>
   <a class="browser-cta-item" href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
@@ -44,7 +47,7 @@ Specpinはビジネス仕様（ルール、説明、受け入れ基準）を*動
 すでに持っているインターフェースに、Gitバージョン管理された生きたドキュメントを固定するものです。
 
 <CardGrid>
-  <Card title="ライブ要素にspecを固定" icon="pin">
+  <Card title="ライブ要素にspecを固定" icon="puzzle">
     堅牢なフィンガープリントマッチング（test-id、aria、selector、xpath、テキスト、
     位置）により、リファクタリング後もspecが要素に固定されたままになります。
   </Card>
