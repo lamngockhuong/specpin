@@ -58,7 +58,7 @@ Với chính xác một dự án ghi được, không có bộ chọn nào hiể
 
 ## Sửa spec hiện có
 
-Nhấp **Sửa** trên thẻ spec trong side panel, hoặc nhấp vào huy hiệu tooltip sau đó **Sửa spec** trong tooltip đã ghim.
+Mở menu **⋯** trên thẻ spec ở side panel rồi chọn **Sửa**, hoặc nhấp vào huy hiệu tooltip sau đó **Sửa spec** trong tooltip đã ghim.
 
 Cùng một biểu mẫu mở ra, được điền trước với nội dung của spec cho mọi ngôn ngữ đã soạn. Thay đổi bất kỳ trường nào và nhấp **Lưu thay đổi**. Spec giữ `id` và nguồn gốc của nó (`createdBy`, `createdAt`, `source`); chỉ `updatedAt` được tăng lên.
 
@@ -133,7 +133,7 @@ Chọn một mẫu điền sẵn **chỉ các trường trống**. Nó không ba
 
 ## Nhân bản sang element
 
-Khi xem một spec bạn có thể sửa (badge tooltip hoặc thẻ side panel), hành động **Nhân bản sang element** xuất hiện. Trên thẻ side panel, nút này hiển thị gọn là **Nhân bản**, tên đầy đủ hiện khi rê chuột.
+Khi xem một spec bạn có thể sửa (badge tooltip hoặc thẻ side panel), hành động **Nhân bản sang element** xuất hiện. Trên thẻ side panel, nút này nằm trong menu **⋯** với nhãn **Nhân bản**.
 
 1. Nhấp **Nhân bản sang element**.
 2. Bộ chọn element xuất hiện. Nhấp element mới trên trang.

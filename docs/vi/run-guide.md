@@ -111,7 +111,7 @@ Nội dung spec (title, description, business rules) được localize. Dropdown
 
 ## 9. Lọc spec theo tag, file, hoặc URL trang
 
-Popup và side panel cung cấp bộ lọc theo facet: Tags, Files, và This page (URL pattern). Bỏ check một facet sẽ ẩn tất cả spec khớp ngay lập tức. Một override cá nhân (force-show hoặc force-hide) đồng bộ giữa các máy qua `chrome.storage.sync`. Side panel cũng cung cấp nút toggle con mắt per spec để kiểm soát chi tiết hơn. **Reset** xóa tất cả override cá nhân.
+Popup và side panel cung cấp bộ lọc theo facet: Tags, Files, và This page (URL pattern). Bỏ check một facet sẽ ẩn tất cả spec khớp ngay lập tức. Một override cá nhân (force-show hoặc force-hide) đồng bộ giữa các máy qua `chrome.storage.sync`. Side panel cũng cung cấp nút toggle con mắt per spec để kiểm soát chi tiết hơn (nút con mắt nằm ngay trên mỗi card, còn các thao tác khác của card - Sao chép liên kết, Sửa, Nhân bản, Xóa - được gom vào menu **⋯**). **Reset** xóa tất cả override cá nhân.
 
 Admin team có thể đặt mặc định toàn project trong trang Options (mục **Team visibility** per kết nối): thêm các facet key (mỗi dòng một, ví dụ `tag:draft`, `file:login.spec.json`, `url:/admin/**`) để ẩn chúng với mọi người. Mặc định team được ghi vào `.specs/views.json` (commit vào Git) qua sidecar. Override cá nhân thắng mặc định team: một force-show cá nhân của `spec:<id>` là hard rescue (hiện spec đó ngay cả khi tag hoặc file của nó bị ẩn ở team). Cổng `url:` trang thắng mọi thứ (ẩn spec trên các trang không khớp glob). Trạng thái rỗng = tất cả hiển thị.
 
@@ -125,11 +125,11 @@ Khi Specpin đang bật, menu chuột phải của trang có submenu **Specpin**
 
 ## 11. Sửa một spec sẵn có
 
-Mở một spec để sửa từ một trong hai nơi: click badge tooltip để ghim nó rồi nhấn **Edit spec**, hoặc click **Edit** trên một spec card trong side panel. Cùng một form sẽ mở ra với nội dung của spec cho mọi ngôn ngữ đã nhập (gồm cả các trường provenance - status, links, và linked tests); đổi title, description, business rules, tags, display mode, hoặc provenance rồi nhấn **Save changes**. Spec giữ nguyên `id` và provenance (`createdBy`/`createdAt`/`source`) và bảo toàn bất kỳ dấu review trước đó; chỉ `updatedAt` được cập nhật. Xóa một link hoặc danh sách linked-tests sẽ loại bỏ nó (không âm thầm giữ lại). Ở chế độ sửa, một hành động **Mark reviewed** đóng dấu `meta.reviewedAt` là hiện tại kèm một token người review (`reviewedBy`, được điền sẵn bằng token không-PII `createdBy` của spec, có thể chỉnh) và lưu qua cùng đường đi - trường người review được **commit vào `.specs/` và có trong các export, nên nó không được chứa PII/email**. Một spec có lần review cuối cũ hơn ngưỡng staleness của project của nó sẽ hiển thị chỉ báo **Stale** trên mọi surface. Thay đổi được ghi lại qua sidecar sở hữu spec và live-update trang qua SSE, giống như khi sửa trực tiếp `.spec.json` trên đĩa.
+Mở một spec để sửa từ một trong hai nơi: click badge tooltip để ghim nó rồi nhấn **Edit spec**, hoặc mở menu **⋯** trên spec card ở side panel rồi chọn **Edit**. Cùng một form sẽ mở ra với nội dung của spec cho mọi ngôn ngữ đã nhập (gồm cả các trường provenance - status, links, và linked tests); đổi title, description, business rules, tags, display mode, hoặc provenance rồi nhấn **Save changes**. Spec giữ nguyên `id` và provenance (`createdBy`/`createdAt`/`source`) và bảo toàn bất kỳ dấu review trước đó; chỉ `updatedAt` được cập nhật. Xóa một link hoặc danh sách linked-tests sẽ loại bỏ nó (không âm thầm giữ lại). Ở chế độ sửa, một hành động **Mark reviewed** đóng dấu `meta.reviewedAt` là hiện tại kèm một token người review (`reviewedBy`, được điền sẵn bằng token không-PII `createdBy` của spec, có thể chỉnh) và lưu qua cùng đường đi - trường người review được **commit vào `.specs/` và có trong các export, nên nó không được chứa PII/email**. Một spec có lần review cuối cũ hơn ngưỡng staleness của project của nó sẽ hiển thị chỉ báo **Stale** trên mọi surface. Thay đổi được ghi lại qua sidecar sở hữu spec và live-update trang qua SSE, giống như khi sửa trực tiếp `.spec.json` trên đĩa.
 
 Để trỏ một spec sang element khác, click **Re-link element** trong form sửa, rồi click element mới trên trang; form mở lại với các chỉnh sửa của bạn còn nguyên và fingerprint mới được áp dụng khi save. Các spec cục bộ (Manual) giờ cũng sửa được theo cách tương tự; bản sửa ghi vào `browser.storage.local` thay vì một sidecar. (Side panel Edit điều khiển form trong trang, nên giữ panel gắn cạnh trang mà nó mô tả.)
 
-Để xoá một spec ghi được, dùng **Delete spec** trên tooltip đã ghim hoặc **Delete** trên spec card trong side panel, rồi xác nhận. Spec sidecar sẽ bị xoá khỏi file `.spec.json` trên đĩa (khôi phục từ Git nếu cần); spec cục bộ bị xoá khỏi `browser.storage.local`. Việc xoá bị giới hạn theo origin giống hệt khi sửa (một trang chỉ xoá được spec của project phục vụ nó), và trang sẽ render lại không còn spec đó qua SSE. Side panel Delete điều khiển cùng một hộp xác nhận trong trang, nên giữ panel gắn cạnh trang.
+Để xoá một spec ghi được, dùng **Delete spec** trên tooltip đã ghim hoặc **Delete** trong menu **⋯** của spec card ở side panel, rồi xác nhận. Spec sidecar sẽ bị xoá khỏi file `.spec.json` trên đĩa (khôi phục từ Git nếu cần); spec cục bộ bị xoá khỏi `browser.storage.local`. Việc xoá bị giới hạn theo origin giống hệt khi sửa (một trang chỉ xoá được spec của project phục vụ nó), và trang sẽ render lại không còn spec đó qua SSE. Side panel Delete điều khiển cùng một hộp xác nhận trong trang, nên giữ panel gắn cạnh trang.
 
 ### Validate provenance & độ tươi (freshness)
 
@@ -192,7 +192,7 @@ Chọn một mẫu sẽ điền sẵn **chỉ các trường trống**: nó khô
 
 ## 15. Nhân bản ("Sao chép sang element")
 
-Khi xem một spec có thể sửa (badge tooltip hoặc spec card trong side panel), hành động **Sao chép sang element** xuất hiện (chỉ hiển thị khi bạn có quyền ghi project của spec đó). Trên spec card ở side panel, nút này hiển thị gọn là **Nhân bản**, tên đầy đủ hiện khi rê chuột.
+Khi xem một spec có thể sửa (badge tooltip hoặc spec card trong side panel), hành động **Sao chép sang element** xuất hiện (chỉ hiển thị khi bạn có quyền ghi project của spec đó). Trên spec card ở side panel, nút này nằm trong menu **⋯** với nhãn **Nhân bản**.
 
 1. Click **Sao chép sang element**.
 2. Bộ chọn element xuất hiện. Click element đích.
