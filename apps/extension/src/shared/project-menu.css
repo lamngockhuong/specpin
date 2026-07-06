@@ -1,3 +1,6 @@
+/* NOTE: near-identical to overflow-menu.css (.sp-menu / .sp-menu-item). Keep in
+   sync; both could collapse into one skin if project-actions migrates onto
+   openOverflowMenu. */
 /* Export project-picker dropdown, shared by the popup and the side panel. Shown
    only when more than one local project serves the current page; a single one
    exports immediately without a menu. Appended to <body> and positioned with

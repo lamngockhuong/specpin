@@ -58,7 +58,7 @@ With exactly one writable project, no picker shows (the lone project is used). W
 
 ## Edit an existing spec
 
-Click **Edit** on a spec card in the side panel, or click a tooltip badge then **Edit spec** in the pinned tooltip.
+Open a spec card's **⋯** (more actions) menu in the side panel and choose **Edit**, or click a tooltip badge then **Edit spec** in the pinned tooltip.
 
 The same form opens, pre-filled with the spec's content for every authored language. Change any field and click **Save changes**. The spec keeps its `id` and provenance (`createdBy`, `createdAt`, `source`); only `updatedAt` is bumped.
 
@@ -133,7 +133,7 @@ Selecting a template pre-fills **empty fields only**. It never overwrites text y
 
 ## Duplicate to element (clone)
 
-When viewing a spec you can edit (tooltip badge or side-panel card), a **Duplicate to element** action appears. On the side-panel card it shows as a compact **Clone** link, with the full name on hover.
+When viewing a spec you can edit (tooltip badge or side-panel card), a **Duplicate to element** action appears. On the side-panel card it lives in the **⋯** (more actions) menu as **Clone**.
 
 1. Click **Duplicate to element**.
 2. The element picker appears. Click the new element on the page.

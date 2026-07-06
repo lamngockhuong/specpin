@@ -33,6 +33,7 @@ const vi: Record<keyof Messages, string> = {
   "common.clickToHighlight": "Nhấp để làm nổi bật trên trang",
   "common.copyLink": "Sao chép liên kết",
   "common.copyLinkTitle": "Sao chép liên kết chia sẻ tới spec này",
+  "common.moreActions": "Thêm thao tác",
   "common.linkCopied": "Đã sao chép liên kết",
   "common.cannotActOnPage":
     "Không thể thao tác trên trang này. Hãy chuyển sang tab trang web trước.",

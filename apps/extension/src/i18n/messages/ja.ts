@@ -35,6 +35,7 @@ const ja: Record<keyof Messages, string> = {
   "common.clickToHighlight": "クリックでページ上をハイライト",
   "common.copyLink": "リンクをコピー",
   "common.copyLinkTitle": "このspecへの共有リンクをコピー",
+  "common.moreActions": "その他の操作",
   "common.linkCopied": "リンクをコピーしました",
   "common.cannotActOnPage":
     "このページでは実行できません。先にウェブサイトのタブに切り替えてください。",

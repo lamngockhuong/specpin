@@ -110,18 +110,18 @@
          actions. Actions align to the top so they stay put as the title wraps. */
       #specs .spec-head { display: flex; align-items: flex-start; gap: 8px; }
       #specs .spec-actions { flex: none; display: flex; gap: 8px; }
-      /* Per-spec action buttons: Copy link / Delete / Edit / Clone / Hide (eye) on
-         each card. All share the transparent text-link style so the action cluster
-         stays narrow and the title keeps room to wrap normally. */
-      #specs .spec-copy, #specs .spec-delete, #specs .spec-edit, #specs .spec-clone, #specs .spec-vis {
+      /* Per-spec header controls: the inline eye toggle (Hide/Show) + the "..."
+         kebab that opens the overflow menu (Copy link / Edit / Clone / Delete).
+         Both share the flat transparent text-link style so the cluster stays narrow
+         and the title keeps room to wrap normally. */
+      #specs .spec-vis, #specs .spec-menu-btn {
         background: transparent; border: none; cursor: pointer; padding: 2px;
         color: var(--sp-text-3); font: 600 13px/1 var(--sp-font-ui); white-space: nowrap;
       }
-      #specs .spec-copy:hover { color: var(--sp-accent); }
       #specs .spec-vis:hover { color: var(--sp-text); }
-      #specs .spec-edit:hover { color: var(--sp-accent); }
-      #specs .spec-clone:hover { color: var(--sp-accent); }
-      #specs .spec-delete:hover { color: var(--sp-error-text); }
+      /* Larger glyph so the kebab reads as a control rather than stray dots. */
+      #specs .spec-menu-btn { padding: 2px 4px; font-size: 18px; line-height: 1; }
+      #specs .spec-menu-btn:hover { color: var(--sp-accent); }
       #specs > li.spec.spec-hidden { opacity: 0.55; }
 
       /* Spec list: full-height, each spec a card with inline detail. */

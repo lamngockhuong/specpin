@@ -132,6 +132,10 @@ Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachabl
 - **Confidence-scored matching** - a hybrid weighted scorer falls back when exact anchors fail, with confidence tiers, a "why matched" hint, and a needs-review signal
 - **Three display modes** - tooltip, sidebar, and draggable modal renderers
 - **Manual capture** - click an element and author a spec in place, no leaving the page
+- **Coverage mode** - a keyboard toggle (`Alt+Shift+U`) drops ghost "+" markers on every undocumented interactive element, with an "N interactive / M documented / K gaps" summary and a "Capture all gaps" action; dismissed gaps are remembered per-origin
+- **Bulk capture** - multi-select many elements and author them from one shared form (tags, rules, status applied to all; per-element title), written as N specs in a single file
+- **Spec templates** - built-in starters (Form validation, API error handling, Auth flow) prefill empty fields in the single and bulk capture forms
+- **Clone a spec** - "Duplicate to element" copies a spec's content onto a newly-picked element with a fresh fingerprint and reset provenance, so an approved spec never launders into an unreviewed copy
 - **Delete specs in place** - remove a writable spec from the tooltip or side panel behind a destructive confirm (sidecar specs recover from Git; local specs from storage)
 - **Writable local projects** - edit, capture, create, and group-zip export specs without a running sidecar
 - **Multi-project connections** - one extension serves many projects at once, routed to each page by origin
@@ -146,6 +150,7 @@ Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachabl
 - **Markdown-formatted specs** - descriptions and business rules carry a safe Markdown subset (bold, italic, links, lists), authored via a toolbar and rendered across every surface
 - **User-selectable theme** - System / Light / Dark, dual-theme design tokens
 - **UI-chrome i18n** - English + Vietnamese + Japanese interface, independent from spec content language
+- **In-app changelog** - a "What's New" link opens the hosted changelog, and a significant update opens it automatically
 - **Support & Feedback** - one-click links from Options to the project's GitHub Issues and Discussions
 - **Author with AI** - a portable skill bundled in `@specpin/cli` teaches your coding agent (Claude Code, Cursor, etc.) to write schema-valid specs and drive the CLI; no LLM in the CLI itself
 - **Provenance & trust** - optional spec status (draft / approved / deprecated), issue/PR links, linked tests (`verifiedBy`), and review freshness with staleness indicators

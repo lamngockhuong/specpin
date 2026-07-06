@@ -67,6 +67,10 @@ export function wireProjectActions(
 
   // Lazily-built picker (only when >1 project serves the page). Appended to <body>
   // and positioned against the Export button, so it is layout-agnostic.
+  // NOTE: this open/position/dismiss lifecycle is the original of the generalized
+  // shared/overflow-menu.ts (openOverflowMenu). Keep the two in sync; a future
+  // refactor can migrate this picker onto it (it needs an optional header row plus
+  // a close/is-open hook for the live-target rebuild in update()).
   let menu: HTMLElement | null = null;
   let dismiss: (() => void) | null = null;
 
