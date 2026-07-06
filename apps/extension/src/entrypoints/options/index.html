@@ -29,6 +29,11 @@
         margin: 0 auto;
         align-items: start;
       }
+      /* Let the content column shrink below its content's intrinsic width.
+         Without min-width:0, a long unbreakable value (e.g. a corpus entry's
+         cssSelector in a <pre>) expands the 1fr track and overflows the page
+         instead of scrolling inside its own overflow:auto box. */
+      .settings > main { min-width: 0; }
       .rail {
         position: sticky;
         top: 40px;
