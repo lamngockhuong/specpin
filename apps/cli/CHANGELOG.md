@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.8](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.7...cli-v0.0.8) (2026-07-06)
+
+
+### Bug Fixes
+
+* **cli:** reject path separators in .specs/ file names ([#132](https://github.com/lamngockhuong/specpin/issues/132)) ([6adeaf1](https://github.com/lamngockhuong/specpin/commit/6adeaf1139f4dd337916d6a6d168578e85b52d33))
+
 ## [0.0.7](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.6...cli-v0.0.7) (2026-07-03)
 
 
