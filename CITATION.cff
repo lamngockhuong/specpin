@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: Specpin
+message: "If you use Specpin, please cite it using this metadata."
+type: software
+authors:
+  - family-names: Lam
+    given-names: Ngoc Khuong
+    website: "https://khuong.dev"
+repository-code: "https://github.com/lamngockhuong/specpin"
+url: "https://specpin.ohnice.app"
+abstract: >-
+  Specpin pins living business specifications (rules, descriptions, acceptance
+  criteria) onto the elements of a running web UI. It is a Git-native, local-first
+  knowledge layer that attaches docs to interfaces you already have; it generates
+  no application code.
+keywords:
+  - specifications
+  - documentation
+  - browser-extension
+  - git-native
+  - fingerprinting
+license: Apache-2.0

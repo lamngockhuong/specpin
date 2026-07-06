@@ -9,6 +9,7 @@ packages:
 # were never built before, so keep them denied to preserve behavior.
 allowBuilds:
   esbuild: true
+  lefthook: true
   sharp: false
   spawn-sync: false
 

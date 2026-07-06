@@ -15,16 +15,24 @@ Go sidecar:
 cd apps/cli && make build
 ```
 
+## Pre-commit hook
+
+`pnpm install` auto-installs a lefthook pre-commit hook that runs Biome (with autofix + re-stage) and typecheck on your staged changes, so red commits are caught locally. Bypass a single commit with `git commit --no-verify`.
+
 ## Before opening a PR
 
-Run the same gates CI runs:
+Run the same gates CI runs. The JS gate is one command:
 
 ```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm schema-validate          # ajv cross-validator
+pnpm check                    # lint + typecheck + test + schema-validate (ajv cross-validator)
+```
 
+The Go sidecar has its own toolchain. Run it too, or use the combined script:
+
+```bash
+pnpm check:all                # pnpm check, then the apps/cli Go gate below
+
+# equivalent Go steps:
 cd apps/cli
 make check-schema             # embedded schema must match packages/spec-schema
 go vet ./... && go test ./...

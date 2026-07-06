@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "guides": [
+    {
+      "id": "dashboard-tour",
+      "name": "Dashboard tour",
+      "description": "A quick walk through the key dashboard metrics and the primary action.",
+      "steps": [
+        "dashboard-stat-revenue",
+        "dashboard-stat-deals",
+        "dashboard-stat-tasks",
+        "dashboard-new-deal-cta"
+      ]
+    },
+    {
+      "id": "login-basics",
+      "name": "Login basics",
+      "description": "The three fields that make up the sign-in flow.",
+      "steps": [
+        "login-email-field",
+        "login-password-field",
+        "login-submit-btn"
+      ]
+    }
+  ]
+}
