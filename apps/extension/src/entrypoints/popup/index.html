@@ -168,7 +168,9 @@
       button:hover { filter: brightness(0.97); }
       /* Only the action buttons share the row width; other buttons stay
          content-sized (icon gear, link buttons, filter reset). */
-      .actions > button { flex: 1; }
+      /* Center the label with flex (like #capture), not text-align: Firefox does
+         not reliably center a stretched button's label via text-align. */
+      .actions > button { flex: 1; display: inline-flex; align-items: center; justify-content: center; }
       #capture {
         display: inline-flex; align-items: center; justify-content: center; gap: 5px;
         background: var(--sp-accent);

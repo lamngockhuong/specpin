@@ -69,6 +69,12 @@
 }
 .ap-actions button {
   flex: 1;
+  /* Center the label with flex (the pattern #capture uses), not text-align:
+     Firefox does not reliably center a stretched button's label via text-align,
+     so these flex:1 buttons can render left-aligned there without justify-content. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px 10px;
   font: 600 14px / 1 var(--sp-font-ui);
   border: 1px solid var(--sp-border);
