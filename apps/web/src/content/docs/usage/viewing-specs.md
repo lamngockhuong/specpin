@@ -7,7 +7,7 @@ Once a project is connected, specs appear on matched elements.
 
 ## Coverage mode
 
-Press `Alt+Shift+U` to toggle **coverage mode**. When on, dashed ghost "+" markers appear on every *undocumented interactive element* on the page: buttons, links with `href`, inputs/select/textarea, ARIA widget roles (button, link, checkbox, tab, menuitem, combobox, slider), elements with `onclick`, `tabindex >= 0`, or `contenteditable`. Hidden, display:none, zero-size, disabled, or `aria-disabled` elements are never marked.
+Press `Alt+Shift+U` to toggle **coverage mode**. When on, dashed ghost "+" markers appear on every *undocumented interactive element* on the page: buttons, links with `href`, inputs/select/textarea, ARIA widget roles (button, link, checkbox, tab, menuitem, combobox, slider), elements with `onclick`, `tabindex >= 0`, or `contenteditable`. Hidden, display:none, zero-size, disabled, or `aria-disabled` elements are never marked - nor are visually-hidden controls (sr-only clipping, `opacity:0`, or off-screen positioning such as `left:-9999px`).
 
 The mode state persists across page reloads (off by default, so pages remain unchanged when the mode is off).
 
@@ -20,7 +20,7 @@ The popup and side panel show a one-line **coverage summary**: "N interactive ·
 Each marker offers two quick actions:
 
 - **Capture**: Opens the capture form on that element (same as single-element capture).
-- **Ignore** (appears only when the element has a stable anchor — a test-id, non-generated id, or unique CSS selector): Dismisses the marker as a personal decision. The ignore is stored in `storage.sync` per origin, so the gap stays hidden after reload and on other machines.
+- **Ignore** (appears only when the element has a stable anchor - a test-id, non-generated id, or unique CSS selector): Dismisses the marker as a personal decision. The ignore is stored in `storage.sync` per origin, so the gap stays hidden after reload and on other machines. Dismissing a gap updates the coverage summary and the **Capture all gaps (K)** count immediately in any open popup or side panel.
 
 The markers use the same collision-avoidance positioning as spec badges, are isolated in Shadow DOM, and respect your reduced-motion preference.
 
@@ -32,7 +32,7 @@ Click the toggle at the top of the popup, or press `Alt+Shift+S`. When Specpin i
 
 Specs render in one of three modes:
 
-- **Tooltip**: A small badge on each element. Hover to peek at the spec. Click the badge to pin the tooltip open (with **Edit spec** and **Open in side panel** actions).
+- **Tooltip**: A small badge on each element. Hover to peek at the spec. Click the badge to pin the tooltip open (with **Edit spec** and **Open in side panel** actions). A pinned tooltip is height-capped with an internal scrollbar for long specs and can be resized by dragging its bottom-right corner; each pin opens at the default size.
 - **Sidebar**: A persistent panel listing all specs on the page. Appears on the right side of the page. Click the **x** button to dismiss it (reopens with a small Specpin pill in the bottom-right corner).
 - **Modal**: A draggable panel showing all specs. Opens centered, drag the header to move it. Click the **x** button to dismiss.
 

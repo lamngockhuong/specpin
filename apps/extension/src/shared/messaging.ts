@@ -123,6 +123,10 @@ export type Message =
   // a content script must not be able to read every local project's specs.
   | { type: "GET_EXPORT_BUNDLES"; id?: string; origin?: string }
   | { type: "SPECS_CHANGED" }
+  // content -> panels: the gap set changed (a gap was ignored) with no spec
+  // change; re-query GET_COVERAGE. Distinct from SPECS_CHANGED so it neither
+  // trips the panel's self-visibility echo counter nor forces a spec re-fetch.
+  | { type: "COVERAGE_CHANGED" }
   | { type: "START_CAPTURE" }
   // Right-click "Pin spec to this element": background -> active tab's content
   // script. The content script captures the element it recorded on the last

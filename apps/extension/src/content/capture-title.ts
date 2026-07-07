@@ -6,6 +6,8 @@
 // the accessible name (aria-label), then the tooltip (title), then the input
 // placeholder, and finally a humanized tag/role so the result is never empty.
 
+import type { ElementFingerprint } from "@specpin/spec-schema";
+
 /** Longest title we seed; a row title stays a label, not a paragraph. */
 export const TITLE_MAX = 80;
 
@@ -42,4 +44,22 @@ export function deriveTitle(el: Element): string {
 
   const role = normalize(el.getAttribute("role"));
   return cap(humanize(role || el.tagName.toLowerCase()));
+}
+
+/** Suggest a capture Title from an element's already-captured fingerprint signals.
+ *  Precedence: aria-label -> visible text -> placeholder -> name attr -> first
+ *  nearby label. Unlike `deriveTitle`, this returns "" when the element exposes
+ *  nothing (the single capture form seeds empty-only and must not invent a label).
+ *  Whitespace-collapsed and length-capped via the same `normalize`/`cap` helpers. */
+export function suggestTitle(fp: ElementFingerprint): string {
+  return cap(
+    normalize(
+      fp.ariaLabel ||
+        fp.textContent ||
+        fp.attributes?.placeholder ||
+        fp.attributes?.name ||
+        fp.nearbyLabels?.[0] ||
+        "",
+    ),
+  );
 }

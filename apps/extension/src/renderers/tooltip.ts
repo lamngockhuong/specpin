@@ -46,6 +46,12 @@ interface Pin {
 
 const HOST_ID = "specpin-tooltip-host";
 
+// Default tip width. Load-bearing: the tip sits in a 0-width absolutely-positioned
+// shadow host, so an explicit width is set inline (not left to CSS) and re-applied
+// on each pin. Kept as one constant so the CSS default and the two inline resets
+// (ensureRoot + showTip) never drift.
+const TIP_WIDTH = "min(360px, 90vw)";
+
 // When max < min (viewport narrower than the tip) the outer Math.max wins and
 // pins to min, so no extra guard is needed.
 const clamp = (value: number, min: number, max: number): number =>
@@ -77,7 +83,7 @@ ${SHADOW_PREAMBLE}
   /* Match .layer's z-index (not auto, which the layer's explicit z-index would
      always outrank) so the tip sits above the badges; tip is appended after the
      layer, so equal z-index makes it win on paint order. */
-  position: absolute; z-index: 2147483647; box-sizing: border-box; width: min(360px, 90vw);
+  position: absolute; z-index: 2147483647; box-sizing: border-box; width: ${TIP_WIDTH};
   background: var(--sp-elevated); color: var(--sp-text);
   font: 15px/1.45 var(--sp-font-ui);
   padding: 11px 13px;
@@ -85,7 +91,18 @@ ${SHADOW_PREAMBLE}
   border-radius: var(--sp-radius-control);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35); display: none; pointer-events: none;
 }
-.tip.pinned { pointer-events: auto; }
+/* Pinned: cap the height so a long spec scrolls internally instead of growing
+   into a giant column, and expose the browser's native corner grip so the user
+   can drag to enlarge. overflow:auto is required for both the scroll and the
+   grip. Ephemeral per pin: showTip resets the inline width/height on each open. */
+.tip.pinned {
+  pointer-events: auto;
+  max-height: min(70vh, 640px);
+  overflow: auto;
+  resize: both;
+  min-width: 240px;
+  min-height: 120px;
+}
 /* When pinned, the title area is the drag handle so the tip can be moved off
    elements it covers. Body text stays selectable; only the header grabs. */
 .tip.pinned .project, .tip.pinned h4 { cursor: move; user-select: none; }
@@ -187,7 +204,7 @@ export class TooltipRenderer implements SpecRenderer {
     tip.className = "tip";
     // Explicit width so the tip never shrink-to-fits inside its 0-width
     // absolutely-positioned shadow host (that collapse was the "too narrow" bug).
-    tip.style.width = "min(360px, 90vw)";
+    tip.style.width = TIP_WIDTH;
     tip.style.boxSizing = "border-box";
     shadow.append(layer, tip);
 
@@ -334,9 +351,13 @@ export class TooltipRenderer implements SpecRenderer {
   private showTip(pin: Pin, pinned: boolean): void {
     const tip = this.tip;
     if (!tip) return;
-    // Fresh open: drop any prior drag so the tip re-anchors to its anchor.
+    // Fresh open: drop any prior drag so the tip re-anchors to its anchor, and
+    // reset the inline size so a resize from a previous pin does not leak into
+    // this one (ephemeral per pin, mirroring the drag-to-move reset above).
     this.dragged = false;
     tip.classList.remove("dragging");
+    tip.style.width = TIP_WIDTH;
+    tip.style.height = "";
     // Anchor to the badge in normal mode, or to the element itself when badges are
     // hidden (reveal tooltip).
     const anchor = this.showBadges ? pin.badge : pin.target;

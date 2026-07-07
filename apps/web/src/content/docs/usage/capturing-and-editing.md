@@ -20,7 +20,7 @@ The spec writes to the chosen project and appears immediately on the element.
 ### Capture form fields
 
 - **Language**: A row of tabs (one per locale, plus a **+** tab). Click a tab to author that language's title, description, and rules. Switch tabs to add a translation. The form preserves what you entered for each language.
-- **Title**: A short label (required for the default language).
+- **Title**: A short label (required for the default language). Opens pre-filled from the element itself (its aria-label, visible text, placeholder, name attribute, or a nearby label, in that order) so you start from a sensible default; fully editable, and left blank when the element exposes none of those.
 - **Description**: What the element does (required for the default language). Markdown supported.
 - **Business rules**: One rule per line (optional). Markdown supported (inline marks only).
 - **Tags**: Comma-separated (optional, e.g. `auth, critical`).

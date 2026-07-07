@@ -399,3 +399,87 @@ describe("mergeLocalized", () => {
     expect(mergeLocalized({ en: "Login", vi: "x" }, "vi", "  ")).toEqual({ en: "Login" });
   });
 });
+
+describe("CaptureForm seedTitle", () => {
+  const fp: ElementFingerprint = {
+    cssSelector: "button.cart",
+    xpath: "/button",
+    domPath: ["button"],
+    tagName: "button",
+    attributes: {},
+    positionHint: { index: 0, siblingCount: 1 },
+  };
+
+  function shadowOf(): ShadowRoot {
+    return must(must(document.getElementById("specpin-capture-host")).shadowRoot);
+  }
+
+  const titleValue = (shadow: ShadowRoot) =>
+    (must(shadow.querySelector("#sp-title")) as HTMLInputElement).value;
+
+  afterEach(() => {
+    document.getElementById("specpin-capture-host")?.remove();
+    document.body.innerHTML = "";
+  });
+
+  it("seeds an empty Title in create mode", () => {
+    new CaptureForm(document).open(fp, {
+      defaultFile: "page.spec.json",
+      locales: ["en"],
+      defaultLocale: "en",
+      seedTitle: "Add to cart",
+      onSubmit: async () => ({ ok: true }),
+    });
+    expect(titleValue(shadowOf())).toBe("Add to cart");
+  });
+
+  it("does not overwrite an edit's prefilled Title", () => {
+    const existing: Spec = {
+      id: "cart-btn",
+      title: { en: "Existing title" },
+      description: { en: "d" },
+      businessRules: [],
+      fingerprint: fp,
+      meta: {
+        createdBy: "a",
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+        source: "manual",
+      },
+    };
+    new CaptureForm(document).open(fp, {
+      defaultFile: "page.spec.json",
+      locales: ["en"],
+      defaultLocale: "en",
+      initial: existing,
+      seedTitle: "Seed should be ignored",
+      onSubmit: async () => ({ ok: true }),
+    });
+    expect(titleValue(shadowOf())).toBe("Existing title");
+  });
+
+  it("does not overwrite a clone prefill Title", () => {
+    const prefill: Spec = {
+      id: "cart-btn",
+      title: { en: "Cloned title" },
+      description: { en: "d" },
+      businessRules: [],
+      fingerprint: fp,
+      meta: {
+        createdBy: "a",
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+        source: "manual",
+      },
+    };
+    new CaptureForm(document).open(fp, {
+      defaultFile: "page.spec.json",
+      locales: ["en"],
+      defaultLocale: "en",
+      prefill,
+      seedTitle: "Seed should be ignored",
+      onSubmit: async () => ({ ok: true }),
+    });
+    expect(titleValue(shadowOf())).toBe("Cloned title");
+  });
+});

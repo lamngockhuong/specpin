@@ -4,6 +4,7 @@ import { browser, defineContentScript } from "#imports";
 import { BulkCaptureForm, type BulkRowResult } from "../content/bulk-capture-form.js";
 import { CaptureForm, cloneFields } from "../content/capture-form.js";
 import { CapturePicker } from "../content/capture-mode.js";
+import { suggestTitle } from "../content/capture-title.js";
 import { findMatchedSpec, isSpecpinOwned } from "../content/context-target.js";
 import { findGaps, stableGapKey } from "../content/coverage.js";
 import { GuideController } from "../content/guide.js";
@@ -395,6 +396,9 @@ export default defineContentScript({
       }
       coverageIgnore.add(key);
       await renderCoverage();
+      // Tell any open panel/popup the gap set shrank so "Capture all gaps (X)"
+      // re-queries GET_COVERAGE; SPECS_CHANGED is wrong here (no spec changed).
+      browser.runtime.sendMessage({ type: "COVERAGE_CHANGED" } satisfies Message).catch(() => {});
     }
 
     // Alt+Shift+U: flip coverage mode, persist it, and paint or tear down the
@@ -578,6 +582,8 @@ export default defineContentScript({
         locales: availableLocales,
         defaultLocale: manifest?.settings?.defaultLocale ?? locale,
         prefill: opts?.prefill,
+        // Empty-only Title seed from the element; ignored in edit/clone paths.
+        seedTitle: suggestTitle(fingerprint),
         targets,
         theme,
         onSubmit: async (file, spec, connectionId) => {
