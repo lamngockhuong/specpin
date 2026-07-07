@@ -83,15 +83,48 @@ export function isVisibleEnabled(el: Element): boolean {
   if ((el as HTMLElement).hidden || el.hasAttribute("hidden")) return false;
   const view = el.ownerDocument?.defaultView;
   const style = view?.getComputedStyle?.(el);
-  if (style && (style.display === "none" || style.visibility === "hidden")) return false;
+  if (style) {
+    if (style.display === "none" || style.visibility === "hidden") return false;
+    // opacity:0 hides the element while keeping its box (custom file inputs, toggles).
+    if (style.opacity === "0") return false;
+    // sr-only clip: rect(0..) / clip-path: inset(50%) hides content while keeping a box.
+    if (isSrOnlyClip(style)) return false;
+  }
 
-  // Zero-size layout box (display:none also lands here in a real browser). Skipped
-  // when getBoundingClientRect is unavailable so a headless test env can rely on
-  // the attribute/style signals above.
+  // Layout-box checks. Skipped when getBoundingClientRect is unavailable so a
+  // headless test env can rely on the attribute/style signals above.
   const rect = el.getBoundingClientRect?.();
-  if (rect && rect.width <= 0 && rect.height <= 0) return false;
+  if (rect) {
+    // Zero-size box (display:none in a real browser) or the sr-only ~1px pattern:
+    // neither is a real on-screen control.
+    if (rect.width <= 1 && rect.height <= 1) return false;
+    // Off-screen positioning (e.g. left:-9999px / top:-9999px). getBoundingClientRect
+    // is viewport-relative, so add the scroll offset to test the DOCUMENT-relative
+    // box — a control merely scrolled above/left of the viewport keeps a non-negative
+    // document position and must stay a gap, unlike one parked off the page origin.
+    const docRight = rect.right + (view?.scrollX ?? 0);
+    const docBottom = rect.bottom + (view?.scrollY ?? 0);
+    if (docRight <= 0 || docBottom <= 0) return false;
+  }
 
   return true;
+}
+
+/** Match the two canonical sr-only clip shapes (which hide content while keeping
+ *  a layout box) without being fooled by `clip: auto` / `clip-path: none`:
+ *  `clip-path: inset(50%)` and the legacy `clip: rect(0 0 0 0)` / `rect(1px …)`.
+ *  Only the collapsed `inset(50%)` form matches (a partial `inset(50% 0 0 0)`
+ *  still shows content, so it is not treated as hidden). */
+function isSrOnlyClip(style: CSSStyleDeclaration): boolean {
+  const clipPath = style.clipPath;
+  if (clipPath && clipPath !== "none" && /^inset\(\s*50%\s*\)/.test(clipPath)) return true;
+  const clip = style.clip; // deprecated but still emitted for sr-only
+  if (clip && clip !== "auto" && /^rect\(/.test(clip)) {
+    // rect(0 0 0 0) / rect(1px, 1px, 1px, 1px): all offsets collapse to <=1px.
+    const nums = clip.match(/-?\d*\.?\d+/g)?.map(Number) ?? [];
+    if (nums.length >= 4 && nums.every((n) => Math.abs(n) <= 1)) return true;
+  }
+  return false;
 }
 
 /** A stable, reusable key for the personal ignore-list, or null when the element

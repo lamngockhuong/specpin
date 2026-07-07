@@ -20,7 +20,7 @@ Spec được ghi vào dự án đã chọn và xuất hiện ngay lập tức t
 ### Các trường biểu mẫu ghi
 
 - **Ngôn ngữ**: Một hàng các tab (một tab cho mỗi locale, cộng với tab **+**). Nhấp vào một tab để soạn tiêu đề, mô tả và quy tắc cho ngôn ngữ đó. Chuyển tab để thêm bản dịch. Biểu mẫu giữ lại những gì bạn đã nhập cho mỗi ngôn ngữ.
-- **Tiêu đề**: Nhãn ngắn (bắt buộc đối với ngôn ngữ mặc định).
+- **Tiêu đề**: Nhãn ngắn (bắt buộc đối với ngôn ngữ mặc định). Mở ra đã được điền sẵn từ chính phần tử (theo thứ tự: aria-label, text hiển thị, placeholder, thuộc tính name, hoặc một nhãn lân cận) nên bạn bắt đầu từ một giá trị hợp lý; vẫn sửa được thoải mái, và để trống khi phần tử không có tín hiệu nào trong số đó.
 - **Mô tả**: Phần tử này làm gì (bắt buộc đối với ngôn ngữ mặc định). Hỗ trợ Markdown.
 - **Quy tắc nghiệp vụ**: Một quy tắc trên mỗi dòng (tùy chọn). Hỗ trợ Markdown (chỉ đánh dấu nội tuyến).
 - **Thẻ**: Phân tách bằng dấu phẩy (tùy chọn, ví dụ: `auth, critical`).

@@ -600,6 +600,9 @@ browser.runtime.onMessage.addListener((raw) => {
     if (selfVisibilityEchoes > 0) selfVisibilityEchoes--;
     else queueRefresh();
   }
+  // A gap was ignored on the page: no spec changed, so just re-query coverage
+  // to keep "Capture all gaps (X)" in step with the on-page markers.
+  if (message?.type === "COVERAGE_CHANGED") queueRefresh();
   if (message?.type === "HIGHLIGHT_SPEC") highlightSpec(message.specId);
 });
 

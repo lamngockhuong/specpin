@@ -96,6 +96,96 @@ describe("isVisibleEnabled", () => {
     sized(el, 0, 0);
     expect(isVisibleEnabled(el)).toBe(false);
   });
+
+  it("rejects opacity:0 (custom file input behind a styled button)", () => {
+    mount(`<input id="o" type="file" style="opacity:0">`);
+    expect(isVisibleEnabled(document.getElementById("o") as Element)).toBe(false);
+  });
+
+  it("rejects an sr-only clip-path: inset(50%)", () => {
+    mount(`<input id="cp" style="clip-path:inset(50%)">`);
+    expect(isVisibleEnabled(document.getElementById("cp") as Element)).toBe(false);
+  });
+
+  it("rejects the legacy sr-only clip: rect(0 0 0 0)", () => {
+    document.body.innerHTML = `<input id="c">`;
+    const el = sized(document.getElementById("c") as Element);
+    // happy-dom does not compute the deprecated `clip` property, so stub the
+    // computed style to the canonical sr-only shape for this element.
+    const orig = window.getComputedStyle;
+    window.getComputedStyle = ((target: Element) =>
+      target === el
+        ? ({
+            display: "",
+            visibility: "",
+            opacity: "1",
+            clip: "rect(0px, 0px, 0px, 0px)",
+            clipPath: "none",
+          } as CSSStyleDeclaration)
+        : orig(target as Element)) as typeof window.getComputedStyle;
+    try {
+      expect(isVisibleEnabled(el)).toBe(false);
+    } finally {
+      window.getComputedStyle = orig;
+    }
+  });
+
+  it("rejects a ~1px sr-only box", () => {
+    document.body.innerHTML = `<input id="p">`;
+    const el = document.getElementById("p") as Element;
+    sized(el, 1, 1);
+    expect(isVisibleEnabled(el)).toBe(false);
+  });
+
+  it("rejects an element positioned off the top-left (left:-9999px)", () => {
+    document.body.innerHTML = `<button id="off">x</button>`;
+    const el = document.getElementById("off") as Element;
+    // Off-screen positioning: negative even after adding the (zero) scroll offset.
+    el.getBoundingClientRect = () =>
+      ({
+        width: 24,
+        height: 16,
+        left: -9999,
+        top: 0,
+        right: -9975,
+        bottom: 16,
+        x: -9999,
+        y: 0,
+        toJSON() {},
+      }) as DOMRect;
+    expect(isVisibleEnabled(el)).toBe(false);
+  });
+
+  it("still accepts a real control scrolled above the viewport (not off-screen)", () => {
+    document.body.innerHTML = `<button id="scr">x</button>`;
+    const el = document.getElementById("scr") as Element;
+    const prev = window.scrollY;
+    // Page scrolled 400px down: a control near the top has a negative viewport rect
+    // (bottom < 0) but a positive DOCUMENT position, so it must remain a gap.
+    (window as unknown as { scrollY: number }).scrollY = 400;
+    el.getBoundingClientRect = () =>
+      ({
+        width: 24,
+        height: 16,
+        left: 10,
+        top: -300,
+        right: 34,
+        bottom: -284,
+        x: 10,
+        y: -300,
+        toJSON() {},
+      }) as DOMRect;
+    try {
+      expect(isVisibleEnabled(el)).toBe(true);
+    } finally {
+      (window as unknown as { scrollY: number }).scrollY = prev;
+    }
+  });
+
+  it("still accepts a normal on-screen control (no over-hiding)", () => {
+    mount(`<button id="ok" style="opacity:1">x</button>`);
+    expect(isVisibleEnabled(document.getElementById("ok") as Element)).toBe(true);
+  });
 });
 
 describe("stableGapKey", () => {

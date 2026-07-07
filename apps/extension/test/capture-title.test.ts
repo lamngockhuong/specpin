@@ -1,5 +1,6 @@
+import type { ElementFingerprint } from "@specpin/spec-schema";
 import { afterEach, describe, expect, it } from "vitest";
-import { deriveTitle, TITLE_MAX } from "../src/content/capture-title.js";
+import { deriveTitle, suggestTitle, TITLE_MAX } from "../src/content/capture-title.js";
 
 function el(html: string): Element {
   document.body.innerHTML = html;
@@ -45,5 +46,47 @@ describe("deriveTitle precedence", () => {
 
   it("is never empty", () => {
     expect(deriveTitle(el(`<a href="/x"></a>`))).not.toBe("");
+  });
+});
+
+describe("suggestTitle", () => {
+  const base: ElementFingerprint = {
+    cssSelector: "button",
+    xpath: "/button",
+    domPath: ["button"],
+    tagName: "button",
+    attributes: {},
+    positionHint: { index: 0, siblingCount: 1 },
+  };
+
+  it("prefers aria-label over text/placeholder/name/nearby", () => {
+    expect(
+      suggestTitle({
+        ...base,
+        ariaLabel: "Add to cart",
+        textContent: "cart text",
+        attributes: { placeholder: "ph", name: "nm" },
+        nearbyLabels: ["nearby"],
+      }),
+    ).toBe("Add to cart");
+  });
+
+  it("falls back to visible text when no aria-label", () => {
+    expect(suggestTitle({ ...base, textContent: "Add to cart" })).toBe("Add to cart");
+  });
+
+  it("falls back to placeholder, then name, then nearby label", () => {
+    expect(suggestTitle({ ...base, attributes: { placeholder: "Email" } })).toBe("Email");
+    expect(suggestTitle({ ...base, attributes: { name: "email_field" } })).toBe("email_field");
+    expect(suggestTitle({ ...base, nearbyLabels: ["Your email"] })).toBe("Your email");
+  });
+
+  it("collapses whitespace and caps the length like deriveTitle", () => {
+    expect(suggestTitle({ ...base, textContent: "  Add   to \n cart  " })).toBe("Add to cart");
+    expect(suggestTitle({ ...base, textContent: "a".repeat(120) })).toHaveLength(TITLE_MAX);
+  });
+
+  it("returns empty when the element exposes no signal (unlike deriveTitle)", () => {
+    expect(suggestTitle(base)).toBe("");
   });
 });

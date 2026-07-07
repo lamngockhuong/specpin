@@ -91,6 +91,10 @@ export interface CaptureFormOptions {
   /** Forced UI theme for the form's shadow host (threaded from the content
    *  script). Omitted leaves the host on the system default. */
   theme?: Theme;
+  /** CREATE-mode-only seed for the default-locale Title, derived from the
+   *  element (see `suggestTitle`). Applied empty-only: it never overwrites an
+   *  edit's or a clone's prefilled Title, and never clobbers user input. */
+  seedTitle?: string;
 }
 
 // Markdown toolbar commands: glyph shown on the button + i18n label key. The
@@ -627,6 +631,12 @@ export class CaptureForm {
       weakHint.hidden = !weak;
       if (weak) refreshSnippet();
     };
+    // CREATE mode only: seed the Title from the element when the author has no
+    // prefill (edit/clone bring their own) and the field is still empty. The
+    // subsequent updateWeakHint() picks the seeded value up in the copy snippet.
+    if (!preload && options.seedTitle && !titleEl.value.trim()) {
+      titleEl.value = options.seedTitle;
+    }
     titleEl.addEventListener("input", () => {
       if (!weakHint.hidden) refreshSnippet();
     });

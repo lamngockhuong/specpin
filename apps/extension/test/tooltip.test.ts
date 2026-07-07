@@ -187,6 +187,35 @@ describe("TooltipRenderer", () => {
     renderer.destroy();
   });
 
+  it("the pinned tip is height-capped, scrollable, and natively resizable", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const css = must(shadowOf().querySelector("style")).textContent ?? "";
+    const pinnedRule = css.match(/\.tip\.pinned\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(pinnedRule).toMatch(/max-height:\s*min\(70vh, 640px\)/);
+    expect(pinnedRule).toMatch(/overflow:\s*auto/);
+    expect(pinnedRule).toMatch(/resize:\s*both/);
+    renderer.destroy();
+  });
+
+  it("re-pinning resets an inline resize back to the default size (ephemeral per pin)", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const { tip, badge } = pin();
+    // Simulate the user dragging the native resize grip (writes inline size).
+    tip.style.height = "500px";
+
+    fire(must(shadowOf().querySelector(".pin-close")), "click");
+    fire(badge, "click");
+    // showTip clears the inline height on each open. (The width is reset to
+    // "min(360px, 90vw)" too, but happy-dom drops that value from inline style,
+    // so only the height reset is observable here; both run in a real browser.)
+    expect(tip.style.height).toBe("");
+    renderer.destroy();
+  });
+
   it("dragging only starts from the title, not the body text", () => {
     document.body.innerHTML = `<button>x</button>`;
     const renderer = new TooltipRenderer(document);
