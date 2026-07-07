@@ -7,6 +7,7 @@ import { CapturePicker } from "../content/capture-mode.js";
 import { findMatchedSpec, isSpecpinOwned } from "../content/context-target.js";
 import { findGaps, stableGapKey } from "../content/coverage.js";
 import { GuideController } from "../content/guide.js";
+import { createHelpOverlay } from "../content/help-overlay.js";
 import { highlightElement } from "../content/highlight.js";
 import { registerKeyboard } from "../content/keyboard.js";
 import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
@@ -898,6 +899,8 @@ export default defineContentScript({
       await refresh();
     }
 
+    const helpOverlay = createHelpOverlay(document);
+
     registerKeyboard(window, {
       onToggleEnabled: () => void toggleEnabled(),
       onCycleMode: cycleMode,
@@ -905,6 +908,7 @@ export default defineContentScript({
       onToggleGuide: toggleGuide,
       onCycleSpec: cycleSpec,
       onToggleCoverage: () => void toggleCoverage(),
+      onToggleHelp: () => helpOverlay.toggle(theme),
     });
 
     // Coverage markers are document-absolute, but sticky/reflowed elements shift;

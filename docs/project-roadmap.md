@@ -158,6 +158,11 @@ Planned, pending usage feedback: the FileSystem Access source and the VSCode aut
 - `RequiredConfig` entity: `{ version: string, required: string[] }`, SSOT `packages/spec-schema/schema/v1.json`, exported as `validateRequired` + type `RequiredConfig` from `@specpin/spec-schema`. Go `ValidateRequired`. Manifest corpus loop cross-validates settings; required-fixture loop cross-validates on both sides.
 - CI: `.github/workflows/ci.yml` Go job runs `specpin report --dir ../../examples/demo-react-app/.specs --fail-on missing-required` after `validate`. Demo `.specs/` gained `required.json` (requires `login-submit-btn`, `dashboard-stat-revenue`). Reusable composite action `.github/actions/spec-lint/action.yml` gained optional `report-fail-on` input (empty default = gate skipped, backward compatible).
 
+**Batch 2 polish shipped (2026-07-07)** on branch `main`:
+- Keyboard cheat-sheet: the 6 content chords now live in one shared table (`content/chords.ts`) read by the key handler and both UI surfaces, so they never drift. A read-only cheat-sheet opens with `Alt+Shift+?` (Shadow-DOM overlay, Esc/backdrop/re-press close, focus-trapped, reduced-motion) and is also an **Options -> Shortcuts** card. Every chord uses the `Alt+Shift` base, so none collides with a site's own bare-key help shortcut (no bare `?`). This is discoverability only, not rebinding (that stays the separate "keyboard shortcut customization UI" item).
+- First-run onboarding: a localized `welcome` entrypoint opens once on first install (guarded by `specpin:welcomeSeen`), never on update or dev reload, wired through the existing `handleInstalled` path; mutually exclusive with the changelog auto-open. Points the user at Options + docs.
+- Docs `llms.txt`: `apps/web/public/llms.txt` (llmstxt.org format) indexes the docs site for AI-assistant discovery; static, manually regenerated.
+
 ### Planned Features
 
 **Additional Spec Sources:**

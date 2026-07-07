@@ -9,6 +9,7 @@ function handlers(): KeyboardHandlers {
     onToggleGuide: vi.fn(),
     onCycleSpec: vi.fn(),
     onToggleCoverage: vi.fn(),
+    onToggleHelp: vi.fn(),
   };
 }
 
@@ -66,5 +67,23 @@ describe("registerKeyboard: Alt+Shift+U coverage toggle", () => {
     expect(h.onToggleEnabled).toHaveBeenCalledTimes(1);
     expect(h.onCycleSpec).toHaveBeenCalledTimes(1);
     expect(h.onToggleCoverage).not.toHaveBeenCalled();
+  });
+});
+
+describe("registerKeyboard: help cheat-sheet chord", () => {
+  it("fires onToggleHelp on Alt+Shift+?", () => {
+    const h = handlers();
+    unregister = registerKeyboard(window, h);
+    const e = press("?");
+    expect(h.onToggleHelp).toHaveBeenCalledTimes(1);
+    expect(e.defaultPrevented).toBe(true);
+  });
+
+  it("ignores a bare ? (no Alt/Shift) so it never collides with a site's help key", () => {
+    const h = handlers();
+    unregister = registerKeyboard(window, h);
+    const e = press("?", { altKey: false, shiftKey: false });
+    expect(h.onToggleHelp).not.toHaveBeenCalled();
+    expect(e.defaultPrevented).toBe(false);
   });
 });

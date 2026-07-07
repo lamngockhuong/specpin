@@ -71,10 +71,12 @@ These shortcuts work on any page when Specpin is loaded:
 | `Alt+Shift+S` | Toggle Specpin on/off |
 | `Alt+Shift+M` | Cycle display mode (tooltip -> sidebar -> modal) |
 | `Alt+Shift+C` | Enter capture mode (`Esc` cancels) |
+| `Alt+Shift+U` | Toggle coverage markers on undocumented elements |
 | `Alt+Shift+N` | Cycle focus through matched specs (flash each, wrap around) |
 | `Alt+Shift+G` | Start / stop the default guided tour |
+| `Alt+Shift+?` | Open the keyboard cheat-sheet |
 
-Shortcuts are always active. You cannot customize them from the Options page (use your browser's extension shortcut settings if you need to change them).
+Not sure of a shortcut? Press `Alt+Shift+?` on any page for a read-only cheat-sheet, or open the same list under **Options -> Shortcuts**. Shortcuts are always active. You cannot rebind them from the Options page (use your browser's extension shortcut settings if you need to change them).
 
 ## Per-project settings
 

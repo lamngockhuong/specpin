@@ -160,6 +160,11 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access và exten
 - Thực thể `RequiredConfig`: `{ version: string, required: string[] }`, SSOT `packages/spec-schema/schema/v1.json`, export thành `validateRequired` + type `RequiredConfig` từ `@specpin/spec-schema`. Go `ValidateRequired`. Vòng lặp manifest corpus cross-validate settings; vòng lặp required-fixture cross-validate ở cả hai phía.
 - CI: job Go trong `.github/workflows/ci.yml` chạy `specpin report --dir ../../examples/demo-react-app/.specs --fail-on missing-required` sau `validate`. Demo `.specs/` được bổ sung `required.json` (yêu cầu `login-submit-btn`, `dashboard-stat-revenue`). Composite action tái sử dụng `.github/actions/spec-lint/action.yml` được thêm input tùy chọn `report-fail-on` (mặc định rỗng = bỏ qua gate, tương thích ngược).
 
+**Batch 2 polish đã giao (2026-07-07)** trên nhánh `main`:
+- Bảng phím tắt: 6 chord của content script giờ nằm trong một bảng dùng chung (`content/chords.ts`) được cả key handler lẫn hai bề mặt UI đọc, nên không bao giờ lệch. Bảng phím tắt chỉ đọc mở bằng `Alt+Shift+?` (overlay Shadow DOM, đóng bằng Esc/backdrop/nhấn lại, focus-trap, tôn trọng reduced-motion) và cũng là một card ở **Options -> Shortcuts**. Mọi chord dùng nền `Alt+Shift` nên không đụng phím help phím-đơn của bất kỳ site nào (không có `?` đơn). Đây chỉ là tăng khả năng khám phá, không phải đổi phím (việc đó vẫn là hạng mục "keyboard shortcut customization UI" riêng).
+- Onboarding lần đầu: một entrypoint `welcome` đã bản địa hóa mở đúng một lần ở lần cài đầu tiên (được canh bằng `specpin:welcomeSeen`), không bao giờ mở khi cập nhật hay dev reload, đi qua đúng đường `handleInstalled` sẵn có; loại trừ lẫn nhau với việc tự mở changelog. Chỉ người dùng tới Options + tài liệu.
+- `llms.txt` cho docs: `apps/web/public/llms.txt` (định dạng llmstxt.org) lập chỉ mục docs site để trợ lý AI khám phá; tĩnh, tạo lại thủ công.
+
 ### Tính năng đã lên kế hoạch
 
 **Các nguồn Spec bổ sung:**
