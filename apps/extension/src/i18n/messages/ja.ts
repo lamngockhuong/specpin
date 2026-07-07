@@ -267,7 +267,8 @@ const ja: Record<keyof Messages, string> = {
   "options.manualLead":
     'バンドルを貼り付けると、<code>specpin serve</code> を実行せずにspecを表示できます。読み取り専用: 記録には依然としてsidecarが必要です。形式: <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>',
   "options.fromFiles": "ファイルから",
-  "options.fromFilesHint": "(manifest.json と1つ以上の *.spec.json を選択)",
+  "options.fromFilesHint":
+    "(manifest.json と1つ以上の *.spec.json、またはエクスポートした .specs.zip を選択)",
   "options.loadFromFiles": "ファイルから読み込む",
   "options.orPaste": "またはバンドルJSONを貼り付け",
   "options.loadPasted": "貼り付けたバンドルを読み込む",
@@ -334,6 +335,7 @@ const ja: Record<keyof Messages, string> = {
   "options.invalidBundle": "無効なバンドル:\n- {errors}",
   "options.pickFiles": "manifest.json と少なくとも1つの .spec.json ファイルを選択してください。",
   "options.invalidSelection": "無効な選択:\n- {errors}",
+  "options.invalidZip": "zip を読み込めませんでした: {error}",
   "options.allCleared": "すべての手動specを消去しました。",
 
   // Matching corpus card (local, opt-in) + confirm loop.

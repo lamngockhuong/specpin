@@ -41,7 +41,8 @@ import {
   sendToBackground,
 } from "../../shared/messaging.js";
 import { applyTheme, watchThemeChanges } from "../../shared/theme.js";
-import { parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
+import { type NamedFile, parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
+import { readPickedFiles } from "../../sources/read-picked-files.js";
 import { initOptionsNav } from "./nav.js";
 import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
@@ -790,16 +791,22 @@ byId("loadFiles").addEventListener("click", async () => {
     showResult(localResult, false, t("options.pickFiles"));
     return;
   }
-  // Read all picked files, then assemble + validate via the shared parseLocalBundle path.
-  const files = await Promise.all(
-    picked.map(async (f) => ({ name: f.name, text: await f.text() })),
-  );
+  // Read picks into named entries (a .zip export is expanded into its members),
+  // then validate the whole set through the one shared parseLocalFiles path.
+  let files: NamedFile[];
+  try {
+    files = await readPickedFiles(picked);
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    showResult(localResult, false, t("options.invalidZip", { error }));
+    return;
+  }
   const { specs, fileGroups, errors } = parseLocalFiles(files);
   if (!specs) {
     showResult(localResult, false, t("options.invalidSelection", { errors: errors.join("\n- ") }));
     return;
   }
-  const fileNames = picked.map((f) => f.name.split(/[/\\]/).pop() ?? f.name);
+  const fileNames = files.map((f) => f.name.split(/[/\\]/).pop() ?? f.name);
   if (await addBatch(specs, "files", fileNames, fileGroups)) localFiles.value = "";
 });
 

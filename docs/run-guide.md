@@ -414,7 +414,7 @@ You can dismiss the sidebar (its **x** button) or the modal (its **x** button on
 
 To view specs without running `specpin serve`, open the extension Options page, go to the **Spec** section, and switch to the **Manual** tab. There are two ways to import:
 
-**From files (no JSON assembly).** Click the file picker, select `manifest.json` plus one or more `*.spec.json` files from your `.specs/` directory, then **Load from files**. The extension assembles and validates them in-page.
+**From files (no JSON assembly).** Click the file picker, select `manifest.json` plus one or more `*.spec.json` files from your `.specs/` directory, then **Load from files**. The extension assembles and validates them in-page. You can also pick an exported `<project>.specs.zip` directly (the same picker accepts it, alone or alongside loose files): the extension unzips it and validates its contents through the same path. Only uncompressed zips produced by Specpin's Export are supported; a compressed archive reports a clear error.
 
 **From a pasted bundle.** Paste a single JSON object of this shape, then **Load pasted bundle**:
 
@@ -439,7 +439,7 @@ The Manual source is a full local authoring path, not just a read-only viewer:
 
 1. **Create** a local project from the popup or side panel: **+ New project** -> *Local project*, give it a name and (optionally) the sites it applies to. With no sites and no **Apply to all sites**, the project serves no page (so it has no writable target yet) - set one or the other to capture into it.
 2. **Capture / edit** specs into it exactly like a sidecar project (capture picks it in the **Save to** picker; edit works in place). Writes go to `browser.storage.local`, origin-bounded to the project's sites, and are schema-validated before they are stored.
-3. **Export** the project (popup/panel **Export**, or per-batch **Export** in Options) to a `<project>.specs.zip` containing `manifest.json` + one `*.spec.json` per group. Unzip it into a repo's `.specs/`, or re-import the files through the multi-file picker - the round-trip preserves group names and spec content, and `specpin serve` reads the result.
+3. **Export** the project (popup/panel **Export**, or per-batch **Export** in Options) to a `<project>.specs.zip` containing `manifest.json` + one `*.spec.json` per group. Unzip it into a repo's `.specs/`, or re-import it straight through the multi-file picker (drop the `.specs.zip` in, or its unzipped files) - the round-trip preserves group names and spec content, and `specpin serve` reads the result.
 
 Created-in-extension projects count against the same 50-batch cap as imports and show a **Local** provenance label in Options.
 
