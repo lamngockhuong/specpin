@@ -146,6 +146,11 @@ export type Message =
   // badges switch between "S" and a reading-order number. Appearance-only, like
   // SET_THEME.
   | { type: "SET_BADGE_NUMBERING"; on: boolean }
+  // Spec-badge color change, broadcast Options -> all tabs' content scripts. The
+  // Options page persists the choice; the content script re-renders so on-page
+  // badges repaint. `color` is null when reset to the default teal. Appearance-only,
+  // like SET_THEME / SET_BADGE_NUMBERING.
+  | { type: "SET_BADGE_COLOR"; color: string | null }
   // UI-chrome language change, broadcast Options -> all tabs' content scripts (and
   // sent popup/sidepanel -> active tab). Receivers re-init i18n and re-render.
   // `locale` is null when "System default" is chosen (resolve via resolveUiLocale).

@@ -115,6 +115,9 @@ export function renderSession(
     /** When on, tooltip-mode badges show a 1-based reading-order number instead of
      *  "S" (Options opt-in, default OFF). */
     badgeNumbering?: boolean;
+    /** On-page spec-badge color (`#rrggbb`), or null/undefined for the default
+     *  teal. Session-global; forwarded verbatim on every spec's meta. */
+    badgeColor?: string | null;
     /** "Duplicate to element" callback (clone), threaded like onEdit; renderers
      *  show it only when the spec is editable/writable. */
     onClone?: (specId: string) => void;
@@ -259,6 +262,9 @@ export function renderSession(
       onLauncherMove: dismiss?.onMove,
       // ordinalById is empty unless numbering is on, so this is undefined when off.
       ordinal: ordinalById.get(spec.id),
+      // Session-global badge color (null/undefined = default teal); the tooltip
+      // renderer applies it, other renderers ignore it.
+      badgeColor: opts?.badgeColor ?? null,
     });
     matches.set(spec.id, el);
     stats.rendered += 1;

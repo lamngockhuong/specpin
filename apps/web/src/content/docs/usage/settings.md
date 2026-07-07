@@ -25,6 +25,12 @@ Off by default. When on, each on-page tooltip badge shows a reading-order number
 
 The number is a position, not an identifier: adding or removing a spec renumbers the ones after it (like line numbers). It applies to the on-page tooltip badges only, and updates immediately across open tabs when you toggle it.
 
+### Badge color
+
+Pick the color of the on-page spec badge to match a site's palette or make a screenshot cleaner. The default is Specpin's brand teal; **Reset** returns to it. The glyph ("S" or the number) automatically switches between dark and light so it stays readable on whatever color you choose.
+
+The color is global (one choice for all sites) and updates immediately across open tabs. It applies to the normal spec badge only: the yellow "needs review" badge keeps its warning color, and coverage markers are unchanged.
+
 ### Language
 
 Choose the language for Specpin's UI:

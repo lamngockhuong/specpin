@@ -254,6 +254,8 @@ const en = {
     "How Specpin's own interface looks. These apply to every Specpin surface (popup, side panel, options, and the in-page tooltip/sidebar/modal).",
   "options.theme": "Theme",
   "options.badgeNumberingLabel": "Number spec badges (show position instead of S)",
+  "options.badgeColorLabel": "Spec badge color",
+  "options.badgeColorReset": "Reset",
   "options.themeSystem": "System default",
   "options.themeLight": "Light",
   "options.themeDark": "Dark",
