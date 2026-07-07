@@ -13,7 +13,7 @@ import type {
   TaggedGuide,
   TaggedSpec,
 } from "../shared/connection-types.js";
-import { localConnId } from "../shared/local-id.js";
+import { isLocalConnectionId, localConnId } from "../shared/local-id.js";
 import { originMatchesDomains } from "../shared/origin-match.js";
 import { resolveStalenessThreshold } from "../shared/provenance.js";
 import { type ConnectionDeps, SidecarConnection } from "./sidecar-connection.js";
@@ -227,15 +227,24 @@ export class SidecarRegistry {
     return { specs, manifest, locales: [...localeSet] };
   }
 
-  /** The team-default hidden facet lists of every connection serving this origin
-   *  (one array per connection). Fed to `buildVisibilityState`, which unions them
-   *  hide-wins. Only origin-matching connections contribute (same boundary as
-   *  `specsForOrigin`). */
+  /** The team-default hidden facet lists of every project serving this origin (one
+   *  array per project). Fed to `buildVisibilityState`, which unions them hide-wins.
+   *  Includes both sidecar connections and imported Manual batches (an imported
+   *  `.specs/views.json` hides specs exactly like a sidecar's). Manual batches use
+   *  the same RENDER gate as `specsForOrigin` (enabled + `originMatchesDomains`,
+   *  match-all on empty domains) - deliberately the looser render gate, not the
+   *  stricter `applyToAllSites` write gate, so hides track wherever the batch's
+   *  specs render. Do not tighten this to `batchServesOrigin`. */
   teamHiddenForOrigin(origin: string): string[][] {
     const sets: string[][] = [];
     for (const conn of this.connections.values()) {
       if (!conn.getCache() || !conn.matchesOrigin(origin)) continue;
       sets.push(conn.hiddenFacets());
+    }
+    for (const batch of this.manual) {
+      if (batch.enabled === false) continue;
+      if (!originMatchesDomains(origin, batch.specs.manifest?.domains ?? [])) continue;
+      sets.push(batch.views?.hidden ?? []);
     }
     return sets;
   }
@@ -304,9 +313,20 @@ export class SidecarRegistry {
     return out;
   }
 
-  /** The cached team-default views for one connection (for the Options editor),
-   *  or the empty default when unknown. */
+  /** Resolve a local `manual:<id>` connection id to its stored batch (undefined when
+   *  it is not a local id or no batch matches). Shared by the local branches of
+   *  getViews/getGuides so the id-scheme comparison lives in one place. */
+  private localBatch(connectionId: string): ManualBatch | undefined {
+    return this.manual.find((b) => localConnId(b.id) === connectionId);
+  }
+
+  /** The cached team-default views for one project (for the Options editor), or the
+   *  empty default when unknown. Resolves a local `manual:<id>` id to that batch's
+   *  imported views so the manual-batch editor mirrors the sidecar one. */
   getViews(connectionId: string): ViewsConfig {
+    if (isLocalConnectionId(connectionId)) {
+      return this.localBatch(connectionId)?.views ?? { version: "1.0", hidden: [] };
+    }
     return this.connections.get(connectionId)?.getViews() ?? { version: "1.0", hidden: [] };
   }
 
@@ -325,9 +345,13 @@ export class SidecarRegistry {
     }
   }
 
-  /** The cached team guides for one sidecar connection (for the Options editor),
-   *  or the empty default when unknown. */
+  /** The cached team guides for one project (for the Options editor), or the empty
+   *  default when unknown. Resolves a local `manual:<id>` id to that batch's guides
+   *  so the manual-batch guides list mirrors the sidecar one. */
   getGuides(connectionId: string): GuidesConfig {
+    if (isLocalConnectionId(connectionId)) {
+      return { version: "1.0", guides: this.localBatch(connectionId)?.guides ?? [] };
+    }
     return this.connections.get(connectionId)?.getGuides() ?? { version: "1.0", guides: [] };
   }
 

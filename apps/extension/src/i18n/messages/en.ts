@@ -274,7 +274,7 @@ const en = {
     'Paste a bundle to view specs without running <code>specpin serve</code>. Read-only: capture still needs a sidecar. Shape: <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>',
   "options.fromFiles": "From files",
   "options.fromFilesHint":
-    "(pick manifest.json + one or more *.spec.json, or an exported .specs.zip)",
+    "(pick a whole .specs/ folder - manifest.json, *.spec.json, and any guides.json / views.json / required.json - or an exported .specs.zip, compressed or not)",
   "options.loadFromFiles": "Load from files",
   "options.orPaste": "Or paste bundle JSON",
   "options.loadPasted": "Load pasted bundle",
@@ -309,6 +309,15 @@ const en = {
   "options.saveTeamDefault": "Save team default",
   "options.savedTeamViews": "Saved to .specs/views.json.",
   "options.teamViewsFailed": "Failed: {errors}",
+  // Manual-batch variants of the two sidecar sections: a local batch has no Git
+  // write of its own, so it saves to storage and exports to commit.
+  "options.batchViewsSummary": "Default view (saved to this batch)",
+  "options.batchViewsNote":
+    "One facet key per line: tag:<t>, file:<name.spec.json>, spec:<id>, or url:<glob>. Saved to this batch; Export the batch to write .specs/views.json and commit it via Git.",
+  "options.batchViewsSaved": "Saved to this batch.",
+  "options.batchGuidesSummary": "Batch guides",
+  "options.batchGuidesNote":
+    "Onboarding guides imported with this batch. Add or edit them from the popup; Export the batch to write them to .specs/guides.json.",
   "options.noProjects": "No projects yet. Add one below.",
   "options.untitled": "untitled",
   "options.sourcePasted": "pasted",

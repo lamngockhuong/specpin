@@ -270,7 +270,7 @@ const ja: Record<keyof Messages, string> = {
     'バンドルを貼り付けると、<code>specpin serve</code> を実行せずにspecを表示できます。読み取り専用: 記録には依然としてsidecarが必要です。形式: <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>',
   "options.fromFiles": "ファイルから",
   "options.fromFilesHint":
-    "(manifest.json と1つ以上の *.spec.json、またはエクスポートした .specs.zip を選択)",
+    "(.specs/ フォルダ一式 - manifest.json、*.spec.json、および任意の guides.json / views.json / required.json - あるいはエクスポートした .specs.zip を選択。圧縮の有無は問いません)",
   "options.loadFromFiles": "ファイルから読み込む",
   "options.orPaste": "またはバンドルJSONを貼り付け",
   "options.loadPasted": "貼り付けたバンドルを読み込む",
@@ -307,6 +307,15 @@ const ja: Record<keyof Messages, string> = {
   "options.saveTeamDefault": "チームのデフォルトを保存",
   "options.savedTeamViews": ".specs/views.json に保存しました。",
   "options.teamViewsFailed": "失敗: {errors}",
+  // 2つのsidecarセクションの手動バッチ版: ローカルバッチはGit書き込みを持たないため、
+  // storageに保存し、エクスポートしてcommitする。
+  "options.batchViewsSummary": "デフォルト表示 (このバッチに保存)",
+  "options.batchViewsNote":
+    "1行に1つのfacetキー: tag:<t>、file:<name.spec.json>、spec:<id>、または url:<glob>。このバッチに保存されます。バッチをエクスポートすると .specs/views.json に書き出してGitにcommitできます。",
+  "options.batchViewsSaved": "このバッチに保存しました。",
+  "options.batchGuidesSummary": "バッチのガイド",
+  "options.batchGuidesNote":
+    "このバッチと一緒にインポートされたオンボーディングガイド。追加・編集はポップアップから。バッチをエクスポートすると .specs/guides.json に書き出せます。",
   "options.noProjects": "まだプロジェクトがありません。下で追加してください。",
   "options.untitled": "無題",
   "options.sourcePasted": "貼り付け",

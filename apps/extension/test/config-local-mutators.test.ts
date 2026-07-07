@@ -14,6 +14,7 @@ import {
   removeLocalSpecById,
   renameLocalBatch,
   setLocalBatchEnabled,
+  setLocalBatchViews,
   setLocalSpecs,
   upsertLocalSpec,
 } from "../src/shared/config.js";
@@ -178,6 +179,35 @@ describe("setLocalBatchEnabled", () => {
 
   it("rejects an unknown batch id", () => {
     expect(setLocalBatchEnabled(empty, "nope", false).ok).toBe(false);
+  });
+});
+
+describe("setLocalBatchViews", () => {
+  it("stores non-empty views on the batch", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", ["p.test"])] };
+    const res = setLocalBatchViews(base, "b1", { version: "1.0", hidden: ["tag:legacy"] });
+    expect((res.state?.batches[0] as ManualBatch).views).toEqual({
+      version: "1.0",
+      hidden: ["tag:legacy"],
+    });
+  });
+
+  it("drops the field when hidden is empty (no {version, hidden:[]} noise)", () => {
+    const withViews: LocalSpecsState = {
+      batches: [{ ...makeBatch("b1", "P", []), views: { version: "1.0", hidden: ["tag:x"] } }],
+    };
+    const res = setLocalBatchViews(withViews, "b1", { version: "1.0", hidden: [] });
+    expect((res.state?.batches[0] as ManualBatch).views).toBeUndefined();
+  });
+
+  it("does not mutate the input state", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", [])] };
+    setLocalBatchViews(base, "b1", { version: "1.0", hidden: ["tag:x"] });
+    expect((base.batches[0] as ManualBatch).views).toBeUndefined();
+  });
+
+  it("rejects an unknown batch id", () => {
+    expect(setLocalBatchViews(empty, "nope", { version: "1.0", hidden: [] }).ok).toBe(false);
   });
 });
 

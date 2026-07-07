@@ -19,10 +19,11 @@ export async function readPickedFiles(files: File[]): Promise<NamedFile[]> {
   const perFile = await Promise.all(
     files.map(async (f): Promise<NamedFile[]> => {
       if (!/\.zip$/i.test(f.name)) return [{ name: f.name, text: await f.text() }];
-      // A STORE archive is never smaller than its contents, so an oversized file
-      // can only overrun: reject on size before reading it into memory.
+      // Reject an oversized archive before reading it into memory. A STORE zip is
+      // never smaller than its contents; a DEFLATE one may be, but unzipStore bounds
+      // the decoded size chunk-by-chunk (zip-bomb guard) as it inflates.
       if (f.size > MAX_ZIP_BYTES) throw new Error(`zip too large (over ${MAX_ZIP_BYTES} bytes)`);
-      return unzipStore(new Uint8Array(await f.arrayBuffer()));
+      return await unzipStore(new Uint8Array(await f.arrayBuffer()));
     }),
   );
   return perFile.flat();

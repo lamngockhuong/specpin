@@ -93,6 +93,22 @@ describe("getLocalSpecs / setLocalSpecs storage round-trip", () => {
     expect(state?.batches.map((b) => b.id)).toEqual(["a", "b"]);
   });
 
+  it("round-trips the imported guides/views/required fields", async () => {
+    const withConfigs: ManualBatch = {
+      ...batch("a", "A"),
+      guides: [{ id: "g", name: "G", steps: [] }],
+      views: { version: "1.0", hidden: ["tag:legacy"] },
+      required: { version: "1.0", required: ["spec"] },
+    };
+    // isManualBatch is shape-only, so the extra optionals must survive the guard.
+    expect(isManualBatch(withConfigs)).toBe(true);
+    await setLocalSpecs({ batches: [withConfigs] });
+    const restored = (await getLocalSpecs())?.batches[0];
+    expect(restored?.guides).toEqual([{ id: "g", name: "G", steps: [] }]);
+    expect(restored?.views).toEqual({ version: "1.0", hidden: ["tag:legacy"] });
+    expect(restored?.required).toEqual({ version: "1.0", required: ["spec"] });
+  });
+
   it("reads a legacy stored bundle as one batch (lossless upgrade on read)", async () => {
     await fakeBrowser.storage.local.set({
       [LOCAL_SPECS_KEY]: { specs: specsResponse("Old"), seq: 3 },

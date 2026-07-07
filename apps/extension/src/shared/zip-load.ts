@@ -1,11 +1,12 @@
-// Minimal STORE-only (uncompressed) ZIP decoder: the read counterpart to
-// zip-store.ts. It exists so the Options page can re-import a `<project>.specs.zip`
-// produced by the export feature without any dependency (only webextension-polyfill
-// today) and while staying CSP-clean (pure Uint8Array/DataView math, no eval, no
-// DecompressionStream). Only method 0 (STORE) is decoded - exactly what zipStore
-// emits; a compressed entry is rejected with a clear error rather than silently
-// mishandled. Central-directory driven (authoritative sizes), so entries written
-// with a streaming data descriptor still read correctly.
+// Minimal ZIP decoder: the read counterpart to zip-store.ts. It exists so the
+// Options page can re-import a `<project>.specs.zip` produced by the export feature,
+// or a folder zipped with any normal tool, without any dependency (only
+// webextension-polyfill today) and while staying CSP-clean (pure Uint8Array/DataView
+// math for the container, native DecompressionStream for inflate - no eval). Decodes
+// method 0 (STORE, what zipStore emits) and method 8 (DEFLATE, what OS/CLI zip tools
+// emit by default); any other method is rejected with a clear error rather than
+// silently mishandled. Central-directory driven (authoritative sizes), so entries
+// written with a streaming data descriptor still read correctly.
 
 const EOCD_SIG = 0x06054b50;
 const CENTRAL_SIG = 0x02014b50;
@@ -35,13 +36,56 @@ function findEocd(view: DataView, len: number): number {
   throw new Error("not a valid zip (no end-of-central-directory record)");
 }
 
+/** Inflate a raw DEFLATE byte range via the native `DecompressionStream`
+ *  ("deflate-raw" = the bare method-8 stream a zip stores, no zlib header). CSP-safe
+ *  and dependency-free. Throws a clear error where the API is absent (older browsers)
+ *  or the data is not valid DEFLATE, so a bad entry surfaces rather than corrupts.
+ *
+ *  Reads the inflate stream CHUNK BY CHUNK against `budget` (bytes still allowed
+ *  before `MAX_ZIP_BYTES`), aborting the moment the running total exceeds it. This is
+ *  the zip-bomb guard: DEFLATE expands up to ~1000x, so buffering a whole entry before
+ *  checking its size would let one crafted entry exhaust the heap. Do not replace this
+ *  with `new Response(stream).arrayBuffer()` (which allocates the full entry first). */
+async function inflateRaw(bytes: Uint8Array, budget: number): Promise<Uint8Array> {
+  if (typeof DecompressionStream === "undefined") {
+    throw new Error("this browser cannot read compressed (DEFLATE) zips");
+  }
+  // Cast: the DOM lib narrows BlobPart to ArrayBuffer-backed views, but a zip
+  // subarray is always ArrayBuffer-backed (never SharedArrayBuffer) at runtime.
+  const stream = new Blob([bytes as BlobPart])
+    .stream()
+    .pipeThrough(new DecompressionStream("deflate-raw"));
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = value as Uint8Array;
+    total += chunk.byteLength;
+    if (total > budget) {
+      await reader.cancel();
+      throw new Error(`zip contents too large (over ${MAX_ZIP_BYTES} bytes)`);
+    }
+    chunks.push(chunk);
+  }
+  const out = new Uint8Array(total);
+  let pos = 0;
+  for (const c of chunks) {
+    out.set(c, pos);
+    pos += c.byteLength;
+  }
+  return out;
+}
+
 /**
- * Decode a STORE-only zip into its entries. Throws a descriptive Error on any
- * malformed or compressed input (never returns partial garbage). Directory
- * entries (names ending in "/") are skipped. Pure: no DOM, no storage, no
- * network - directly testable and safe to run in the Options page.
+ * Decode a zip (STORE + DEFLATE) into its entries. Throws a descriptive Error on any
+ * malformed input or an unsupported compression method (never returns partial
+ * garbage). Directory entries (names ending in "/") are skipped. No DOM/storage;
+ * async only because DEFLATE inflates through a stream - safe to run in the Options
+ * page and directly testable.
  */
-export function unzipStore(data: Uint8Array): UnzipEntry[] {
+export async function unzipStore(data: Uint8Array): Promise<UnzipEntry[]> {
   const len = data.length;
   if (len < 22) throw new Error("not a valid zip (too small)");
 
@@ -62,7 +106,7 @@ export function unzipStore(data: Uint8Array): UnzipEntry[] {
       throw new Error("not a valid zip (bad central directory)");
     }
     const method = view.getUint16(ptr + 10, true);
-    const size = view.getUint32(ptr + 20, true); // compressed == uncompressed for STORE
+    const compSize = view.getUint32(ptr + 20, true); // on-disk bytes (== uncompressed for STORE)
     const nameLen = view.getUint16(ptr + 28, true);
     const extraLen = view.getUint16(ptr + 30, true);
     const commentLen = view.getUint16(ptr + 32, true);
@@ -75,8 +119,8 @@ export function unzipStore(data: Uint8Array): UnzipEntry[] {
     // Skip directory entries (no data to import).
     if (name.endsWith("/")) continue;
 
-    if (method !== 0) {
-      throw new Error(`entry "${name}" is compressed; only uncompressed zips are supported`);
+    if (method !== 0 && method !== 8) {
+      throw new Error(`entry "${name}" uses unsupported compression method ${method}`);
     }
 
     // Locate the data via the local file header (its name/extra lengths can differ
@@ -87,14 +131,21 @@ export function unzipStore(data: Uint8Array): UnzipEntry[] {
     const localNameLen = view.getUint16(localOffset + 26, true);
     const localExtraLen = view.getUint16(localOffset + 28, true);
     const dataStart = localOffset + 30 + localNameLen + localExtraLen;
-    if (dataStart + size > len) throw new Error(`not a valid zip (truncated data for "${name}")`);
+    if (dataStart + compSize > len) {
+      throw new Error(`not a valid zip (truncated data for "${name}")`);
+    }
 
-    totalBytes += size;
+    const raw = data.subarray(dataStart, dataStart + compSize);
+    // DEFLATE can expand well past the archive size, so inflate is bounded by the
+    // remaining decoded budget (aborts mid-stream on a zip bomb); STORE data is
+    // already bounded by the archive size but still counts toward the total.
+    const bytes = method === 0 ? raw : await inflateRaw(raw, MAX_ZIP_BYTES - totalBytes);
+    totalBytes += bytes.byteLength;
     if (totalBytes > MAX_ZIP_BYTES) {
       throw new Error(`zip contents too large (over ${MAX_ZIP_BYTES} bytes)`);
     }
 
-    entries.push({ name, text: decoder.decode(data.subarray(dataStart, dataStart + size)) });
+    entries.push({ name, text: decoder.decode(bytes) });
   }
 
   return entries;

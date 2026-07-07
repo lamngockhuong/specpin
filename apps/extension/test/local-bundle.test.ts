@@ -94,6 +94,39 @@ describe("parseLocalBundle", () => {
     expect(parseLocalBundle('{"files":{}}').errors[0]).toMatch(/manifest/i);
     expect(parseLocalBundle('{"manifest":{}}').errors[0]).toMatch(/files/i);
   });
+
+  it("parses valid guides.json / views.json / required.json alongside specs", () => {
+    const { specs, guides, views, required, errors } = parseLocalBundle(
+      bundle({
+        manifest,
+        files: {
+          "login.spec.json": specFile,
+          "guides.json": { version: "1.0", guides: [{ id: "g", name: "Guide", steps: [] }] },
+          "views.json": { version: "1.0", hidden: ["tag:legacy"] },
+          "required.json": { version: "1.0", required: ["login-btn"] },
+        },
+      }),
+    );
+    expect(errors).toEqual([]);
+    expect(specs?.specs).toHaveLength(1); // configs are not counted as specs
+    expect(guides?.guides).toHaveLength(1);
+    expect(views?.hidden).toEqual(["tag:legacy"]);
+    expect(required?.required).toEqual(["login-btn"]);
+  });
+
+  it("reports a clear error for a schema-invalid config file", () => {
+    const { specs, errors } = parseLocalBundle(
+      bundle({
+        manifest,
+        files: {
+          "login.spec.json": specFile,
+          "views.json": { version: "1.0" }, // missing required `hidden`
+        },
+      }),
+    );
+    expect(specs).toBeUndefined();
+    expect(errors.some((e) => e.startsWith("views.json:"))).toBe(true);
+  });
 });
 
 describe("parseLocalFiles", () => {
@@ -144,7 +177,22 @@ describe("parseLocalFiles", () => {
   it("rejects an unexpected file name", () => {
     const { specs, errors } = parseLocalFiles([manifestFile, { name: "notes.txt", text: "{}" }]);
     expect(specs).toBeUndefined();
-    expect(errors.some((e) => /expected manifest\.json or/i.test(e))).toBe(true);
+    expect(errors.some((e) => /expected manifest\.json/i.test(e))).toBe(true);
+  });
+
+  it("routes .specs/ config files through the shared validation path", () => {
+    const { specs, guides, views, required, errors } = parseLocalFiles([
+      manifestFile,
+      loginFile,
+      { name: "guides.json", text: JSON.stringify({ version: "1.0", guides: [] }) },
+      { name: ".specs/views.json", text: JSON.stringify({ version: "1.0", hidden: ["spec:x"] }) },
+      { name: "required.json", text: JSON.stringify({ version: "1.0", required: [] }) },
+    ]);
+    expect(errors).toEqual([]);
+    expect(specs?.specs).toHaveLength(1);
+    expect(guides).toEqual({ version: "1.0", guides: [] });
+    expect(views?.hidden).toEqual(["spec:x"]);
+    expect(required).toEqual({ version: "1.0", required: [] });
   });
 
   it("reports invalid JSON per file", () => {
