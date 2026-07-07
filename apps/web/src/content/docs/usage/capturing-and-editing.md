@@ -152,6 +152,6 @@ Local projects can be exported as a `.specs.zip` bundle:
 1. In the popup or side panel, click **Export** (top-right). If several projects serve the page, a picker appears.
 2. In the Options page, click **Export** on a local project's card.
 
-The bundle contains `manifest.json` plus one `*.spec.json` per group. Unzip it into a repo's `.specs/` directory, or re-import the files through the multi-file picker in Options.
+The bundle contains `manifest.json` plus one `*.spec.json` per group, and any `.specs/` config files that hold content: `guides.json`, `views.json`, and (local projects only) `required.json`. Empty config files are omitted. Unzip it into a repo's `.specs/` directory, or re-import the files through the multi-file picker in Options - the round-trip keeps guides and views, not just specs.
 
 Sidecar projects also support **Export** (the bundle is assembled from the live cache).

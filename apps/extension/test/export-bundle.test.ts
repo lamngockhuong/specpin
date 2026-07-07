@@ -49,7 +49,7 @@ describe("sanitizeSpecFileName (zip-slip guard)", () => {
 describe("bundleToFiles", () => {
   it("rebuilds manifest.json + per-group files, strips _file, sets $schema + group", () => {
     const b = batch([specWithFile("a", "login.spec.json")], { "login.spec.json": "Login" });
-    const files = bundleToFiles(b.specs, b.fileGroups);
+    const files = bundleToFiles(b.specs, { fileGroups: b.fileGroups });
     expect(Object.keys(files).sort()).toEqual(["login.spec.json", "manifest.json"]);
     const manifest = files["manifest.json"] as { $schema?: string; specFiles: string[] };
     expect(manifest.$schema).toBe(SCHEMA_V1_ID);
@@ -62,7 +62,7 @@ describe("bundleToFiles", () => {
 
   it("falls back to a file-base group when fileGroups has none (pre-plan batch)", () => {
     const b = batch([specWithFile("a", "dashboard.spec.json")]);
-    const files = bundleToFiles(b.specs, b.fileGroups);
+    const files = bundleToFiles(b.specs, { fileGroups: b.fileGroups });
     expect((files["dashboard.spec.json"] as { group: string }).group).toBe("Dashboard");
   });
 
@@ -71,7 +71,7 @@ describe("bundleToFiles", () => {
       [specWithFile("login-btn", "login.spec.json"), specWithFile("nav", "nav.spec.json")],
       { "login.spec.json": "Login", "nav.spec.json": "Navigation" },
     );
-    const files = bundleToFiles(original.specs, original.fileGroups);
+    const files = bundleToFiles(original.specs, { fileGroups: original.fileGroups });
     // Split into the { manifest, files } envelope the picker/parse expects.
     const { "manifest.json": manifest, ...specFiles } = files;
     const parsed = parseLocalBundle(JSON.stringify({ manifest, files: specFiles }));
@@ -81,6 +81,65 @@ describe("bundleToFiles", () => {
       "login.spec.json": "Login",
       "nav.spec.json": "Navigation",
     });
+  });
+});
+
+describe("bundleToFiles - optional .specs/ config files", () => {
+  const specs = [specWithFile("login-btn", "login.spec.json")];
+
+  it("emits guides.json / views.json / required.json when they have content", () => {
+    const b = batch(specs);
+    const files = bundleToFiles(b.specs, {
+      guides: {
+        version: "1.0",
+        guides: [{ id: "tour", name: "Tour", steps: ["login-btn"] }],
+      },
+      views: { version: "1.0", hidden: ["source:ai-generated"] },
+      required: { version: "1.0", required: ["login-btn"] },
+    });
+    expect(Object.keys(files).sort()).toEqual([
+      "guides.json",
+      "login.spec.json",
+      "manifest.json",
+      "required.json",
+      "views.json",
+    ]);
+    // $schema is forced onto each config file.
+    for (const name of ["guides.json", "views.json", "required.json"]) {
+      expect((files[name] as { $schema?: string }).$schema).toBe(SCHEMA_V1_ID);
+    }
+    // Config files are discovered by name on import, never listed in specFiles.
+    expect((files["manifest.json"] as { specFiles: string[] }).specFiles).toEqual([
+      "login.spec.json",
+    ]);
+  });
+
+  it("skips a config file when it is empty (or absent)", () => {
+    const b = batch(specs);
+    const files = bundleToFiles(b.specs, {
+      guides: { version: "1.0", guides: [] },
+      views: { version: "1.0", hidden: [] },
+      required: { version: "1.0", required: [] },
+    });
+    expect(Object.keys(files).sort()).toEqual(["login.spec.json", "manifest.json"]);
+  });
+
+  it("round-trips config files through parseLocalBundle", () => {
+    const b = batch(specs);
+    const files = bundleToFiles(b.specs, {
+      guides: {
+        version: "1.0",
+        guides: [{ id: "tour", name: "Tour", steps: ["login-btn"] }],
+      },
+      views: { version: "1.0", hidden: ["source:ai-generated"] },
+      required: { version: "1.0", required: ["login-btn"] },
+    });
+    const { "manifest.json": manifest, ...rest } = files;
+    const parsed = parseLocalBundle(JSON.stringify({ manifest, files: rest }));
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.guides?.guides.map((g) => g.id)).toEqual(["tour"]);
+    expect(parsed.views?.hidden).toEqual(["source:ai-generated"]);
+    expect(parsed.required?.required).toEqual(["login-btn"]);
   });
 });
 

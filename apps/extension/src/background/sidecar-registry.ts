@@ -33,6 +33,16 @@ export interface OriginSpecs {
   locales: string[];
 }
 
+/** One sidecar connection reconstructed for export: the cached specs payload plus a
+ *  display project name and the cached team guides/views (no `required.json`: the
+ *  sidecar never fetches it). Consumed by the background's GET_EXPORT_BUNDLES handler. */
+export interface SidecarExportBundle {
+  project: string;
+  specs: SpecsResponse;
+  guides: GuidesConfig;
+  views: ViewsConfig;
+}
+
 /**
  * Holds many sidecar connections plus the page-owned Manual-import source, and
  * aggregates the specs that apply to a given page origin. Each connection is
@@ -289,22 +299,27 @@ export class SidecarRegistry {
   /** Sidecar connections to export: the one named by `id`, else those serving
    *  `origin`. Only connections with a live cache are returned (a down/never-loaded
    *  sidecar has nothing to bundle). Returns the cached specs payload + a display
-   *  project name. Privileged (carries the full specs), like the manual path. */
-  sidecarBatchesForExport(opts: {
-    id?: string;
-    origin?: string;
-  }): Array<{ project: string; specs: SpecsResponse }> {
-    const bundle = (conn: SidecarConnection): { project: string; specs: SpecsResponse } | null => {
+   *  project name, plus the cached team guides/views so an export can write back
+   *  `.specs/guides.json` / `views.json` (there is no cached `required.json`: the
+   *  sidecar never fetches it). Privileged (carries the full specs), like the manual
+   *  path. */
+  sidecarBatchesForExport(opts: { id?: string; origin?: string }): SidecarExportBundle[] {
+    const bundle = (conn: SidecarConnection): SidecarExportBundle | null => {
       const specs = conn.getCache();
       if (!specs) return null;
-      return { project: specs.manifest?.project || conn.label || conn.baseUrl, specs };
+      return {
+        project: specs.manifest?.project || conn.label || conn.baseUrl,
+        specs,
+        guides: conn.getGuides(),
+        views: conn.getViews(),
+      };
     };
     if (opts.id) {
       const conn = this.connections.get(opts.id);
       const out = conn ? bundle(conn) : null;
       return out ? [out] : [];
     }
-    const out: Array<{ project: string; specs: SpecsResponse }> = [];
+    const out: SidecarExportBundle[] = [];
     for (const conn of this.connections.values()) {
       if (opts.origin && !conn.matchesOrigin(opts.origin)) continue;
       const got = bundle(conn);

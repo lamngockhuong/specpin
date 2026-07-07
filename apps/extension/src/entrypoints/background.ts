@@ -16,6 +16,7 @@ import {
 import {
   findDuplicateBatches,
   findSpecIdCollisions,
+  type SidecarExportBundle,
   SidecarRegistry,
 } from "../background/sidecar-registry.js";
 import { initI18n, resolveUiLocale, type UiLocale } from "../i18n/index.js";
@@ -63,7 +64,7 @@ import {
 } from "../shared/drift-corpus.js";
 import { bundleToFiles, groupFromFileName } from "../shared/export-bundle.js";
 import { removeHostPermissionIfUnused } from "../shared/host-permission.js";
-import { isLocalConnectionId, localBatchId } from "../shared/local-id.js";
+import { isLocalConnectionId, localBatchId, localConnId } from "../shared/local-id.js";
 import {
   type AddLocalBatchResult,
   type CreateLocalProjectResult,
@@ -962,13 +963,26 @@ export default defineBackground(() => {
   // origin (legacy/all path; current surfaces always pass an id). The surface zips
   // + downloads the result.
   function handleGetExportBundles(message: { id?: string; origin?: string }): ExportBundle[] {
-    const localBundle = (batch: ManualBatch): ExportBundle => ({
-      project: batch.specs.manifest?.project || batch.label,
-      files: bundleToFiles(batch.specs, batch.fileGroups),
-    });
-    const sidecarBundle = (b: { project: string; specs: SpecsResponse }): ExportBundle => ({
+    const localBundle = (batch: ManualBatch): ExportBundle => {
+      // Pull the batch's team guides/views through the same registry normalizers the
+      // Options editors use, so export stays in lockstep with them (and the batch's
+      // bare GuideDef[] is wrapped into a guides.json config in exactly one place).
+      // Empty configs are dropped inside bundleToFiles; `required` has no getter, so
+      // it is passed straight from the batch.
+      const connId = localConnId(batch.id);
+      return {
+        project: batch.specs.manifest?.project || batch.label,
+        files: bundleToFiles(batch.specs, {
+          fileGroups: batch.fileGroups,
+          guides: registry.getGuides(connId),
+          views: registry.getViews(connId),
+          required: batch.required,
+        }),
+      };
+    };
+    const sidecarBundle = (b: SidecarExportBundle): ExportBundle => ({
       project: b.project,
-      files: bundleToFiles(b.specs),
+      files: bundleToFiles(b.specs, { guides: b.guides, views: b.views }),
     });
     if (message.id) {
       if (isLocalConnectionId(message.id)) {
