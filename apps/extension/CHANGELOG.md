@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.0.14](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.13...extension-v0.0.14) (2026-07-07)
+
+
+### Features
+
+* **extension:** close the authoring loop — coverage, bulk capture, templates, clone ([#140](https://github.com/lamngockhuong/specpin/issues/140)) ([ab1e1f5](https://github.com/lamngockhuong/specpin/commit/ab1e1f564eec6142cb28911250f1e6aedc209d43))
+* **extension:** import an exported .specs.zip in the manual picker ([#152](https://github.com/lamngockhuong/specpin/issues/152)) ([c4439ea](https://github.com/lamngockhuong/specpin/commit/c4439eaea080bfc002f09accd76340b092c79d49))
+* **extension:** non-dismissable authoring modals, picker HUD, and guide-row icon buttons ([#148](https://github.com/lamngockhuong/specpin/issues/148)) ([4865b1d](https://github.com/lamngockhuong/specpin/commit/4865b1dd7004f4323494588688f87c74e9d3d519))
+* **extension:** side-panel spec-card overflow menu + UI polish ([#145](https://github.com/lamngockhuong/specpin/issues/145)) ([05c5bd0](https://github.com/lamngockhuong/specpin/commit/05c5bd07bb87648a3909849213b1378d33ad48f7))
+
+
+### Bug Fixes
+
+* **extension:** center marker icons and make coverage markers theme-independent ([#146](https://github.com/lamngockhuong/specpin/issues/146)) ([7653b8a](https://github.com/lamngockhuong/specpin/commit/7653b8a227745224c9890b063251f209d669227c))
+* **extension:** flatten Options team-guides delete link; compact side-panel Clone label ([#144](https://github.com/lamngockhuong/specpin/issues/144)) ([5988009](https://github.com/lamngockhuong/specpin/commit/59880090504b722b739dd21cc6070d566ddea20c))
+* **extension:** gate coverage markers on a project serving the page ([#147](https://github.com/lamngockhuong/specpin/issues/147)) ([ef004c4](https://github.com/lamngockhuong/specpin/commit/ef004c4c7403359db3f73d5df214bf968ed4a8d4))
+* **extension:** hide coverage markers and summary when Specpin is off ([#149](https://github.com/lamngockhuong/specpin/issues/149)) ([bde5628](https://github.com/lamngockhuong/specpin/commit/bde5628a4313b4343e7765d018d5b378b936217f))
+* **extension:** prevent settings content column overflow on long values ([#141](https://github.com/lamngockhuong/specpin/issues/141)) ([a38b6e4](https://github.com/lamngockhuong/specpin/commit/a38b6e45ff45b4f17469cd30ba8f200a2d191169))
+* **extension:** sync bulk-capture count on removal + clearer vi term for orphaned specs ([#151](https://github.com/lamngockhuong/specpin/issues/151)) ([936e3cc](https://github.com/lamngockhuong/specpin/commit/936e3cca16c6e2e69f64d80bd0dc6acc6958d4bd))
+
 ## [0.0.13](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.12...extension-v0.0.13) (2026-07-05)
 
 
