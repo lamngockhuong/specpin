@@ -32,7 +32,7 @@ Click the toggle at the top of the popup, or press `Alt+Shift+S`. When Specpin i
 
 Specs render in one of three modes:
 
-- **Tooltip**: A small badge on each element. Hover to peek at the spec. Click the badge to pin the tooltip open (with **Edit spec** and **Open in side panel** actions). A pinned tooltip is height-capped with an internal scrollbar for long specs and can be resized by dragging its bottom-right corner; each pin opens at the default size.
+- **Tooltip**: A small badge on each element. Hover to peek at the spec. Click the badge to pin the tooltip open (with **Edit spec** and **Open in side panel** actions). A pinned tooltip is height-capped with an internal scrollbar for long specs and can be resized by dragging its bottom-right corner; each pin opens at the default size. If a badge covers UI you need to see, drag the badge aside (a plain click still pins it); the moved badge holds its spot and stops re-anchoring on scroll. The position is temporary: it is never saved and resets on reload.
 - **Sidebar**: A persistent panel listing all specs on the page. Appears on the right side of the page. Click the **x** button to dismiss it (reopens with a small Specpin pill in the bottom-right corner).
 - **Modal**: A draggable panel showing all specs. Opens centered, drag the header to move it. Click the **x** button to dismiss.
 

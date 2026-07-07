@@ -48,6 +48,10 @@ interface Pin {
   pageOrigin?: string;
   /** Forced UI theme, so the copy-link confirmation toast matches the host theme. */
   theme?: Theme;
+  /** True once the user has dragged this badge to a temporary spot. While set,
+   *  positionAll() stops re-anchoring the badge to its element so the manual
+   *  position holds through scroll/resize. Never persisted: reset on re-render. */
+  dragged: boolean;
 }
 
 const HOST_ID = "specpin-tooltip-host";
@@ -62,6 +66,25 @@ const TIP_WIDTH = "min(360px, 90vw)";
 // pins to min, so no extra guard is needed.
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(value, max));
+
+// Clamp a viewport-space top-left (w x h box) into the viewport, then convert to
+// the document-absolute pixels the tip and badges are positioned in. Shared by
+// the pinned-tip drag and the badge drag, which clamp then scroll-offset alike.
+const clampToDocument = (
+  originX: number,
+  originY: number,
+  w: number,
+  h: number,
+  win: Window,
+): { left: number; top: number } => ({
+  left: clamp(originX, 4, win.innerWidth - w - 4) + win.scrollX,
+  top: clamp(originY, 4, win.innerHeight - h - 4) + win.scrollY,
+});
+
+// Pointer travel (px) that turns a badge mousedown into a drag rather than a
+// click. Small enough to feel immediate, large enough that a normal click with a
+// tiny jitter still pins the tip.
+const BADGE_DRAG_THRESHOLD = 4;
 
 const STYLES = `
 ${SHADOW_PREAMBLE}
@@ -80,6 +103,8 @@ ${SHADOW_PREAMBLE}
 .badge[data-review="true"] {
   background: var(--sp-warning-border); color: var(--sp-accent-on);
 }
+/* While being dragged out of the way, show the grabbing cursor. */
+.badge.dragging { cursor: grabbing; }
 /* 2+ digit ordinal: widen to a pill (height + fully-rounded ends unchanged) so the
    number stays legible; the circle above is untouched for the default/S case. */
 .badge.wide {
@@ -185,6 +210,21 @@ export class TooltipRenderer implements SpecRenderer {
   // (it does not change mid-drag) to avoid a layout reflow on every mousemove.
   private dragOffset: { x: number; y: number; w: number; h: number } | null = null;
   private dragged = false;
+  // Drag state for an "S" badge. `grabX`/`grabY` are the cursor offset within the
+  // badge at mousedown; `startX`/`startY` are the mousedown cursor position, so the
+  // threshold is measured as pure cursor travel (no per-move reflow); `moved` flips
+  // true once travel passes BADGE_DRAG_THRESHOLD, distinguishing a drag from a click.
+  private badgeDrag: {
+    pin: Pin;
+    grabX: number;
+    grabY: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null = null;
+  // Set on a drag release so the native click that follows is swallowed (see the
+  // badge click handler) and does not also toggle the pin.
+  private suppressBadgeClick = false;
 
   // `hostId` lets a second, on-demand instance (the context-menu "Show spec here"
   // reveal tooltip) coexist with the session's tooltip renderer without clashing
@@ -289,18 +329,31 @@ export class TooltipRenderer implements SpecRenderer {
       scored: meta?.strategy === "scored",
       pageOrigin: meta?.pageOrigin,
       theme: meta?.theme,
+      dragged: false,
     };
     this.pins.push(pin);
     // The reveal tooltip (showBadges=false) skips the badge entirely: no hover
     // affordance, no on-page marker. Its single tip is pinned via revealSpec().
     if (this.showBadges) {
       badge.addEventListener("mouseenter", () => {
-        if (!this.pinnedAnchor) this.showTip(pin, false);
+        // Suppress the hover peek mid-drag: the badge moves under the cursor and
+        // would otherwise flicker the tip open.
+        if (!this.pinnedAnchor && !this.badgeDrag) this.showTip(pin, false);
       });
       badge.addEventListener("mouseleave", () => {
         if (!this.pinnedAnchor) this.hideTip();
       });
-      badge.addEventListener("click", () => this.togglePin(pin));
+      // A real drag (mousedown + move past the threshold) is followed by a native
+      // click; swallow that one click so a drag never also toggles the pin. A plain
+      // click (no drag) falls through and pins as before.
+      badge.addEventListener("click", () => {
+        if (this.suppressBadgeClick) {
+          this.suppressBadgeClick = false;
+          return;
+        }
+        this.togglePin(pin);
+      });
+      badge.addEventListener("mousedown", (e) => this.startBadgeDrag(pin, e));
       layer.appendChild(badge);
       // Measure the rendered width once (a pill is wider than BADGE_SIZE) and cache
       // it so scroll/resize re-placement reserves the true footprint without another
@@ -321,14 +374,20 @@ export class TooltipRenderer implements SpecRenderer {
     const boxes: BadgeBox[] = [];
     for (const pin of this.pins) {
       if (pin === exclude) continue;
-      boxes.push({
-        left: Number.parseFloat(pin.badge.style.left) || 0,
-        top: Number.parseFloat(pin.badge.style.top) || 0,
-        width: pin.width,
-        height: BADGE_SIZE,
-      });
+      boxes.push(this.badgeBox(pin));
     }
     return boxes;
+  }
+
+  // One badge's box read from its committed style (no forced reflow). Feeds the
+  // collision solver and reserves a dragged badge's manual spot.
+  private badgeBox(pin: Pin): BadgeBox {
+    return {
+      left: Number.parseFloat(pin.badge.style.left) || 0,
+      top: Number.parseFloat(pin.badge.style.top) || 0,
+      width: pin.width,
+      height: BADGE_SIZE,
+    };
   }
 
   /** Pin the tip for a given spec id so its content shows without a hover (the
@@ -487,6 +546,12 @@ export class TooltipRenderer implements SpecRenderer {
       const view = documentView(win);
       const placed: BadgeBox[] = [];
       for (const pin of this.pins) {
+        // A badge the user dragged keeps its manual spot: do not re-anchor it, but
+        // still reserve its box so the other badges dodge it.
+        if (pin.dragged) {
+          placed.push(this.badgeBox(pin));
+          continue;
+        }
         placed.push(this.positionBadge(pin, view, placed));
       }
     }
@@ -524,11 +589,9 @@ export class TooltipRenderer implements SpecRenderer {
     e.preventDefault();
     this.dragged = true;
     const { x, y, w, h } = this.dragOffset;
-    // Clamp to the viewport so the tip cannot be dragged out of reach.
-    const left = clamp(e.clientX - x, 4, win.innerWidth - w - 4);
-    const top = clamp(e.clientY - y, 4, win.innerHeight - h - 4);
-    tip.style.left = `${left + win.scrollX}px`;
-    tip.style.top = `${top + win.scrollY}px`;
+    const { left, top } = clampToDocument(e.clientX - x, e.clientY - y, w, h, win);
+    tip.style.left = `${left}px`;
+    tip.style.top = `${top}px`;
   };
 
   private endDrag = (): void => {
@@ -537,6 +600,74 @@ export class TooltipRenderer implements SpecRenderer {
     const win = this.doc.defaultView;
     win?.removeEventListener("mousemove", this.onDrag, true);
     win?.removeEventListener("mouseup", this.endDrag, true);
+  };
+
+  // Drag an "S" badge to a temporary spot when it covers host UI. The move is
+  // never saved: a dragged badge keeps its manual document-absolute position and
+  // stops re-anchoring (see positionAll + Pin.dragged), and a re-render resets it.
+  private startBadgeDrag(pin: Pin, e: MouseEvent): void {
+    const win = this.doc.defaultView;
+    if (!win || e.button !== 0) return;
+    const rect = pin.badge.getBoundingClientRect();
+    this.badgeDrag = {
+      pin,
+      grabX: e.clientX - rect.left,
+      grabY: e.clientY - rect.top,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+    };
+    // Clear any stale suppression from a prior drag whose trailing click never
+    // reached the badge (e.g. released off the badge after clamping to the edge),
+    // so this fresh interaction's click is honored.
+    this.suppressBadgeClick = false;
+    // Prevent text selection while dragging; the native click still fires and is
+    // swallowed on release only when the drag actually moved.
+    e.preventDefault();
+    win.addEventListener("mousemove", this.onBadgeDrag, true);
+    win.addEventListener("mouseup", this.endBadgeDrag, true);
+  }
+
+  private onBadgeDrag = (e: MouseEvent): void => {
+    const drag = this.badgeDrag;
+    const win = this.doc.defaultView;
+    if (!drag || !win) return;
+    const { pin, grabX, grabY, startX, startY } = drag;
+    if (!drag.moved) {
+      // Below the threshold this is still a click, not a drag: leave the badge and
+      // the tip untouched so a plain click still pins.
+      if (Math.hypot(e.clientX - startX, e.clientY - startY) < BADGE_DRAG_THRESHOLD) return;
+      drag.moved = true;
+      pin.dragged = true;
+      pin.badge.classList.add("dragging");
+      // Drop any non-pinned hover peek so it does not trail the moving badge.
+      if (!this.pinnedAnchor) this.hideTip();
+    }
+    e.preventDefault();
+    // Cursor minus the grab offset is where the badge's top-left should land.
+    const { left, top } = clampToDocument(
+      e.clientX - grabX,
+      e.clientY - grabY,
+      pin.width,
+      BADGE_SIZE,
+      win,
+    );
+    pin.badge.style.left = `${left}px`;
+    pin.badge.style.top = `${top}px`;
+  };
+
+  private endBadgeDrag = (): void => {
+    const drag = this.badgeDrag;
+    const win = this.doc.defaultView;
+    win?.removeEventListener("mousemove", this.onBadgeDrag, true);
+    win?.removeEventListener("mouseup", this.endBadgeDrag, true);
+    if (drag?.moved) {
+      drag.pin.badge.classList.remove("dragging");
+      // Swallow the click that the browser fires right after this mouseup so the
+      // drag does not also toggle the pin.
+      this.suppressBadgeClick = true;
+    }
+    this.badgeDrag = null;
   };
 
   /** Number of currently rendered pins (used in tests). */
@@ -549,6 +680,7 @@ export class TooltipRenderer implements SpecRenderer {
     win?.removeEventListener("scroll", this.reposition, true);
     win?.removeEventListener("resize", this.reposition);
     this.endDrag();
+    this.endBadgeDrag();
     this.host?.remove();
     this.host = this.shadow = null;
     this.layer = this.tip = null;
