@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.0.15](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.14...extension-v0.0.15) (2026-07-07)
+
+
+### Features
+
+* **extension:** coverage UX polish (gap-count sync, title seed, hidden skip, resizable tip) ([#159](https://github.com/lamngockhuong/specpin/issues/159)) ([2709bc7](https://github.com/lamngockhuong/specpin/commit/2709bc772686936117ae497f86c609a86e7b68f3))
+* **extension:** customizable spec badge color ([#153](https://github.com/lamngockhuong/specpin/issues/153)) ([866bfad](https://github.com/lamngockhuong/specpin/commit/866bfadf5e87d1088a7c3be5eadfe792f1d1e622))
+* **extension:** drag spec badge aside temporarily when it covers UI ([#161](https://github.com/lamngockhuong/specpin/issues/161)) ([ed07a12](https://github.com/lamngockhuong/specpin/commit/ed07a129bd6290595e8fadf92de5ebdc3f8cfa0f))
+* **extension:** export full .specs config files (guides/views/required) ([#157](https://github.com/lamngockhuong/specpin/issues/157)) ([83baa5d](https://github.com/lamngockhuong/specpin/commit/83baa5de998bacae4d755f7389876d78589b6226))
+* **extension:** icon-ify CTAs and tooltip action row ([#156](https://github.com/lamngockhuong/specpin/issues/156)) ([675eb31](https://github.com/lamngockhuong/specpin/commit/675eb31294cfbf21c8fe410e830f34878ab55f59))
+* **extension:** keyboard cheat-sheet, first-run welcome, docs llms.txt ([#158](https://github.com/lamngockhuong/specpin/issues/158)) ([2449249](https://github.com/lamngockhuong/specpin/commit/24492495cc02b6815144849f49dd76dd868c046f))
+* **extension:** manual-import config parity + DEFLATE zips ([#155](https://github.com/lamngockhuong/specpin/issues/155)) ([83c67f6](https://github.com/lamngockhuong/specpin/commit/83c67f6c2abb7d43e670cf2843dcfbb857610e7f))
+
+
+### Bug Fixes
+
+* **extension:** anchor badges and coverage markers to elements on scroll and resize ([#160](https://github.com/lamngockhuong/specpin/issues/160)) ([398fbb7](https://github.com/lamngockhuong/specpin/commit/398fbb755e674c390e147b8483f50585db852f64))
+* **extension:** keep off-screen badges from piling at the page edge ([#162](https://github.com/lamngockhuong/specpin/issues/162)) ([3af40cf](https://github.com/lamngockhuong/specpin/commit/3af40cf1a270f0041e89824ce5d479bace024601))
+* **extension:** stop side panel filter-toggle flicker + Firefox button layout ([#163](https://github.com/lamngockhuong/specpin/issues/163)) ([275b509](https://github.com/lamngockhuong/specpin/commit/275b509fd6f05b62a8a98227bfc9097eefb38b12))
+
 ## [0.0.14](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.13...extension-v0.0.14) (2026-07-07)
 
 
