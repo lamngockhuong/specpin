@@ -5,6 +5,7 @@ import { SidecarConnection } from "../src/background/sidecar-connection.js";
 import { findDuplicateBatches, SidecarRegistry } from "../src/background/sidecar-registry.js";
 import type { ManualBatch } from "../src/shared/config.js";
 import type { Connection } from "../src/shared/connection-types.js";
+import { localConnId } from "../src/shared/local-id.js";
 import type { SpecSource } from "../src/sources/source.js";
 
 /** Wrap a SpecsResponse as a stored Manual-import batch. */
@@ -607,5 +608,71 @@ describe("SidecarRegistry per-project enable/disable", () => {
     expect(watch.n).toBe(0);
     // Specs are reachable again once enabled, watch or not.
     expect(r.specsForOrigin("https://a.test").specs.map((s) => s.id)).toEqual(["a-spec"]);
+  });
+});
+
+describe("SidecarRegistry imported config parity", () => {
+  it("teamHiddenForOrigin includes an imported batch's views on a matching origin", () => {
+    const r = registryWith({});
+    r.setLocalBatches([
+      {
+        ...batch("1", resp("A", ["a.test"], "a")),
+        views: { version: "1.0", hidden: ["tag:legacy"] },
+      },
+    ]);
+    expect(r.teamHiddenForOrigin("https://a.test")).toEqual([["tag:legacy"]]);
+    // A non-matching origin gets nothing.
+    expect(r.teamHiddenForOrigin("https://other.test")).toEqual([]);
+  });
+
+  it("an empty-domains imported batch's views hide match-all (render gate, not write gate)", () => {
+    const r = registryWith({});
+    r.setLocalBatches([
+      { ...batch("1", resp("All", [], "all")), views: { version: "1.0", hidden: ["spec:x"] } },
+    ]);
+    // No applyToAllSites set: the looser render gate still applies the hides wherever
+    // the batch's specs render.
+    expect(r.teamHiddenForOrigin("https://anything.test")).toEqual([["spec:x"]]);
+  });
+
+  it("a disabled imported batch contributes no team-hidden facets", () => {
+    const r = registryWith({});
+    r.setLocalBatches([
+      {
+        ...batch("1", resp("A", ["a.test"], "a")),
+        enabled: false,
+        views: { version: "1.0", hidden: ["tag:legacy"] },
+      },
+    ]);
+    expect(r.teamHiddenForOrigin("https://a.test")).toEqual([]);
+  });
+
+  it("guidesForOrigin renders an imported batch's guides as team scope", () => {
+    const r = registryWith({});
+    r.setLocalBatches([
+      {
+        ...batch("1", resp("A", ["a.test"], "a")),
+        guides: [{ id: "onboarding", name: "Onboarding", steps: ["a"] }],
+      },
+    ]);
+    const guides = r.guidesForOrigin("https://a.test");
+    expect(guides).toHaveLength(1);
+    expect(guides[0]).toMatchObject({ id: "onboarding", scope: "team", project: "A" });
+  });
+
+  it("getViews/getGuides resolve a local manual:<id> to that batch's config (Options editor)", () => {
+    const r = registryWith({});
+    r.setLocalBatches([
+      {
+        ...batch("1", resp("A", ["a.test"], "a")),
+        views: { version: "1.0", hidden: ["tag:legacy"] },
+        guides: [{ id: "onboarding", name: "Onboarding", steps: [] }],
+      },
+    ]);
+    expect(r.getViews(localConnId("1")).hidden).toEqual(["tag:legacy"]);
+    expect(r.getGuides(localConnId("1")).guides).toHaveLength(1);
+    // An unknown local id yields the empty defaults, never a throw.
+    expect(r.getViews(localConnId("nope")).hidden).toEqual([]);
+    expect(r.getGuides(localConnId("nope")).guides).toEqual([]);
   });
 });

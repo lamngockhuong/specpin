@@ -1,5 +1,12 @@
 import type { SpecsResponse, SpecWithFile } from "@specpin/api-client";
-import type { DisplayMode, GuideDef, Manifest, Spec } from "@specpin/spec-schema";
+import type {
+  DisplayMode,
+  GuideDef,
+  Manifest,
+  RequiredConfig,
+  Spec,
+  ViewsConfig,
+} from "@specpin/spec-schema";
 import { browser } from "#imports";
 import type { UiLocale } from "../i18n/locales.js";
 import type { Connection } from "./connection-types.js";
@@ -54,6 +61,16 @@ export interface ManualBatch {
    *  saves one. Stored inline on the batch so a local project is a self-contained
    *  guide target without a sidecar. */
   guides?: GuideDef[];
+  /** Team-default hidden facets imported from a `.specs/views.json` (the local
+   *  equivalent of a sidecar's views). Applied by `teamHiddenForOrigin` so an
+   *  imported folder hides specs exactly like the sidecar it came from. Absent on
+   *  batches imported before this field, and on the paste/authoring paths. */
+  views?: ViewsConfig;
+  /** The imported `.specs/required.json` (a `specpin validate` coverage checklist).
+   *  Stored for forward-compat and to keep a whole-folder import from erroring, but
+   *  INERT: nothing in the extension reads it (no `/required` endpoint, no coverage
+   *  consumer) until a future required-coverage feature. */
+  required?: RequiredConfig;
   /** The validated bundle: manifest + flattened specs (unchanged shape). */
   specs: SpecsResponse;
 }
@@ -703,5 +720,21 @@ export function setLocalBatchEnabled(
   if (idx === -1) return { ok: false, error: "unknown local project" };
   const batch = state.batches[idx] as ManualBatch;
   const nextBatch: ManualBatch = { ...batch, enabled };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Set (or clear) a local batch's team-default views (`views.hidden`), the local
+ *  parallel to a sidecar's `SAVE_TEAM_VIEWS`. An empty `hidden` drops the field so
+ *  the batch carries no `{version, hidden: []}` noise. Unknown batch id -> ok:false. */
+export function setLocalBatchViews(
+  state: LocalSpecsState,
+  batchId: string,
+  views: ViewsConfig,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const nextBatch: ManualBatch = { ...(state.batches[idx] as ManualBatch) };
+  if (views.hidden.length) nextBatch.views = views;
+  else delete nextBatch.views;
   return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
 }

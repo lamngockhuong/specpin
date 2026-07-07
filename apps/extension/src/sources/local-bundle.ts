@@ -1,6 +1,19 @@
 import type { SpecsResponse, SpecWithFile } from "@specpin/api-client";
-import type { Manifest } from "@specpin/spec-schema";
-import { formatErrors, validateManifest, validateSpecFile } from "@specpin/spec-schema";
+import type {
+  GuidesConfig,
+  Manifest,
+  RequiredConfig,
+  ValidationResult,
+  ViewsConfig,
+} from "@specpin/spec-schema";
+import {
+  formatErrors,
+  validateGuides,
+  validateManifest,
+  validateRequired,
+  validateSpecFile,
+  validateViews,
+} from "@specpin/spec-schema";
 
 // A Manual-import bundle: the manifest plus the named *.spec.json files, mirroring
 // the on-disk .specs/ layout. Pasted/uploaded in the Options page.
@@ -17,12 +30,25 @@ const MAX_SPECS = 5000;
 // properties, so reject any bundle containing them rather than spreading them.
 const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
+// The optional `.specs/` config files (beyond manifest.json + *.spec.json) both
+// entry points recognize. Single source so the two functions cannot drift.
+const CONFIG_FILE_NAMES = new Set(["guides.json", "views.json", "required.json"]);
+
 export interface BundleResult {
   specs?: SpecsResponse;
   /** Map of `<name>.spec.json` -> its file-level `group`, captured here because
    *  the flatten into `specs[]` keeps only `_file` and drops the group. Carried
    *  onto the stored batch so a later export reconstructs per-file groups. */
   fileGroups?: Record<string, string>;
+  /** The validated `guides.json` when the bundle carries one (a `.specs/` folder
+   *  import). Rendered as team-scope guides once stored on the batch. */
+  guides?: GuidesConfig;
+  /** The validated `views.json` when present: team-default hidden facets, applied
+   *  like a sidecar's views once stored on the batch. */
+  views?: ViewsConfig;
+  /** The validated `required.json` when present. Carried for forward-compat and to
+   *  avoid erroring on a full-folder import; inert (no extension consumer yet). */
+  required?: RequiredConfig;
   errors: string[];
 }
 
@@ -87,7 +113,35 @@ export function parseLocalBundle(text: string): BundleResult {
 
   const specs: SpecWithFile[] = [];
   const fileGroups: Record<string, string> = {};
+  let guides: GuidesConfig | undefined;
+  let views: ViewsConfig | undefined;
+  let required: RequiredConfig | undefined;
+  // Validate one `.specs/` config file against its schema on the SINGLE parse path
+  // shared by both entry points: return the typed object on success, else push a
+  // clear `${name}: ...` error (which blocks the import) and return undefined.
+  const takeConfig = <T>(
+    name: string,
+    validate: (v: unknown) => ValidationResult,
+  ): T | undefined => {
+    const r = validate(files[name]);
+    if (r.valid) return files[name] as T;
+    errors.push(`${name}: ${formatErrors(r.errors)}`);
+    return undefined;
+  };
   for (const name of names) {
+    // The three optional `.specs/` config files (mirror the on-disk layout).
+    if (name === "guides.json") {
+      guides = takeConfig<GuidesConfig>(name, validateGuides);
+      continue;
+    }
+    if (name === "views.json") {
+      views = takeConfig<ViewsConfig>(name, validateViews);
+      continue;
+    }
+    if (name === "required.json") {
+      required = takeConfig<RequiredConfig>(name, validateRequired);
+      continue;
+    }
     if (!name.endsWith(".spec.json")) {
       errors.push(`${name}: file name must end with .spec.json`);
       continue;
@@ -111,7 +165,14 @@ export function parseLocalBundle(text: string): BundleResult {
 
   if (errors.length > 0) return { errors };
 
-  return { specs: { manifest: bundle.manifest as Manifest, specs }, fileGroups, errors: [] };
+  return {
+    specs: { manifest: bundle.manifest as Manifest, specs },
+    fileGroups,
+    ...(guides ? { guides } : {}),
+    ...(views ? { views } : {}),
+    ...(required ? { required } : {}),
+    errors: [],
+  };
 }
 
 /** One picked file: its name and already-read text content. */
@@ -146,15 +207,20 @@ export function parseLocalFiles(files: NamedFile[]): BundleResult {
     if (base === "manifest.json") {
       if (manifest !== undefined) errors.push("Multiple manifest.json files selected.");
       manifest = parsed;
-    } else if (base.endsWith(".spec.json")) {
+    } else if (base.endsWith(".spec.json") || CONFIG_FILE_NAMES.has(base)) {
+      // Spec files and the three `.specs/` config files ride the same `files`
+      // envelope so parseLocalBundle runs the ONE validation path over all of them.
       specFiles[base] = parsed;
     } else {
-      errors.push(`${base}: expected manifest.json or a *.spec.json file`);
+      errors.push(`${base}: expected manifest.json, a *.spec.json, or a .specs/ config file`);
     }
   }
 
   if (manifest === undefined) errors.push("No manifest.json among the selected files.");
-  if (Object.keys(specFiles).length === 0) errors.push("No *.spec.json files selected.");
+  // Count only real spec files: a selection of just manifest + config files has no
+  // specs to show, which is the error this guard is here to surface.
+  const specCount = Object.keys(specFiles).filter((n) => n.endsWith(".spec.json")).length;
+  if (specCount === 0) errors.push("No *.spec.json files selected.");
   if (errors.length > 0) return { errors };
 
   return parseLocalBundle(JSON.stringify({ manifest, files: specFiles }));

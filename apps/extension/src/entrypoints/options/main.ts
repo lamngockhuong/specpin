@@ -1,4 +1,5 @@
 import type { GuidesConfig, SpecsResponse, ViewsConfig } from "@specpin/api-client";
+import type { RequiredConfig } from "@specpin/spec-schema";
 import { hydrateI18n, initI18n, resolveUiLocale, t, type UiLocale } from "../../i18n/index.js";
 import { parseDomains } from "../../shared/add-project.js";
 import {
@@ -192,9 +193,21 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
 
   row.append(head, meta, editForm);
 
-  // Team-default visibility editor (sidecar-backed connections only). Writes
-  // .specs/views.json to Git, shared with everyone on the project.
-  if (c.connected) row.append(teamViewsSection(c), teamGuidesSection(c));
+  // Team-default visibility editor + guides list (sidecar-backed connections only).
+  // Writes .specs/views.json to Git, shared with everyone on the project.
+  if (c.connected) {
+    row.append(
+      teamViewsSection(c.id, {
+        summary: t("options.teamViewsSummary"),
+        note: t("options.teamViewsNote"),
+        savedMsg: t("options.savedTeamViews"),
+      }),
+      teamGuidesSection(c.id, {
+        summary: t("options.teamGuidesSummary"),
+        note: t("options.teamGuidesNote"),
+      }),
+    );
+  }
 
   // Empty-domains projects are inactive until the user opts in (RT-SA1).
   if (c.domains.length === 0) {
@@ -317,16 +330,23 @@ function editSection(c: ConnectionStatus): HTMLElement {
 /** Team-default visibility editor for one connection. The hidden facet keys are
  *  edited as one-per-line text (tag: / file: / spec: / url:) and saved to
  *  .specs/views.json via the sidecar. The current views load lazily on expand. */
-function teamViewsSection(c: ConnectionStatus): HTMLElement {
+/** Team-default views editor, shared by a sidecar connection card and a manual
+ *  batch card. `connId` is a sidecar uuid or a `manual:<id>` local id; the background
+ *  routes GET/SAVE_TEAM_VIEWS by that id (sidecar -> Git, local -> storage.local).
+ *  The summary/note/savedMsg differ so the local variant does not claim a Git write. */
+function teamViewsSection(
+  connId: string,
+  labels: { summary: string; note: string; savedMsg: string },
+): HTMLElement {
   const wrap = document.createElement("details");
   wrap.className = "team-views";
   const summary = document.createElement("summary");
-  summary.textContent = t("options.teamViewsSummary");
+  summary.textContent = labels.summary;
   wrap.appendChild(summary);
 
   const note = document.createElement("p");
   note.className = "muted";
-  note.textContent = t("options.teamViewsNote");
+  note.textContent = labels.note;
   const area = document.createElement("textarea");
   area.className = "views-editor";
   area.rows = 4;
@@ -346,7 +366,7 @@ function teamViewsSection(c: ConnectionStatus): HTMLElement {
     loaded = true;
     const views = await sendToBackground<ViewsConfig>({
       type: "GET_TEAM_VIEWS",
-      connectionId: c.id,
+      connectionId: connId,
     });
     version = views.version || "1.0";
     area.value = (views.hidden ?? []).join("\n");
@@ -359,14 +379,14 @@ function teamViewsSection(c: ConnectionStatus): HTMLElement {
       .filter(Boolean);
     const res = await sendToBackground<{ ok: boolean; errors?: string[] }>({
       type: "SAVE_TEAM_VIEWS",
-      connectionId: c.id,
+      connectionId: connId,
       views: { version, hidden },
     });
     showResult(
       result,
       res.ok,
       res.ok
-        ? t("options.savedTeamViews")
+        ? labels.savedMsg
         : t("options.teamViewsFailed", { errors: res.errors?.join("; ") ?? "error" }),
     );
   });
@@ -380,16 +400,16 @@ function teamViewsSection(c: ConnectionStatus): HTMLElement {
  *  reorder happen in the popup/side-panel editor (which has the page specs);
  *  Options is the list + delete surface, parallel to teamViewsSection. Guides
  *  load lazily on expand. */
-function teamGuidesSection(c: ConnectionStatus): HTMLElement {
+function teamGuidesSection(connId: string, labels: { summary: string; note: string }): HTMLElement {
   const wrap = document.createElement("details");
   wrap.className = "team-views";
   const summary = document.createElement("summary");
-  summary.textContent = t("options.teamGuidesSummary");
+  summary.textContent = labels.summary;
   wrap.appendChild(summary);
 
   const note = document.createElement("p");
   note.className = "muted";
-  note.textContent = t("options.teamGuidesNote");
+  note.textContent = labels.note;
   const list = document.createElement("ul");
   list.className = "guides-list";
   const result = document.createElement("div");
@@ -398,7 +418,7 @@ function teamGuidesSection(c: ConnectionStatus): HTMLElement {
   async function load(): Promise<void> {
     const config = await sendToBackground<GuidesConfig>({
       type: "GET_TEAM_GUIDES",
-      connectionId: c.id,
+      connectionId: connId,
     });
     renderList(config.guides);
   }
@@ -426,7 +446,7 @@ function teamGuidesSection(c: ConnectionStatus): HTMLElement {
             type: "DELETE_GUIDE",
             scope: "team",
             id: guide.id,
-            targetId: c.id,
+            targetId: connId,
           });
           if (res.ok) await load();
           else showResult(result, false, t("guide.deleteFailed", { error: res.error ?? "error" }));
@@ -559,7 +579,22 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
     ? t("options.sitesPrefix", { sites: b.domains.join(", ") })
     : t("options.sitesAll");
 
-  row.append(head, meta, sites, renameForm);
+  // Views editor + guides list, mirroring the sidecar card. Same background message
+  // routing (GET/SAVE_TEAM_VIEWS, GET_TEAM_GUIDES, DELETE_GUIDE) resolves the
+  // `manual:<id>` local id to this batch; labels say "saved to this batch / Export
+  // to commit" since a local batch has no Git write of its own.
+  const connId = localConnId(b.id);
+  const viewsSection = teamViewsSection(connId, {
+    summary: t("options.batchViewsSummary"),
+    note: t("options.batchViewsNote"),
+    savedMsg: t("options.batchViewsSaved"),
+  });
+  const guidesSection = teamGuidesSection(connId, {
+    summary: t("options.batchGuidesSummary"),
+    note: t("options.batchGuidesNote"),
+  });
+
+  row.append(head, meta, sites, renameForm, viewsSection, guidesSection);
   return row;
 }
 
@@ -765,6 +800,8 @@ async function addBatch(
   source: "paste" | "files",
   fileNames?: string[],
   fileGroups?: Record<string, string>,
+  /** The parsed `.specs/` config from a folder/zip import; absent on the paste path. */
+  configs?: { guides?: GuidesConfig; views?: ViewsConfig; required?: RequiredConfig },
 ): Promise<boolean> {
   const res = await sendToBackground<AddLocalBatchResult>({
     type: "ADD_LOCAL_BATCH",
@@ -772,6 +809,9 @@ async function addBatch(
     source,
     fileNames,
     fileGroups,
+    guides: configs?.guides?.guides,
+    views: configs?.views,
+    required: configs?.required,
   });
   if (!res.ok) {
     showResult(localResult, false, res.error ?? t("options.couldNotAddBatch"));
@@ -818,6 +858,7 @@ byId("loadLocal").addEventListener("click", async () => {
     showResult(localResult, false, t("options.invalidBundle", { errors: errors.join("\n- ") }));
     return;
   }
+  // Paste path carries no `.specs/` config files (they only arrive via the picker).
   if (await addBatch(specs, "paste", undefined, fileGroups)) localSpecs.value = "";
 });
 
@@ -837,13 +878,14 @@ byId("loadFiles").addEventListener("click", async () => {
     showResult(localResult, false, t("options.invalidZip", { error }));
     return;
   }
-  const { specs, fileGroups, errors } = parseLocalFiles(files);
+  const { specs, fileGroups, guides, views, required, errors } = parseLocalFiles(files);
   if (!specs) {
     showResult(localResult, false, t("options.invalidSelection", { errors: errors.join("\n- ") }));
     return;
   }
   const fileNames = files.map((f) => f.name.split(/[/\\]/).pop() ?? f.name);
-  if (await addBatch(specs, "files", fileNames, fileGroups)) localFiles.value = "";
+  if (await addBatch(specs, "files", fileNames, fileGroups, { guides, views, required }))
+    localFiles.value = "";
 });
 
 byId("clearLocal").addEventListener("click", async () => {

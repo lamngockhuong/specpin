@@ -2,6 +2,7 @@ import type { SpecsResponse, SpecWithFile, ViewsConfig } from "@specpin/api-clie
 import {
   formatErrors,
   type GuideDef,
+  type RequiredConfig,
   type Spec,
   validateGuides,
   validateSpec,
@@ -44,6 +45,7 @@ import {
   setEnabled,
   setLastVersion,
   setLocalBatchEnabled,
+  setLocalBatchViews,
   setLocalSpecs,
   setPersonalGuides,
   setPersonalVisibility,
@@ -439,6 +441,21 @@ export default defineBackground(() => {
     connectionId: string,
     views: ViewsConfig,
   ): Promise<{ ok: boolean; errors?: string[] }> {
+    // Local batch: persist the views onto the stored batch (the parallel to a
+    // sidecar's Git write), mirroring the local branch of handleDeleteGuide.
+    if (isLocalConnectionId(connectionId)) {
+      return mutate(async () => {
+        const batchId = localBatchId(connectionId);
+        if (!batchId) return { ok: false, errors: ["invalid local project"] };
+        const state = (await getLocalSpecs()) ?? { batches: [] };
+        const result = setLocalBatchViews(state, batchId, views);
+        if (!result.ok || !result.state) return { ok: false, errors: [result.error ?? "error"] };
+        await setLocalSpecs(result.state);
+        registry.setLocalBatches(result.state.batches);
+        await broadcastSpecsChanged();
+        return { ok: true };
+      });
+    }
     const result = await registry.saveViews(connectionId, views);
     if (result.ok) await broadcastSpecsChanged();
     return result;
@@ -1038,6 +1055,9 @@ export default defineBackground(() => {
     source: "paste" | "files";
     fileNames?: string[];
     fileGroups?: Record<string, string>;
+    guides?: GuideDef[];
+    views?: ViewsConfig;
+    required?: RequiredConfig;
   }): Promise<AddLocalBatchResult> {
     return mutate(async () => {
       const state = (await getLocalSpecs()) ?? { batches: [] };
@@ -1059,6 +1079,12 @@ export default defineBackground(() => {
         fileNames: message.fileNames,
         importedAt: Date.now(),
         fileGroups: message.fileGroups,
+        // Omit empty configs so a batch carries no `{version, guides: []}` noise.
+        // (guides.json is capped at MAX_GUIDES_PER_BATCH by the schema, enforced in
+        // parseLocalBundle, so an over-cap file is rejected before it reaches here.)
+        ...(message.guides?.length ? { guides: message.guides } : {}),
+        ...(message.views ? { views: message.views } : {}),
+        ...(message.required ? { required: message.required } : {}),
         specs: message.bundle,
       };
       const next = { batches: [...state.batches, batch] };

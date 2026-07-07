@@ -5,6 +5,7 @@ import type {
   ElementFingerprint,
   GuideDef,
   Manifest,
+  RequiredConfig,
   Spec,
 } from "@specpin/spec-schema";
 import { browser } from "#imports";
@@ -87,6 +88,11 @@ export type Message =
       /** Per-file `group` map from the parse, stored on the batch so export
        *  reconstructs per-file groups (the flatten drops the field). */
       fileGroups?: Record<string, string>;
+      /** Imported `.specs/` config, when a folder/zip carried them. Stored on the
+       *  batch: guides render as team-scope, views hide specs, required is inert. */
+      guides?: GuideDef[];
+      views?: ViewsConfig;
+      required?: RequiredConfig;
     }
   | { type: "REMOVE_LOCAL_BATCH"; id: string }
   | { type: "CLEAR_LOCAL_SPECS" }

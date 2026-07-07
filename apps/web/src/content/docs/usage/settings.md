@@ -91,7 +91,7 @@ See [Connecting Projects](/usage/connecting-projects/) for details.
 
 ## Manual specs (no sidecar)
 
-The Options page's **Spec** section has a **Manual** tab where you can import specs without running `specpin serve`. Load specs from files (pick `manifest.json` + one or more `*.spec.json`, or an exported `<project>.specs.zip`) or paste a bundle JSON. Picking an exported zip re-imports it directly; only uncompressed zips from Specpin's Export are supported.
+The Options page's **Spec** section has a **Manual** tab where you can import specs without running `specpin serve`. Load specs from files (pick a whole `.specs/` folder: `manifest.json`, one or more `*.spec.json`, and any of `guides.json` / `views.json` / `required.json`) or paste a bundle JSON. Imported `guides.json` renders as team guides and `views.json` hides its facets, just like a sidecar; `required.json` is accepted and stored but currently has no in-extension effect (it is a CLI-only coverage checklist). You can also pick an exported `<project>.specs.zip` or a folder zipped with any tool: both uncompressed (STORE) and compressed (DEFLATE) zips re-import directly; a corrupt archive reports a clear error.
 
 Each import appends a batch. Loaded batches appear below the buttons, one card per import, with **Export**, **Rename**, and **Remove** actions. Click **Clear all manual specs** to empty the list.
 

@@ -263,7 +263,7 @@ const vi: Record<keyof Messages, string> = {
     'Dán một bundle để xem spec mà không cần chạy <code>specpin serve</code>. Chỉ đọc: việc ghi spec vẫn cần sidecar. Dạng: <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>',
   "options.fromFiles": "Từ tệp",
   "options.fromFilesHint":
-    "(chọn manifest.json + một hoặc nhiều *.spec.json, hoặc tệp .specs.zip đã export)",
+    "(chọn cả thư mục .specs/ - manifest.json, *.spec.json, và guides.json / views.json / required.json nếu có - hoặc tệp .specs.zip đã export, nén hay không đều được)",
   "options.loadFromFiles": "Tải từ tệp",
   "options.orPaste": "Hoặc dán bundle JSON",
   "options.loadPasted": "Tải bundle đã dán",
@@ -299,6 +299,15 @@ const vi: Record<keyof Messages, string> = {
   "options.saveTeamDefault": "Lưu mặc định nhóm",
   "options.savedTeamViews": "Đã lưu vào .specs/views.json.",
   "options.teamViewsFailed": "Thất bại: {errors}",
+  // Biến thể cho manual batch của hai mục sidecar: batch cục bộ không tự ghi Git,
+  // nên lưu vào storage và Export để commit.
+  "options.batchViewsSummary": "Mặc định hiển thị (lưu vào batch này)",
+  "options.batchViewsNote":
+    "Mỗi dòng một khóa facet: tag:<t>, file:<name.spec.json>, spec:<id>, hoặc url:<glob>. Lưu vào batch; Export batch để ghi ra .specs/views.json và commit qua Git.",
+  "options.batchViewsSaved": "Đã lưu vào batch này.",
+  "options.batchGuidesSummary": "Hướng dẫn của batch",
+  "options.batchGuidesNote":
+    "Các hướng dẫn onboarding đi kèm batch này. Thêm hoặc sửa ở popup; Export batch để ghi ra .specs/guides.json.",
   "options.noProjects": "Chưa có dự án nào. Thêm một dự án bên dưới.",
   "options.untitled": "không có tiêu đề",
   "options.sourcePasted": "đã dán",
