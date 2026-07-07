@@ -51,7 +51,7 @@ Signature của matcher và shape của `MatchResult` được giữ ổn địn
 
 ### Corpus drift cho matching (cục bộ, opt-in)
 
-Để tinh chỉnh scorer với drift thực tế, extension có thể thu thập một corpus huấn luyện cục bộ (`storage.local`, mặc định **TẮT**, ring-buffer có giới hạn, xuất + xóa được từ Options, không bao giờ tải lên). Hai nguồn: **supervised**, một lần re-pin ghi lại cặp fingerprint `(cũ → mới)` (ground truth); và **passive**, khi một spec trở nên mồ côi hoặc scored-trung-bình lúc match, nó chụp lại các candidate fingerprint mà scorer đã cân nhắc (nhãn `chosenByScorer` tạm thời, không bao giờ coi là sự thật). Chỉ fingerprint, không HTML, với `textContent` được lược bỏ (email + chuỗi số dài) lúc ghi. Nằm ở `apps/extension/src/shared/drift-corpus.ts`.
+Để tinh chỉnh scorer với drift thực tế, extension có thể thu thập một corpus huấn luyện cục bộ (`storage.local`, mặc định **TẮT**, ring-buffer có giới hạn, xuất + xóa được từ Options, không bao giờ tải lên). Hai nguồn: **supervised**, một lần re-pin ghi lại cặp fingerprint `(cũ → mới)` (ground truth); và **passive**, khi một spec trở nên mất liên kết hoặc scored-trung-bình lúc match, nó chụp lại các candidate fingerprint mà scorer đã cân nhắc (nhãn `chosenByScorer` tạm thời, không bao giờ coi là sự thật). Chỉ fingerprint, không HTML, với `textContent` được lược bỏ (email + chuỗi số dài) lúc ghi. Nằm ở `apps/extension/src/shared/drift-corpus.ts`.
 
 ## Multi-project registry
 

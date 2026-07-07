@@ -145,8 +145,8 @@ const vi: Record<keyof Messages, string> = {
 
   // Page match-health summary + orphaned list.
   "health.summary":
-    "{total} spec · {exact} chính xác · {scored} theo điểm · {fuzzy} gần đúng · {orphaned} lạc",
-  "health.orphanedTitle": "Spec lạc ({count})",
+    "{total} spec · {exact} chính xác · {scored} theo điểm · {fuzzy} gần đúng · {orphaned} mất liên kết",
+  "health.orphanedTitle": "Spec mất liên kết ({count})",
   "health.orphanedHint": "Các spec này nhắm tới trang này nhưng không tìm thấy phần tử.",
   "health.orphanedNotFound": "Không tìm thấy trên trang này",
   "health.fuzzy": "gần đúng",
