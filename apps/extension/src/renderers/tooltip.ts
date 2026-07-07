@@ -1,12 +1,12 @@
 import type { DisplayMode, Spec } from "@specpin/spec-schema";
 import { type LocalizedSpecText, localizeSpec } from "../content/localize-spec.js";
 import { showToast } from "../content/toast.js";
-import { t } from "../i18n/index.js";
+import { type MessageKey, t } from "../i18n/index.js";
 import { copyText } from "../shared/clipboard.js";
 import { isValidBadgeColor, readableGlyph } from "../shared/contrast.js";
 import { buildSpecLink } from "../shared/deep-link.js";
-import { escapeHtml, setTrustedHtml } from "../shared/html.js";
-import { iconSvg } from "../shared/icons.js";
+import { escapeAttr, escapeHtml, setTrustedHtml } from "../shared/html.js";
+import { type IconName, iconSvg } from "../shared/icons.js";
 import { renderMarkdownBlock } from "../shared/markdown.js";
 import { PROVENANCE_CSS, provenanceSectionHtml } from "../shared/provenance.js";
 import { createShadowHost } from "../shared/shadow.js";
@@ -107,34 +107,20 @@ ${PROVENANCE_CSS}
   color: var(--sp-text-3); border-radius: 4px;
 }
 .tip .pin-close:hover { background: var(--sp-border); color: var(--sp-text); }
-.tip .pin-edit {
-  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
+/* Pinned actions: one compact horizontal row of icon-only buttons (was up to six
+   stacked full-width text bars). Each carries aria-label + title, so the icon
+   stays discoverable. Wraps on very narrow tips. */
+.tip .pin-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.tip .pin-act {
+  width: 28px; height: 28px; display: grid; place-items: center; padding: 0; cursor: pointer;
   background: var(--sp-control); color: var(--sp-text); border: 1px solid var(--sp-border);
-  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
+  border-radius: var(--sp-radius-control);
 }
-.tip .pin-edit:hover { filter: brightness(0.97); }
-.tip .pin-clone {
-  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
-  background: var(--sp-control); color: var(--sp-text); border: 1px solid var(--sp-border);
-  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
-}
-.tip .pin-clone:hover { filter: brightness(0.97); }
-.tip .pin-copy {
-  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
-  background: var(--sp-control); color: var(--sp-text); border: 1px solid var(--sp-border);
-  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
-}
-.tip .pin-copy:hover { filter: brightness(0.97); }
+.tip .pin-act:hover { filter: brightness(0.97); }
+/* Delete keeps its destructive tint; the icon strokes currentColor, so the trash
+   glyph turns error-red too. */
 .tip .pin-delete {
-  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
-  background: var(--sp-error-bg); color: var(--sp-error-text); border: 1px solid var(--sp-error-border);
-  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
-}
-.tip .pin-delete:hover { filter: brightness(0.97); }
-.tip .pin-open {
-  margin-top: 9px; width: 100%; padding: 6px 8px; cursor: pointer;
-  background: var(--sp-accent); color: var(--sp-accent-on); border: none;
-  border-radius: var(--sp-radius-control); font: 600 14px/1.2 var(--sp-font-ui);
+  background: var(--sp-error-bg); color: var(--sp-error-text); border-color: var(--sp-error-border);
 }
 .tip.show { display: block; }
 ${CONFIDENCE_BADGE_CSS}
@@ -364,9 +350,27 @@ export class TooltipRenderer implements SpecRenderer {
     // the existing Edit flow). "Correct" shows only when the corpus opt-in gave us
     // an onConfirm callback, so it stays hidden for users who never opted in.
     const canConfirm = pin.scored && !!this.onConfirm;
+    // Pinned actions render as a compact horizontal row of icon-only buttons. The
+    // visible text moved to aria-label + title (hover), so each icon stays
+    // discoverable. Class names are unchanged, so the handler wiring below still
+    // matches. iconSvg output is trusted in-repo markup (same path as pin-close).
+    // The label lands in attribute context, so escapeAttr (quotes too), not
+    // escapeHtml. `actions` is only emitted inside the `pinned` wrapper below, so
+    // the per-button conditions need only their own can* gate.
+    const iconBtn = (cls: string, icon: IconName, key: MessageKey): string => {
+      const label = escapeAttr(t(key));
+      return `<button type="button" class="pin-act ${cls}" aria-label="${label}" title="${label}">${iconSvg(icon, 16)}</button>`;
+    };
+    const actions =
+      (canEdit ? iconBtn("pin-edit", "pencil", "tooltip.editSpec") : "") +
+      (canDelete ? iconBtn("pin-delete", "trash", "tooltip.deleteSpec") : "") +
+      (canClone ? iconBtn("pin-clone", "copy", "clone.duplicate") : "") +
+      (canConfirm ? iconBtn("pin-correct", "check", "match.correct") : "") +
+      iconBtn("pin-copy", "link", "common.copyLink") +
+      iconBtn("pin-open", "panel", "tooltip.openInPanel");
     const tipHtml =
       (pinned
-        ? `<button type="button" class="pin-close" aria-label="${escapeHtml(t("common.close"))}">${iconSvg("close", 12)}</button>`
+        ? `<button type="button" class="pin-close" aria-label="${escapeAttr(t("common.close"))}">${iconSvg("close", 12)}</button>`
         : "") +
       (pin.project ? `<span class="project">${escapeHtml(pin.project)}</span>` : "") +
       `<h4>${escapeHtml(pin.text.title)}</h4>` +
@@ -378,24 +382,7 @@ export class TooltipRenderer implements SpecRenderer {
       rulesListHtml(pin.text.businessRules, pin.pageOrigin) +
       tags +
       pin.provenanceHtml +
-      (pinned && canEdit
-        ? `<button type="button" class="pin-edit">${escapeHtml(t("tooltip.editSpec"))}</button>`
-        : "") +
-      (pinned && canDelete
-        ? `<button type="button" class="pin-delete">${escapeHtml(t("tooltip.deleteSpec"))}</button>`
-        : "") +
-      (pinned && canClone
-        ? `<button type="button" class="pin-clone">${escapeHtml(t("clone.duplicate"))}</button>`
-        : "") +
-      (pinned && canConfirm
-        ? `<button type="button" class="pin-correct">${escapeHtml(t("match.correct"))}</button>`
-        : "") +
-      (pinned
-        ? `<button type="button" class="pin-copy">${escapeHtml(t("common.copyLink"))}</button>`
-        : "") +
-      (pinned
-        ? `<button type="button" class="pin-open">${escapeHtml(t("tooltip.openInPanel"))}</button>`
-        : "");
+      (pinned ? `<div class="pin-actions">${actions}</div>` : "");
     setTrustedHtml(tip, tipHtml);
     tip.classList.toggle("pinned", pinned);
     if (pinned) {

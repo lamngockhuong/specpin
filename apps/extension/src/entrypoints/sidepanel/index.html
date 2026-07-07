@@ -262,6 +262,7 @@
          content-sized (icon gear, link buttons, filter reset). */
       .actions > button { flex: 1; }
       #capture {
+        display: inline-flex; align-items: center; justify-content: center; gap: 5px;
         background: var(--sp-accent);
         border-color: var(--sp-accent);
         color: var(--sp-accent-on);
@@ -377,7 +378,7 @@
       </select>
     </div>
     <div class="actions" id="actions">
-      <button id="capture" type="button" data-i18n="common.captureSpec">+ Capture spec</button>
+      <button id="capture" type="button"><span data-i18n="common.captureSpec">Capture spec</span></button>
       <button id="bulk-capture" type="button" data-i18n="bulk.title">Bulk capture</button>
     </div>
     <div id="add-project" hidden></div>

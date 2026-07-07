@@ -29,6 +29,7 @@ import "../../shared/surface-states.css";
 import { actOnActiveTab } from "../../shared/active-tab-action.js";
 import { clearDraft, loadDraft, saveDraft } from "../../shared/draft-store.js";
 import { mountGuideSection } from "../../shared/guide-section.js";
+import { createIcon } from "../../shared/icons.js";
 import {
   type MatchReportEntry,
   type SpecsForOrigin,
@@ -289,6 +290,11 @@ watchThemeChanges();
 // Show the actual extension version from the manifest, not a hardcoded string.
 // The pill links to the hosted changelog (href is static in index.html).
 byId("version").textContent = `v${browser.runtime.getManifest().version}`;
+
+// The primary CTA leads with the `plus` icon (was a literal "+" in the label).
+// The icon is a separate node from the `[data-i18n]` label span, so i18n
+// hydration (which rewrites only the span's textContent) never wipes it.
+byId("capture").prepend(createIcon(document, "plus", 12));
 
 // Resolve the UI-chrome language, hydrate the static HTML, then render. initI18n
 // runs before the first refresh so every t() call uses the chosen language.

@@ -26,6 +26,14 @@ const ICON_PATHS = {
   // tab, body with rounded bottom corners, and two ribs. Reads clearly small.
   trash:
     "M1.5 3H10.5M9.5 3V10a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V3M4.5 3V2a1 1 0 0 1 1-1H6.5a1 1 0 0 1 1 1V3M5 5.5V8.5M7 5.5V8.5",
+  // Duplicate = two overlapping rounded squares (front + back-corner hint). Shape
+  // deliberately differs from `link` so "duplicate to element" never reads as
+  // "copy link".
+  copy: "M2.5 5.5a1 1 0 0 1 1-1H7a1 1 0 0 1 1 1V9a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1ZM5 4.5V3.5a1 1 0 0 1 1-1H9a1 1 0 0 1 1 1V7a1 1 0 0 1-1 1H8",
+  // Chain link = two linked rounded strokes (copy-a-link). Distinct from `copy`.
+  link: "M5 7 7 5M4.6 6.2 3.4 7.4a1.6 1.6 0 0 0 2.2 2.2L6.8 8.4M7.4 5.8 8.6 4.6a1.6 1.6 0 0 0-2.2-2.2L5.2 3.6",
+  // Side panel = rounded rect with a divided right column (open-in-side-panel).
+  panel: "M2 3.5a1 1 0 0 1 1-1H9a1 1 0 0 1 1 1V8.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1ZM7.5 2.5V9.5",
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

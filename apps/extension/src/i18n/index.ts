@@ -58,7 +58,13 @@ export function plural(
 /** Hydrate static HTML: fill every `[data-i18n]` node's text and the
  *  `[data-i18n-placeholder]` / `[data-i18n-aria]` attributes from the active
  *  catalog. Called after the DOM is present and after initI18n. Re-runnable, so a
- *  language switch can re-hydrate in place. */
+ *  language switch can re-hydrate in place.
+ *
+ *  Invariant: put `data-i18n` on a leaf text node, never on a container that also
+ *  holds an icon or other child. `el.textContent = t(key)` REPLACES all children,
+ *  so a `data-i18n` button with a prepended icon loses the icon on every hydrate
+ *  (and every language switch). Wrap the label in an inner `<span data-i18n>` and
+ *  keep siblings (icons) outside it (see the `#capture` CTA in popup/sidepanel). */
 export function hydrateI18n(root: ParentNode = document): void {
   for (const el of root.querySelectorAll<HTMLElement>("[data-i18n]")) {
     const key = el.dataset.i18n;
