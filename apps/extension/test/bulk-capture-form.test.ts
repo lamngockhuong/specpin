@@ -75,8 +75,11 @@ describe("BulkCaptureForm", () => {
 
   it("removes a row and drops that spec from the batch", async () => {
     const onSubmit = openWith(`<button>A</button><button>B</button><button>C</button>`);
+    const selCount = () => (shadow().querySelector(".sel-count") as HTMLElement).textContent;
+    expect(selCount()).toBe("3 elements");
     (rows()[1].querySelector(".row-remove") as HTMLButtonElement).click();
     expect(rows().length).toBe(2);
+    expect(selCount()).toBe("2 elements");
     (shadow().querySelector(".save") as HTMLButtonElement).click();
     await flush();
     const specs = onSubmit.mock.calls[0]?.[0] ?? [];

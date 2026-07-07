@@ -141,6 +141,12 @@ export class BulkCaptureForm {
     const q = <T extends HTMLElement>(sel: string) => shadow.querySelector(sel) as T;
     const errorsBox = q<HTMLElement>(".errors");
     const rowsBox = q<HTMLElement>(".rows");
+    const selCount = q<HTMLElement>(".sel-count");
+
+    // Keep the selected-element count in sync as rows are removed.
+    const updateCount = () => {
+      selCount.textContent = t("bulk.selectedCount", { count: rows.length });
+    };
 
     // One row per element: capture its fingerprint now, seed the title input from
     // the element, and keep the input as the row's source of truth.
@@ -174,6 +180,7 @@ export class BulkCaptureForm {
         rowEl.remove();
         const idx = rows.indexOf(row);
         if (idx >= 0) rows.splice(idx, 1);
+        updateCount();
         markDuplicates();
       });
       input.addEventListener("input", markDuplicates);
@@ -323,7 +330,7 @@ export class BulkCaptureForm {
       `<div class="card" role="dialog" aria-modal="true">` +
       `<div class="card-head"><h2>${escapeHtml(t("bulk.title"))}</h2>` +
       `<button type="button" class="card-close" aria-label="${escapeAttr(t("common.close"))}" title="${escapeAttr(t("common.close"))}">${iconSvg("close", 16)}</button></div>` +
-      `<p class="sub">${escapeHtml(t("bulk.selectedCount", { count }))} · ${escapeHtml(t("bulk.sharedHint"))}</p>` +
+      `<p class="sub"><span class="sel-count">${escapeHtml(t("bulk.selectedCount", { count }))}</span> · ${escapeHtml(t("bulk.sharedHint"))}</p>` +
       targetField +
       `<label>${escapeHtml(t("template.label"))}</label>` +
       `<select class="shared-template">` +
