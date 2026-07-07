@@ -19,6 +19,7 @@ import { IMPLEMENTED_MODES } from "../renderers/registry.js";
 import { TooltipRenderer } from "../renderers/tooltip.js";
 import {
   addCoverageIgnore,
+  getBadgeColor,
   getBadgeNumbering,
   getCoverageEnabled,
   getCoverageIgnore,
@@ -81,6 +82,9 @@ export default defineContentScript({
     // rerender path stays synchronous. Read at startup + updated by
     // SET_BADGE_NUMBERING broadcasts from the Options page.
     let badgeNumbering = false;
+    // On-page badge color (null = default teal), cached per refresh like
+    // badgeNumbering. Read at startup + updated by SET_BADGE_COLOR broadcasts.
+    let badgeColor: string | null = null;
     // Coverage mode (Alt+Shift+U): ghost markers on undocumented interactive
     // elements. A content-script overlay layered on the live page, independent of
     // the spec render `session` (its own Shadow host). Off by default; the ignore
@@ -190,6 +194,7 @@ export default defineContentScript({
                 captureDrift: corpusEnabled,
                 onConfirm: corpusEnabled ? confirmMatch : undefined,
                 badgeNumbering,
+                badgeColor,
                 onClone: cloneSpecFlow,
               },
             )
@@ -1009,6 +1014,12 @@ export default defineContentScript({
           badgeNumbering = message.on;
           rerender();
           break;
+        case "SET_BADGE_COLOR":
+          // Options already persisted the choice; re-render so on-page badges
+          // repaint in the chosen color (or the default teal when null).
+          badgeColor = message.color;
+          rerender();
+          break;
         case "SET_UI_LOCALE":
           // UI-chrome language changed in Options; re-init i18n and re-render so
           // renderers' chrome (badges, buttons, summaries) switches language.
@@ -1100,6 +1111,7 @@ export default defineContentScript({
       storedUiLocale,
       storedLauncherPosition,
       storedBadgeNumbering,
+      storedBadgeColor,
       storedCoverageEnabled,
     ] = await Promise.all([
       getDisplayMode(),
@@ -1107,12 +1119,14 @@ export default defineContentScript({
       getUiLocale(),
       getLauncherPosition(),
       getBadgeNumbering(),
+      getBadgeColor(),
       getCoverageEnabled(),
     ]);
     forcedMode = storedMode;
     theme = storedTheme;
     launcherPosition = storedLauncherPosition;
     badgeNumbering = storedBadgeNumbering;
+    badgeColor = storedBadgeColor;
     // Restore coverage mode so a reload keeps ghost markers on; load the personal
     // ignore list first so dismissed gaps stay hidden on the first scan.
     coverageEnabled = storedCoverageEnabled;

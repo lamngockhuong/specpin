@@ -243,6 +243,8 @@ const vi: Record<keyof Messages, string> = {
     "Giao diện của chính Specpin trông như thế nào. Áp dụng cho mọi giao diện của Specpin (popup, thanh bên, trang cài đặt và tooltip/thanh bên/hộp thoại hiển thị trong trang).",
   "options.theme": "Chế độ hiển thị",
   "options.badgeNumberingLabel": "Đánh số badge spec (hiện vị trí thay cho chữ S)",
+  "options.badgeColorLabel": "Màu badge spec",
+  "options.badgeColorReset": "Đặt lại",
   "options.themeSystem": "Theo hệ thống",
   "options.themeLight": "Sáng",
   "options.themeDark": "Tối",

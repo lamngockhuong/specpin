@@ -3,6 +3,7 @@ import { type LocalizedSpecText, localizeSpec } from "../content/localize-spec.j
 import { showToast } from "../content/toast.js";
 import { t } from "../i18n/index.js";
 import { copyText } from "../shared/clipboard.js";
+import { isValidBadgeColor, readableGlyph } from "../shared/contrast.js";
 import { buildSpecLink } from "../shared/deep-link.js";
 import { escapeHtml, setTrustedHtml } from "../shared/html.js";
 import { iconSvg } from "../shared/icons.js";
@@ -55,7 +56,10 @@ ${SHADOW_PREAMBLE}
 .layer { position: absolute; top: 0; left: 0; z-index: 2147483647; }
 .badge {
   position: absolute; width: ${BADGE_SIZE}px; height: ${BADGE_SIZE}px; border-radius: 50%;
-  background: var(--sp-accent); color: var(--sp-accent-on);
+  /* --sp-badge-bg/-fg are set on the host only when the user chose a custom color
+     (see applyBadgeColor); unset, the fallback keeps today's brand teal. The
+     needsReview rule below stays hard-coded, so yellow never recolors. */
+  background: var(--sp-badge-bg, var(--sp-accent)); color: var(--sp-badge-fg, var(--sp-accent-on));
   font: 600 12px/${BADGE_SIZE}px var(--sp-font-ui);
   text-align: center; cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--sp-accent-glow);
@@ -150,6 +154,9 @@ export class TooltipRenderer implements SpecRenderer {
   private layer: HTMLElement | null = null;
   private tip: HTMLElement | null = null;
   private pins: Pin[] = [];
+  // Last badge color written to the host (null = default/none). Lets applyBadgeColor
+  // skip the redundant re-validate + host write on every spec of a render pass.
+  private appliedBadgeColor: string | null = null;
   // The element the pinned tip is positioned against (also the "is something
   // pinned" flag): a badge in normal mode, or the spec's target element when
   // badges are hidden (the reveal tooltip). Null when no tip is pinned.
@@ -211,8 +218,35 @@ export class TooltipRenderer implements SpecRenderer {
     return layer;
   }
 
+  // Set or clear the badge-color custom properties on the host. A valid `#rrggbb`
+  // paints the badge + an auto-contrasted glyph; anything else (null, tampered
+  // value) removes the properties so `.badge`'s `var(..., var(--sp-accent))`
+  // fallback keeps the default teal. Guarded so a bad value can never inject into
+  // the shadow CSS. The color is session-global (identical for every spec in a
+  // render pass), so memoize the last-applied value: the first spec writes the
+  // host props, the rest early-return. A `SET_BADGE_COLOR` change rebuilds the
+  // session (fresh renderer, memo resets), so a real change still repaints.
+  private applyBadgeColor(color?: string | null): void {
+    const host = this.host;
+    if (!host) return;
+    const next = isValidBadgeColor(color) ? color : null;
+    if (next === this.appliedBadgeColor) return;
+    this.appliedBadgeColor = next;
+    if (next) {
+      host.style.setProperty("--sp-badge-bg", next);
+      host.style.setProperty("--sp-badge-fg", readableGlyph(next));
+    } else {
+      host.style.removeProperty("--sp-badge-bg");
+      host.style.removeProperty("--sp-badge-fg");
+    }
+  }
+
   render(spec: Spec, target: Element, meta?: RenderMeta): void {
     const layer = this.ensureRoot(meta?.theme);
+    // Session-global badge color. Re-applied every render (the host persists across
+    // color changes), so switching A -> B -> reset all land: set the two custom
+    // properties for a valid color, else remove them so the token fallback holds.
+    this.applyBadgeColor(meta?.badgeColor);
     if (meta?.onOpenInPanel) this.onOpenInPanel = meta.onOpenInPanel;
     if (meta?.onEdit) this.onEdit = meta.onEdit;
     if (meta?.onDelete) this.onDelete = meta.onDelete;

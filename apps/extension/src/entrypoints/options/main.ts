@@ -2,17 +2,21 @@ import type { GuidesConfig, SpecsResponse, ViewsConfig } from "@specpin/api-clie
 import { hydrateI18n, initI18n, resolveUiLocale, t, type UiLocale } from "../../i18n/index.js";
 import { parseDomains } from "../../shared/add-project.js";
 import {
+  DEFAULT_BADGE_COLOR,
   type DefaultSurface,
+  getBadgeColor,
   getBadgeNumbering,
   getDefaultSurface,
   getTheme,
   getUiLocale,
+  setBadgeColor,
   setBadgeNumbering,
   setDefaultSurface,
   setTheme,
   setUiLocale,
   type Theme,
 } from "../../shared/config.js";
+import { readableGlyph } from "../../shared/contrast.js";
 import { confirmDialog } from "../../shared/dialog.js";
 import { downloadBytes } from "../../shared/download.js";
 import {
@@ -69,6 +73,10 @@ const localBatches = byId("localBatches");
 const surface = byId("surface") as HTMLSelectElement;
 const theme = byId("theme") as HTMLSelectElement;
 const badgeNumbering = byId("badgeNumbering") as HTMLInputElement;
+const badgeColor = byId("badgeColor") as HTMLInputElement;
+const badgeColorHex = byId("badgeColorHex");
+const badgeColorPreview = byId("badgeColorPreview");
+const badgeColorReset = byId("badgeColorReset") as HTMLButtonElement;
 const uiLocale = byId("uiLocale") as HTMLSelectElement;
 const corpusEnabled = byId("corpusEnabled") as HTMLInputElement;
 const corpusCount = byId("corpusCount");
@@ -666,6 +674,34 @@ void getBadgeNumbering().then((value) => {
 badgeNumbering.addEventListener("change", async () => {
   await setBadgeNumbering(badgeNumbering.checked);
   await broadcastToTabs({ type: "SET_BADGE_NUMBERING", on: badgeNumbering.checked });
+});
+
+// Badge-color preference. The color input cannot represent "unset", so it always
+// shows a concrete swatch: the stored color, else the default teal. Reflect it in
+// the hex readout + a live badge preview (same auto-contrast glyph as the on-page
+// badge). `input` repaints the local preview live; `change` persists + broadcasts;
+// Reset drops the stored key (back to default) and repaints everything.
+function paintBadgePreview(hex: string): void {
+  badgeColorHex.textContent = hex.toUpperCase();
+  badgeColorPreview.style.background = hex;
+  badgeColorPreview.style.color = readableGlyph(hex);
+}
+void getBadgeColor().then((value) => {
+  badgeColor.value = value ?? DEFAULT_BADGE_COLOR;
+  paintBadgePreview(badgeColor.value);
+});
+badgeColor.addEventListener("input", () => {
+  paintBadgePreview(badgeColor.value);
+});
+badgeColor.addEventListener("change", async () => {
+  await setBadgeColor(badgeColor.value);
+  await broadcastToTabs({ type: "SET_BADGE_COLOR", color: badgeColor.value });
+});
+badgeColorReset.addEventListener("click", async () => {
+  badgeColor.value = DEFAULT_BADGE_COLOR;
+  paintBadgePreview(DEFAULT_BADGE_COLOR);
+  await setBadgeColor(null);
+  await broadcastToTabs({ type: "SET_BADGE_COLOR", color: null });
 });
 
 // UI-chrome language. "system" maps to stored null (follow the browser). On change

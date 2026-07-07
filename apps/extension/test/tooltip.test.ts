@@ -383,6 +383,73 @@ describe("TooltipRenderer", () => {
     renderer.destroy();
   });
 
+  it("paints a custom badge color with an auto-contrasted glyph", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    // A dark pick -> white glyph.
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+      badgeColor: "#1E3A8A",
+    });
+    const host = must(document.getElementById("specpin-tooltip-host"));
+    expect(host.style.getPropertyValue("--sp-badge-bg")).toBe("#1E3A8A");
+    expect(host.style.getPropertyValue("--sp-badge-fg")).toBe("#FFFFFF");
+    renderer.destroy();
+  });
+
+  it("leaves the default teal (no custom properties) when no color is set", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 1,
+      needsReview: false,
+    });
+    const host = must(document.getElementById("specpin-tooltip-host"));
+    expect(host.style.getPropertyValue("--sp-badge-bg")).toBe("");
+    expect(host.style.getPropertyValue("--sp-badge-fg")).toBe("");
+    // The badge CSS falls back to the brand accent token.
+    const css = must(shadowOf().querySelector("style")).textContent ?? "";
+    expect(css).toMatch(/background:\s*var\(--sp-badge-bg,\s*var\(--sp-accent\)\)/);
+    renderer.destroy();
+  });
+
+  it("ignores a tampered color and clears it on a later reset (persisted host)", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    const target = must(document.querySelector("button"));
+    // First a valid color, then a reset to null on the SAME (reused) host.
+    renderer.render(spec, target, { confidence: 1, needsReview: false, badgeColor: "#123456" });
+    const host = must(document.getElementById("specpin-tooltip-host"));
+    expect(host.style.getPropertyValue("--sp-badge-bg")).toBe("#123456");
+    renderer.render(spec, target, { confidence: 1, needsReview: false, badgeColor: null });
+    expect(host.style.getPropertyValue("--sp-badge-bg")).toBe("");
+    // A tampered value never reaches the property.
+    renderer.render(spec, target, {
+      confidence: 1,
+      needsReview: false,
+      badgeColor: "url(evil)" as unknown as string,
+    });
+    expect(host.style.getPropertyValue("--sp-badge-bg")).toBe("");
+    renderer.destroy();
+  });
+
+  it("keeps the needsReview yellow rule independent of a custom color", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")), {
+      confidence: 0.7,
+      needsReview: true,
+      badgeColor: "#123456",
+    });
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+    expect(badge.dataset.review).toBe("true");
+    // The review rule hard-codes the warning token; it does not read --sp-badge-bg.
+    const css = must(shadowOf().querySelector("style")).textContent ?? "";
+    expect(css).toMatch(/\.badge\[data-review="true"\]\s*\{[^}]*--sp-warning-border/);
+    renderer.destroy();
+  });
+
   it("renders the Markdown subset in description and rules", () => {
     document.body.innerHTML = `<button>x</button>`;
     const md: Spec = {

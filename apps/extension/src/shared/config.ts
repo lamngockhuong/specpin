@@ -3,6 +3,7 @@ import type { DisplayMode, GuideDef, Manifest, Spec } from "@specpin/spec-schema
 import { browser } from "#imports";
 import type { UiLocale } from "../i18n/locales.js";
 import type { Connection } from "./connection-types.js";
+import { isValidBadgeColor } from "./contrast.js";
 import { connectionServesOrigin } from "./origin-match.js";
 import type { SeenSnapshot } from "./surface-data.js";
 import type { Theme } from "./theme.js";
@@ -89,6 +90,13 @@ export const THEME_KEY = "specpin:theme";
 /** Whether on-page spec badges show a reading-order number instead of "S".
  *  Default OFF preserves the "S" brand mark. */
 export const BADGE_NUMBERING_KEY = "specpin:badgeNumbering";
+/** The user's chosen on-page spec-badge background color (a `#rrggbb` hex), or
+ *  null to keep the default brand teal. Global (one color for all sites), so it
+ *  lives beside the other appearance prefs in `storage.local`. */
+export const BADGE_COLOR_KEY = "specpin:badgeColor";
+/** The default spec-badge color: today's `--sp-accent` teal. Used for the Options
+ *  swatch default and the "reset" target. Kept in sync with `tokens.gen.css`. */
+export const DEFAULT_BADGE_COLOR = "#2DD4BF";
 /** Whether coverage mode is on: ghost markers over undocumented interactive
  *  elements. Default OFF so a page is byte-identical to today unless invoked. */
 export const COVERAGE_ENABLED_KEY = "specpin:coverageEnabled";
@@ -236,6 +244,24 @@ export async function setBadgeNumbering(on: boolean): Promise<void> {
     return;
   }
   await browser.storage.local.set({ [BADGE_NUMBERING_KEY]: true });
+}
+
+/** The user's chosen spec-badge color, or null to keep the default teal. A stored
+ *  value that fails validation is treated as unset (returns null). */
+export async function getBadgeColor(): Promise<string | null> {
+  const stored = await browser.storage.local.get(BADGE_COLOR_KEY);
+  const value = stored[BADGE_COLOR_KEY];
+  return isValidBadgeColor(value) ? value : null;
+}
+
+export async function setBadgeColor(color: string | null): Promise<void> {
+  // null (or an invalid value) = the default teal: drop the key so a default
+  // profile carries nothing (mirrors setBadgeNumbering / setTheme).
+  if (!isValidBadgeColor(color)) {
+    await browser.storage.local.remove(BADGE_COLOR_KEY);
+    return;
+  }
+  await browser.storage.local.set({ [BADGE_COLOR_KEY]: color });
 }
 
 /** Whether coverage mode (ghost markers on undocumented interactive elements) is

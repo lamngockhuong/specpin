@@ -184,6 +184,28 @@
       }
       button.secondary:hover { background: var(--sp-elevated); border-color: var(--sp-border); }
 
+      /* Spec-badge color control: a field label above (like the selects), then a
+         row of swatch + hex + live badge preview, with Reset pinned to the right. */
+      .badge-color-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+      .color-swatch {
+        width: 34px; height: 34px; flex: none; padding: 3px; cursor: pointer;
+        background: var(--sp-elevated);
+        border: 1px solid var(--sp-border); border-radius: var(--sp-radius-control);
+      }
+      .color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+      .color-swatch::-webkit-color-swatch { border: none; border-radius: 6px; }
+      .color-swatch::-moz-color-swatch { border: none; border-radius: 6px; }
+      .badge-color-hex { font: 13px/1 var(--sp-font-mono); color: var(--sp-text-2); letter-spacing: 0.02em; }
+      /* Mirrors the on-page tooltip badge (16px circle grown to 22 for legibility);
+         JS sets background + auto-contrast glyph so this previews the real result. */
+      .badge-color-preview {
+        width: 22px; height: 22px; flex: none; border-radius: 50%;
+        display: grid; place-items: center; font: 600 12px/1 var(--sp-font-ui);
+        background: var(--sp-accent); color: var(--sp-accent-on);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 3px var(--sp-accent-glow);
+      }
+      #badgeColorReset { margin-left: auto; }
+
       /* Connection rows */
       .conn {
         padding: 14px; margin-bottom: 10px;
@@ -441,6 +463,14 @@
             </select>
 
             <label class="inline" style="margin-top: 16px"><input id="badgeNumbering" type="checkbox" /> <span data-i18n="options.badgeNumberingLabel">Number spec badges (show position instead of S)</span></label>
+
+            <label for="badgeColor" data-i18n="options.badgeColorLabel" style="margin-top: 16px">Spec badge color</label>
+            <div class="badge-color-row">
+              <input id="badgeColor" type="color" class="color-swatch" />
+              <span id="badgeColorHex" class="badge-color-hex"></span>
+              <span id="badgeColorPreview" class="badge-color-preview" aria-hidden="true">S</span>
+              <button id="badgeColorReset" type="button" class="secondary" data-i18n="options.badgeColorReset">Reset</button>
+            </div>
           </div>
         </section>
 

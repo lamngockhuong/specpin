@@ -250,6 +250,8 @@ const ja: Record<keyof Messages, string> = {
     "Specpin自身のインターフェースの見た目です。すべてのSpecpin画面 (popup、サイドパネル、設定、ページ内のツールチップ/サイドバー/モーダル) に適用されます。",
   "options.theme": "テーマ",
   "options.badgeNumberingLabel": "specバッジに番号を表示 (Sの代わりに位置を表示)",
+  "options.badgeColorLabel": "specバッジの色",
+  "options.badgeColorReset": "リセット",
   "options.themeSystem": "システムのデフォルト",
   "options.themeLight": "ライト",
   "options.themeDark": "ダーク",

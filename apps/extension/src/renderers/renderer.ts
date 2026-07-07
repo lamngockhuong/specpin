@@ -86,6 +86,11 @@ export interface RenderMeta {
    *  a tooltip badge. The tooltip renderer prints it instead of "S"; other
    *  renderers ignore it. Its presence is the "numbering on" signal (always >= 1). */
   ordinal?: number;
+  /** The user's chosen on-page spec-badge background color (`#rrggbb`), or null to
+   *  keep the default `--sp-accent` teal. Session-global (same for every spec, like
+   *  `theme`); the tooltip renderer paints it with an auto-contrasted glyph. Other
+   *  renderers ignore it. */
+  badgeColor?: string | null;
 }
 
 // SpecRenderer is the pluggable display contract. The DisplayMode union already
