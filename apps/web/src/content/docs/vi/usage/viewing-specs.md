@@ -32,7 +32,7 @@ Nhấp vào công tắc ở đầu popup, hoặc nhấn `Alt+Shift+S`. Khi Specp
 
 Spec được hiển thị theo một trong ba chế độ:
 
-- **Tooltip**: Một huy hiệu nhỏ trên mỗi phần tử. Rê chuột để xem nhanh spec. Nhấp vào huy hiệu để ghim tooltip mở (với hành động **Sửa spec** và **Mở trong thanh bên**). Một tooltip đã ghim bị giới hạn chiều cao và có thanh cuộn bên trong cho các spec dài, đồng thời có thể chỉnh kích thước bằng cách kéo góc dưới bên phải; mỗi lần ghim đều mở ở kích thước mặc định.
+- **Tooltip**: Một huy hiệu nhỏ trên mỗi phần tử. Rê chuột để xem nhanh spec. Nhấp vào huy hiệu để ghim tooltip mở (với hành động **Sửa spec** và **Mở trong thanh bên**). Một tooltip đã ghim bị giới hạn chiều cao và có thanh cuộn bên trong cho các spec dài, đồng thời có thể chỉnh kích thước bằng cách kéo góc dưới bên phải; mỗi lần ghim đều mở ở kích thước mặc định. Nếu một huy hiệu che mất phần UI bạn cần xem, cứ kéo chính huy hiệu đó sang chỗ khác (một cú nhấp thường vẫn ghim tooltip); huy hiệu đã kéo sẽ nằm yên tại chỗ và không tự neo lại khi cuộn trang. Vị trí này chỉ là tạm thời: không bao giờ được lưu và tự reset khi tải lại trang.
 - **Thanh bên**: Một bảng liên tục liệt kê tất cả spec trên trang. Xuất hiện ở phía bên phải của trang. Nhấp nút **x** để đóng (mở lại bằng một nút Specpin nhỏ ở góc dưới bên phải).
 - **Hộp thoại**: Một bảng kéo thả hiển thị tất cả spec. Mở ở giữa, kéo tiêu đề để di chuyển. Nhấp nút **x** để đóng.
 

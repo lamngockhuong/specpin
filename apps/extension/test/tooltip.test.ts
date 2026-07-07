@@ -212,6 +212,101 @@ describe("TooltipRenderer", () => {
     renderer.destroy();
   });
 
+  it("dragging a badge moves it to a temporary spot", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+
+    mouse(badge, "mousedown", { clientX: 100, clientY: 100 });
+    mouse(window, "mousemove", { clientX: 180, clientY: 240 });
+    expect(badge.classList.contains("dragging")).toBe(true);
+    mouse(window, "mouseup");
+
+    expect(badge.classList.contains("dragging")).toBe(false);
+    // rect.left is 0 in jsdom, so grab offset == mousedown coords; the moved
+    // delta lands the badge top-left at 80/140 (document-absolute, scrollX 0).
+    expect(badge.style.left).toBe("80px");
+    expect(badge.style.top).toBe("140px");
+    renderer.destroy();
+  });
+
+  it("a dragged badge stays put through scroll (no re-anchor to its element)", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+
+    mouse(badge, "mousedown", { clientX: 100, clientY: 100 });
+    mouse(window, "mousemove", { clientX: 180, clientY: 240 });
+    mouse(window, "mouseup");
+    const { left, top } = badge.style;
+
+    window.dispatchEvent(new Event("scroll"));
+    expect(badge.style.left).toBe(left);
+    expect(badge.style.top).toBe(top);
+    renderer.destroy();
+  });
+
+  it("a click that never moved past the threshold still pins the tip", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+    const tip = must(shadowOf().querySelector(".tip"));
+
+    mouse(badge, "mousedown", { clientX: 100, clientY: 100 });
+    // 2px of jitter, below BADGE_DRAG_THRESHOLD: not a drag.
+    mouse(window, "mousemove", { clientX: 102, clientY: 102 });
+    mouse(window, "mouseup");
+    expect(badge.classList.contains("dragging")).toBe(false);
+
+    fire(badge, "click");
+    expect(tip.classList.contains("pinned")).toBe(true);
+    renderer.destroy();
+  });
+
+  it("the click that follows a real drag does not also pin the tip", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+    const tip = must(shadowOf().querySelector(".tip"));
+
+    mouse(badge, "mousedown", { clientX: 100, clientY: 100 });
+    mouse(window, "mousemove", { clientX: 180, clientY: 240 });
+    mouse(window, "mouseup");
+    // Native click fired by the browser right after the drag: swallowed.
+    fire(badge, "click");
+    expect(tip.classList.contains("pinned")).toBe(false);
+
+    // A fresh click still pins, so only the drag's trailing click was consumed.
+    fire(badge, "click");
+    expect(tip.classList.contains("pinned")).toBe(true);
+    renderer.destroy();
+  });
+
+  it("a drag released off the badge does not swallow the next real click", () => {
+    document.body.innerHTML = `<button>x</button>`;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, must(document.querySelector("button")));
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+    const tip = must(shadowOf().querySelector(".tip"));
+
+    // Drag whose release lands off the badge (viewport clamp): no trailing click
+    // reaches the badge, so the suppression flag would otherwise stay stuck.
+    mouse(badge, "mousedown", { clientX: 100, clientY: 100 });
+    mouse(window, "mousemove", { clientX: 180, clientY: 240 });
+    mouse(window, "mouseup");
+
+    // A fresh, genuine click (mousedown clears any stale suppression) still pins.
+    mouse(badge, "mousedown", { clientX: 50, clientY: 50 });
+    mouse(window, "mouseup");
+    fire(badge, "click");
+    expect(tip.classList.contains("pinned")).toBe(true);
+    renderer.destroy();
+  });
+
   it("the pinned tip is height-capped, scrollable, and natively resizable", () => {
     document.body.innerHTML = `<button>x</button>`;
     const renderer = new TooltipRenderer(document);
