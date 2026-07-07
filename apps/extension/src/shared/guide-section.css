@@ -21,6 +21,13 @@
   text-transform: uppercase;
   color: var(--sp-text-3);
 }
+/* "New guide" link-button: lead with the plus icon, so align the icon + label
+   on one baseline (the icon is a sibling of the label span). */
+.guides-head .guide-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 /* Secondary (outline) button: Capture spec is the sole teal primary in the
    popup / side panel, so the tour launcher stays neutral to keep one clear CTA. */
 .guides-default {

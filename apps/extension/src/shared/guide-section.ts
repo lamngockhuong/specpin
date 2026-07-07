@@ -1,7 +1,7 @@
 import { t } from "../i18n/index.js";
 import { confirmDialog } from "./dialog.js";
 import { openGuideEditor } from "./guide-editor.js";
-import { createIconButton } from "./icons.js";
+import { createIcon, createIconButton } from "./icons.js";
 import {
   type GuideMutationResult,
   type GuidesForOrigin,
@@ -60,8 +60,12 @@ export function mountGuideSection(
     label.textContent = t("guide.sectionTitle");
     const newBtn = document.createElement("button");
     newBtn.type = "button";
-    newBtn.className = "link";
-    newBtn.textContent = t("guide.newGuide");
+    newBtn.className = "link guide-new";
+    // Icon + label (was a literal "+" prefix in the string). The section rebuilds
+    // on every refresh, so the icon is re-created with the label each time.
+    const newLabel = document.createElement("span");
+    newLabel.textContent = t("guide.newGuide");
+    newBtn.append(createIcon(document, "plus", 12), newLabel);
     newBtn.addEventListener("click", () => void openEditor());
     header.append(label, newBtn);
     container.appendChild(header);
