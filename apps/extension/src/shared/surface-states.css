@@ -114,6 +114,12 @@ body.no-project .toggle-row {
 
 .es-btn {
   width: 100%;
+  /* Center the label with flex (the pattern #capture uses), not text-align:
+     Firefox does not reliably center a stretched button's label via text-align,
+     so a width:100% button can render left-aligned there. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px;
   border-radius: var(--sp-radius-control);
   border: 1px solid var(--sp-accent);
