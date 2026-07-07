@@ -530,6 +530,29 @@ const ja: Record<keyof Messages, string> = {
   "picker.hint.bulk": "要素をクリックして選択し、「完了」を押します。",
   "picker.selectedCount": "{count} 件選択",
   "picker.done": "完了",
+
+  "shortcuts.title": "キーボードショートカット",
+  "shortcuts.close": "閉じる",
+  "shortcuts.toggleEnabled": "Specpin のオン/オフを切り替える",
+  "shortcuts.cycleMode": "表示モードを切り替える（tooltip / sidebar / modal）",
+  "shortcuts.toggleCapture": "capture モードを切り替えて要素を文書化する",
+  "shortcuts.toggleGuide": "ガイドツアーを開始または停止する",
+  "shortcuts.cycleSpec": "ページ内の一致した spec にフォーカスを順に移す",
+  "shortcuts.toggleCoverage": "未文書化のインタラクティブ要素のマーカーを切り替える",
+  "shortcuts.toggleHelp": "このショートカット一覧を表示する",
+  "options.navShortcuts": "ショートカット",
+  "options.shortcuts": "キーボードショートカット",
+  "options.shortcutsLead":
+    "Specpin が待ち受けるすべてのキーボードショートカット。任意のページで Alt+Shift+? を押すと、その場でこの一覧を開けます。",
+
+  "welcome.title": "Specpin へようこそ",
+  "welcome.lead":
+    "Specpin は、実際に動いている UI の要素にビジネス仕様を紐づけます。まずは次の手順で始めましょう。",
+  "welcome.step1": ".specs/ フォルダーがあるリポジトリで specpin serve を実行します。",
+  "welcome.step2": "Options を開き、表示された sidecar の URL とトークンで接続します。",
+  "welcome.step3": "アプリを開くと、spec が対応する要素の上に表示されます。",
+  "welcome.openOptions": "Options を開く",
+  "welcome.docsLink": "ドキュメントを読む",
 };
 
 export default ja;

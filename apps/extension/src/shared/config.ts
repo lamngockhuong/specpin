@@ -141,6 +141,10 @@ export const LAUNCHER_POSITION_KEY = "specpin:launcherPosition";
  *  Used to decide whether to open the changelog when `onInstalled` fires without a
  *  `previousVersion`, and to avoid re-opening on a dev reload (see whats-new.ts). */
 export const LAST_VERSION_KEY = "specpin:lastVersion";
+/** Whether the first-run welcome page has already been shown. Set once when the
+ *  extension is first installed so an update, a dev reload, or a re-fired install
+ *  event never reopens the welcome tab. */
+export const WELCOME_SEEN_KEY = "specpin:welcomeSeen";
 /** The "what changed since last visit" snapshot: a per-project map of spec
  *  content hashes (see `surface-data.ts`). Local-only, no telemetry. */
 export const SEEN_KEY = "specpin:seenSpecs";
@@ -442,6 +446,16 @@ export async function getLastVersion(): Promise<string | null> {
 
 export async function setLastVersion(version: string): Promise<void> {
   await browser.storage.local.set({ [LAST_VERSION_KEY]: version });
+}
+
+/** Whether the first-run welcome page has been shown (default false). */
+export async function getWelcomeSeen(): Promise<boolean> {
+  const stored = await browser.storage.local.get(WELCOME_SEEN_KEY);
+  return (stored[WELCOME_SEEN_KEY] as boolean | undefined) ?? false;
+}
+
+export async function setWelcomeSeen(seen: boolean): Promise<void> {
+  await browser.storage.local.set({ [WELCOME_SEEN_KEY]: seen });
 }
 
 /** The "what changed since last visit" snapshot, or an empty map when unset (the

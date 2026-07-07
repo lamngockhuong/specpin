@@ -5,6 +5,10 @@ description: Cách kết nối Specpin với dự án qua sidecar hoặc dự á
 
 Specpin kết nối với dự án theo hai cách: kết nối **Sidecar** (một instance `specpin serve` đang chạy) hoặc **Dự án cục bộ** (spec lưu trong trình duyệt).
 
+:::note
+Ở lần cài đầu tiên, Specpin mở một tab chào mừng một lần dẫn thẳng tới đây. Nó chỉ xuất hiện một lần (không mở lại khi cập nhật).
+:::
+
 ## Thêm dự án mới
 
 Mở popup Specpin hoặc side panel, rồi nhấp vào biểu tượng bánh răng (góc trên bên phải) hoặc nút **+ Dự án mới**. Bạn sẽ thấy hai lựa chọn:

@@ -1,0 +1,34 @@
+# Specpin
+
+> Specpin pins business specifications (rules, descriptions, acceptance criteria) onto the elements of a running web UI. It is a Git-native knowledge layer, not a code generator: specs live as JSON in the consumer repo's `.specs/`, link to elements via resilient fingerprints, and render in-browser through a localhost sidecar plus a browser extension.
+
+This file indexes the Specpin documentation site for LLM-assisted tools. The list is maintained manually; regenerate it when the docs change.
+
+## Getting started
+
+- [Introduction](https://specpin.ohnice.app/guide/introduction/): What Specpin is and the problem it solves.
+- [Install](https://specpin.ohnice.app/guide/install/): Install the extension and the `specpin` sidecar CLI.
+- [Getting started](https://specpin.ohnice.app/guide/getting-started/): First run end to end (init, serve, connect, render).
+
+## Concepts
+
+- [How it works](https://specpin.ohnice.app/concepts/how-it-works/): The three-tier flow: `.specs/` -> sidecar -> extension, and fingerprint matching.
+- [Security and privacy](https://specpin.ohnice.app/concepts/security-and-privacy/): Localhost-only sidecar, token auth, no telemetry.
+
+## Usage
+
+- [Connecting projects](https://specpin.ohnice.app/usage/connecting-projects/): Add sidecar and local projects; multi-project routing.
+- [Viewing specs](https://specpin.ohnice.app/usage/viewing-specs/): Display modes, coverage mode, reader navigation.
+- [Capturing and editing](https://specpin.ohnice.app/usage/capturing-and-editing/): Author specs from the running UI, provenance, bulk capture.
+- [Settings](https://specpin.ohnice.app/usage/settings/): Options page, themes, language, keyboard shortcuts.
+
+## Sidecar and spec format
+
+- [CLI](https://specpin.ohnice.app/sidecar/cli/): `specpin init`, `serve`, `validate`, `report`, `format`, and remote serving.
+- [Spec format](https://specpin.ohnice.app/sidecar/spec-format/): The v1 JSON schema for `.specs/` files.
+
+## Help
+
+- [Troubleshooting](https://specpin.ohnice.app/help/troubleshooting/): Common setup and connection issues.
+- [Privacy policy](https://specpin.ohnice.app/help/privacy-policy/): What Specpin does and does not collect.
+- [Changelog](https://specpin.ohnice.app/changelog/): Released extension versions.

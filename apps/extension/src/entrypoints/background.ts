@@ -33,6 +33,7 @@ import {
   getPersonalGuides,
   getPersonalVisibility,
   getUiLocale,
+  getWelcomeSeen,
   LOCAL_SPECS_KEY,
   MAX_MANUAL_BATCHES,
   type ManualBatch,
@@ -50,6 +51,7 @@ import {
   setLocalSpecs,
   setPersonalGuides,
   setPersonalVisibility,
+  setWelcomeSeen,
   UI_LOCALE_KEY,
   upsertLocalGuide,
   upsertLocalSpec,
@@ -258,8 +260,13 @@ export default defineBackground(() => {
       const current = browser.runtime.getManifest().version;
       if (details.reason === "install") {
         // First install: record the baseline, never open the changelog (nothing
-        // to compare against).
+        // to compare against). Instead open the welcome page once - the flag makes
+        // a re-fired install event idempotent, and update/dev-reload never reach here.
         await setLastVersion(current);
+        if (!(await getWelcomeSeen())) {
+          await setWelcomeSeen(true);
+          await browser.tabs.create({ url: browser.runtime.getURL("/welcome.html") });
+        }
       } else if (details.reason === "update") {
         // Prefer the browser-supplied previousVersion; fall back to our stored
         // baseline. With neither (fresh profile), stay silent rather than guess.

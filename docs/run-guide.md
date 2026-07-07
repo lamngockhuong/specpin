@@ -81,6 +81,8 @@ pnpm --filter @specpin/extension build:firefox    # firefox-mv2 in .output/
 - Chrome: `chrome://extensions` -> Developer mode -> Load unpacked -> `apps/extension/.output/chrome-mv3`.
 - Firefox: `about:debugging` -> This Firefox -> Load Temporary Add-on -> any file in `apps/extension/.output/firefox-mv2`.
 
+On the **first install** the extension opens a one-time **welcome tab** (localized) that points you to Options and the docs. It opens once and never again (updates and dev reloads do not reopen it).
+
 ## 6. Connect
 
 Open the extension Options page (**Connected projects**), paste the URL and token from step 4 into the add form, optionally name it, click **Test & add project**. The project appears in the list with its status, project name, spec count, and domains. Each connection has an enable/disable toggle; a disabled project serves no page (its specs disappear everywhere) and its SSE watch stops, but it stays listed so it can be re-enabled. Add more projects the same way; **Edit**, **Remove**, and **Reconnect** act per row. **Edit** opens an inline form to change a project's URL, label, or token (leave the token blank to keep the current one) and re-tests the connection on save.
@@ -403,6 +405,9 @@ connection, so the default install carries no broad-host permission.
 | `Alt+Shift+U` | toggle coverage mode (ghost markers on undocumented elements) |
 | `Alt+Shift+N` | cycle focus through matched specs (flash each, wrap around) |
 | `Alt+Shift+G` | start / stop the default guided tour (in-tour: `←` / `→` step, `Esc` exits) |
+| `Alt+Shift+?` | open the keyboard cheat-sheet |
+
+The cheat-sheet is a read-only overlay listing every chord; it is also available as **Options -> Shortcuts**. Both are generated from one shared list, so they never drift from the handler. Every chord uses the `Alt+Shift` base so none collides with a site's own bare-key shortcuts.
 
 ## Display modes
 

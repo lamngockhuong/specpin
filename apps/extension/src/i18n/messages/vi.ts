@@ -520,6 +520,29 @@ const vi: Record<keyof Messages, string> = {
   "picker.hint.bulk": "Nhấp chọn các phần tử, rồi bấm Xong.",
   "picker.selectedCount": "Đã chọn {count}",
   "picker.done": "Xong",
+
+  "shortcuts.title": "Phím tắt",
+  "shortcuts.close": "Đóng",
+  "shortcuts.toggleEnabled": "Bật hoặc tắt Specpin",
+  "shortcuts.cycleMode": "Đổi kiểu hiển thị (tooltip / sidebar / modal)",
+  "shortcuts.toggleCapture": "Bật/tắt chế độ capture để ghi tài liệu cho phần tử",
+  "shortcuts.toggleGuide": "Bắt đầu hoặc dừng tour hướng dẫn",
+  "shortcuts.cycleSpec": "Chuyển focus qua các spec khớp trên trang",
+  "shortcuts.toggleCoverage": "Bật/tắt dấu trên các phần tử tương tác chưa có tài liệu",
+  "shortcuts.toggleHelp": "Hiện danh sách phím tắt này",
+  "options.navShortcuts": "Phím tắt",
+  "options.shortcuts": "Phím tắt",
+  "options.shortcutsLead":
+    "Toàn bộ phím tắt Specpin lắng nghe. Nhấn Alt+Shift+? trên bất kỳ trang nào để mở danh sách này ngay tại đó.",
+
+  "welcome.title": "Chào mừng đến với Specpin",
+  "welcome.lead":
+    "Specpin gắn các đặc tả nghiệp vụ của bạn lên chính các phần tử của một giao diện đang chạy. Bắt đầu như sau.",
+  "welcome.step1": "Chạy specpin serve trong một repo có thư mục .specs/.",
+  "welcome.step2": "Mở Options rồi kết nối bằng URL sidecar và token được in ra.",
+  "welcome.step3": "Mở ứng dụng của bạn - spec hiện ngay trên các phần tử tương ứng.",
+  "welcome.openOptions": "Mở Options",
+  "welcome.docsLink": "Đọc tài liệu",
 };
 
 export default vi;

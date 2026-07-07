@@ -1,5 +1,6 @@
 import type { GuidesConfig, SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { RequiredConfig } from "@specpin/spec-schema";
+import { CHORDS } from "../../content/chords.js";
 import { hydrateI18n, initI18n, resolveUiLocale, t, type UiLocale } from "../../i18n/index.js";
 import { parseDomains } from "../../shared/add-project.js";
 import {
@@ -1047,11 +1048,33 @@ byId("corpusClear").addEventListener("click", async () => {
   showResult(corpusResult, true, t("options.corpusCleared"));
 });
 
+// Render the keyboard cheat-sheet rows from the shared CHORDS table (single source
+// of truth with the content-script handler + the in-page overlay). Re-run on every
+// language change so descriptions follow the UI locale.
+function renderShortcuts(): void {
+  const list = document.getElementById("shortcutsList");
+  if (!list) return;
+  list.replaceChildren();
+  for (const chord of CHORDS) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const key = document.createElement("dt");
+    const kbd = document.createElement("kbd");
+    kbd.textContent = chord.keyLabel;
+    key.appendChild(kbd);
+    const desc = document.createElement("dd");
+    desc.textContent = t(chord.descKey);
+    row.append(key, desc);
+    list.appendChild(row);
+  }
+}
+
 // Re-render everything that carries translated text: hydrate the static HTML, then
 // re-run the imperative connection/batch rows. Called at startup and after a UI
 // language change (Phase 5) so the page updates in place without a reload.
 async function renderAll(): Promise<void> {
   hydrateI18n(document);
+  renderShortcuts();
   await refresh();
   await refreshCorpus();
 }

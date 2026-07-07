@@ -528,6 +528,32 @@ const en = {
   "picker.hint.bulk": "Click elements to select them, then Done.",
   "picker.selectedCount": "{count} selected",
   "picker.done": "Done",
+
+  // Keyboard cheat-sheet: the in-page help overlay + the Options "Shortcuts" card.
+  // One description per chord in chords.ts (keyed by that chord's descKey).
+  "shortcuts.title": "Keyboard shortcuts",
+  "shortcuts.close": "Close",
+  "shortcuts.toggleEnabled": "Turn Specpin on or off",
+  "shortcuts.cycleMode": "Cycle the display mode (tooltip / sidebar / modal)",
+  "shortcuts.toggleCapture": "Toggle capture mode to document an element",
+  "shortcuts.toggleGuide": "Start or stop the guided tour",
+  "shortcuts.cycleSpec": "Move focus through the matched specs on the page",
+  "shortcuts.toggleCoverage": "Toggle markers on undocumented interactive elements",
+  "shortcuts.toggleHelp": "Show this keyboard shortcut list",
+  "options.navShortcuts": "Shortcuts",
+  "options.shortcuts": "Keyboard shortcuts",
+  "options.shortcutsLead":
+    "Every keyboard chord Specpin listens for. Press Alt+Shift+? on any page to open this list there.",
+
+  // First-run welcome page (entrypoints/welcome), opened once on install.
+  "welcome.title": "Welcome to Specpin",
+  "welcome.lead":
+    "Specpin pins your business specifications onto the elements of a running UI. Here is how to get started.",
+  "welcome.step1": "Run specpin serve in a repo that has a .specs/ folder.",
+  "welcome.step2": "Open Options and connect the printed sidecar URL + token.",
+  "welcome.step3": "Open your app - specs render right on their elements.",
+  "welcome.openOptions": "Open Options",
+  "welcome.docsLink": "Read the docs",
 } satisfies Record<string, string>;
 
 export type Messages = typeof en;
