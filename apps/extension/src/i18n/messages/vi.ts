@@ -260,7 +260,8 @@ const vi: Record<keyof Messages, string> = {
   "options.manualLead":
     'Dán một bundle để xem spec mà không cần chạy <code>specpin serve</code>. Chỉ đọc: việc ghi spec vẫn cần sidecar. Dạng: <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>',
   "options.fromFiles": "Từ tệp",
-  "options.fromFilesHint": "(chọn manifest.json + một hoặc nhiều *.spec.json)",
+  "options.fromFilesHint":
+    "(chọn manifest.json + một hoặc nhiều *.spec.json, hoặc tệp .specs.zip đã export)",
   "options.loadFromFiles": "Tải từ tệp",
   "options.orPaste": "Hoặc dán bundle JSON",
   "options.loadPasted": "Tải bundle đã dán",
@@ -326,6 +327,7 @@ const vi: Record<keyof Messages, string> = {
   "options.invalidBundle": "Bundle không hợp lệ:\n- {errors}",
   "options.pickFiles": "Chọn manifest.json và ít nhất một tệp .spec.json.",
   "options.invalidSelection": "Lựa chọn không hợp lệ:\n- {errors}",
+  "options.invalidZip": "Không đọc được tệp zip: {error}",
   "options.allCleared": "Đã xóa tất cả spec thủ công.",
 
   // Matching corpus card (local, opt-in) + confirm loop.

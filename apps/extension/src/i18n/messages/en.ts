@@ -271,7 +271,8 @@ const en = {
   "options.manualLead":
     'Paste a bundle to view specs without running <code>specpin serve</code>. Read-only: capture still needs a sidecar. Shape: <code>{ "manifest": {…}, "files": { "x.spec.json": {…} } }</code>',
   "options.fromFiles": "From files",
-  "options.fromFilesHint": "(pick manifest.json + one or more *.spec.json)",
+  "options.fromFilesHint":
+    "(pick manifest.json + one or more *.spec.json, or an exported .specs.zip)",
   "options.loadFromFiles": "Load from files",
   "options.orPaste": "Or paste bundle JSON",
   "options.loadPasted": "Load pasted bundle",
@@ -336,6 +337,7 @@ const en = {
   "options.invalidBundle": "Invalid bundle:\n- {errors}",
   "options.pickFiles": "Pick manifest.json and at least one .spec.json file.",
   "options.invalidSelection": "Invalid selection:\n- {errors}",
+  "options.invalidZip": "Couldn't read the zip: {error}",
   "options.allCleared": "All manual specs cleared.",
 
   // Matching corpus card (local, opt-in) + the scored-match confirm loop.
