@@ -1,5 +1,13 @@
 import type { SpecsResponse } from "@specpin/api-client";
-import { type Manifest, SCHEMA_V1_ID, type Spec, type SpecFile } from "@specpin/spec-schema";
+import {
+  type GuidesConfig,
+  type Manifest,
+  type RequiredConfig,
+  SCHEMA_V1_ID,
+  type Spec,
+  type SpecFile,
+  type ViewsConfig,
+} from "@specpin/spec-schema";
 import { slugify } from "./slug.js";
 
 // Reconstruct a manual batch's on-disk .specs/ layout (manifest.json + one
@@ -32,20 +40,40 @@ function groupFromBase(file: string): string {
   return words ? words.replace(/\b\w/g, (c) => c.toUpperCase()) : "Specs";
 }
 
-/** manifest.json plus the per-group *.spec.json files, keyed by file name. */
-export type BundleFiles = Record<string, Manifest | SpecFile>;
+/** manifest.json + per-group *.spec.json, plus any of the optional `.specs/` config
+ *  files (guides.json / views.json / required.json), keyed by file name. */
+export type BundleFiles = Record<
+  string,
+  Manifest | SpecFile | GuidesConfig | ViewsConfig | RequiredConfig
+>;
+
+/** The optional config inputs a caller can carry into an export. All optional so
+ *  the paste/authoring paths (no config) and the sidecar path (no `required`) each
+ *  pass only what they have; `bundleToFiles` decides per file whether to emit. */
+export interface BundleConfig {
+  /** `_file` -> file-level `group`, to reconstruct per-file groups (local batches). */
+  fileGroups?: Record<string, string>;
+  /** Team guides -> `guides.json`, emitted when it holds at least one guide. */
+  guides?: GuidesConfig;
+  /** Team-default hidden facets -> `views.json`, emitted when `hidden` is non-empty. */
+  views?: ViewsConfig;
+  /** Required-id checklist -> `required.json`, emitted when `required` is non-empty. */
+  required?: RequiredConfig;
+}
 
 /** Reconstruct the file set for a specs payload (a local batch's `specs`, or a
- *  sidecar connection's cache). `group` per file comes from `fileGroups` when the
- *  caller has it (local batches) or a file-base fallback otherwise (sidecar caches
+ *  sidecar connection's cache). `group` per file comes from `config.fileGroups` when
+ *  the caller has it (local batches) or a file-base fallback otherwise (sidecar caches
  *  flatten away the per-file group); the `_file` shadow field is stripped from each
  *  spec; every file gets `$schema = SCHEMA_V1_ID`. Output file names are sanitized
  *  and de-collided so two source files never both map to one name (and never to
- *  `manifest.json`). */
-export function bundleToFiles(
-  payload: SpecsResponse,
-  fileGroups?: Record<string, string>,
-): BundleFiles {
+ *  `manifest.json`).
+ *
+ *  The optional `.specs/` config files (guides.json / views.json / required.json) are
+ *  appended when the caller supplies one AND it has real content, so a full-folder
+ *  import round-trips back out losslessly. They are discovered by name on re-import,
+ *  so they are NOT added to `manifest.specFiles` (which lists spec files only). */
+export function bundleToFiles(payload: SpecsResponse, config: BundleConfig = {}): BundleFiles {
   const byFile = new Map<string, { group: string; specs: Spec[] }>();
   const used = new Set<string>(["manifest.json"]); // reserved: never collide
   const resolved = new Map<string, string>(); // original _file -> output name
@@ -65,7 +93,7 @@ export function bundleToFiles(
     }
     let bucket = byFile.get(outName);
     if (!bucket) {
-      bucket = { group: fileGroups?.[origFile] ?? groupFromFileName(outName), specs: [] };
+      bucket = { group: config.fileGroups?.[origFile] ?? groupFromFileName(outName), specs: [] };
       byFile.set(outName, bucket);
     }
     // Strip the _file shadow field; the rest is a plain Spec.
@@ -82,6 +110,20 @@ export function bundleToFiles(
   files["manifest.json"] = manifest;
   for (const [name, { group, specs }] of byFile) {
     files[name] = { $schema: SCHEMA_V1_ID, group, specs } satisfies SpecFile;
+  }
+
+  // Append the optional `.specs/` config files, but only when they carry content -
+  // an empty guides/views/required config is the same as not having the file, and
+  // omitting it keeps the zip matching what is actually on disk. `$schema` is forced
+  // last so a canonical id lands even if the source config omitted or differs on it.
+  if (config.guides?.guides?.length) {
+    files["guides.json"] = { ...config.guides, $schema: SCHEMA_V1_ID } satisfies GuidesConfig;
+  }
+  if (config.views?.hidden?.length) {
+    files["views.json"] = { ...config.views, $schema: SCHEMA_V1_ID } satisfies ViewsConfig;
+  }
+  if (config.required?.required?.length) {
+    files["required.json"] = { ...config.required, $schema: SCHEMA_V1_ID } satisfies RequiredConfig;
   }
   return files;
 }

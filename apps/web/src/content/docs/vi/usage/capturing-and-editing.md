@@ -152,6 +152,6 @@ Dự án cục bộ có thể được xuất dưới dạng bundle `.specs.zip`
 1. Trong popup hoặc side panel, nhấp **Xuất** (góc trên bên phải). Nếu nhiều dự án phục vụ trang, một bộ chọn xuất hiện.
 2. Trong trang Options, nhấp **Xuất** trên thẻ của dự án cục bộ.
 
-Bundle chứa `manifest.json` cộng với một `*.spec.json` cho mỗi nhóm. Giải nén nó vào thư mục `.specs/` của repo, hoặc nhập lại các tệp thông qua bộ chọn nhiều tệp trong Options.
+Bundle chứa `manifest.json` cộng với một `*.spec.json` cho mỗi nhóm, và bất kỳ file config `.specs/` nào có nội dung: `guides.json`, `views.json`, và (chỉ dự án cục bộ) `required.json`. File config rỗng sẽ được bỏ qua. Giải nén nó vào thư mục `.specs/` của repo, hoặc nhập lại các tệp thông qua bộ chọn nhiều tệp trong Options - vòng round-trip giữ được cả guide và view, không chỉ spec.
 
 Dự án sidecar cũng hỗ trợ **Xuất** (bundle được lắp ráp từ cache đang chạy).
