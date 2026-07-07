@@ -122,6 +122,19 @@ function expectSelfVisibilityEcho(): void {
   }, 1000);
 }
 
+/** Re-render the filter checklist from a specs snapshot, wired to this surface's
+ *  refresh and echo guard so a filter toggle repaints once (not twice: this
+ *  refresh plus the write's echoed SPECS_CHANGED). */
+function renderFilterPanel(specs: SpecsForOrigin, path: string): void {
+  renderFilterSection(
+    byId("filters"),
+    buildFilterModel(specs, path),
+    refresh,
+    true,
+    expectSelfVisibilityEcho,
+  );
+}
+
 // Per-spec eye toggle: a hard per-spec override that wins across axes (a spec
 // hidden by a tag can still be re-shown here). Persists the override and syncs the
 // in-memory state + filter panel, but does NOT run a full refresh: the caller
@@ -141,7 +154,7 @@ async function toggleSpec(
   // Keep the filter panel's per-spec markers consistent with the eye toggle
   // (separate DOM subtree from the spec cards, so no card flicker).
   if (lastSpecs) {
-    renderFilterSection(byId("filters"), buildFilterModel(lastSpecs, currentPath), refresh, true);
+    renderFilterPanel(lastSpecs, currentPath);
   }
 }
 
@@ -469,7 +482,7 @@ async function refresh(): Promise<void> {
   renderProjects(status, origin);
   renderLocalePicker(status.locales ?? [], activeLocale, specs.enabled);
   // The side panel has the room for per-spec rows in addition to group filters.
-  renderFilterSection(byId("filters"), buildFilterModel(specs, path), refresh, true);
+  renderFilterPanel(specs, path);
   scopeToggle.render();
   fragileScan.render();
   // Export is per project serving THIS page (one click exports one project); the

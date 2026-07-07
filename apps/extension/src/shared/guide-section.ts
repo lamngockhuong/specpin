@@ -44,14 +44,20 @@ export function mountGuideSection(
 
   async function refresh(next: GuideSectionContext): Promise<void> {
     ctx = next;
-    container.innerHTML = "";
     // List controls are hidden when Specpin is off, like the spec list (the tour
     // cannot render specs while disabled).
     if (!next.enabled) {
       container.hidden = true;
+      container.replaceChildren();
       return;
     }
-    container.hidden = false;
+
+    // Build into a detached fragment and swap it in one shot at the end. Clearing
+    // the live container up front would leave #guides empty during the async
+    // guides fetch, collapsing the section and jolting everything below it (the
+    // filters, spec list, ...) up then back down - a visible flicker on every
+    // refresh, including a filter toggle that runs the whole refresh().
+    const frag = document.createDocumentFragment();
 
     const header = document.createElement("div");
     header.className = "guides-head";
@@ -68,7 +74,7 @@ export function mountGuideSection(
     newBtn.append(createIcon(document, "plus", 12), newLabel);
     newBtn.addEventListener("click", () => void openEditor());
     header.append(label, newBtn);
-    container.appendChild(header);
+    frag.appendChild(header);
 
     // Default tour: always available (walks all matched specs in default order).
     const startDefault = document.createElement("button");
@@ -76,7 +82,7 @@ export function mountGuideSection(
     startDefault.className = "guides-default";
     startDefault.textContent = t("guide.startDefault");
     startDefault.addEventListener("click", () => deps.launch(undefined, t("guide.defaultName")));
-    container.appendChild(startDefault);
+    frag.appendChild(startDefault);
 
     let guides: TaggedGuide[] = [];
     try {
@@ -89,6 +95,10 @@ export function mountGuideSection(
       // Background not ready: just show the default-tour button.
     }
 
+    // A newer refresh started while we awaited: it owns the container now, so drop
+    // this stale render rather than swapping outdated guides back in.
+    if (ctx !== next) return;
+
     const list = document.createElement("ul");
     list.className = "guides-list";
     if (guides.length === 0) {
@@ -99,7 +109,10 @@ export function mountGuideSection(
     } else {
       for (const guide of guides) list.appendChild(guideRow(guide));
     }
-    container.appendChild(list);
+    frag.appendChild(list);
+
+    container.hidden = false;
+    container.replaceChildren(frag);
   }
 
   function guideRow(guide: TaggedGuide): HTMLElement {

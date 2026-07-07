@@ -458,12 +458,19 @@ export function renderFilters(
 
 /** Render the filter checklist for a surface and wire its toggles to the
  *  background, calling `refresh` after each change. Shared by the popup
- *  (`perSpec` off, stays compact) and the side panel (`perSpec` on). */
+ *  (`perSpec` off, stays compact) and the side panel (`perSpec` on).
+ *
+ *  `onSelfWrite` fires immediately before each personal-visibility write. A
+ *  persistent surface (the side panel) that both `refresh`es here AND re-renders
+ *  on the background's echoed SPECS_CHANGED uses it to arm an echo-drop guard, so
+ *  a filter toggle repaints once (this refresh) instead of twice (refresh + echo)
+ *  - the double flicker. The ephemeral popup ignores echoes, so it omits it. */
 export function renderFilterSection(
   container: HTMLElement,
   model: FilterModel,
   refresh: () => Promise<void> | void,
   perSpec = false,
+  onSelfWrite?: () => void,
 ): void {
   renderFilters(container, model.inventory, {
     path: model.path,
@@ -472,10 +479,13 @@ export function renderFilterSection(
     hasOverrides: model.hasOverrides,
     enabled: model.enabled,
     onToggle: async (key, visible) => {
+      // Arm before the write so the guard is set before the echo can arrive back.
+      onSelfWrite?.();
       await applyFacetToggle(model.state, key, visible);
       await refresh();
     },
     onReset: async () => {
+      onSelfWrite?.();
       await resetPersonalVisibility();
       await refresh();
     },
