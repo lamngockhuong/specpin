@@ -415,15 +415,17 @@ export default defineContentScript({
       }
     }
 
-    // Reposition markers on scroll/resize without a re-scan (cheap; the gap set is
-    // unchanged). Debounced; a no-op when coverage is off.
-    let coverageRepositionTimer: ReturnType<typeof setTimeout> | null = null;
+    // Reposition markers on scroll/resize without a re-scan (the gap set is
+    // unchanged). rAF, not a timer: the marker host is document-level, so a target
+    // inside a scroll container needs JS to catch up; rAF coalesces a scroll burst
+    // into one pass per frame, just before paint, with no visible lag.
+    let coverageRepositionRaf: number | null = null;
     const scheduleCoverageReposition = (): void => {
-      if (!coverageEnabled || !coverageOverlay || coverageRepositionTimer) return;
-      coverageRepositionTimer = setTimeout(() => {
-        coverageRepositionTimer = null;
+      if (!coverageEnabled || !coverageOverlay || coverageRepositionRaf !== null) return;
+      coverageRepositionRaf = requestAnimationFrame(() => {
+        coverageRepositionRaf = null;
         coverageOverlay?.reposition();
-      }, 100);
+      });
     };
 
     // How long the deep-link resolver keeps retrying for a late-rendering element

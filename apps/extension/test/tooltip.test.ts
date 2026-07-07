@@ -59,6 +59,31 @@ describe("TooltipRenderer", () => {
     renderer.destroy();
   });
 
+  it("keeps an edge element's badge on the page (does not clip off-screen)", () => {
+    document.body.innerHTML = `<button>Login</button>`;
+    const target = must(document.querySelector("button"));
+    // Element flush at the document's top-left origin.
+    target.getBoundingClientRect = () =>
+      ({
+        width: 40,
+        height: 20,
+        left: 0,
+        top: 0,
+        right: 40,
+        bottom: 20,
+        x: 0,
+        y: 0,
+        toJSON() {},
+      }) as DOMRect;
+    const renderer = new TooltipRenderer(document);
+    renderer.render(spec, target, { confidence: 1, needsReview: false });
+    const badge = must(shadowOf().querySelector(".badge")) as HTMLElement;
+    // Badge is placed on the page (a visible corner), not clipped off the origin.
+    expect(Number.parseFloat(badge.style.left)).toBeGreaterThanOrEqual(0);
+    expect(Number.parseFloat(badge.style.top)).toBeGreaterThanOrEqual(0);
+    renderer.destroy();
+  });
+
   it("flags needsReview matches distinctly", () => {
     document.body.innerHTML = `<button>x</button>`;
     const renderer = new TooltipRenderer(document);
