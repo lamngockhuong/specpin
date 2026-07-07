@@ -12,7 +12,13 @@ import { PROVENANCE_CSS, provenanceSectionHtml } from "../shared/provenance.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
-import { BADGE_SIZE, type BadgeBox, resolveBadgePosition } from "./badge-position.js";
+import {
+  BADGE_SIZE,
+  type BadgeBox,
+  documentView,
+  resolveBadgePosition,
+  type Viewport,
+} from "./badge-position.js";
 import { CONFIDENCE_BADGE_CSS, confidenceBadge } from "./confidence-badge.js";
 import type { RenderMeta, SpecRenderer } from "./renderer.js";
 import { MARKDOWN_BODY_CSS, rulesListHtml } from "./renderer.js";
@@ -303,7 +309,8 @@ export class TooltipRenderer implements SpecRenderer {
       // Place only the new badge, dodging the already-placed ones. Cheaper than a
       // full re-lay on every render (one getBoundingClientRect, not N); scroll and
       // resize still trigger positionAll() when every badge genuinely moves.
-      this.positionBadge(pin, this.placedBoxes(pin));
+      const win = this.doc.defaultView;
+      if (win) this.positionBadge(pin, documentView(win), this.placedBoxes(pin));
     }
   }
 
@@ -464,33 +471,23 @@ export class TooltipRenderer implements SpecRenderer {
   }
 
   // Place one badge, dodging the already-placed ones, and return its box so the
-  // caller can accumulate it for the next badge to avoid.
-  private positionBadge(pin: Pin, placed: BadgeBox[]): BadgeBox | null {
-    const win = this.doc.defaultView;
-    if (!win) return null;
+  // caller can accumulate it for the next badge to avoid. `view` is built once per
+  // pass (document size is constant across a reposition) and threaded in.
+  private positionBadge(pin: Pin, view: Viewport, placed: BadgeBox[]): BadgeBox {
     const rect = pin.target.getBoundingClientRect();
-    const { left, top } = resolveBadgePosition(
-      rect,
-      {
-        scrollX: win.scrollX,
-        scrollY: win.scrollY,
-        innerWidth: win.innerWidth,
-        innerHeight: win.innerHeight,
-      },
-      placed,
-      { width: pin.width },
-    );
+    const { left, top } = resolveBadgePosition(rect, view, placed, { width: pin.width });
     pin.badge.style.left = `${left}px`;
     pin.badge.style.top = `${top}px`;
     return { left, top, width: pin.width, height: BADGE_SIZE };
   }
 
   private positionAll(): void {
-    if (this.showBadges) {
+    const win = this.doc.defaultView;
+    if (this.showBadges && win) {
+      const view = documentView(win);
       const placed: BadgeBox[] = [];
       for (const pin of this.pins) {
-        const box = this.positionBadge(pin, placed);
-        if (box) placed.push(box);
+        placed.push(this.positionBadge(pin, view, placed));
       }
     }
     // Keep the pinned tip anchored through scroll/resize, unless the user has

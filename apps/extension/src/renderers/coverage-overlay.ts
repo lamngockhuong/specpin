@@ -13,7 +13,7 @@ import { createIcon } from "../shared/icons.js";
 import { createShadowHost } from "../shared/shadow.js";
 import type { Theme } from "../shared/theme.js";
 import { SHADOW_PREAMBLE } from "../shared/tokens.js";
-import { type BadgeBox, resolveBadgePosition } from "./badge-position.js";
+import { type BadgeBox, documentView, resolveBadgePosition } from "./badge-position.js";
 
 const HOST_ID = "specpin-coverage-host";
 /** Marker diameter in px. A touch larger than the 16px spec badge so a ghost
@@ -126,12 +126,7 @@ export class CoverageOverlay {
     const win = this.doc.defaultView;
     if (!win) return;
     const placed: BadgeBox[] = [];
-    const view = {
-      scrollX: win.scrollX,
-      scrollY: win.scrollY,
-      innerWidth: win.innerWidth,
-      innerHeight: win.innerHeight,
-    };
+    const view = documentView(win);
     for (const { el, node } of this.markers) {
       const rect = el.getBoundingClientRect();
       const { left, top } = resolveBadgePosition(rect, view, placed, { size: MARKER_SIZE });

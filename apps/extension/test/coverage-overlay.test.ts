@@ -95,6 +95,18 @@ describe("CoverageOverlay", () => {
     expect(host()).toBeNull();
   });
 
+  it("keeps an edge element's marker on the page (does not clip off-screen)", () => {
+    document.body.innerHTML = `<button id="a">A</button>`;
+    const a = document.getElementById("a") as Element;
+    // Element flush at the document's top-left origin.
+    sized(a, 0, 0, 40, 20);
+    overlay.render([a], { keyFor: () => "#a", actions });
+    // Marker is placed on the page (a visible corner), not clipped off the origin.
+    const m = markers()[0] as HTMLElement;
+    expect(Number.parseFloat(m.style.left)).toBeGreaterThanOrEqual(0);
+    expect(Number.parseFloat(m.style.top)).toBeGreaterThanOrEqual(0);
+  });
+
   it("reposition() repaints without a re-scan", () => {
     document.body.innerHTML = `<button id="a">A</button>`;
     const a = document.getElementById("a") as Element;

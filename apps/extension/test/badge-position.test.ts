@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { type BadgeBox, resolveBadgePosition } from "../src/renderers/badge-position.js";
 
-// A 1000x800 viewport, unscrolled, unless a test overrides it.
-const view = { scrollX: 0, scrollY: 0, innerWidth: 1000, innerHeight: 800 };
+// A 1000x800 document, unscrolled, unless a test overrides it.
+const view = { scrollX: 0, scrollY: 0, docWidth: 1000, docHeight: 800 };
 
 // Badge is 16px, centered on a corner (±8 overhang); gutter is 2px.
 describe("resolveBadgePosition", () => {
@@ -11,8 +11,8 @@ describe("resolveBadgePosition", () => {
     expect(resolveBadgePosition(rect, view)).toEqual({ left: 392, top: 292 });
   });
 
-  it("flips off the clipped left/top edge instead of going off-screen", () => {
-    // Element flush against the viewport's left edge (like a left nav item).
+  it("flips off the clipped left/top edge instead of going off the page", () => {
+    // Element flush against the document's left edge (like a left nav item).
     const rect = { left: 0, top: 200, right: 240, bottom: 240 };
     const pos = resolveBadgePosition(rect, view);
     // Top-left would be -8 (off-screen); solver flips to the right corner.
@@ -21,7 +21,7 @@ describe("resolveBadgePosition", () => {
     expect(pos).toEqual({ left: 232, top: 192 }); // top-right: right-8, top-8
   });
 
-  it("never lets a badge clip past any viewport edge", () => {
+  it("never lets a badge clip past any page edge", () => {
     // Tiny element jammed into the very top-left corner.
     const rect = { left: 0, top: 0, right: 4, bottom: 4 };
     const pos = resolveBadgePosition(rect, view);
@@ -40,8 +40,32 @@ describe("resolveBadgePosition", () => {
     expect(clear).toBe(true);
   });
 
+  // Clamping is document-relative (scroll-independent): a badge tracks its
+  // element and scrolls off-screen with it, instead of pinning to a viewport edge.
+  describe("document-relative clamp (glued to the element, on the page)", () => {
+    it("keeps a badge at its element's document position when the element scrolls off", () => {
+      // Viewport scrolled 1000px down; the element sits at document top 300
+      // (rect.top = 300 - 1000 = -700), fully above the viewport.
+      const scrolled = { scrollX: 0, scrollY: 1000 };
+      const rect = { left: 400, top: -700, right: 500, bottom: -660 };
+      // Tracks the element (doc top 300 - 8), NOT the viewport top (~1002) that
+      // the old viewport clamp forced.
+      expect(resolveBadgePosition(rect, scrolled)).toEqual({ left: 392, top: 292 });
+    });
+
+    it("keeps an edge element's badge on the page regardless of scroll", () => {
+      // Element flush at the document's top-left origin, viewport scrolled far away.
+      const scrolled = { scrollX: 0, scrollY: 1000 };
+      const rect = { left: 0, top: -1000, right: 40, bottom: -980 }; // doc origin (0,0,40,20)
+      const pos = resolveBadgePosition(rect, scrolled);
+      // Placed on the page (a visible corner), not clipped off the page origin.
+      expect(pos.left).toBeGreaterThanOrEqual(2);
+      expect(pos.top).toBeGreaterThanOrEqual(2);
+    });
+  });
+
   it("respects scroll offsets (returns document-absolute coordinates)", () => {
-    const scrolled = { scrollX: 0, scrollY: 1000, innerWidth: 1000, innerHeight: 800 };
+    const scrolled = { scrollX: 0, scrollY: 1000 };
     const rect = { left: 400, top: 100, right: 500, bottom: 140 };
     expect(resolveBadgePosition(rect, scrolled)).toEqual({ left: 392, top: 1092 });
   });
@@ -74,9 +98,9 @@ describe("resolveBadgePosition", () => {
       expect(clear).toBe(true);
     });
 
-    it("keeps a wide pill on-screen against the right edge (clamps by width, not size)", () => {
-      // Element flush against the right edge; the top-right corner would push a
-      // 30px-wide pill off-screen, so the left must clamp to innerWidth-width-gutter.
+    it("keeps a wide pill on the page against the right edge (clamps by width, not size)", () => {
+      // Element flush at the document's right edge (docWidth 1000). A 30px-wide
+      // pill must stay within the page: its right edge clamps to docWidth-gutter.
       const rect = { left: 760, top: 200, right: 1000, bottom: 240 };
       const pos = resolveBadgePosition(rect, view, [], { width: 30 });
       expect(pos.left + 30).toBeLessThanOrEqual(1000 - 2);
