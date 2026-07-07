@@ -64,6 +64,50 @@ describe("resolveBadgePosition", () => {
     });
   });
 
+  // With the viewport size known, a badge whose element has scrolled fully out of
+  // view follows the element off-screen instead of the clamp pinning it to a page
+  // edge. This is what stops scrolled-off badges piling up inside an inner scroll
+  // container (window.scrollY stays 0 while rows scroll away).
+  describe("off-screen guard (element outside the viewport)", () => {
+    const sized = {
+      scrollX: 0,
+      scrollY: 0,
+      docWidth: 1000,
+      docHeight: 5000,
+      viewWidth: 1000,
+      viewHeight: 800,
+    };
+
+    it("leaves the badge at its raw off-screen corner when the element is above the fold", () => {
+      // Row scrolled above an inner container: window unscrolled, rect fully above.
+      const rect = { left: 400, top: -300, right: 900, bottom: -260 };
+      // Raw top-left (no clamp to gutter): would be 392 / -308, off the top edge.
+      expect(resolveBadgePosition(rect, sized)).toEqual({ left: 392, top: -308 });
+    });
+
+    it("does not pile an above-the-fold badge at the top gutter", () => {
+      const rect = { left: 400, top: -300, right: 900, bottom: -260 };
+      // The clamp would have forced top to the gutter (2); the guard must not.
+      expect(resolveBadgePosition(rect, sized).top).toBeLessThan(0);
+    });
+
+    it("still clamps an on-screen edge element onto the page", () => {
+      // Element flush at the document's left edge and in view: clamp keeps it visible.
+      const rect = { left: 0, top: 200, right: 240, bottom: 240 };
+      const pos = resolveBadgePosition(rect, sized);
+      expect(pos.left).toBeGreaterThanOrEqual(2);
+      expect(pos.top).toBeGreaterThanOrEqual(2);
+    });
+
+    it("keeps a partially-visible element's badge on a visible corner", () => {
+      // Tall element straddling the top edge (top above the fold, bottom in view):
+      // the solver flips to the bottom corner rather than off-screen.
+      const rect = { left: 400, top: -100, right: 500, bottom: 300 };
+      const pos = resolveBadgePosition(rect, sized);
+      expect(pos.top).toBeGreaterThanOrEqual(2);
+    });
+  });
+
   it("respects scroll offsets (returns document-absolute coordinates)", () => {
     const scrolled = { scrollX: 0, scrollY: 1000 };
     const rect = { left: 400, top: 100, right: 500, bottom: 140 };

@@ -14,6 +14,12 @@
  * a badge stays glued to its element and scrolls off-screen together with it,
  * instead of detaching to a viewport edge on scroll or resize, while still never
  * clipping off the page edges.
+ *
+ * The keep-visible clamp applies only while the element is on screen. When the
+ * element is fully outside the viewport (scrolled off, e.g. above an inner scroll
+ * container whose scroll does not move window.scrollY), the badge is left at its
+ * raw corner so it disappears WITH the element, instead of the clamp rescuing it
+ * to a page edge where off-screen badges would otherwise pile up.
  */
 
 /** A viewport-relative rect, as returned by getBoundingClientRect. */
@@ -33,6 +39,13 @@ export interface Viewport {
   docWidth?: number;
   /** documentElement.scrollHeight. Omit (or 0) → the bottom edge is unbounded. */
   docHeight?: number;
+  /** Visible viewport width (window.innerWidth). When both view sizes are set, a
+   *  badge whose element is fully outside the viewport is left at its raw corner
+   *  instead of clamped into view (so scrolled-off badges do not pile at the edge).
+   *  Omit → the off-screen guard is skipped and the badge is always clamped on-page. */
+  viewWidth?: number;
+  /** Visible viewport height (window.innerHeight). See `viewWidth`. */
+  viewHeight?: number;
 }
 
 /** Build the document-relative `Viewport` the solver expects from a window: scroll
@@ -46,6 +59,8 @@ export function documentView(win: Window): Viewport {
     scrollY: win.scrollY,
     docWidth: root.scrollWidth,
     docHeight: root.scrollHeight,
+    viewWidth: win.innerWidth,
+    viewHeight: win.innerHeight,
   };
 }
 
@@ -112,6 +127,21 @@ export function resolveBadgePosition(
   const gutter = opts.gutter ?? DEFAULT_GUTTER;
   const halfX = width / 2;
   const halfY = size / 2;
+
+  // A badge only belongs where its element is on screen. `rect` is viewport-
+  // relative, so the element is visible when it overlaps the [0, viewSize) box.
+  // When it is fully off screen (scrolled above an inner container that leaves
+  // window.scrollY at 0, or off any edge), skip the keep-visible clamp and return
+  // the raw top-left corner so the badge scrolls away WITH the element instead of
+  // the clamp pinning it to a page edge (which piles detached badges up there).
+  // Opt-in: without both view sizes the guard is skipped and clamping runs as before.
+  if (view.viewWidth && view.viewHeight) {
+    const onScreen =
+      rect.right > 0 && rect.left < view.viewWidth && rect.bottom > 0 && rect.top < view.viewHeight;
+    if (!onScreen) {
+      return { left: rect.left + view.scrollX - halfX, top: rect.top + view.scrollY - halfY };
+    }
+  }
 
   // Bounds are DOCUMENT-relative (scroll-independent): near edges = page origin +
   // gutter; far edges = document size, or unbounded when unknown (0/undefined).
