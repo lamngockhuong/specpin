@@ -106,4 +106,67 @@ describe("captureFingerprint", () => {
     // jsdom serves fixtures from http://localhost/, so pathname is "/".
     expect(captureFingerprint(el).pageUrl).toBe(document.location.pathname);
   });
+
+  it("whitelists identity + descriptive attributes, excludes runtime state", () => {
+    const el = mount(
+      `<button role="checkbox" data-slot="cell" data-part="control" data-scope="checkbox"
+               alt="Select" title="Select all" data-state="checked" aria-expanded="true">x</button>`,
+    );
+    const attrs = captureFingerprint(el).attributes;
+    expect(attrs.role).toBe("checkbox");
+    expect(attrs["data-slot"]).toBe("cell");
+    expect(attrs["data-part"]).toBe("control");
+    expect(attrs["data-scope"]).toBe("checkbox");
+    expect(attrs.alt).toBe("Select");
+    expect(attrs.title).toBe("Select all");
+    // State attributes must never be captured as identity.
+    expect(attrs["data-state"]).toBeUndefined();
+    expect(attrs["aria-expanded"]).toBeUndefined();
+  });
+
+  it("prefers identity attributes over classes in the cssSelector compound", () => {
+    // Two checkbox buttons force the selector to walk up to the th to
+    // disambiguate, exercising identity attributes at both levels.
+    const table = mount(
+      `<table><thead><tr>
+         <th data-slot="select-head"><button role="checkbox" class="gap-1 px-2 bg-red-1">a</button></th>
+         <th data-slot="table-head"><button role="checkbox" class="gap-1 px-2 bg-red-1">b</button></th>
+       </tr></thead></table>`,
+    );
+    const el = must(table.querySelectorAll(`th[data-slot="table-head"] button`)[0]);
+    const fp = captureFingerprint(el);
+    expect(fp.cssSelector).toContain(`button[role="checkbox"]`);
+    expect(fp.cssSelector).toContain(`th[data-slot="table-head"]`);
+    // Utility classes must not leak into the selector.
+    expect(fp.cssSelector).not.toContain("gap-1");
+    expect(fp.cssSelector).not.toContain("px-2");
+    expect(fp.cssSelector).not.toContain("bg-red-1");
+    const hits = document.querySelectorAll(fp.cssSelector);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toBe(el);
+  });
+
+  it("keeps a semantic class in the compound while dropping utility classes", () => {
+    const el = must(
+      mount(`<div><button class="px-2 submit-btn gap-1">Go</button></div>`).querySelector("button"),
+    );
+    const fp = captureFingerprint(el);
+    expect(fp.cssSelector).toContain("button.submit-btn");
+    expect(fp.cssSelector).not.toContain("px-2");
+    expect(fp.cssSelector).not.toContain("gap-1");
+  });
+
+  it("drops utility-only classes from the compound, falling back to structure", () => {
+    const el = must(
+      mount(
+        `<div><span class="bg-red-1 text-red-6 px-2">a</span><span class="bg-red-1 text-red-6 px-2">b</span></div>`,
+      ).querySelectorAll("span")[1],
+    );
+    const fp = captureFingerprint(el);
+    expect(fp.cssSelector).not.toContain("bg-red-1");
+    expect(fp.cssSelector).toContain(":nth-of-type");
+    const hits = document.querySelectorAll(fp.cssSelector);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toBe(el);
+  });
 });
