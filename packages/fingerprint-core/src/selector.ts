@@ -1,5 +1,5 @@
-import { cssEscapeIdent } from "./css-escape.js";
-import { isGeneratedClass, isGeneratedId } from "./generated-id.js";
+import { cssEscapeAttrValue, cssEscapeIdent } from "./css-escape.js";
+import { IDENTITY_ATTRS, isGeneratedClass, isGeneratedId, isUtilityClass } from "./generated-id.js";
 
 const MAX_DEPTH = 6;
 
@@ -17,15 +17,31 @@ function isUnique(root: ParentNode, selector: string, target: Element): boolean 
   return hits.length === 1 && hits[0] === target;
 }
 
-/** Stable (non-generated) class names on an element, original order preserved. */
-function stableClasses(el: Element): string[] {
-  return Array.from(el.classList).filter((c) => !isGeneratedClass(c));
+/** First stable (non-generated, non-utility) class on an element, or undefined.
+ *  The compound uses a single semantic class; utility/hashed classes are
+ *  churn-prone and must never become identity. */
+function firstStableClass(el: Element): string | undefined {
+  for (const c of el.classList) {
+    if (!isGeneratedClass(c) && !isUtilityClass(c)) return c;
+  }
+  return undefined;
 }
 
-/** Compound selector for a single element: tag + stable classes (no position). */
+/**
+ * Compound selector for a single element (no position): tag + any stable
+ * identity attributes + at most one semantic class. Identity attributes
+ * (role/type/name/data-slot/part/scope) are preferred over classes because
+ * headless libraries expose them as stable structural hooks; classes are the
+ * churn-prone fallback.
+ */
 function compound(el: Element): string {
   let part = el.tagName.toLowerCase();
-  for (const cls of stableClasses(el)) part += `.${cssEscapeIdent(cls)}`;
+  for (const attr of IDENTITY_ATTRS) {
+    const v = el.getAttribute(attr);
+    if (v != null && v !== "") part += `[${attr}="${cssEscapeAttrValue(v)}"]`;
+  }
+  const cls = firstStableClass(el);
+  if (cls) part += `.${cssEscapeIdent(cls)}`;
   return part;
 }
 

@@ -6,7 +6,7 @@ export type { ElementFingerprint } from "@specpin/spec-schema";
 export { type AnchorStrength, anchorStrength } from "./anchor-strength.js";
 export { captureFingerprint, TEST_ID_ATTRS } from "./capture.js";
 export { detectFramework } from "./detect-framework.js";
-export { isGeneratedClass, isGeneratedId } from "./generated-id.js";
+export { IDENTITY_ATTRS, isGeneratedClass, isGeneratedId, isUtilityClass } from "./generated-id.js";
 export { type MatchAnchor, type MatchResult, matchElement } from "./match.js";
 export {
   CANDIDATE_CAP,

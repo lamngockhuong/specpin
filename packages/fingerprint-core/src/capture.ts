@@ -1,15 +1,17 @@
 import type { ElementFingerprint, PositionHint } from "@specpin/spec-schema";
 import { cssEscapeAttrValue } from "./css-escape.js";
 import { detectFramework } from "./detect-framework.js";
-import { isGeneratedId } from "./generated-id.js";
+import { IDENTITY_ATTRS, isGeneratedId } from "./generated-id.js";
 import { cssSelectorFor } from "./selector.js";
 import { xpathFor } from "./xpath.js";
 
 /** Attributes searched, in priority order, for the Tier-1 test-id anchor. */
 export const TEST_ID_ATTRS = ["data-spec-id", "data-testid", "data-cy", "data-qa"] as const;
 
-/** Attributes copied verbatim into the fingerprint (href handled separately). */
-const ATTR_WHITELIST = ["role", "type", "name", "placeholder"] as const;
+/** Attributes copied verbatim into the fingerprint (href handled separately):
+ *  the stable identity attributes plus descriptive carriers that feed the
+ *  scorer. Excludes state attributes (data-state, aria-expanded, aria-selected). */
+const ATTR_WHITELIST = [...IDENTITY_ATTRS, "placeholder", "alt", "title"] as const;
 
 const TEXT_MAX = 100;
 const MAX_NEARBY_LABELS = 5;
