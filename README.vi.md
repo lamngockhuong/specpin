@@ -39,7 +39,9 @@
   <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
     <img src="https://img.shields.io/badge/Cài_từ-Chrome_Web_Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Cài từ Chrome Web Store">
   </a>
-  <img src="https://img.shields.io/badge/Firefox_Add--ons-Sắp_có-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Firefox Add-ons - Sắp có">
+  <a href="https://addons.mozilla.org/vi/firefox/addon/specpin/">
+    <img src="https://img.shields.io/badge/Cài_từ-Firefox_Add--ons-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Cài từ Firefox Add-ons">
+  </a>
 </p>
 
 <p align="center">
@@ -82,7 +84,7 @@ Specpin **không phải** công cụ sinh code từ đặc tả (không liên qu
 
 Cài Specpin cho Chrome từ **[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)**. Ghim nó lên thanh công cụ để truy cập nhanh.
 
-Firefox Add-ons sắp có. Trong lúc chờ, người dùng Firefox có thể build từ mã nguồn và nạp dạng unpacked (xem [hướng dẫn chạy](./docs/vi/run-guide.md)).
+Người dùng Firefox cài từ **[Firefox Add-ons](https://addons.mozilla.org/vi/firefox/addon/specpin/)**. (Bạn cũng có thể build từ mã nguồn và nạp dạng unpacked — xem [hướng dẫn chạy](./docs/vi/run-guide.md).)
 
 ## Cài đặt CLI
 
@@ -113,7 +115,7 @@ specpin serve                  # in ra URL localhost + bearer token
 
 # 3. Cài extension và kết nối
 #    Chrome:  cài từ Chrome Web Store (link ở trên)
-#    Firefox: build unpacked (AMO sắp có) -> pnpm --filter @specpin/extension build:firefox
+#    Firefox: cài từ Firefox Add-ons (link bên trên)
 ```
 
 Dán URL + token vừa in vào phần cài đặt kết nối của extension, mở ứng dụng của bạn, và đặc tả sẽ hiển thị trên đúng phần tử. Xem **[`docs/vi/run-guide.md`](./docs/vi/run-guide.md)** để biết toàn bộ vòng lặp init -> serve -> nạp -> kết nối -> hiển thị -> capture, hoặc thử ngay với **[ứng dụng demo](./examples/demo-react-app)** đi kèm:
@@ -231,7 +233,7 @@ pnpm check:all   # chạy thêm cổng Go của apps/cli (make check-schema, go 
 
 ## Trạng thái
 
-Specpin đã phát hành và có mặt trên [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn); Firefox Add-ons sắp có. Đang tiếp tục phát triển. Xem [`docs/vi/project-roadmap.md`](./docs/vi/project-roadmap.md) để biết năng lực đã ship, việc dự kiến, và nhật ký quyết định.
+Specpin đã phát hành và có mặt trên cả [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn) lẫn [Firefox Add-ons](https://addons.mozilla.org/vi/firefox/addon/specpin/). Đang tiếp tục phát triển. Xem [`docs/vi/project-roadmap.md`](./docs/vi/project-roadmap.md) để biết năng lực đã ship, việc dự kiến, và nhật ký quyết định.
 
 ## Tài trợ
 

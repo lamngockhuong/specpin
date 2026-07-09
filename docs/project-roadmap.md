@@ -82,6 +82,8 @@ Independent review findings:
 
 Goal: robustness, flexibility, polish. No timeline committed.
 
+**Firefox Add-ons published (2026-07-09)**: the extension is approved and live on Firefox Add-ons (<https://addons.mozilla.org/en-US/firefox/addon/specpin/>), joining the Chrome Web Store listing. Both stores now ship the same WXT build (Chrome MV3 + Firefox MV2). Firefox users no longer need to build from source.
+
 **Website shipped (2026-06-29)**: public marketing landing + a fresh end-user documentation set (EN + VI + JA), built as an Astro Starlight app in `apps/web`, targeting `specpin.ohnice.app` via GitHub Pages. The repo `docs/` set stays developer/contributor docs and is unrelated to the website's end-user content.
 
 **First follow-up shipped (2026-06-26)** on branch `feat/spec-validate-cli-and-ci`:
@@ -298,6 +300,7 @@ Planned after public release:
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-07-09 | Published to Firefox Add-ons (AMO), same WXT build as Chrome | Second first-party distribution channel; MV2 build already maintained, so no extra runtime cost. Removes the build-from-source barrier for Firefox users |
 | 2026-07-06 | Built-in templates (not user-authored/persisted) | User-authored templates add UI complexity (save, edit, share, sync). Fixed built-in set (Form validation / API error / Auth flow) handles the common case; users can snapshot specs manually as templates if needed |
 | 2026-07-06 | Personal ignore-list (storage.sync, not team-shared) | Team-shared ignore list would require sidecar write + Git commit per dismiss. Personal `storage.sync` is immediate, per-user, and reversible. Team can set a coverage gate in CI if gaps need enforcement |
 | 2026-07-06 | Bulk capture writes one .spec.json per page/route, not one per element | Atomic per-file write reduces spec fragmentation. Specs for a page typically belong in one logical group (e.g. `checkout.spec.json`); users can manually split if needed |

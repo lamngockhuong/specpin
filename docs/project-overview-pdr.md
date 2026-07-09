@@ -44,7 +44,7 @@ Specs live as JSON inside the consumer repo's `.specs/` directory, are linked to
 
 - AI-assisted capture (`specpin generate`) - keeps LLM work out of the extension and CLI.
 - FileSystem Access API source adapter - sidecar + writable local projects cover authoring today.
-- Safari packaging - Chrome shipped, Firefox coming soon.
+- Safari packaging - Chrome and Firefox shipped; Safari deferred.
 - Overlay and inline-badge renderers - **dropped as redundant**: overlay duplicated the modal + the Guide-mode spotlight, inline-badge duplicated the tooltip badge. Enum values stay reserved; tooltip, sidebar, and modal ship today.
 
 ## Scope Boundaries

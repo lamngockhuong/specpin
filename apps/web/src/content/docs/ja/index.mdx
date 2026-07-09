@@ -12,10 +12,6 @@ hero:
       link: /ja/guide/getting-started/
       icon: right-arrow
       variant: primary
-    - text: Chrome Web Storeからインストール
-      link: https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn
-      icon: external
-      variant: secondary
     - text: GitHubで見る
       link: https://github.com/lamngockhuong/specpin
       icon: external
@@ -31,13 +27,15 @@ import HeroSpecDemo from '../../../components/HeroSpecDemo.astro';
   <a class="browser-cta-item" href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
     <img src="/chrome-logo.svg" alt="" width="40" height="40" />
     <span class="browser-cta-name">Chrome Web Store</span>
-    <span class="browser-cta-status">公開中</span>
   </a>
-  <div class="browser-cta-item is-soon" aria-disabled="true" title="近日公開">
+  <a class="browser-cta-item" href="https://addons.mozilla.org/ja/firefox/addon/specpin/">
     <img src="/firefox-logo.svg" alt="" width="40" height="40" />
     <span class="browser-cta-name">Firefox Add-ons</span>
-    <span class="browser-cta-status">近日公開</span>
-  </div>
+  </a>
+</div>
+
+<div class="browser-support" not-content>
+  <span class="browser-support-text">Edge、Brave、Opera、Arc などの Chromium ブラウザでも動作します。</span>
 </div>
 
 ## Specpinができること
@@ -117,10 +115,10 @@ specpin serve                  # localhost URL + bearerトークンを表示
 
 # 3. extensionをインストールして接続
 #    Chrome:  Chrome Web Store（下記リンク）
-#    Firefox: ソースからビルド（AMOは近日公開）
+#    Firefox: Firefox Add-ons（下記リンク）
 ```
 
-Chrome版Specpinを[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)からインストールし、表示されたURLとトークンを拡張機能に貼り付け、アプリを開くと各要素にspecがレンダリングされます。
+Specpinを[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)または[Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/specpin/)からインストールし、表示されたURLとトークンを拡張機能に貼り付け、アプリを開くと各要素にspecがレンダリングされます。
 
 <CardGrid>
   <Card title="Specpinを初めて使う方へ" icon="rocket">

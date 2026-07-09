@@ -1,13 +1,14 @@
 # Firefox Add-on Listing - Describe Add-on
 
-> Reference for the Firefox Developer Hub "Submit a New Add-on" form.
+> **Status: published and live** on Firefox Add-ons (approved 2026-07-09).
+> Reference for the Firefox Developer Hub listing (used for the initial submission and future updates).
 > URL: <https://addons.mozilla.org/en-US/developers/>
 
 ---
 
 ## Add-on URL
 
-`https://addons.mozilla.org/en-US/firefox/addon/specpin/`
+<https://addons.mozilla.org/en-US/firefox/addon/specpin/>
 
 ---
 

@@ -1,17 +1,21 @@
 ---
 title: 拡張機能のインストール
-description: Chrome版SpecpinをChrome Web Storeからインストール、またはソースからビルドする方法。
+description: SpecpinをChrome Web StoreまたはFirefox Add-onsからインストール、またはソースからビルドする方法。
 ---
 
-Chrome版SpecpinはChrome Web Storeで公開されています。Firefoxユーザーは当面ソースからビルドします。
+SpecpinはChrome Web StoreとFirefox Add-onsで公開されています。開発用にソースからビルドすることもできます。
 
 ## Chrome Web Storeからインストール
 
 [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)から直接Specpinをインストールできます。拡張機能がツールバーに表示されます。素早くアクセスできるようピン留めし、[最初の接続を始めましょう](/ja/guide/getting-started/)。
 
-## ソースからビルド（Firefox、または開発）
+## Firefox Add-onsからインストール
 
-Firefox向け、または拡張機能を開発する場合は、ソースからビルドしてパッケージ化されていない拡張機能として読み込みます。
+[Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/specpin/)から直接Specpinをインストールできます。拡張機能がツールバーに表示されます。素早くアクセスできるようピン留めし、[最初の接続を始めましょう](/ja/guide/getting-started/)。
+
+## ソースからビルド（開発）
+
+拡張機能を開発する場合は、ソースからビルドしてパッケージ化されていない拡張機能として読み込みます。
 
 ### 前提条件
 
@@ -59,7 +63,7 @@ Firefoxの出力先は`apps/extension/.output/firefox-mv2`です。
 拡張機能は一時的に読み込まれ、Firefoxを再起動すると消えます。必要に応じて`about:debugging`から再読み込みしてください。
 
 :::note
-Firefox Add-onsでの公開は近日予定です。それまでは、上記の一時的なアドオンがFirefoxでSpecpinを動かす方法です。
+日常的に使う場合は[Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/specpin/)からインストールしてください。上記の一時的なアドオンは再起動で消えるため、開発用途のみです。
 :::
 
 ## 次のステップ
