@@ -124,6 +124,6 @@ English is the source of truth; `docs/vi/` and the `vi` i18n catalog are transla
 
 ## Status
 
-Released and live on the Chrome Web Store (extension ID `kkfmoieoahdjneagognaoedggkiiolkn`, <https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn>). Firefox Add-ons publication is pending (build-from-source only for now). Active development continues.
+Released and live on both stores: the Chrome Web Store (extension ID `kkfmoieoahdjneagognaoedggkiiolkn`, <https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn>) and Firefox Add-ons (<https://addons.mozilla.org/en-US/firefox/addon/specpin/>). Active development continues.
 
 For the shipped-capability list, planned work, and the decision log (including dropped ideas such as the overlay + inline-badge renderers), see `docs/project-roadmap.md`, the single source of truth for project status.

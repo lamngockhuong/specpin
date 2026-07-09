@@ -108,6 +108,10 @@ The extension will capture a fresh fingerprint and save it back to `.specs/`. Th
 
 **Fix:**
 
+For everyday use, install Specpin from [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/specpin/) — it stays installed across restarts.
+
+To load a development build unpacked instead:
+
 1. Build the extension: `pnpm --filter @specpin/extension build:firefox` (produces `.output/firefox-mv2`).
 2. Go to `about:debugging`, click **This Firefox**, click **Load Temporary Add-on**, and select any file inside `apps/extension/.output/firefox-mv2`.
 3. Temporary add-ons are removed when Firefox closes. You must reload them each session.

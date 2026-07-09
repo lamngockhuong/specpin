@@ -1,17 +1,21 @@
 ---
 title: Cài đặt tiện ích mở rộng
-description: Cài Specpin cho Chrome từ Chrome Web Store, hoặc build từ mã nguồn.
+description: Cài Specpin từ Chrome Web Store hoặc Firefox Add-ons, hoặc build từ mã nguồn.
 ---
 
-Specpin cho Chrome đã có trên Chrome Web Store. Người dùng Firefox tạm thời build từ mã nguồn.
+Specpin đã có trên Chrome Web Store và Firefox Add-ons. Bạn cũng có thể build từ mã nguồn để phát triển.
 
 ## Cài từ Chrome Web Store
 
 Cài Specpin trực tiếp từ [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn). Tiện ích mở rộng xuất hiện trên thanh công cụ. Ghim nó để truy cập nhanh, rồi [bắt đầu với kết nối đầu tiên](/vi/guide/getting-started/).
 
-## Build từ mã nguồn (Firefox, hoặc phát triển)
+## Cài từ Firefox Add-ons
 
-Với Firefox, hoặc để phát triển tiện ích, hãy build từ mã nguồn và tải dưới dạng tiện ích không đóng gói.
+Cài Specpin trực tiếp từ [Firefox Add-ons](https://addons.mozilla.org/vi/firefox/addon/specpin/). Tiện ích mở rộng xuất hiện trên thanh công cụ. Ghim nó để truy cập nhanh, rồi [bắt đầu với kết nối đầu tiên](/vi/guide/getting-started/).
+
+## Build từ mã nguồn (phát triển)
+
+Để phát triển tiện ích, hãy build từ mã nguồn và tải dưới dạng tiện ích không đóng gói.
 
 ### Yêu cầu trước
 
@@ -59,7 +63,7 @@ Tiện ích mở rộng xuất hiện trên thanh công cụ của bạn. Ghim n
 Tiện ích mở rộng tải tạm thời và sẽ biến mất khi bạn khởi động lại Firefox. Tải lại nó từ `about:debugging` khi cần.
 
 :::note
-Bản phát hành Firefox Add-ons sắp có. Trong lúc chờ, tiện ích tạm thời ở trên là cách chạy Specpin trên Firefox.
+Để dùng hằng ngày, hãy cài từ [Firefox Add-ons](https://addons.mozilla.org/vi/firefox/addon/specpin/) — tiện ích tạm thời ở trên chỉ dành cho phát triển, vì nó biến mất khi khởi động lại.
 :::
 
 ## Bước tiếp theo

@@ -108,6 +108,10 @@ description: Specpinの一般的な問題と解決方法、および簡単なFAQ
 
 **解決策：**
 
+日常利用には、[Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/specpin/) からSpecpinをインストールしてください。再起動後もインストールされたままになります。
+
+開発用ビルドをアンパックで読み込む場合：
+
 1. 拡張機能をビルドします：`pnpm --filter @specpin/extension build:firefox`（`.output/firefox-mv2`が生成されます）。
 2. `about:debugging`に行き、**このFirefox**をクリックし、**一時的なアドオンを読み込む**をクリックして`apps/extension/.output/firefox-mv2`内の任意のファイルを選択します。
 3. 一時的なアドオンはFirefoxを閉じると削除されます。各セッションで再読み込みが必要です。

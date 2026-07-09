@@ -84,6 +84,8 @@ Phát hiện từ review độc lập:
 
 Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa cam kết timeline.
 
+**Đã lên Firefox Add-ons (2026-07-09)**: extension đã được duyệt và có mặt trên Firefox Add-ons (<https://addons.mozilla.org/vi/firefox/addon/specpin/>), sánh cùng listing trên Chrome Web Store. Cả hai store giờ đều dùng cùng một bản build WXT (Chrome MV3 + Firefox MV2). Người dùng Firefox không còn phải build từ mã nguồn nữa.
+
 **Đã ship website (2026-06-29)**: trang landing marketing công khai cùng một bộ tài liệu dành cho người dùng cuối viết mới (EN + VI + JA), dựng bằng Astro Starlight trong `apps/web`, hướng tới `specpin.ohnice.app` qua GitHub Pages. Bộ `docs/` trong repo vẫn là tài liệu cho lập trình viên/người đóng góp, tách biệt với nội dung người dùng cuối của website.
 
 **Đã ship bản follow-up đầu tiên (2026-06-26)** trên nhánh `feat/spec-validate-cli-and-ci`:
@@ -300,6 +302,7 @@ Dự kiến sau khi release public:
 
 | Ngày | Quyết định | Lý do |
 |------|----------|-------|
+| 2026-07-09 | Phát hành lên Firefox Add-ons (AMO), cùng bản build WXT với Chrome | Kênh phân phối chính thức thứ hai; bản build MV2 vốn đã được duy trì nên không tốn thêm chi phí runtime. Gỡ bỏ rào cản build-from-source cho người dùng Firefox |
 | 2026-07-06 | Template dựng sẵn (không do người dùng tạo/lưu) | Template do người dùng tạo làm UI phức tạp (lưu, sửa, chia sẻ, đồng bộ). Bộ dựng sẵn cố định (Kiểm tra biểu mẫu / Xử lý lỗi API / Luồng xác thực) đủ cho trường hợp phổ biến; người dùng có thể tự lưu spec làm template khi cần |
 | 2026-07-06 | Ignore-list cá nhân (storage.sync, không chia sẻ theo nhóm) | Ignore-list chia sẻ nhóm sẽ cần ghi qua sidecar + commit Git cho mỗi lần bỏ qua. `storage.sync` cá nhân là tức thì, theo từng người và có thể đảo ngược. Nhóm có thể đặt cổng coverage trong CI nếu cần siết chỗ thiếu |
 | 2026-07-06 | Ghi hàng loạt lưu một .spec.json cho mỗi trang/route, không phải một tệp cho mỗi phần tử | Ghi nguyên tử theo tệp giảm phân mảnh spec. Spec của một trang thường thuộc cùng một nhóm logic (ví dụ `checkout.spec.json`); người dùng có thể tự tách nếu cần |

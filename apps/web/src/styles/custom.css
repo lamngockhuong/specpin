@@ -394,7 +394,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-block: 0 2.5rem;
+  margin-block: 0 1rem;
 }
 .browser-cta-item {
   display: flex;
@@ -421,15 +421,14 @@ a.browser-cta-item:hover {
 .browser-cta-name {
   font-weight: 600;
 }
-.browser-cta-status {
+/* Compatibility note: the Chrome build also runs on other Chromium browsers. */
+.browser-support {
+  margin-block: 0 2.5rem;
+}
+.browser-support-text {
   font-size: var(--sl-text-sm);
   color: var(--sl-color-gray-3);
 }
-.browser-cta-item.is-soon {
-  opacity: 0.55;
-  cursor: default;
-}
-
 /* Branded site footer appended below Starlight's built-in page footer. */
 .specpin-footer {
   margin-top: 2rem;

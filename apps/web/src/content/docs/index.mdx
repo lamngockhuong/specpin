@@ -12,10 +12,6 @@ hero:
       link: /guide/getting-started/
       icon: right-arrow
       variant: primary
-    - text: Install from Chrome Web Store
-      link: https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn
-      icon: external
-      variant: secondary
     - text: View on GitHub
       link: https://github.com/lamngockhuong/specpin
       icon: external
@@ -31,13 +27,15 @@ import HeroSpecDemo from '../../components/HeroSpecDemo.astro';
   <a class="browser-cta-item" href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
     <img src="/chrome-logo.svg" alt="" width="40" height="40" />
     <span class="browser-cta-name">Chrome Web Store</span>
-    <span class="browser-cta-status">Available now</span>
   </a>
-  <div class="browser-cta-item is-soon" aria-disabled="true" title="Coming soon">
+  <a class="browser-cta-item" href="https://addons.mozilla.org/en-US/firefox/addon/specpin/">
     <img src="/firefox-logo.svg" alt="" width="40" height="40" />
     <span class="browser-cta-name">Firefox Add-ons</span>
-    <span class="browser-cta-status">Coming soon</span>
-  </div>
+  </a>
+</div>
+
+<div class="browser-support" not-content>
+  <span class="browser-support-text">Also works on Edge, Brave, Opera, Arc, and other Chromium browsers.</span>
 </div>
 
 ## What Specpin does
@@ -122,10 +120,10 @@ specpin serve                  # prints a localhost URL + bearer token
 
 # 3. Install the extension and connect
 #    Chrome:  Chrome Web Store (link below)
-#    Firefox: build from source (AMO coming soon)
+#    Firefox: Firefox Add-ons (link below)
 ```
 
-Install Specpin for Chrome from the [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn), paste the printed URL and token into the extension, open your app, and specs
+Install Specpin from the [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn) or [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/specpin/), paste the printed URL and token into the extension, open your app, and specs
 render on their elements.
 
 <CardGrid>

@@ -1,17 +1,21 @@
 ---
 title: Install the Extension
-description: Install Specpin for Chrome from the Chrome Web Store, or build it from source.
+description: Install Specpin from the Chrome Web Store or Firefox Add-ons, or build it from source.
 ---
 
-Specpin for Chrome is available on the Chrome Web Store. Firefox users build from source for now.
+Specpin is available on the Chrome Web Store and Firefox Add-ons. You can also build it from source for development.
 
 ## Install from the Chrome Web Store
 
 Install Specpin directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn). The extension appears in your toolbar. Pin it for quick access, then [get started with your first connection](/guide/getting-started/).
 
-## Build from source (Firefox, or development)
+## Install from Firefox Add-ons
 
-For Firefox, or to hack on the extension, build it from source and load it as an unpacked extension.
+Install Specpin directly from [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/specpin/). The extension appears in your toolbar. Pin it for quick access, then [get started with your first connection](/guide/getting-started/).
+
+## Build from source (development)
+
+To hack on the extension, build it from source and load it as an unpacked extension.
 
 ### Prerequisites
 
@@ -59,7 +63,7 @@ The extension appears in your toolbar. Pin it for quick access.
 The extension loads temporarily and will disappear when you restart Firefox. Re-load it from `about:debugging` as needed.
 
 :::note
-Firefox Add-ons publication is coming soon. Until then, the temporary add-on above is the way to run Specpin on Firefox.
+For everyday use, install from [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/specpin/) instead — the temporary add-on above is only for development, since it disappears on restart.
 :::
 
 ## Next steps

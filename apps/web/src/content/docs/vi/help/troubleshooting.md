@@ -108,6 +108,10 @@ Extension sẽ capture một fingerprint mới và lưu lại vào `.specs/`. Đ
 
 **Khắc phục:**
 
+Để dùng hằng ngày, hãy cài Specpin từ [Firefox Add-ons](https://addons.mozilla.org/vi/firefox/addon/specpin/) — bản này vẫn còn sau khi khởi động lại trình duyệt.
+
+Nếu muốn nạp bản build phát triển dưới dạng unpacked:
+
 1. Build extension: `pnpm --filter @specpin/extension build:firefox` (tạo ra `.output/firefox-mv2`).
 2. Truy cập `about:debugging`, click **This Firefox**, click **Load Temporary Add-on**, và chọn bất kỳ file nào trong `apps/extension/.output/firefox-mv2`.
 3. Temporary add-on bị xóa khi Firefox đóng. Bạn phải tải lại chúng mỗi phiên.

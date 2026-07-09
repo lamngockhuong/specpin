@@ -46,7 +46,7 @@ Spec tồn tại dưới dạng JSON bên trong thư mục `.specs/` của repo 
 
 - Capture có AI hỗ trợ (`specpin generate`) - giữ mọi công việc LLM ra ngoài extension và CLI.
 - Source adapter dùng FileSystem Access API - hiện sidecar + dự án cục bộ ghi được đã đủ cho việc authoring.
-- Đóng gói Safari - Chrome đã có, Firefox sắp có.
+- Đóng gói Safari - Chrome và Firefox đã có; Safari hoãn lại.
 - Các renderer overlay và inline-badge - **đã bỏ vì trùng lặp**: overlay trùng với modal + spotlight của Guide mode, inline-badge trùng với badge của tooltip. Giá trị enum vẫn giữ reserved; hiện đã ship tooltip, sidebar, và modal.
 
 ## Ranh giới phạm vi

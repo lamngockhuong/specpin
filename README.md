@@ -39,7 +39,9 @@
   <a href="https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn">
     <img src="https://img.shields.io/badge/Install_from-Chrome_Web_Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Install from Chrome Web Store">
   </a>
-  <img src="https://img.shields.io/badge/Firefox_Add--ons-Coming_soon-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Firefox Add-ons - Coming soon">
+  <a href="https://addons.mozilla.org/en-US/firefox/addon/specpin/">
+    <img src="https://img.shields.io/badge/Install_from-Firefox_Add--ons-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Install from Firefox Add-ons">
+  </a>
 </p>
 
 <p align="center">
@@ -82,7 +84,7 @@ It is **not** a spec-driven code generator (unrelated to GitHub Spec Kit / OpenS
 
 Install Specpin for Chrome from the **[Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn)**. Pin it to your toolbar for quick access.
 
-Firefox Add-ons is coming soon. Until then, Firefox users can build from source and load it unpacked (see the [run guide](./docs/run-guide.md)).
+Firefox users install from **[Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/specpin/)**. (You can also build from source and load it unpacked — see the [run guide](./docs/run-guide.md).)
 
 ## Install the CLI
 
@@ -113,7 +115,7 @@ specpin serve                  # prints a localhost URL + bearer token
 
 # 3. Install the extension and connect
 #    Chrome:  install from the Chrome Web Store (link above)
-#    Firefox: build unpacked (AMO coming soon) -> pnpm --filter @specpin/extension build:firefox
+#    Firefox: install from Firefox Add-ons (link above)
 ```
 
 Paste the printed URL + token into the extension's connection settings, open your app, and specs render on their elements. See **[`docs/run-guide.md`](./docs/run-guide.md)** for the full init -> serve -> load -> connect -> render -> capture loop, or try it against the bundled **[demo app](./examples/demo-react-app)**:
@@ -242,7 +244,7 @@ pnpm check:all   # also runs the apps/cli Go gate (make check-schema, go vet, go
 
 ## Status
 
-Specpin is released and live on the [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn); Firefox Add-ons is coming soon. Active development continues. See [`docs/project-roadmap.md`](./docs/project-roadmap.md) for shipped capabilities, planned work, and the decision log.
+Specpin is released and live on both the [Chrome Web Store](https://chromewebstore.google.com/detail/specpin/kkfmoieoahdjneagognaoedggkiiolkn) and [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/specpin/). Active development continues. See [`docs/project-roadmap.md`](./docs/project-roadmap.md) for shipped capabilities, planned work, and the decision log.
 
 ## Sponsor
 
