@@ -61,7 +61,7 @@ jobs:
       # pnpm version comes from package.json "packageManager"; do not also set
       # "version" here or action-setup errors on the duplicate.
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
