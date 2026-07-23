@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing";
-import { mountAddProject } from "../src/shared/add-project.js";
+import { mountAddProject, parseDomains } from "../src/shared/add-project.js";
 import { loadDraft, saveDraft } from "../src/shared/draft-store.js";
 
 const flush = () => new Promise((r) => setTimeout(r));
@@ -110,5 +110,27 @@ describe("mountAddProject draft persistence", () => {
     const draft = await loadDraft<{ url: string }>(KEY);
     expect(draft?.url).toBe("http://localhost:4319");
     expect(JSON.stringify(draft)).not.toContain("super-secret-token");
+  });
+});
+
+describe("parseDomains normalization", () => {
+  it("keeps a bare host untouched", () => {
+    expect(parseDomains("example.com")).toEqual(["example.com"]);
+  });
+
+  it("strips a pasted URL down to its host (scheme + path dropped)", () => {
+    expect(parseDomains("https://app.example.com/dashboard?q=1")).toEqual(["app.example.com"]);
+  });
+
+  it("preserves the port so it still mirrors the origin host", () => {
+    expect(parseDomains("localhost:3000")).toEqual(["localhost:3000"]);
+  });
+
+  it("splits, lowercases, and de-duplicates a mixed comma/space list", () => {
+    expect(parseDomains("HTTPS://A.com/x, a.com  b.io")).toEqual(["a.com", "b.io"]);
+  });
+
+  it("drops entries that cannot yield a host (scheme with no host)", () => {
+    expect(parseDomains("http://, , good.com")).toEqual(["good.com"]);
   });
 });

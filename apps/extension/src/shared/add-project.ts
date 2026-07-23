@@ -66,13 +66,32 @@ function template(): string {
     </div>`;
 }
 
-/** Comma/space-separated domain list -> trimmed non-empty entries. Shared with
- *  the Options rename form so the parse rule cannot drift. */
+/** A single entry -> a bare host (the shape `originMatchesDomains` compares
+ *  against). Users paste whole URLs into the domains field; matching keys off the
+ *  page's `host`, so a stored `https://app.example.com/path` never matches and the
+ *  project silently serves nothing. Strip an entry down to its host: parse it as a
+ *  URL (prepending a scheme when absent, so a bare host / host:port also parses),
+ *  keep `host` (port included, to mirror the origin host), and lowercase. Anything
+ *  that cannot yield a host (e.g. contains a space) returns "" and is dropped. */
+export function normalizeDomain(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    return new URL(candidate).host.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+/** Comma/space-separated domain list -> normalized, de-duplicated bare hosts.
+ *  Shared with the Options rename form so the parse rule cannot drift. */
 export function parseDomains(raw: string): string[] {
-  return raw
+  const hosts = raw
     .split(/[\s,]+/)
-    .map((d) => d.trim())
+    .map(normalizeDomain)
     .filter(Boolean);
+  return [...new Set(hosts)];
 }
 
 export function mountAddProject(
