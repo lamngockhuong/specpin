@@ -118,6 +118,60 @@ describe("SidecarClient requests", () => {
     expect(init.method).toBe("PUT");
     expect(JSON.parse(init.body as string)).toEqual(guides);
   });
+
+  it("getFlows() GETs /flows and returns the empty default", async () => {
+    const flows = { version: "1.0", flows: [] };
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(flows));
+    const res = await client(fetchImpl).getFlows();
+    expect(res).toEqual(flows);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/flows");
+    expect(init.method).toBe("GET");
+  });
+
+  it("putFlows() PUTs the config to /flows", async () => {
+    const flows = {
+      version: "1.0",
+      flows: [
+        {
+          id: "application-status",
+          object: { en: "Application" },
+          states: [{ id: "draft", label: { en: "Draft" } }],
+          transitions: [{ id: "t1", from: "draft", to: "draft", trigger: { en: "Save" } }],
+        },
+      ],
+    };
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(flows));
+    await client(fetchImpl).putFlows(flows);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/flows");
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(init.body as string)).toEqual(flows);
+  });
+
+  it("getScreens() GETs /screens and returns the empty default", async () => {
+    const screens = { version: "1.0", screens: [], transitions: [] };
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(screens));
+    const res = await client(fetchImpl).getScreens();
+    expect(res).toEqual(screens);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/screens");
+    expect(init.method).toBe("GET");
+  });
+
+  it("putScreens() PUTs the config to /screens", async () => {
+    const screens = {
+      version: "1.0",
+      screens: [{ id: "home", name: { en: "Home" }, urlGlob: "/" }],
+      transitions: [],
+    };
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(screens));
+    await client(fetchImpl).putScreens(screens);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/screens");
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(init.body as string)).toEqual(screens);
+  });
 });
 
 describe("SidecarClient errors", () => {

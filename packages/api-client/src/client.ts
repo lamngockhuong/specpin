@@ -1,8 +1,15 @@
-import type { GuidesConfig, Manifest, Spec, ViewsConfig } from "@specpin/spec-schema";
+import type {
+  FlowsConfig,
+  GuidesConfig,
+  Manifest,
+  ScreensConfig,
+  Spec,
+  ViewsConfig,
+} from "@specpin/spec-schema";
 import { SidecarError } from "./errors.js";
 import { type ConnectionState, type SubscribeOptions, subscribeEvents } from "./events.js";
 
-export type { GuidesConfig, ViewsConfig } from "@specpin/spec-schema";
+export type { FlowsConfig, GuidesConfig, ScreensConfig, ViewsConfig } from "@specpin/spec-schema";
 
 export interface SidecarClientOptions {
   baseUrl: string;
@@ -134,6 +141,28 @@ export class SidecarClient {
   /** Write the named-guides config (validated server-side). */
   async putGuides(config: GuidesConfig): Promise<void> {
     await this.request("PUT", "/guides", config);
+  }
+
+  /** The status-flow FSM config from .specs/flows.json. The sidecar returns the
+   *  empty default ({ version, flows: [] }) when the file is absent. */
+  getFlows(): Promise<FlowsConfig> {
+    return this.request<FlowsConfig>("GET", "/flows");
+  }
+
+  /** Write the status-flow FSM config (validated server-side). */
+  async putFlows(config: FlowsConfig): Promise<void> {
+    await this.request("PUT", "/flows", config);
+  }
+
+  /** The screen-transition config from .specs/screens.json. The sidecar returns
+   *  the empty default ({ version, screens: [], transitions: [] }) when absent. */
+  getScreens(): Promise<ScreensConfig> {
+    return this.request<ScreensConfig>("GET", "/screens");
+  }
+
+  /** Write the screen-transition config (validated server-side). */
+  async putScreens(config: ScreensConfig): Promise<void> {
+    await this.request("PUT", "/screens", config);
   }
 
   async saveSpec(file: string, spec: Spec): Promise<void> {
