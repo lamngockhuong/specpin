@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.2",
-    "happy-dom": "20.10.6",
+    "happy-dom": "20.11.0",
     "lefthook": "2.1.10",
     "turbo": "2.10.5",
     "typescript": "6.0.3",
