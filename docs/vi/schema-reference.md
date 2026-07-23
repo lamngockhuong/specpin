@@ -13,6 +13,8 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 ├── manifest.json          # index + project config
 ├── views.json             # cài đặt hiển thị mặc định theo nhóm (tùy chọn, commit vào Git)
 ├── guides.json            # các tour onboarding có tên (tùy chọn, commit vào Git)
+├── flows.json             # các status-flow FSM (tùy chọn, commit vào Git)
+├── screens.json           # đồ thị screen-transition (tùy chọn, commit vào Git)
 └── <area>.spec.json       # a group of specs (SpecFile)
 ```
 
@@ -184,11 +186,149 @@ Cổng governance tùy chọn: danh sách spec id bắt buộc phải tồn tạ
 
 Khi `.specs/guides.json` không có, sidecar trả về default rỗng `{ "version": "1.0", "guides": [] }` trên `GET /guides`. Guide được tạo trong extension (trình chỉnh sửa ở popup / thanh bên) và ghi qua `PUT /guides` (schema-validated, atomic, pretty-printed), hoặc lưu vào dự án cục bộ / lưu trữ cá nhân. Các giới hạn ở trên nằm trong SSOT nên cả hai validator đều kế thừa; guide cá nhân còn tôn trọng quota per-item của `storage.sync` (ghi bị từ chối sẽ báo lỗi thay vì âm thầm bỏ).
 
+## Transition (dùng chung bởi FlowsConfig và ScreensConfig)
+
+Một edge có hướng, dùng cho cả status-flow FSM (state -> state) lẫn đồ thị screen-transition (screen -> screen). `trigger` đặt tên cho hành động gây ra nó; `specId` tùy chọn liên kết edge ngược về phần tử đã pin gây ra nó, nên một graph là **view over** kiến thức đã pin theo element, không phải một silo song song.
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|-------|------|----------|-------|
+| `id` | string | yes | 1-100 ký tự; ổn định, duy nhất trong phạm vi graph cha của nó |
+| `from` | string | yes | id node nguồn (một `FlowState.id` hoặc `Screen.id`) |
+| `to` | string | yes | id node đích (một `FlowState.id` hoặc `Screen.id`) |
+| `trigger` | LocalizedString | yes | hành động/sự kiện gây ra transition, ví dụ `"Submit"` |
+| `guard` | string \| null | no | điều kiện tùy chọn phải đúng để transition kích hoạt, ví dụ `"amount > 0"` |
+| `role` | string \| null | no | actor/role tùy chọn thực hiện transition, ví dụ `"admin"` |
+| `specId` | string \| null | no | id của phần tử đã pin kích hoạt transition này, nếu có |
+| `source` | enum kiểu SpecSource | no | `"manual" \| "auto-captured" \| "imported"`; mặc định là do người soạn (manual) khi không có |
+
+## FlowsConfig (`.specs/flows.json`)
+
+Một status-flow FSM cho mỗi kiểu đối tượng (ví dụ vòng đời của "Deal" hoặc "Application"): các state và các transition giữa chúng. Tùy chọn, commit vào Git, theo cùng pattern singleton như `guides.json`/`views.json`.
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|-------|------|----------|-------|
+| `version` | string | yes | ví dụ `"1.0"` |
+| `flows` | Flow[] | yes | tối đa 50 (`maxItems`) |
+
+`Flow`:
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|-------|------|----------|-------|
+| `id` | string | yes | 1-100 ký tự; duy nhất trong file, ví dụ `"deal-status"` |
+| `object` | LocalizedString | yes | kiểu đối tượng mà flow này mô tả vòng đời, ví dụ `"Deal"` |
+| `description` | LocalizedString | no | mô tả ngắn tùy chọn cho flow |
+| `states` | FlowState[] | yes | tối đa 200 |
+| `transitions` | Transition[] | yes | tối đa 2000 |
+
+`FlowState`:
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|-------|------|----------|-------|
+| `id` | string | yes | 1-100 ký tự; duy nhất trong phạm vi Flow của nó |
+| `label` | LocalizedString | yes | nhãn state dễ đọc |
+| `kind` | string | no | `"initial" \| "normal" \| "terminal"`; không có nghĩa là state bình thường |
+| `specId` | string \| null | no | id của phần tử đã pin đại diện cho state này trên UI đang chạy |
+
+Id của state chỉ duy nhất **trong phạm vi** Flow của nó (hai flow khác nhau đều có thể dùng `"draft"` làm state id).
+
+```json
+{
+  "version": "1.0",
+  "flows": [
+    {
+      "id": "deal-status",
+      "object": { "en": "Deal", "vi": "Giao dịch" },
+      "description": {
+        "en": "Lifecycle of a deal as it moves through the sales pipeline.",
+        "vi": "Vòng đời của một giao dịch khi di chuyển qua pipeline bán hàng."
+      },
+      "states": [
+        { "id": "draft", "label": { "en": "Draft", "vi": "Nháp" }, "kind": "initial" },
+        { "id": "negotiation", "label": { "en": "Negotiation", "vi": "Đàm phán" }, "specId": "deal-stage" },
+        { "id": "won", "label": { "en": "Won", "vi": "Đã chốt" }, "kind": "terminal", "specId": "deal-stage" },
+        { "id": "lost", "label": { "en": "Lost", "vi": "Thất bại" }, "kind": "terminal", "specId": "deal-stage" }
+      ],
+      "transitions": [
+        {
+          "id": "start-negotiation",
+          "from": "draft",
+          "to": "negotiation",
+          "trigger": { "en": "Start negotiation", "vi": "Bắt đầu đàm phán" },
+          "specId": "deal-submit",
+          "source": "manual"
+        },
+        {
+          "id": "mark-won",
+          "from": "negotiation",
+          "to": "won",
+          "trigger": { "en": "Mark won", "vi": "Đánh dấu đã chốt" },
+          "specId": "deal-stage",
+          "source": "manual"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Khi `.specs/flows.json` không có, sidecar trả về default rỗng `{ "version": "1.0", "flows": [] }` trên `GET /flows`. `PUT /flows` validate rồi ghi (schema-validated, atomic, pretty-printed, giới hạn trong `.specs/`), và watcher `.specs/` sẵn có sẽ bắn SSE khi thay đổi, giống hệt `views.json`/`guides.json`.
+
+## ScreensConfig (`.specs/screens.json`)
+
+Đồ thị screen-transition: các node screen/page và các transition điều hướng giữa chúng. Tùy chọn, commit vào Git, cùng pattern singleton như `flows.json`.
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|-------|------|----------|-------|
+| `version` | string | yes | ví dụ `"1.0"` |
+| `screens` | Screen[] | yes | tối đa 500 |
+| `transitions` | Transition[] | yes | tối đa 2000 |
+
+`Screen`:
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|-------|------|----------|-------|
+| `id` | string | yes | 1-100 ký tự; duy nhất trong file, ví dụ `"checkout"` |
+| `name` | LocalizedString | yes | tên screen dễ đọc |
+| `urlGlob` | string | yes | URL glob nhận diện screen này trên UI đang chạy, **dùng lại đúng ngữ nghĩa glob của `fingerprint.pageUrl` trên spec** (`*` = một segment đường dẫn, `**` = qua nhiều segment), ví dụ `"/checkout/*"` |
+| `description` | LocalizedString | no | mô tả ngắn tùy chọn cho screen |
+| `specIds` | string[] | no | id của các phần tử đã pin nằm trên screen này; tối đa 200, mỗi phần tử `maxLength` 200 |
+
+Khác với `flows.json` (state id chỉ duy nhất theo từng Flow), `screens.json` giữ một danh sách `screens`/`transitions` phẳng duy nhất, nên id đã duy nhất toàn cục - không cần prefix.
+
+```json
+{
+  "version": "1.0",
+  "screens": [
+    { "id": "login", "name": { "en": "Login", "vi": "Đăng nhập" }, "urlGlob": "/login", "specIds": ["login-submit-btn"] },
+    {
+      "id": "dashboard",
+      "name": { "en": "Dashboard", "vi": "Bảng điều khiển" },
+      "urlGlob": "/",
+      "description": { "en": "Landing page after sign-in: stats + recent activity.", "vi": "Trang sau khi đăng nhập: số liệu và hoạt động gần đây." },
+      "specIds": ["dashboard-new-deal-cta"]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "login-to-dashboard",
+      "from": "login",
+      "to": "dashboard",
+      "trigger": { "en": "Sign in", "vi": "Đăng nhập" },
+      "specId": "login-submit-btn"
+    }
+  ]
+}
+```
+
+Khi `.specs/screens.json` không có, sidecar trả về default rỗng `{ "version": "1.0", "screens": [], "transitions": [] }` trên `GET /screens`. `PUT /screens` validate rồi ghi giống hệt `PUT /flows`.
+
+Cả hai config này được render trong **graph view** toàn trang của extension (layout dagre + SVG vẽ tay, mở từ popup/side panel); xem [`run-guide.md`](./run-guide.md#19-graph-views) để có hướng dẫn dành cho người dùng.
+
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired`.
-- Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired, validateFlows, validateScreens } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired` / `ValidateFlows` / `ValidateScreens`.
+- Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`, `tests/fixtures/flows/{valid,invalid}`, `tests/fixtures/screens/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).
 
 ## Dùng schema (consuming)
 

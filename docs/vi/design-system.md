@@ -87,7 +87,12 @@ pnpm --filter @specpin/extension sync-css-tokens   # tái sinh tokens.gen.css
 Hai consumer, một file được sinh ra:
 
 - **Popup + options page** import trực tiếp `tokens.gen.css` (Vite inject vào);
-  `:root` khớp với document nên các biến resolve bình thường.
+  `:root` khớp với document nên các biến resolve bình thường. **Graph view** toàn trang
+  (`entrypoints/graph/`, sơ đồ flows/screens) theo cùng pattern này - nó là một trang do
+  extension sở hữu như popup/options, không phải overlay Shadow DOM trên trang host - và
+  không thêm token mới nào, chỉ tham chiếu các biến `--sp-*` sẵn có (`--sp-bg`, `--sp-surface`,
+  `--sp-border`, `--sp-control`, `--sp-accent`, `--sp-accent-on`, `--sp-text`/`--sp-text-2`,
+  `--sp-elevated`, `--sp-radius-control`, `--sp-font-ui`/`--sp-font-mono`).
 - **Shadow DOM renderers** (sidebar, tooltip, capture form) không thể kế thừa biến
   `:root` của trang: `:host { all: initial }` cô lập chúng, và `:root` không khớp bên
   trong shadow tree. Vì vậy `src/shared/tokens.ts` import `tokens.gen.css?inline` và

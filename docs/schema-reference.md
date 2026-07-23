@@ -11,6 +11,8 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 ├── manifest.json          # index + project config
 ├── views.json             # team visibility defaults (optional, Git-committed)
 ├── guides.json            # named onboarding tours (optional, Git-committed)
+├── flows.json             # status-flow FSMs (optional, Git-committed)
+├── screens.json           # screen-transition graph (optional, Git-committed)
 └── <area>.spec.json       # a group of specs (SpecFile)
 ```
 
@@ -182,11 +184,149 @@ Optional governance gate: a list of spec ids that must exist in the project. Use
 
 When `.specs/guides.json` is absent, the sidecar returns the empty default `{ "version": "1.0", "guides": [] }` on `GET /guides`. Guides are authored in the extension (popup / side panel guide editor) and written via `PUT /guides` (schema-validated, atomic, pretty-printed), or saved to a local project / personal storage. The bounds above live in the SSOT so both validators inherit them; personal guides additionally respect the `storage.sync` per-item quota (a rejected write surfaces an error rather than dropping silently).
 
+## Transition (shared by FlowsConfig and ScreensConfig)
+
+A directed edge, used both by a status-flow FSM (state -> state) and by the screen-transition graph (screen -> screen). `trigger` names the action that causes it; the optional `specId` links the edge back to the pinned element that fires it, so a graph is a *view over already-pinned knowledge*, not a parallel silo.
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | string | yes | 1-100 chars; stable, unique within its parent graph |
+| `from` | string | yes | source node id (a `FlowState.id` or `Screen.id`) |
+| `to` | string | yes | target node id (a `FlowState.id` or `Screen.id`) |
+| `trigger` | LocalizedString | yes | the action/event that causes the transition, e.g. `"Submit"` |
+| `guard` | string \| null | no | optional condition that must hold for the transition to fire, e.g. `"amount > 0"` |
+| `role` | string \| null | no | optional actor/role that performs the transition, e.g. `"admin"` |
+| `specId` | string \| null | no | id of the pinned element that triggers this transition, if any |
+| `source` | SpecSource-like enum | no | `"manual" \| "auto-captured" \| "imported"`; defaults to manual authoring when absent |
+
+## FlowsConfig (`.specs/flows.json`)
+
+A status-flow FSM per object type (e.g. the lifecycle of a "Deal" or "Application"): its states and the transitions between them. Optional, Git-committed, mirrors the `guides.json`/`views.json` singleton pattern.
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `version` | string | yes | e.g. `"1.0"` |
+| `flows` | Flow[] | yes | at most 50 (`maxItems`) |
+
+`Flow`:
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | string | yes | 1-100 chars; unique within the file, e.g. `"deal-status"` |
+| `object` | LocalizedString | yes | the object type whose lifecycle this flow describes, e.g. `"Deal"` |
+| `description` | LocalizedString | no | optional blurb describing the flow |
+| `states` | FlowState[] | yes | at most 200 |
+| `transitions` | Transition[] | yes | at most 2000 |
+
+`FlowState`:
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | string | yes | 1-100 chars; unique within its Flow |
+| `label` | LocalizedString | yes | human-readable state label |
+| `kind` | string | no | `"initial" \| "normal" \| "terminal"`; absent means a normal state |
+| `specId` | string \| null | no | id of a pinned element that represents this state in the live UI |
+
+State ids are only unique **within** their own Flow (two flows may both use `"draft"` as a state id).
+
+```json
+{
+  "version": "1.0",
+  "flows": [
+    {
+      "id": "deal-status",
+      "object": { "en": "Deal", "vi": "Giao dịch" },
+      "description": {
+        "en": "Lifecycle of a deal as it moves through the sales pipeline.",
+        "vi": "Vòng đời của một giao dịch khi di chuyển qua pipeline bán hàng."
+      },
+      "states": [
+        { "id": "draft", "label": { "en": "Draft", "vi": "Nháp" }, "kind": "initial" },
+        { "id": "negotiation", "label": { "en": "Negotiation", "vi": "Đàm phán" }, "specId": "deal-stage" },
+        { "id": "won", "label": { "en": "Won", "vi": "Đã chốt" }, "kind": "terminal", "specId": "deal-stage" },
+        { "id": "lost", "label": { "en": "Lost", "vi": "Thất bại" }, "kind": "terminal", "specId": "deal-stage" }
+      ],
+      "transitions": [
+        {
+          "id": "start-negotiation",
+          "from": "draft",
+          "to": "negotiation",
+          "trigger": { "en": "Start negotiation", "vi": "Bắt đầu đàm phán" },
+          "specId": "deal-submit",
+          "source": "manual"
+        },
+        {
+          "id": "mark-won",
+          "from": "negotiation",
+          "to": "won",
+          "trigger": { "en": "Mark won", "vi": "Đánh dấu đã chốt" },
+          "specId": "deal-stage",
+          "source": "manual"
+        }
+      ]
+    }
+  ]
+}
+```
+
+When `.specs/flows.json` is absent, the sidecar returns the empty default `{ "version": "1.0", "flows": [] }` on `GET /flows`. `PUT /flows` validates + writes it (schema-validated, atomic, pretty-printed, `.specs/`-confined), and the existing `.specs/` watcher fires SSE on change, the same as `views.json`/`guides.json`.
+
+## ScreensConfig (`.specs/screens.json`)
+
+The screen-transition graph: screen/page nodes and the navigation transitions between them. Optional, Git-committed, same singleton pattern as `flows.json`.
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `version` | string | yes | e.g. `"1.0"` |
+| `screens` | Screen[] | yes | at most 500 |
+| `transitions` | Transition[] | yes | at most 2000 |
+
+`Screen`:
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | string | yes | 1-100 chars; unique within the file, e.g. `"checkout"` |
+| `name` | LocalizedString | yes | human-readable screen name |
+| `urlGlob` | string | yes | URL glob that identifies this screen in the live UI, **reusing the same glob semantics as a spec's `fingerprint.pageUrl`** (`*` = one path segment, `**` = across segments), e.g. `"/checkout/*"` |
+| `description` | LocalizedString | no | optional blurb describing the screen |
+| `specIds` | string[] | no | ids of pinned elements that live on this screen; at most 200, each `maxLength` 200 |
+
+Unlike `flows.json` (where state ids are only unique per-Flow), `screens.json` holds one flat `screens`/`transitions` list, so ids are already globally unique - no prefixing needed.
+
+```json
+{
+  "version": "1.0",
+  "screens": [
+    { "id": "login", "name": { "en": "Login", "vi": "Đăng nhập" }, "urlGlob": "/login", "specIds": ["login-submit-btn"] },
+    {
+      "id": "dashboard",
+      "name": { "en": "Dashboard", "vi": "Bảng điều khiển" },
+      "urlGlob": "/",
+      "description": { "en": "Landing page after sign-in: stats + recent activity.", "vi": "Trang sau khi đăng nhập: số liệu và hoạt động gần đây." },
+      "specIds": ["dashboard-new-deal-cta"]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "login-to-dashboard",
+      "from": "login",
+      "to": "dashboard",
+      "trigger": { "en": "Sign in", "vi": "Đăng nhập" },
+      "specId": "login-submit-btn"
+    }
+  ]
+}
+```
+
+When `.specs/screens.json` is absent, the sidecar returns the empty default `{ "version": "1.0", "screens": [], "transitions": [] }` on `GET /screens`. `PUT /screens` validates + writes it the same way as `PUT /flows`.
+
+Both configs render in the extension's full-page **graph view** (dagre layout + hand-drawn SVG, launched from the popup/side panel); see [`run-guide.md`](./run-guide.md#19-graph-views) for the reader-facing walkthrough.
+
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired`.
-- Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired, validateFlows, validateScreens } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired` / `ValidateFlows` / `ValidateScreens`.
+- Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`, `tests/fixtures/flows/{valid,invalid}`, `tests/fixtures/screens/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).
 
 ## Consuming the schema
 
