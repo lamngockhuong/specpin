@@ -1,0 +1,99 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "version": "1.0",
+  "flows": [
+    {
+      "id": "deal-status",
+      "object": {
+        "en": "Deal",
+        "vi": "Giao dịch"
+      },
+      "description": {
+        "en": "Lifecycle of a deal as it moves through the sales pipeline.",
+        "vi": "Vòng đời của một giao dịch khi di chuyển qua pipeline bán hàng."
+      },
+      "states": [
+        {
+          "id": "draft",
+          "label": {
+            "en": "Draft",
+            "vi": "Nháp"
+          },
+          "kind": "initial"
+        },
+        {
+          "id": "negotiation",
+          "label": {
+            "en": "Negotiation",
+            "vi": "Đàm phán"
+          },
+          "specId": "deal-stage"
+        },
+        {
+          "id": "won",
+          "label": {
+            "en": "Won",
+            "vi": "Đã chốt"
+          },
+          "kind": "terminal",
+          "specId": "deal-stage"
+        },
+        {
+          "id": "lost",
+          "label": {
+            "en": "Lost",
+            "vi": "Thất bại"
+          },
+          "kind": "terminal",
+          "specId": "deal-stage"
+        }
+      ],
+      "transitions": [
+        {
+          "id": "start-negotiation",
+          "from": "draft",
+          "to": "negotiation",
+          "trigger": {
+            "en": "Start negotiation",
+            "vi": "Bắt đầu đàm phán"
+          },
+          "specId": "deal-submit",
+          "source": "manual"
+        },
+        {
+          "id": "mark-won",
+          "from": "negotiation",
+          "to": "won",
+          "trigger": {
+            "en": "Mark won",
+            "vi": "Đánh dấu đã chốt"
+          },
+          "specId": "deal-stage",
+          "source": "manual"
+        },
+        {
+          "id": "mark-lost",
+          "from": "negotiation",
+          "to": "lost",
+          "trigger": {
+            "en": "Mark lost",
+            "vi": "Đánh dấu thất bại"
+          },
+          "specId": "deal-stage",
+          "source": "manual"
+        },
+        {
+          "id": "cancel-draft",
+          "from": "draft",
+          "to": "lost",
+          "trigger": {
+            "en": "Cancel",
+            "vi": "Hủy"
+          },
+          "guard": "no owner assigned",
+          "source": "manual"
+        }
+      ]
+    }
+  ]
+}

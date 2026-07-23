@@ -1,5 +1,7 @@
 import {
+  type FlowsConfig,
   type GuidesConfig,
+  type ScreensConfig,
   SidecarClient,
   SidecarError,
   type SpecsResponse,
@@ -43,6 +45,8 @@ export class SidecarConnection {
   private cache: SpecsResponse | null = null;
   private viewsCache: ViewsConfig | null = null;
   private guidesCache: GuidesConfig | null = null;
+  private flowsCache: FlowsConfig | null = null;
+  private screensCache: ScreensConfig | null = null;
   private unwatch: (() => void) | null = null;
   private connected = false;
   private lastError: string | null = null;
@@ -86,21 +90,23 @@ export class SidecarConnection {
     }
   }
 
-  /** Reload this connection's specs (and its team-default views). Captures
-   *  failure on the instance instead of throwing, so the registry can keep
-   *  aggregating the others. */
+  /** Reload this connection's specs (and its team-default views/guides/flows/
+   *  screens). Captures failure on the instance instead of throwing, so the
+   *  registry can keep aggregating the others. */
   async reload(): Promise<void> {
-    // Fetch specs, views, and guides to the same sidecar in parallel (one
-    // round-trip, not three). allSettled keeps the views/guides fetches isolated
-    // (RT-M3): an older sidecar without /views or /guides (404) must not drop the
-    // specs we loaded, and a specs failure marks the connection disconnected
-    // regardless of the views/guides results. guides being in this same group is
-    // exactly what gives it SSE liveness: a guides-only .specs/ change triggers a
-    // reload that refreshes guidesCache here.
-    const [specs, views, guides] = await Promise.allSettled([
+    // Fetch specs, views, guides, flows, and screens to the same sidecar in
+    // parallel (one round-trip, not five). allSettled keeps the config fetches
+    // isolated (RT-M3): an older sidecar without /views, /guides, /flows, or
+    // /screens (404) must not drop the specs we loaded, and a specs failure
+    // marks the connection disconnected regardless of the other results. Each
+    // config being in this same group is exactly what gives it SSE liveness: a
+    // config-only .specs/ change triggers a reload that refreshes its cache here.
+    const [specs, views, guides, flows, screens] = await Promise.allSettled([
       this.source.loadSpecs(),
       this.source.loadViews?.() ?? Promise.resolve(null),
       this.source.loadGuides?.() ?? Promise.resolve(null),
+      this.source.loadFlows?.() ?? Promise.resolve(null),
+      this.source.loadScreens?.() ?? Promise.resolve(null),
     ]);
     if (specs.status === "fulfilled") {
       this.cache = specs.value;
@@ -112,6 +118,8 @@ export class SidecarConnection {
       this.cache = null;
       this.viewsCache = null;
       this.guidesCache = null;
+      this.flowsCache = null;
+      this.screensCache = null;
       this.connected = false;
       if (specs.reason instanceof SidecarError) {
         this.lastError = specs.reason.code;
@@ -126,6 +134,8 @@ export class SidecarConnection {
     }
     this.viewsCache = views.status === "fulfilled" ? (views.value ?? null) : null;
     this.guidesCache = guides.status === "fulfilled" ? (guides.value ?? null) : null;
+    this.flowsCache = flows.status === "fulfilled" ? (flows.value ?? null) : null;
+    this.screensCache = screens.status === "fulfilled" ? (screens.value ?? null) : null;
   }
 
   getCache(): SpecsResponse | null {
@@ -159,6 +169,18 @@ export class SidecarConnection {
     if (!this.source.saveGuides) throw new Error("source does not support guides");
     await this.source.saveGuides(config);
     await this.reload();
+  }
+
+  /** The status-flow FSM config, or the empty default when unavailable (no
+   *  flows.json, or an old sidecar with no /flows endpoint). */
+  getFlows(): FlowsConfig {
+    return this.flowsCache ?? { version: "1.0", flows: [] };
+  }
+
+  /** The screen-transition config, or the empty default when unavailable (no
+   *  screens.json, or an old sidecar with no /screens endpoint). */
+  getScreens(): ScreensConfig {
+    return this.screensCache ?? { version: "1.0", screens: [], transitions: [] };
   }
 
   /** Sidecar currently reachable (last reload succeeded). Cheaper than building
@@ -222,6 +244,8 @@ export class SidecarConnection {
     this.cache = null;
     this.viewsCache = null;
     this.guidesCache = null;
+    this.flowsCache = null;
+    this.screensCache = null;
     this.lastDomains = [];
   }
 

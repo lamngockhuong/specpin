@@ -14,6 +14,7 @@ import type {
   TaggedSpec,
 } from "../shared/connection-types.js";
 import { isLocalConnectionId, localConnId } from "../shared/local-id.js";
+import type { ProjectFlowsScreens } from "../shared/messaging.js";
 import { originMatchesDomains } from "../shared/origin-match.js";
 import { resolveStalenessThreshold } from "../shared/provenance.js";
 import { type ConnectionDeps, SidecarConnection } from "./sidecar-connection.js";
@@ -324,6 +325,30 @@ export class SidecarRegistry {
       if (opts.origin && !conn.matchesOrigin(opts.origin)) continue;
       const got = bundle(conn);
       if (got) out.push(got);
+    }
+    return out;
+  }
+
+  /** Every sidecar connection's flows + screens configs, one entry per
+   *  connection with a live cache (a down/never-loaded sidecar has nothing to
+   *  contribute). Not origin-scoped -- the graph panel is a standalone tab, not
+   *  tied to a page -- so this returns every connected project regardless of
+   *  which site it serves. Each entry carries its own `connectionId` alongside
+   *  the display `project` name so the panel can distinguish two projects that
+   *  happen to share a name; flows/screens across connections are never merged
+   *  (a page can have multiple connected projects, each with its own
+   *  `application-status` flow that must not collide with another's). */
+  flowsScreensByProject(): ProjectFlowsScreens[] {
+    const out: ProjectFlowsScreens[] = [];
+    for (const conn of this.connections.values()) {
+      const specs = conn.getCache();
+      if (!specs) continue;
+      out.push({
+        connectionId: conn.id,
+        project: specs.manifest?.project || conn.label || conn.baseUrl,
+        flows: conn.getFlows(),
+        screens: conn.getScreens(),
+      });
     }
     return out;
   }

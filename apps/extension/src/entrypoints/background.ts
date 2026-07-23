@@ -393,6 +393,8 @@ export default defineBackground(() => {
         return Promise.resolve(registry.getGuides(message.connectionId));
       case "GET_GUIDES_FOR_ORIGIN":
         return handleGetGuidesForOrigin(message.origin, sender);
+      case "GET_FLOWS_SCREENS":
+        return Promise.resolve({ projects: registry.flowsScreensByProject() });
       case "SAVE_TEAM_GUIDE":
         return handleSaveTeamGuide(message);
       case "SAVE_PERSONAL_GUIDE":

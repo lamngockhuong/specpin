@@ -74,6 +74,7 @@ const vi: Record<keyof Messages, string> = {
   "common.markerYou": "bạn",
   "common.markerYouTitle": "Tùy chỉnh cá nhân của bạn",
   "common.viewChangelog": "Xem changelog",
+  "common.openGraphView": "Mở chế độ xem đồ thị",
 
   // Popup-only.
   "popup.openSidepanel": "Mở dạng thanh bên ⇥",
@@ -534,6 +535,23 @@ const vi: Record<keyof Messages, string> = {
   "options.shortcuts": "Phím tắt",
   "options.shortcutsLead":
     "Toàn bộ phím tắt Specpin lắng nghe. Nhấn Alt+Shift+? trên bất kỳ trang nào để mở danh sách này ngay tại đó.",
+
+  "graph.pageTitle": "Chế độ xem đồ thị - Specpin",
+  "graph.datasetFlows": "Luồng trạng thái",
+  "graph.datasetScreens": "Màn hình",
+  "graph.noData":
+    "Chưa cấu hình flows hay screens nào. Thêm .specs/flows.json hoặc .specs/screens.json vào một dự án đã kết nối.",
+  "graph.notOnPage": "Không có trên trang hiện tại - {page}",
+  // Bộ điều khiển đồ thị (chuyển chế độ xem, tab danh mục, tìm kiếm) + chế độ bảng.
+  "graph.toggleGraph": "Đồ thị",
+  "graph.toggleTable": "Bảng",
+  "graph.searchPlaceholder": "Tìm node…",
+  "graph.categoryAll": "Tất cả",
+  "graph.colNode": "Node",
+  "graph.colCategory": "Danh mục",
+  "graph.colKind": "Loại",
+  "graph.colSpec": "Spec",
+  "graph.noMatch": "Không có node nào khớp với bộ lọc hiện tại.",
 
   "welcome.title": "Chào mừng đến với Specpin",
   "welcome.lead":
