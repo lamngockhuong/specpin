@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.16](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.15...extension-v0.0.16) (2026-07-23)
+
+
+### Bug Fixes
+
+* **extension:** normalize domain input to bare host ([#179](https://github.com/lamngockhuong/specpin/issues/179)) ([0878a63](https://github.com/lamngockhuong/specpin/commit/0878a63e7b1d442a00c1364fc47dc2af2b82b952))
+
 ## [0.0.15](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.14...extension-v0.0.15) (2026-07-07)
 
 
