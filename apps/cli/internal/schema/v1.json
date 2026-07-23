@@ -300,6 +300,190 @@
         }
       }
     },
+    "Transition": {
+      "title": "Transition",
+      "description": "A directed edge shared by both graph views: a state change in a status-flow FSM, or a navigation between screens. `trigger` names the action; the optional `specId` links the edge back to the pinned element that fires it.",
+      "type": "object",
+      "required": ["id", "from", "to", "trigger"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Stable unique id within its parent graph."
+        },
+        "from": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Source node id (a FlowState.id or Screen.id)."
+        },
+        "to": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Target node id (a FlowState.id or Screen.id)."
+        },
+        "trigger": {
+          "$ref": "#/$defs/LocalizedString",
+          "description": "The action or event that causes the transition, e.g. \"Submit\"."
+        },
+        "guard": {
+          "type": ["string", "null"],
+          "description": "Optional condition that must hold for the transition to fire, e.g. \"amount > 0\"."
+        },
+        "role": {
+          "type": ["string", "null"],
+          "description": "Optional actor/role that performs the transition, e.g. \"admin\"."
+        },
+        "specId": {
+          "type": ["string", "null"],
+          "description": "Optional id of the pinned element that triggers this transition. Links the graph edge back to element-anchored knowledge."
+        },
+        "source": {
+          "type": "string",
+          "enum": ["manual", "auto-captured", "imported"],
+          "description": "How this transition was authored. Defaults to manual authoring when absent."
+        }
+      }
+    },
+    "FlowState": {
+      "title": "FlowState",
+      "description": "One state in a status-flow FSM (e.g. \"pending\", \"approved\").",
+      "type": "object",
+      "required": ["id", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Stable unique id within its Flow."
+        },
+        "label": {
+          "$ref": "#/$defs/LocalizedString",
+          "description": "Human-readable state label."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["initial", "normal", "terminal"],
+          "description": "Role of the state in the FSM. Absent means a normal state."
+        },
+        "specId": {
+          "type": ["string", "null"],
+          "description": "Optional id of a pinned element that represents this state in the live UI."
+        }
+      }
+    },
+    "Flow": {
+      "title": "Flow",
+      "description": "A status-flow FSM for one object type (e.g. the lifecycle of an \"application\"): its states and the transitions between them.",
+      "type": "object",
+      "required": ["id", "object", "states", "transitions"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Stable unique id within the file, e.g. \"application-status\"."
+        },
+        "object": {
+          "$ref": "#/$defs/LocalizedString",
+          "description": "The object type whose lifecycle this flow describes, e.g. \"Application\"."
+        },
+        "description": {
+          "$ref": "#/$defs/LocalizedString",
+          "description": "Optional blurb describing the flow."
+        },
+        "states": {
+          "type": "array",
+          "maxItems": 200,
+          "items": { "$ref": "#/$defs/FlowState" }
+        },
+        "transitions": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": { "$ref": "#/$defs/Transition" }
+        }
+      }
+    },
+    "FlowsConfig": {
+      "title": "FlowsConfig",
+      "description": "The .specs/flows.json config: a versioned file holding an array of status-flow FSMs, one per object type.",
+      "type": "object",
+      "required": ["version", "flows"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Optional pointer to this schema for editor tooling."
+        },
+        "version": { "type": "string", "minLength": 1 },
+        "flows": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "$ref": "#/$defs/Flow" }
+        }
+      }
+    },
+    "Screen": {
+      "title": "Screen",
+      "description": "One screen/page node in the screen-transition graph, matched to the live UI via a URL glob (same glob semantics as a spec's pageUrl).",
+      "type": "object",
+      "required": ["id", "name", "urlGlob"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Stable unique id within the file, e.g. \"checkout\"."
+        },
+        "name": {
+          "$ref": "#/$defs/LocalizedString",
+          "description": "Human-readable screen name."
+        },
+        "urlGlob": {
+          "type": "string",
+          "minLength": 1,
+          "description": "URL glob that identifies this screen in the live UI, reusing the pageUrl glob semantics, e.g. \"/checkout/*\"."
+        },
+        "description": {
+          "$ref": "#/$defs/LocalizedString",
+          "description": "Optional blurb describing the screen."
+        },
+        "specIds": {
+          "type": "array",
+          "maxItems": 200,
+          "items": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "description": "Optional ids of pinned elements that live on this screen."
+        }
+      }
+    },
+    "ScreensConfig": {
+      "title": "ScreensConfig",
+      "description": "The .specs/screens.json config: a versioned file holding the screen nodes and the navigation transitions between them.",
+      "type": "object",
+      "required": ["version", "screens", "transitions"],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Optional pointer to this schema for editor tooling."
+        },
+        "version": { "type": "string", "minLength": 1 },
+        "screens": {
+          "type": "array",
+          "maxItems": 500,
+          "items": { "$ref": "#/$defs/Screen" }
+        },
+        "transitions": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": { "$ref": "#/$defs/Transition" }
+        }
+      }
+    },
     "Manifest": {
       "title": "Manifest",
       "description": "The .specs/manifest.json index + project configuration.",

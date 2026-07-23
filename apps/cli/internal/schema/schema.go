@@ -25,6 +25,8 @@ type Validator struct {
 	views    *jsonschema.Schema
 	guides   *jsonschema.Schema
 	required *jsonschema.Schema
+	flows    *jsonschema.Schema
+	screens  *jsonschema.Schema
 }
 
 // NewValidator compiles the embedded schema. Format assertions are enabled so
@@ -65,8 +67,16 @@ func NewValidator() (*Validator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compile RequiredConfig schema: %w", err)
 	}
+	flows, err := c.Compile(schemaID + "#/$defs/FlowsConfig")
+	if err != nil {
+		return nil, fmt.Errorf("compile FlowsConfig schema: %w", err)
+	}
+	screens, err := c.Compile(schemaID + "#/$defs/ScreensConfig")
+	if err != nil {
+		return nil, fmt.Errorf("compile ScreensConfig schema: %w", err)
+	}
 
-	return &Validator{spec: spec, manifest: manifest, specFile: specFile, views: views, guides: guides, required: required}, nil
+	return &Validator{spec: spec, manifest: manifest, specFile: specFile, views: views, guides: guides, required: required, flows: flows, screens: screens}, nil
 }
 
 func validate(sch *jsonschema.Schema, raw []byte) []string {
@@ -124,3 +134,9 @@ func (v *Validator) ValidateGuides(raw []byte) []string { return validate(v.guid
 
 // ValidateRequired validates a .specs/required.json document (RequiredConfig).
 func (v *Validator) ValidateRequired(raw []byte) []string { return validate(v.required, raw) }
+
+// ValidateFlows validates a .specs/flows.json document (FlowsConfig).
+func (v *Validator) ValidateFlows(raw []byte) []string { return validate(v.flows, raw) }
+
+// ValidateScreens validates a .specs/screens.json document (ScreensConfig).
+func (v *Validator) ValidateScreens(raw []byte) []string { return validate(v.screens, raw) }
