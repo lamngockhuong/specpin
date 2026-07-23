@@ -1,8 +1,10 @@
 import type { SpecsResponse, SpecWithFile, ViewsConfig } from "@specpin/api-client";
 import {
+  type FlowsConfig,
   formatErrors,
   type GuideDef,
   type RequiredConfig,
+  type ScreensConfig,
   type Spec,
   validateGuides,
   validateSpec,
@@ -986,6 +988,8 @@ export default defineBackground(() => {
           guides: registry.getGuides(connId),
           views: registry.getViews(connId),
           required: batch.required,
+          flows: batch.flows,
+          screens: batch.screens,
         }),
       };
     };
@@ -1081,6 +1085,8 @@ export default defineBackground(() => {
     guides?: GuideDef[];
     views?: ViewsConfig;
     required?: RequiredConfig;
+    flows?: FlowsConfig;
+    screens?: ScreensConfig;
   }): Promise<AddLocalBatchResult> {
     return mutate(async () => {
       const state = (await getLocalSpecs()) ?? { batches: [] };
@@ -1108,6 +1114,8 @@ export default defineBackground(() => {
         ...(message.guides?.length ? { guides: message.guides } : {}),
         ...(message.views ? { views: message.views } : {}),
         ...(message.required ? { required: message.required } : {}),
+        ...(message.flows ? { flows: message.flows } : {}),
+        ...(message.screens ? { screens: message.screens } : {}),
         specs: message.bundle,
       };
       const next = { batches: [...state.batches, batch] };

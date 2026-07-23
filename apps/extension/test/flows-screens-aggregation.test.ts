@@ -2,6 +2,8 @@ import type { FlowsConfig, ScreensConfig, SpecsResponse } from "@specpin/api-cli
 import { describe, expect, it } from "vitest";
 import { SidecarConnection } from "../src/background/sidecar-connection.js";
 import { SidecarRegistry } from "../src/background/sidecar-registry.js";
+import type { ManualBatch } from "../src/shared/config.js";
+import { localConnId } from "../src/shared/local-id.js";
 import { PRIVILEGED_MESSAGE_TYPES } from "../src/shared/messaging.js";
 import type { SpecSource } from "../src/sources/source.js";
 
@@ -24,6 +26,26 @@ const screensWith = (id: string): ScreensConfig =>
     screens: [{ id, name: { en: id }, urlGlob: "/*" }],
     transitions: [],
   }) as unknown as ScreensConfig;
+
+function localBatch(
+  id: string,
+  project: string,
+  domains: string[],
+  flows?: FlowsConfig,
+  screens?: ScreensConfig,
+  enabled?: boolean,
+): ManualBatch {
+  return {
+    id,
+    label: project,
+    source: "manual",
+    importedAt: 0,
+    flows,
+    screens,
+    enabled,
+    specs: { manifest: { version: "1.0", project, domains, specFiles: [] }, specs: [] },
+  };
+}
 
 /** Fake source that serves canned specs + canned flows/screens configs. */
 function flowsSource(specs: SpecsResponse, flows: FlowsConfig, screens: ScreensConfig): SpecSource {
@@ -180,6 +202,36 @@ describe("SidecarRegistry.flowsScreensByProject (namespaced by project)", () => 
     });
     await r.reestablish([conn("a")], false);
     expect(r.flowsScreensByProject().map((p) => p.project)).toEqual(["A"]);
+  });
+
+  it("includes a manual batch's imported flows/screens, tagged manual:<batchId>", () => {
+    const r = registryWith({});
+    r.setLocalBatches([
+      localBatch("b1", "Local", ["loc.test"], flowsWith("application-status"), screensWith("home")),
+    ]);
+    const out = r.flowsScreensByProject();
+    expect(out).toHaveLength(1);
+    expect(out[0]?.connectionId).toBe(localConnId("b1"));
+    expect(out[0]?.project).toBe("Local");
+    expect(out[0]?.flows.flows.map((f) => f.id)).toEqual(["application-status"]);
+    expect(out[0]?.screens.screens.map((s) => s.id)).toEqual(["home"]);
+  });
+
+  it("defaults a manual batch with no imported flows/screens to the empty config", () => {
+    const r = registryWith({});
+    r.setLocalBatches([localBatch("b1", "Local", ["loc.test"])]);
+    const out = r.flowsScreensByProject();
+    expect(out).toHaveLength(1);
+    expect(out[0]?.flows).toEqual({ version: "1.0", flows: [] });
+    expect(out[0]?.screens).toEqual({ version: "1.0", screens: [], transitions: [] });
+  });
+
+  it("skips a disabled manual batch", () => {
+    const r = registryWith({});
+    r.setLocalBatches([
+      localBatch("b1", "Off", ["loc.test"], flowsWith("f1"), screensWith("s1"), false),
+    ]);
+    expect(r.flowsScreensByProject()).toEqual([]);
   });
 });
 

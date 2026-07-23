@@ -114,6 +114,37 @@ describe("parseLocalBundle", () => {
     expect(required?.required).toEqual(["login-btn"]);
   });
 
+  it("parses valid flows.json / screens.json alongside specs", () => {
+    const { specs, flows, screens, errors } = parseLocalBundle(
+      bundle({
+        manifest,
+        files: {
+          "login.spec.json": specFile,
+          "flows.json": {
+            version: "1.0",
+            flows: [
+              {
+                id: "application-status",
+                object: { en: "Application" },
+                states: [],
+                transitions: [],
+              },
+            ],
+          },
+          "screens.json": {
+            version: "1.0",
+            screens: [{ id: "home", name: { en: "Home" }, urlGlob: "/*" }],
+            transitions: [],
+          },
+        },
+      }),
+    );
+    expect(errors).toEqual([]);
+    expect(specs?.specs).toHaveLength(1); // configs are not counted as specs
+    expect(flows?.flows.map((f) => f.id)).toEqual(["application-status"]);
+    expect(screens?.screens.map((s) => s.id)).toEqual(["home"]);
+  });
+
   it("reports a clear error for a schema-invalid config file", () => {
     const { specs, errors } = parseLocalBundle(
       bundle({
@@ -126,6 +157,20 @@ describe("parseLocalBundle", () => {
     );
     expect(specs).toBeUndefined();
     expect(errors.some((e) => e.startsWith("views.json:"))).toBe(true);
+  });
+
+  it("reports a clear error for a schema-invalid flows.json / screens.json", () => {
+    const { specs, errors } = parseLocalBundle(
+      bundle({
+        manifest,
+        files: {
+          "login.spec.json": specFile,
+          "flows.json": { version: "1.0" }, // missing required `flows`
+        },
+      }),
+    );
+    expect(specs).toBeUndefined();
+    expect(errors.some((e) => e.startsWith("flows.json:"))).toBe(true);
   });
 });
 
@@ -181,18 +226,25 @@ describe("parseLocalFiles", () => {
   });
 
   it("routes .specs/ config files through the shared validation path", () => {
-    const { specs, guides, views, required, errors } = parseLocalFiles([
+    const { specs, guides, views, required, flows, screens, errors } = parseLocalFiles([
       manifestFile,
       loginFile,
       { name: "guides.json", text: JSON.stringify({ version: "1.0", guides: [] }) },
       { name: ".specs/views.json", text: JSON.stringify({ version: "1.0", hidden: ["spec:x"] }) },
       { name: "required.json", text: JSON.stringify({ version: "1.0", required: [] }) },
+      { name: "flows.json", text: JSON.stringify({ version: "1.0", flows: [] }) },
+      {
+        name: ".specs/screens.json",
+        text: JSON.stringify({ version: "1.0", screens: [], transitions: [] }),
+      },
     ]);
     expect(errors).toEqual([]);
     expect(specs?.specs).toHaveLength(1);
     expect(guides).toEqual({ version: "1.0", guides: [] });
     expect(views?.hidden).toEqual(["spec:x"]);
     expect(required).toEqual({ version: "1.0", required: [] });
+    expect(flows).toEqual({ version: "1.0", flows: [] });
+    expect(screens).toEqual({ version: "1.0", screens: [], transitions: [] });
   });
 
   it("reports invalid JSON per file", () => {

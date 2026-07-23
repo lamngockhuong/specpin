@@ -93,6 +93,11 @@ export type Message =
       guides?: GuideDef[];
       views?: ViewsConfig;
       required?: RequiredConfig;
+      /** Imported `.specs/flows.json` / `screens.json`, when a folder/zip carried
+       *  them. Stored on the batch and surfaced in the graph panel (see
+       *  ProjectFlowsScreens / flowsScreensByProject). */
+      flows?: FlowsConfig;
+      screens?: ScreensConfig;
     }
   | { type: "REMOVE_LOCAL_BATCH"; id: string }
   | { type: "CLEAR_LOCAL_SPECS" }

@@ -114,12 +114,51 @@ describe("bundleToFiles - optional .specs/ config files", () => {
     ]);
   });
 
+  it("emits flows.json when it has flows, screens.json when it has screens or transitions", () => {
+    const b = batch(specs);
+    const files = bundleToFiles(b.specs, {
+      flows: {
+        version: "1.0",
+        flows: [
+          { id: "application-status", object: { en: "Application" }, states: [], transitions: [] },
+        ],
+      },
+      screens: {
+        version: "1.0",
+        screens: [{ id: "home", name: { en: "Home" }, urlGlob: "/*" }],
+        transitions: [],
+      },
+    });
+    expect(Object.keys(files).sort()).toEqual([
+      "flows.json",
+      "login.spec.json",
+      "manifest.json",
+      "screens.json",
+    ]);
+    expect((files["flows.json"] as { $schema?: string }).$schema).toBe(SCHEMA_V1_ID);
+    expect((files["screens.json"] as { $schema?: string }).$schema).toBe(SCHEMA_V1_ID);
+  });
+
+  it("emits screens.json when only transitions is non-empty (no screens)", () => {
+    const b = batch(specs);
+    const files = bundleToFiles(b.specs, {
+      screens: {
+        version: "1.0",
+        screens: [],
+        transitions: [{ id: "t1", from: "a", to: "b", trigger: { en: "Go" } }],
+      },
+    });
+    expect(files["screens.json"]).toBeDefined();
+  });
+
   it("skips a config file when it is empty (or absent)", () => {
     const b = batch(specs);
     const files = bundleToFiles(b.specs, {
       guides: { version: "1.0", guides: [] },
       views: { version: "1.0", hidden: [] },
       required: { version: "1.0", required: [] },
+      flows: { version: "1.0", flows: [] },
+      screens: { version: "1.0", screens: [], transitions: [] },
     });
     expect(Object.keys(files).sort()).toEqual(["login.spec.json", "manifest.json"]);
   });
@@ -133,6 +172,17 @@ describe("bundleToFiles - optional .specs/ config files", () => {
       },
       views: { version: "1.0", hidden: ["source:ai-generated"] },
       required: { version: "1.0", required: ["login-btn"] },
+      flows: {
+        version: "1.0",
+        flows: [
+          { id: "application-status", object: { en: "Application" }, states: [], transitions: [] },
+        ],
+      },
+      screens: {
+        version: "1.0",
+        screens: [{ id: "home", name: { en: "Home" }, urlGlob: "/*" }],
+        transitions: [],
+      },
     });
     const { "manifest.json": manifest, ...rest } = files;
     const parsed = parseLocalBundle(JSON.stringify({ manifest, files: rest }));
@@ -140,6 +190,8 @@ describe("bundleToFiles - optional .specs/ config files", () => {
     expect(parsed.guides?.guides.map((g) => g.id)).toEqual(["tour"]);
     expect(parsed.views?.hidden).toEqual(["source:ai-generated"]);
     expect(parsed.required?.required).toEqual(["login-btn"]);
+    expect(parsed.flows?.flows.map((f) => f.id)).toEqual(["application-status"]);
+    expect(parsed.screens?.screens.map((s) => s.id)).toEqual(["home"]);
   });
 });
 

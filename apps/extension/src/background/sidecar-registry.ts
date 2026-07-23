@@ -329,14 +329,18 @@ export class SidecarRegistry {
     return out;
   }
 
-  /** Every sidecar connection's flows + screens configs, one entry per
+  /** Every sidecar connection's flows + screens configs, plus every enabled
+   *  Manual-import batch's imported `flows.json`/`screens.json`, one entry per
    *  connection with a live cache (a down/never-loaded sidecar has nothing to
-   *  contribute). Not origin-scoped -- the graph panel is a standalone tab, not
-   *  tied to a page -- so this returns every connected project regardless of
-   *  which site it serves. Each entry carries its own `connectionId` alongside
+   *  contribute) or per manual batch. Not origin-scoped -- the graph panel is a
+   *  standalone tab, not tied to a page -- so this returns every connected/manual
+   *  project regardless of which site it serves; a disabled manual batch is
+   *  skipped, mirroring the render gate elsewhere (specsForOrigin,
+   *  teamHiddenForOrigin). Each entry carries its own `connectionId` alongside
    *  the display `project` name so the panel can distinguish two projects that
-   *  happen to share a name; flows/screens across connections are never merged
-   *  (a page can have multiple connected projects, each with its own
+   *  happen to share a name (a manual batch uses the same `manual:<id>` id scheme
+   *  as getViews/getGuides); flows/screens across entries are never merged (a
+   *  page can have multiple connected projects, each with its own
    *  `application-status` flow that must not collide with another's). */
   flowsScreensByProject(): ProjectFlowsScreens[] {
     const out: ProjectFlowsScreens[] = [];
@@ -348,6 +352,15 @@ export class SidecarRegistry {
         project: specs.manifest?.project || conn.label || conn.baseUrl,
         flows: conn.getFlows(),
         screens: conn.getScreens(),
+      });
+    }
+    for (const batch of this.manual) {
+      if (batch.enabled === false) continue;
+      out.push({
+        connectionId: localConnId(batch.id),
+        project: batch.specs.manifest?.project || batch.label,
+        flows: batch.flows ?? { version: "1.0", flows: [] },
+        screens: batch.screens ?? { version: "1.0", screens: [], transitions: [] },
       });
     }
     return out;
