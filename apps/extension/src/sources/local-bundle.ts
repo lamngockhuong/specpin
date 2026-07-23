@@ -1,16 +1,20 @@
 import type { SpecsResponse, SpecWithFile } from "@specpin/api-client";
 import type {
+  FlowsConfig,
   GuidesConfig,
   Manifest,
   RequiredConfig,
+  ScreensConfig,
   ValidationResult,
   ViewsConfig,
 } from "@specpin/spec-schema";
 import {
   formatErrors,
+  validateFlows,
   validateGuides,
   validateManifest,
   validateRequired,
+  validateScreens,
   validateSpecFile,
   validateViews,
 } from "@specpin/spec-schema";
@@ -32,7 +36,13 @@ const DANGEROUS_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
 // The optional `.specs/` config files (beyond manifest.json + *.spec.json) both
 // entry points recognize. Single source so the two functions cannot drift.
-const CONFIG_FILE_NAMES = new Set(["guides.json", "views.json", "required.json"]);
+const CONFIG_FILE_NAMES = new Set([
+  "guides.json",
+  "views.json",
+  "required.json",
+  "flows.json",
+  "screens.json",
+]);
 
 export interface BundleResult {
   specs?: SpecsResponse;
@@ -49,6 +59,13 @@ export interface BundleResult {
   /** The validated `required.json` when present. Carried for forward-compat and to
    *  avoid erroring on a full-folder import; inert (no extension consumer yet). */
   required?: RequiredConfig;
+  /** The validated `flows.json` when present: the local equivalent of a sidecar's
+   *  status-flow FSM config, stored on the batch and surfaced in the graph panel. */
+  flows?: FlowsConfig;
+  /** The validated `screens.json` when present: the local equivalent of a
+   *  sidecar's screen-transition config, stored on the batch and surfaced in the
+   *  graph panel. */
+  screens?: ScreensConfig;
   errors: string[];
 }
 
@@ -116,6 +133,8 @@ export function parseLocalBundle(text: string): BundleResult {
   let guides: GuidesConfig | undefined;
   let views: ViewsConfig | undefined;
   let required: RequiredConfig | undefined;
+  let flows: FlowsConfig | undefined;
+  let screens: ScreensConfig | undefined;
   // Validate one `.specs/` config file against its schema on the SINGLE parse path
   // shared by both entry points: return the typed object on success, else push a
   // clear `${name}: ...` error (which blocks the import) and return undefined.
@@ -140,6 +159,14 @@ export function parseLocalBundle(text: string): BundleResult {
     }
     if (name === "required.json") {
       required = takeConfig<RequiredConfig>(name, validateRequired);
+      continue;
+    }
+    if (name === "flows.json") {
+      flows = takeConfig<FlowsConfig>(name, validateFlows);
+      continue;
+    }
+    if (name === "screens.json") {
+      screens = takeConfig<ScreensConfig>(name, validateScreens);
       continue;
     }
     if (!name.endsWith(".spec.json")) {
@@ -171,6 +198,8 @@ export function parseLocalBundle(text: string): BundleResult {
     ...(guides ? { guides } : {}),
     ...(views ? { views } : {}),
     ...(required ? { required } : {}),
+    ...(flows ? { flows } : {}),
+    ...(screens ? { screens } : {}),
     errors: [],
   };
 }

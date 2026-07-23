@@ -77,6 +77,7 @@ const en = {
   "common.markerYou": "you",
   "common.markerYouTitle": "Your personal override",
   "common.viewChangelog": "View changelog",
+  "common.openGraphView": "Open graph view",
 
   // Popup-only.
   "popup.openSidepanel": "Open as side panel ⇥",
@@ -544,6 +545,24 @@ const en = {
   "options.shortcuts": "Keyboard shortcuts",
   "options.shortcutsLead":
     "Every keyboard chord Specpin listens for. Press Alt+Shift+? on any page to open this list there.",
+
+  // Graph panel (entrypoints/graph), the full-page flows/screens diagram.
+  "graph.pageTitle": "Graph view - Specpin",
+  "graph.datasetFlows": "Flows",
+  "graph.datasetScreens": "Screens",
+  "graph.noData":
+    "No flows or screens configured yet. Add .specs/flows.json or .specs/screens.json to a connected project.",
+  "graph.notOnPage": "Not on the current page - {page}",
+  // Graph controls (view toggle, category tabs, search) + the table view.
+  "graph.toggleGraph": "Graph",
+  "graph.toggleTable": "Table",
+  "graph.searchPlaceholder": "Search nodes…",
+  "graph.categoryAll": "All",
+  "graph.colNode": "Node",
+  "graph.colCategory": "Category",
+  "graph.colKind": "Kind",
+  "graph.colSpec": "Spec",
+  "graph.noMatch": "No nodes match the current filter.",
 
   // First-run welcome page (entrypoints/welcome), opened once on install.
   "welcome.title": "Welcome to Specpin",

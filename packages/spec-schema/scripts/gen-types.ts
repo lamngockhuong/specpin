@@ -28,7 +28,7 @@ const genRoot = {
   $id: "https://specpin.ohnice.app/schema/v1.types.json",
   title: "SpecpinSchemaRoots",
   type: "object",
-  required: ["specFile", "manifest", "views", "guides", "required"],
+  required: ["specFile", "manifest", "views", "guides", "required", "flows", "screens"],
   additionalProperties: false,
   properties: {
     specFile: { $ref: "#/$defs/SpecFile" },
@@ -42,6 +42,10 @@ const genRoot = {
     // RequiredConfig is likewise unreferenced by the roots above; reference here
     // so its interface is emitted.
     required: { $ref: "#/$defs/RequiredConfig" },
+    // FlowsConfig/ScreensConfig (and Flow/FlowState/Screen/Transition) are likewise
+    // unreferenced by the roots above; reference here so their interfaces are emitted.
+    flows: { $ref: "#/$defs/FlowsConfig" },
+    screens: { $ref: "#/$defs/ScreensConfig" },
   },
   $defs: schema.$defs,
 };
@@ -102,6 +106,8 @@ const validatorsCode = standaloneCode(standaloneAjv, {
   validateViews: `${schemaId}#/$defs/ViewsConfig`,
   validateGuides: `${schemaId}#/$defs/GuidesConfig`,
   validateRequired: `${schemaId}#/$defs/RequiredConfig`,
+  validateFlows: `${schemaId}#/$defs/FlowsConfig`,
+  validateScreens: `${schemaId}#/$defs/ScreensConfig`,
 });
 
 const validatorsBanner = [
@@ -124,6 +130,8 @@ const validatorsDts = [
   "export const validateViews: ValidateFunction;",
   "export const validateGuides: ValidateFunction;",
   "export const validateRequired: ValidateFunction;",
+  "export const validateFlows: ValidateFunction;",
+  "export const validateScreens: ValidateFunction;",
   "",
 ].join("\n");
 

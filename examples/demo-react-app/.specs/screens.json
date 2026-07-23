@@ -1,0 +1,134 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "version": "1.0",
+  "screens": [
+    {
+      "id": "login",
+      "name": {
+        "en": "Login",
+        "vi": "Đăng nhập"
+      },
+      "urlGlob": "/login",
+      "specIds": [
+        "login-submit-btn"
+      ]
+    },
+    {
+      "id": "dashboard",
+      "name": {
+        "en": "Dashboard",
+        "vi": "Bảng điều khiển"
+      },
+      "urlGlob": "/",
+      "description": {
+        "en": "Landing page after sign-in: stats + recent activity.",
+        "vi": "Trang sau khi đăng nhập: số liệu và hoạt động gần đây."
+      },
+      "specIds": [
+        "dashboard-new-deal-cta"
+      ]
+    },
+    {
+      "id": "customers",
+      "name": {
+        "en": "Customers",
+        "vi": "Khách hàng"
+      },
+      "urlGlob": "/customers*",
+      "specIds": [
+        "customers-add"
+      ]
+    },
+    {
+      "id": "deal-new",
+      "name": {
+        "en": "New deal",
+        "vi": "Giao dịch mới"
+      },
+      "urlGlob": "/deals/new",
+      "specIds": [
+        "deal-submit"
+      ]
+    },
+    {
+      "id": "settings",
+      "name": {
+        "en": "Settings",
+        "vi": "Cài đặt"
+      },
+      "urlGlob": "/settings",
+      "specIds": [
+        "settings-save"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "login-to-dashboard",
+      "from": "login",
+      "to": "dashboard",
+      "trigger": {
+        "en": "Sign in",
+        "vi": "Đăng nhập"
+      },
+      "specId": "login-submit-btn"
+    },
+    {
+      "id": "dashboard-to-deal-new",
+      "from": "dashboard",
+      "to": "deal-new",
+      "trigger": {
+        "en": "New deal",
+        "vi": "Giao dịch mới"
+      },
+      "specId": "dashboard-new-deal-cta"
+    },
+    {
+      "id": "deal-new-to-dashboard",
+      "from": "deal-new",
+      "to": "dashboard",
+      "trigger": {
+        "en": "Create deal",
+        "vi": "Tạo giao dịch"
+      },
+      "specId": "deal-submit"
+    },
+    {
+      "id": "dashboard-to-customers",
+      "from": "dashboard",
+      "to": "customers",
+      "trigger": {
+        "en": "View customers",
+        "vi": "Xem khách hàng"
+      }
+    },
+    {
+      "id": "customers-to-dashboard",
+      "from": "customers",
+      "to": "dashboard",
+      "trigger": {
+        "en": "Back",
+        "vi": "Quay lại"
+      }
+    },
+    {
+      "id": "dashboard-to-settings",
+      "from": "dashboard",
+      "to": "settings",
+      "trigger": {
+        "en": "Open settings",
+        "vi": "Mở cài đặt"
+      }
+    },
+    {
+      "id": "settings-to-login",
+      "from": "settings",
+      "to": "login",
+      "trigger": {
+        "en": "Log out",
+        "vi": "Đăng xuất"
+      },
+      "specId": "nav-logout"
+    }
+  ]
+}

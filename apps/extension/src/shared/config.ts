@@ -1,9 +1,11 @@
 import type { SpecsResponse, SpecWithFile } from "@specpin/api-client";
 import type {
   DisplayMode,
+  FlowsConfig,
   GuideDef,
   Manifest,
   RequiredConfig,
+  ScreensConfig,
   Spec,
   ViewsConfig,
 } from "@specpin/spec-schema";
@@ -71,6 +73,14 @@ export interface ManualBatch {
    *  INERT: nothing in the extension reads it (no `/required` endpoint, no coverage
    *  consumer) until a future required-coverage feature. */
   required?: RequiredConfig;
+  /** The imported `.specs/flows.json`: the local equivalent of a sidecar's
+   *  status-flow FSM config. Surfaced in the graph panel alongside connected
+   *  sidecar projects' flows (see `flowsScreensByProject`). */
+  flows?: FlowsConfig;
+  /** The imported `.specs/screens.json`: the local equivalent of a sidecar's
+   *  screen-transition config. Surfaced in the graph panel alongside connected
+   *  sidecar projects' screens (see `flowsScreensByProject`). */
+  screens?: ScreensConfig;
   /** The validated bundle: manifest + flattened specs (unchanged shape). */
   specs: SpecsResponse;
 }

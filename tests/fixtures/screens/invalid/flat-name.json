@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "screens": [{ "id": "home", "name": "Home", "urlGlob": "/" }],
+  "transitions": []
+}

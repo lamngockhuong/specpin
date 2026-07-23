@@ -84,7 +84,12 @@ pnpm --filter @specpin/extension sync-css-tokens   # regenerate tokens.gen.css
 Two consumers, one generated file:
 
 - **Popup + options pages** import `tokens.gen.css` directly (Vite injects it);
-  `:root` matches the document, so vars resolve normally.
+  `:root` matches the document, so vars resolve normally. The full-page **graph view**
+  (`entrypoints/graph/`, flows/screens diagram) follows the same pattern - it is an
+  extension-owned page like popup/options, not a Shadow DOM overlay on a host page - and
+  introduces no new tokens, referencing only existing `--sp-*` vars (`--sp-bg`, `--sp-surface`,
+  `--sp-border`, `--sp-control`, `--sp-accent`, `--sp-accent-on`, `--sp-text`/`--sp-text-2`,
+  `--sp-elevated`, `--sp-radius-control`, `--sp-font-ui`/`--sp-font-mono`).
 - **Shadow DOM renderers** (sidebar, tooltip, capture form) cannot inherit the
   page's `:root` vars: `:host { all: initial }` isolates them, and `:root` does
   not match inside a shadow tree. So `src/shared/tokens.ts` imports

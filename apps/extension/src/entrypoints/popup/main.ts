@@ -10,6 +10,7 @@ import {
 import { chromeApi } from "../../shared/chrome-api.js";
 import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
+import { openGraphView } from "../../shared/open-graph-view.js";
 import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
@@ -264,6 +265,11 @@ byId("search").addEventListener("input", (e) => {
   if (lastSpecs) renderSpecs(lastSpecs);
 });
 byId("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
+// Opens the full-page graph view (Phase 5) in a new tab; the popup itself has
+// no docked state to preserve, so close it once the new tab is open.
+byId("open-graph").addEventListener("click", () => {
+  void openGraphView().then(() => window.close());
+});
 
 // Chrome only: offer to dock the panel from the popup (the click is the required
 // user gesture for sidePanel.open). Firefox lacks chrome.sidePanel and opens its

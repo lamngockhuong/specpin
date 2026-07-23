@@ -76,6 +76,7 @@ const ja: Record<keyof Messages, string> = {
   "common.markerYou": "あなた",
   "common.markerYouTitle": "あなたの個人設定",
   "common.viewChangelog": "変更履歴を見る",
+  "common.openGraphView": "グラフビューを開く",
 
   // Popup-only.
   "popup.openSidepanel": "サイドパネルで開く ⇥",
@@ -544,6 +545,23 @@ const ja: Record<keyof Messages, string> = {
   "options.shortcuts": "キーボードショートカット",
   "options.shortcutsLead":
     "Specpin が待ち受けるすべてのキーボードショートカット。任意のページで Alt+Shift+? を押すと、その場でこの一覧を開けます。",
+
+  "graph.pageTitle": "グラフビュー - Specpin",
+  "graph.datasetFlows": "フロー",
+  "graph.datasetScreens": "画面",
+  "graph.noData":
+    "flows も screens もまだ設定されていません。接続済みプロジェクトに .specs/flows.json または .specs/screens.json を追加してください。",
+  "graph.notOnPage": "現在のページにはありません - {page}",
+  // グラフコントロール (表示切り替え、カテゴリタブ、検索) + テーブル表示。
+  "graph.toggleGraph": "グラフ",
+  "graph.toggleTable": "テーブル",
+  "graph.searchPlaceholder": "ノードを検索…",
+  "graph.categoryAll": "すべて",
+  "graph.colNode": "ノード",
+  "graph.colCategory": "カテゴリ",
+  "graph.colKind": "種類",
+  "graph.colSpec": "Spec",
+  "graph.noMatch": "現在のフィルターに一致するノードはありません。",
 
   "welcome.title": "Specpin へようこそ",
   "welcome.lead":

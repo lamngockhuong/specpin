@@ -3,9 +3,11 @@ import type { ErrorObject, ValidateFunction } from "ajv";
 // scripts/gen-types.ts. Compiling at runtime breaks in content scripts whose
 // host page CSP forbids `unsafe-eval`.
 import {
+  validateFlows as flowsValidator,
   validateGuides as guidesValidator,
   validateManifest as manifestValidator,
   validateRequired as requiredValidator,
+  validateScreens as screensValidator,
   validateSpecFile as specFileValidator,
   validateSpec as specValidator,
   validateViews as viewsValidator,
@@ -49,6 +51,16 @@ export function validateGuides(data: unknown): ValidationResult {
 /** Validate a .specs/required.json governance config. */
 export function validateRequired(data: unknown): ValidationResult {
   return run(requiredValidator, data);
+}
+
+/** Validate a .specs/flows.json status-flow FSM config. */
+export function validateFlows(data: unknown): ValidationResult {
+  return run(flowsValidator, data);
+}
+
+/** Validate a .specs/screens.json screen-transition config. */
+export function validateScreens(data: unknown): ValidationResult {
+  return run(screensValidator, data);
 }
 
 /** Human-readable one-line summary of validation errors (e.g. for HTTP 400 bodies). */

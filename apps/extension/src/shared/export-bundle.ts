@@ -1,9 +1,11 @@
 import type { SpecsResponse } from "@specpin/api-client";
 import {
+  type FlowsConfig,
   type GuidesConfig,
   type Manifest,
   type RequiredConfig,
   SCHEMA_V1_ID,
+  type ScreensConfig,
   type Spec,
   type SpecFile,
   type ViewsConfig,
@@ -41,10 +43,11 @@ function groupFromBase(file: string): string {
 }
 
 /** manifest.json + per-group *.spec.json, plus any of the optional `.specs/` config
- *  files (guides.json / views.json / required.json), keyed by file name. */
+ *  files (guides.json / views.json / required.json / flows.json / screens.json),
+ *  keyed by file name. */
 export type BundleFiles = Record<
   string,
-  Manifest | SpecFile | GuidesConfig | ViewsConfig | RequiredConfig
+  Manifest | SpecFile | GuidesConfig | ViewsConfig | RequiredConfig | FlowsConfig | ScreensConfig
 >;
 
 /** The optional config inputs a caller can carry into an export. All optional so
@@ -59,6 +62,11 @@ export interface BundleConfig {
   views?: ViewsConfig;
   /** Required-id checklist -> `required.json`, emitted when `required` is non-empty. */
   required?: RequiredConfig;
+  /** Status-flow FSM config -> `flows.json`, emitted when `flows` is non-empty. */
+  flows?: FlowsConfig;
+  /** Screen-transition config -> `screens.json`, emitted when `screens`/`transitions`
+   *  is non-empty. */
+  screens?: ScreensConfig;
 }
 
 /** Reconstruct the file set for a specs payload (a local batch's `specs`, or a
@@ -69,10 +77,11 @@ export interface BundleConfig {
  *  and de-collided so two source files never both map to one name (and never to
  *  `manifest.json`).
  *
- *  The optional `.specs/` config files (guides.json / views.json / required.json) are
- *  appended when the caller supplies one AND it has real content, so a full-folder
- *  import round-trips back out losslessly. They are discovered by name on re-import,
- *  so they are NOT added to `manifest.specFiles` (which lists spec files only). */
+ *  The optional `.specs/` config files (guides.json / views.json / required.json /
+ *  flows.json / screens.json) are appended when the caller supplies one AND it has
+ *  real content, so a full-folder import round-trips back out losslessly. They are
+ *  discovered by name on re-import, so they are NOT added to `manifest.specFiles`
+ *  (which lists spec files only). */
 export function bundleToFiles(payload: SpecsResponse, config: BundleConfig = {}): BundleFiles {
   const byFile = new Map<string, { group: string; specs: Spec[] }>();
   const used = new Set<string>(["manifest.json"]); // reserved: never collide
@@ -124,6 +133,12 @@ export function bundleToFiles(payload: SpecsResponse, config: BundleConfig = {})
   }
   if (config.required?.required?.length) {
     files["required.json"] = { ...config.required, $schema: SCHEMA_V1_ID } satisfies RequiredConfig;
+  }
+  if (config.flows?.flows?.length) {
+    files["flows.json"] = { ...config.flows, $schema: SCHEMA_V1_ID } satisfies FlowsConfig;
+  }
+  if (config.screens?.screens?.length || config.screens?.transitions?.length) {
+    files["screens.json"] = { ...config.screens, $schema: SCHEMA_V1_ID } satisfies ScreensConfig;
   }
   return files;
 }

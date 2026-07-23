@@ -2,9 +2,11 @@ import { readdir, readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  validateFlows,
   validateGuides,
   validateManifest,
   validateRequired,
+  validateScreens,
   validateSpec,
   validateSpecFile,
   validateViews,
@@ -20,6 +22,8 @@ const viewsDir = resolve(here, "../../../tests/fixtures/views");
 const guidesDir = resolve(here, "../../../tests/fixtures/guides");
 const manifestDir = resolve(here, "../../../tests/fixtures/manifest");
 const requiredDir = resolve(here, "../../../tests/fixtures/required");
+const flowsDir = resolve(here, "../../../tests/fixtures/flows");
+const screensDir = resolve(here, "../../../tests/fixtures/screens");
 
 async function readFixtures(
   baseDir: string,
@@ -92,6 +96,28 @@ async function main(): Promise<void> {
   for (const { name, data } of await readFixtures(requiredDir, "invalid")) {
     const { valid } = validateRequired(data);
     if (valid) failures.push(`required/invalid/${name} should fail but passed`);
+  }
+
+  // flows.json corpus, cross-checked against validateFlows on both sides.
+  for (const { name, data } of await readFixtures(flowsDir, "valid")) {
+    const { valid, errors } = validateFlows(data);
+    if (!valid)
+      failures.push(`flows/valid/${name} should pass but failed: ${JSON.stringify(errors)}`);
+  }
+  for (const { name, data } of await readFixtures(flowsDir, "invalid")) {
+    const { valid } = validateFlows(data);
+    if (valid) failures.push(`flows/invalid/${name} should fail but passed`);
+  }
+
+  // screens.json corpus, cross-checked against validateScreens on both sides.
+  for (const { name, data } of await readFixtures(screensDir, "valid")) {
+    const { valid, errors } = validateScreens(data);
+    if (!valid)
+      failures.push(`screens/valid/${name} should pass but failed: ${JSON.stringify(errors)}`);
+  }
+  for (const { name, data } of await readFixtures(screensDir, "invalid")) {
+    const { valid } = validateScreens(data);
+    if (valid) failures.push(`screens/invalid/${name} should fail but passed`);
   }
 
   // Guard against demo rot: the seeded demo specs must stay schema-valid.

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="graph.pageTitle">Graph view - Specpin</title>
+    <style>
+      /* Tokens are imported in main.ts (src/shared/tokens.gen.css); values below
+         reference --sp-* vars for light/dark parity, like the other full pages. */
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        font: 13px/1.5 var(--sp-font-ui);
+        color: var(--sp-text);
+        background: var(--sp-bg);
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--sp-border);
+        background: var(--sp-surface);
+        flex-wrap: wrap;
+      }
+      header img { width: 22px; height: 22px; }
+      header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+      header select {
+        font: inherit;
+        padding: 5px 8px;
+        border-radius: var(--sp-radius-control);
+        border: 1px solid var(--sp-border);
+        background: var(--sp-control);
+        color: var(--sp-text);
+      }
+      #controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--sp-border);
+        background: var(--sp-surface);
+        flex-wrap: wrap;
+      }
+      .graph-view-toggle, .graph-category-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+      .graph-view-toggle button, .graph-category-tabs button {
+        font: inherit;
+        padding: 5px 10px;
+        border-radius: var(--sp-radius-control);
+        border: 1px solid var(--sp-border);
+        background: var(--sp-control);
+        color: var(--sp-text-2);
+        cursor: pointer;
+      }
+      .graph-view-toggle button.active, .graph-category-tabs button.active {
+        background: var(--sp-accent);
+        border-color: var(--sp-accent);
+        color: var(--sp-accent-on);
+      }
+      .graph-search {
+        font: inherit;
+        padding: 5px 10px;
+        border-radius: var(--sp-radius-control);
+        border: 1px solid var(--sp-border);
+        background: var(--sp-control);
+        color: var(--sp-text);
+        min-width: 200px;
+      }
+      main { position: relative; flex: 1; overflow: hidden; }
+      #canvas, #table { position: absolute; inset: 0; overflow: auto; }
+      #canvas svg { display: block; touch-action: none; cursor: grab; }
+      #canvas svg:active { cursor: grabbing; }
+      .graph-node text, .graph-edge text { pointer-events: none; user-select: none; }
+      .graph-node { cursor: pointer; }
+      .graph-node.dimmed, .graph-edge.dimmed { opacity: 0.25; }
+      .graph-node.hidden, .graph-edge.hidden { display: none; }
+      .graph-node.highlighted rect { stroke-width: 3; }
+      .graph-node.has-spec rect { stroke-dasharray: none; }
+      .graph-table { width: 100%; border-collapse: collapse; }
+      .graph-table th, .graph-table td {
+        text-align: left;
+        padding: 6px 12px;
+        border-bottom: 1px solid var(--sp-border);
+      }
+      .graph-table tbody tr { cursor: pointer; }
+      .graph-table tbody tr:hover { background: var(--sp-control); }
+      .graph-table-spec { color: var(--sp-text-2); font-family: var(--sp-font-mono); font-size: 11px; }
+      .graph-table-empty, .graph-empty { padding: 24px; color: var(--sp-text-2); }
+      #hint {
+        position: absolute;
+        bottom: 16px;
+        left: 16px;
+        right: 16px;
+        max-width: 480px;
+        padding: 10px 14px;
+        border-radius: var(--sp-radius-control);
+        background: var(--sp-elevated);
+        border: 1px solid var(--sp-border);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        display: none;
+      }
+      #hint.visible { display: block; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="/icon/32.png" alt="" />
+      <h1 data-i18n="graph.pageTitle">Graph view</h1>
+      <select id="project-select" hidden></select>
+      <select id="dataset-select" hidden>
+        <option value="flows" data-i18n="graph.datasetFlows">Flows</option>
+        <option value="screens" data-i18n="graph.datasetScreens">Screens</option>
+      </select>
+    </header>
+    <div id="controls"></div>
+    <main>
+      <div id="canvas"></div>
+      <div id="table" hidden></div>
+      <div id="hint"></div>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

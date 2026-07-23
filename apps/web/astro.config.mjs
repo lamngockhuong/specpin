@@ -90,6 +90,7 @@ export default defineConfig({
             { slug: "usage/connecting-projects" },
             { slug: "usage/viewing-specs" },
             { slug: "usage/capturing-and-editing" },
+            { slug: "usage/graph-views" },
             { slug: "usage/settings" },
           ],
         },

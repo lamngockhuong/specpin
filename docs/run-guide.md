@@ -395,6 +395,24 @@ connection, so the default install carries no broad-host permission.
   private key secure and scope trust to managed machines. On untrusted clients
   prefer the SSH-tunnel path, which needs no added trust.
 
+## 19. Graph views
+
+Two optional `.specs/` files render as read-only diagrams in a dedicated full-page graph view: `flows.json` (a status-flow FSM per object type, e.g. how a "Deal" moves `draft -> negotiation -> won/lost`) and `screens.json` (which screen navigates to which, and through what action). Both are hand-authored JSON in v1 - see [schema-reference.md](./schema-reference.md#flowsconfig-specsflowsjson) for the field-by-field format and worked examples (the demo app ships both at `examples/demo-react-app/.specs/flows.json` and `screens.json`).
+
+**Open it.** Click **Open graph view** in the popup or side panel; it opens the graph in a new tab. When a connected project serves more than one dataset, a project/dataset picker appears above the canvas (the dataset select only shows when a project has *both* flows and screens configured).
+
+**Controls**, all combinable:
+
+- **Graph <-> Table toggle**: switch between the diagram and a plain sortable table of the same nodes/edges.
+- **Category filter tabs**: one tab per category, each showing its node count (`All N`, `<category> N`, ...) - flows group by the parent Flow's `object` label, screens group by the `urlGlob`'s top path segment (e.g. `/checkout/*` -> `checkout`). Picking a tab hides non-matching nodes and their edges.
+- **Search**: a text box that highlights matching node labels live (it does not hide anything, unlike the category filter).
+- **Focus-on-click**: click a node to dim everything except it and its directly connected nodes/edges; click it again (or an empty area) to clear the focus.
+- **Pan/zoom**: drag the canvas to pan, scroll/wheel to zoom.
+
+**Click-to-highlight.** Clicking a node or edge that carries a `specId` sends a message back to the tab the graph view was opened from: if that spec is currently matched on that page, its element scrolls into view and flashes (reusing the same highlight as a deep-link or keyboard-cycle jump). If the spec isn't matched there (wrong page, or no live element), a hint appears instead naming the screen/page it belongs to, so you know where to go rather than seeing nothing happen.
+
+Nodes/edges with no `specId` (a pure domain state like `"won"`, or a navigation with no single triggering element) render normally but have nothing to click through to.
+
 ## Keyboard shortcuts
 
 | Shortcut | Action |

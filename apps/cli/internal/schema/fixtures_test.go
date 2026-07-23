@@ -59,6 +59,26 @@ func TestSharedRequiredCorpus(t *testing.T) {
 	runFixtureCorpus(t, "required", v.ValidateRequired)
 }
 
+// TestSharedFlowsCorpus mirrors the ajv flows loop so the TS and Go validators
+// agree on the flows.json (FlowsConfig) schema too.
+func TestSharedFlowsCorpus(t *testing.T) {
+	v, err := NewValidator()
+	if err != nil {
+		t.Fatalf("new validator: %v", err)
+	}
+	runFixtureCorpus(t, "flows", v.ValidateFlows)
+}
+
+// TestSharedScreensCorpus mirrors the ajv screens loop so the TS and Go
+// validators agree on the screens.json (ScreensConfig) schema too.
+func TestSharedScreensCorpus(t *testing.T) {
+	v, err := NewValidator()
+	if err != nil {
+		t.Fatalf("new validator: %v", err)
+	}
+	runFixtureCorpus(t, "screens", v.ValidateScreens)
+}
+
 // runFixtureCorpus runs every fixture under tests/fixtures/<name>/{valid,invalid}
 // through validate, asserting valid ones pass and invalid ones fail.
 func runFixtureCorpus(t *testing.T, name string, validate func([]byte) []string) {

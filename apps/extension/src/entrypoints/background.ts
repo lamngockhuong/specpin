@@ -1,8 +1,10 @@
 import type { SpecsResponse, SpecWithFile, ViewsConfig } from "@specpin/api-client";
 import {
+  type FlowsConfig,
   formatErrors,
   type GuideDef,
   type RequiredConfig,
+  type ScreensConfig,
   type Spec,
   validateGuides,
   validateSpec,
@@ -71,6 +73,7 @@ import {
   type AddLocalBatchResult,
   type CreateLocalProjectResult,
   type ExportBundle,
+  type FlowsScreensResult,
   type GuideMutationResult,
   type GuidesForOrigin,
   type ManualMutationResult,
@@ -393,6 +396,8 @@ export default defineBackground(() => {
         return Promise.resolve(registry.getGuides(message.connectionId));
       case "GET_GUIDES_FOR_ORIGIN":
         return handleGetGuidesForOrigin(message.origin, sender);
+      case "GET_FLOWS_SCREENS":
+        return handleGetFlowsScreens();
       case "SAVE_TEAM_GUIDE":
         return handleSaveTeamGuide(message);
       case "SAVE_PERSONAL_GUIDE":
@@ -416,6 +421,18 @@ export default defineBackground(() => {
 
   function originOf(sender: { tab?: { url?: string } } | undefined): string {
     return canonicalOrigin(sender?.tab?.url ?? "") ?? "";
+  }
+
+  // The graph page is a standalone tab whose ONLY registry-touching call is this
+  // one. On a cold MV3 service worker it can therefore arrive before initWorker's
+  // fire-and-forget reestablish() has hydrated the registry from storage (manual
+  // batches + connection caches), which surfaced as an empty "No flows or screens
+  // configured yet" graph even after a successful import. Await a reestablish so
+  // the in-memory registry is populated before we read it (idempotent; also
+  // reconnects sidecars so their /flows,/screens caches are live).
+  async function handleGetFlowsScreens(): Promise<FlowsScreensResult> {
+    await reestablish();
+    return { projects: registry.flowsScreensByProject() };
   }
 
   async function handleGetSpecs(origin: string): Promise<SpecsForOrigin> {
@@ -984,6 +1001,8 @@ export default defineBackground(() => {
           guides: registry.getGuides(connId),
           views: registry.getViews(connId),
           required: batch.required,
+          flows: batch.flows,
+          screens: batch.screens,
         }),
       };
     };
@@ -1079,6 +1098,8 @@ export default defineBackground(() => {
     guides?: GuideDef[];
     views?: ViewsConfig;
     required?: RequiredConfig;
+    flows?: FlowsConfig;
+    screens?: ScreensConfig;
   }): Promise<AddLocalBatchResult> {
     return mutate(async () => {
       const state = (await getLocalSpecs()) ?? { batches: [] };
@@ -1106,6 +1127,8 @@ export default defineBackground(() => {
         ...(message.guides?.length ? { guides: message.guides } : {}),
         ...(message.views ? { views: message.views } : {}),
         ...(message.required ? { required: message.required } : {}),
+        ...(message.flows ? { flows: message.flows } : {}),
+        ...(message.screens ? { screens: message.screens } : {}),
         specs: message.bundle,
       };
       const next = { batches: [...state.batches, batch] };

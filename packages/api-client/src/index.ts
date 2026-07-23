@@ -4,8 +4,10 @@
 
 export {
   type ConnectionState,
+  type FlowsConfig,
   type GuidesConfig,
   type HealthResponse,
+  type ScreensConfig,
   SidecarClient,
   type SidecarClientOptions,
   type SpecsResponse,

@@ -1,5 +1,7 @@
 import type {
+  FlowsConfig,
   GuidesConfig,
+  ScreensConfig,
   SidecarClient,
   SpecsResponse,
   SubscribeOptions,
@@ -54,6 +56,14 @@ export class SidecarSource implements SpecSource {
 
   saveGuides(config: GuidesConfig): Promise<void> {
     return this.client.putGuides(config);
+  }
+
+  loadFlows(): Promise<FlowsConfig> {
+    return this.client.getFlows();
+  }
+
+  loadScreens(): Promise<ScreensConfig> {
+    return this.client.getScreens();
   }
 
   watch(onChange: () => void, options?: Omit<SubscribeOptions, "fetch">): () => void {

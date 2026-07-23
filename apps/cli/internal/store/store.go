@@ -29,6 +29,15 @@ const defaultGuidesJSON = "{\n  \"version\": \"1.0\",\n  \"guides\": []\n}\n"
 // absent: no spec ids are required, so the report gate has nothing to enforce.
 const defaultRequiredJSON = "{\n  \"version\": \"1.0\",\n  \"required\": []\n}\n"
 
+// defaultFlowsJSON is returned by LoadFlows when .specs/flows.json is absent: an
+// empty flows list, so clients need no 404 special-case.
+const defaultFlowsJSON = "{\n  \"version\": \"1.0\",\n  \"flows\": []\n}\n"
+
+// defaultScreensJSON is returned by LoadScreens when .specs/screens.json is
+// absent: an empty screens/transitions graph, so clients need no 404
+// special-case.
+const defaultScreensJSON = "{\n  \"version\": \"1.0\",\n  \"screens\": [],\n  \"transitions\": []\n}\n"
+
 // ErrNotFound is returned when a spec id cannot be located across spec files.
 var ErrNotFound = errors.New("spec not found")
 
@@ -249,6 +258,60 @@ func (s *Store) LoadRequired() ([]byte, error) {
 		return nil, err
 	}
 	return raw, nil
+}
+
+// LoadFlows reads the raw .specs/flows.json (the FSM flows config), or returns
+// the empty default when the file does not exist. The traversal + symlink
+// guard applies via resolve, like every other .specs/ read. flows.json is a
+// singleton (one per .specs/); per-flow edits are whole-file PUTs.
+func (s *Store) LoadFlows() ([]byte, error) {
+	full, err := s.resolve("flows.json")
+	if err != nil {
+		return nil, err
+	}
+	raw, err := os.ReadFile(full)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []byte(defaultFlowsJSON), nil
+		}
+		return nil, err
+	}
+	return raw, nil
+}
+
+// SaveFlows writes flows.json atomically and canonically (2-space, expanded)
+// for clean Git diffs, confined to .specs/. The caller validates the body
+// against the schema first; Canonicalize preserves the client's key order.
+func (s *Store) SaveFlows(raw json.RawMessage) error {
+	return s.WriteCanonical("flows.json", raw)
+}
+
+// LoadScreens reads the raw .specs/screens.json (the screens/transitions
+// graph config), or returns the empty default when the file does not exist.
+// The traversal + symlink guard applies via resolve, like every other .specs/
+// read. screens.json is a singleton (one per .specs/); per-screen edits are
+// whole-file PUTs.
+func (s *Store) LoadScreens() ([]byte, error) {
+	full, err := s.resolve("screens.json")
+	if err != nil {
+		return nil, err
+	}
+	raw, err := os.ReadFile(full)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []byte(defaultScreensJSON), nil
+		}
+		return nil, err
+	}
+	return raw, nil
+}
+
+// SaveScreens writes screens.json atomically and canonically (2-space,
+// expanded) for clean Git diffs, confined to .specs/. The caller validates the
+// body against the schema first; Canonicalize preserves the client's key
+// order.
+func (s *Store) SaveScreens(raw json.RawMessage) error {
+	return s.WriteCanonical("screens.json", raw)
 }
 
 // LoadManifest reads and parses manifest.json.

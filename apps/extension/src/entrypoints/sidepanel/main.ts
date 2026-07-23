@@ -11,6 +11,7 @@ import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import { appendTrustedHtml, setTrustedHtml } from "../../shared/html.js";
 import { renderInlineMarkdown, renderMarkdownBlock } from "../../shared/markdown.js";
+import { openGraphView } from "../../shared/open-graph-view.js";
 import { provenanceSectionHtml } from "../../shared/provenance.js";
 import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/inter-font.css";
@@ -562,6 +563,9 @@ byId("search").addEventListener("input", (e) => {
   if (lastSpecs) renderSpecs(lastSpecs);
 });
 byId("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
+// Opens the full-page graph view (Phase 5) in a new tab; the panel stays
+// docked (unlike the popup, which closes on launch) since it isn't ephemeral.
+byId("open-graph").addEventListener("click", () => void openGraphView());
 
 // Same-origin spec-text links carry `data-specpin-internal` and no `target`. In
 // the in-page renderers a plain <a> navigates the host tab directly, but the side

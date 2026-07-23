@@ -1,4 +1,4 @@
-import type { SpecsResponse, ViewsConfig } from "@specpin/api-client";
+import type { FlowsConfig, ScreensConfig, SpecsResponse, ViewsConfig } from "@specpin/api-client";
 import type { AnchorStrength, MatchAnchor, MatchResult } from "@specpin/fingerprint-core";
 import type {
   DisplayMode,
@@ -93,6 +93,11 @@ export type Message =
       guides?: GuideDef[];
       views?: ViewsConfig;
       required?: RequiredConfig;
+      /** Imported `.specs/flows.json` / `screens.json`, when a folder/zip carried
+       *  them. Stored on the batch and surfaced in the graph panel (see
+       *  ProjectFlowsScreens / flowsScreensByProject). */
+      flows?: FlowsConfig;
+      screens?: ScreensConfig;
     }
   | { type: "REMOVE_LOCAL_BATCH"; id: string }
   | { type: "CLEAR_LOCAL_SPECS" }
@@ -210,6 +215,29 @@ export type Message =
   // tab). A content script can thus never read another origin's personal guides
   // (RT-C1).
   | { type: "GET_GUIDES_FOR_ORIGIN"; origin: string }
+  // The graph panel's data feed (Phase 5/6): every connected sidecar project's
+  // status-flow FSM (.specs/flows.json) + screen-transition config
+  // (.specs/screens.json), namespaced by project so two projects' flows are
+  // never silently merged. Not origin-scoped -- the panel is a standalone tab,
+  // not tied to a page -- so this returns every connection with a live cache.
+  // Read-only, unprivileged (mirrors GET_TEAM_GUIDES/GET_TEAM_VIEWS: team config,
+  // not private data). `specId` resolution against the live DOM is a panel/
+  // overlay concern, not this layer's.
+  | { type: "GET_FLOWS_SCREENS" }
+  // Graph panel (Phase 5) -> the ORIGINAL tab's content script (the page the
+  // graph was opened from, not the graph tab itself; the graph page sends this
+  // directly via tabs.sendMessage(originTabId, ...), never through the
+  // active-tab helpers, since the graph tab is what's active once it's open).
+  // Fired when a node/edge exposing a `specId` is clicked. `connectionId` scopes
+  // it to the owning project, since the graph aggregates flows/screens across
+  // every connected project and two projects could coincidentally reuse a spec
+  // id. Deliberately NOT named "HIGHLIGHT_SPEC": that name is already taken
+  // (background -> side panel runtime page, scroll-to-card, no connectionId) --
+  // reusing it here would collide two unrelated contracts under one wire name.
+  // Phase 6 implements the receiver (resolving specId + connectionId against the
+  // live DOM); this type is unprivileged since it only requests scrolling to an
+  // already-rendered element, like HIGHLIGHT_ELEMENT.
+  | { type: "HIGHLIGHT_SPEC_ON_TAB"; specId: string; connectionId: string }
   // Save a guide to a team target: a sidecar connection (PUT /guides) OR a local
   // committed project (storage.local guides blob), routed by `targetId` kind
   // (RT-H7). `origin` bounds the local-project write (RT-SA7). Privileged.
@@ -388,6 +416,24 @@ export interface GuidesForOrigin {
   guides: TaggedGuide[];
 }
 
+/** One connected sidecar project's flows + screens configs, tagged with its
+ *  connection id + display project name so the graph panel can tell apart two
+ *  projects that happen to share a name. Raw configs only -- `specId`
+ *  resolution against the live page is a panel/overlay concern (Phase 5/6),
+ *  not this layer's. */
+export interface ProjectFlowsScreens {
+  connectionId: string;
+  project: string;
+  flows: FlowsConfig;
+  screens: ScreensConfig;
+}
+
+/** Result of GET_FLOWS_SCREENS: every connected project's flows/screens,
+ *  namespaced by project (never silently merged across connections). */
+export interface FlowsScreensResult {
+  projects: ProjectFlowsScreens[];
+}
+
 /** Result of a guide save/delete. `error` carries a single human-readable reason
  *  (e.g. a sync quota rejection surfaced rather than swallowed, RT-H1). */
 export interface GuideMutationResult {
@@ -439,6 +485,26 @@ export interface CoverageCounts {
 /** Send a message to the background service worker. */
 export function sendToBackground<T = unknown>(message: Message): Promise<T> {
   return browser.runtime.sendMessage(message) as Promise<T>;
+}
+
+/** Send a message to a SPECIFIC tab's content script, by tab id rather than
+ *  "whichever tab is active" (graph tab -> the original page tab it was opened
+ *  from, which is no longer the active tab once the graph tab has focus).
+ *  Resolves false for a closed tab, a navigated-away tab, or a page with no
+ *  content script (chrome://, the store, an extension page). Otherwise
+ *  propagates the content script's own response: most listeners answer
+ *  fire-and-forget messages with no return value, which resolves `undefined`
+ *  here and reads as "delivered" (true); a handler that explicitly answers with
+ *  a boolean (e.g. HIGHLIGHT_SPEC_ON_TAB reporting whether it found +
+ *  highlighted the element) has that value passed straight through, so a
+ *  genuine "not on this page" result is distinguishable from mere delivery. */
+export async function sendToTab(tabId: number, message: Message): Promise<boolean> {
+  try {
+    const response = await browser.tabs.sendMessage(tabId, message);
+    return response === undefined ? true : Boolean(response);
+  } catch {
+    return false;
+  }
 }
 
 /** Send a message to the active tab's content script (popup -> content).

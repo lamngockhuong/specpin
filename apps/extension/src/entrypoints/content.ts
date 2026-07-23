@@ -10,6 +10,7 @@ import { findGaps, stableGapKey } from "../content/coverage.js";
 import { GuideController } from "../content/guide.js";
 import { createHelpOverlay } from "../content/help-overlay.js";
 import { highlightElement } from "../content/highlight.js";
+import { highlightSpecOnTab } from "../content/highlight-spec.js";
 import { registerKeyboard } from "../content/keyboard.js";
 import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
 import { type RenderSession, renderSession } from "../content/orchestrator.js";
@@ -1045,6 +1046,23 @@ export default defineContentScript({
           const el = session?.matches.get(message.specId);
           if (el) highlight(el);
           break;
+        }
+        case "HIGHLIGHT_SPEC_ON_TAB": {
+          // Graph page (its own tab) -> the origin tab's content script: resolve
+          // the clicked node/edge's specId (scoped by connectionId) against this
+          // page's specs and reuse the existing highlight/scroll path. Returning a
+          // value (a Promise) makes this the sendMessage response so sendToTab can
+          // propagate "found + highlighted" vs. "not on this page" back to the
+          // graph panel, which shows a hint on false.
+          const found = highlightSpecOnTab(
+            message.specId,
+            message.connectionId,
+            specs,
+            session?.matches,
+            document,
+            highlight,
+          );
+          return Promise.resolve(found);
         }
         case "GET_MATCHED_IDS": {
           // Report which specs resolve to an element on this page so the popup /

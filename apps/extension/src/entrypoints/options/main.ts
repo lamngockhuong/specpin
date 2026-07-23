@@ -1,5 +1,5 @@
 import type { GuidesConfig, SpecsResponse, ViewsConfig } from "@specpin/api-client";
-import type { RequiredConfig } from "@specpin/spec-schema";
+import type { FlowsConfig, RequiredConfig, ScreensConfig } from "@specpin/spec-schema";
 import { CHORDS } from "../../content/chords.js";
 import { hydrateI18n, initI18n, resolveUiLocale, t, type UiLocale } from "../../i18n/index.js";
 import { parseDomains } from "../../shared/add-project.js";
@@ -802,7 +802,13 @@ async function addBatch(
   fileNames?: string[],
   fileGroups?: Record<string, string>,
   /** The parsed `.specs/` config from a folder/zip import; absent on the paste path. */
-  configs?: { guides?: GuidesConfig; views?: ViewsConfig; required?: RequiredConfig },
+  configs?: {
+    guides?: GuidesConfig;
+    views?: ViewsConfig;
+    required?: RequiredConfig;
+    flows?: FlowsConfig;
+    screens?: ScreensConfig;
+  },
 ): Promise<boolean> {
   const res = await sendToBackground<AddLocalBatchResult>({
     type: "ADD_LOCAL_BATCH",
@@ -813,6 +819,8 @@ async function addBatch(
     guides: configs?.guides?.guides,
     views: configs?.views,
     required: configs?.required,
+    flows: configs?.flows,
+    screens: configs?.screens,
   });
   if (!res.ok) {
     showResult(localResult, false, res.error ?? t("options.couldNotAddBatch"));
@@ -879,13 +887,22 @@ byId("loadFiles").addEventListener("click", async () => {
     showResult(localResult, false, t("options.invalidZip", { error }));
     return;
   }
-  const { specs, fileGroups, guides, views, required, errors } = parseLocalFiles(files);
+  const { specs, fileGroups, guides, views, required, flows, screens, errors } =
+    parseLocalFiles(files);
   if (!specs) {
     showResult(localResult, false, t("options.invalidSelection", { errors: errors.join("\n- ") }));
     return;
   }
   const fileNames = files.map((f) => f.name.split(/[/\\]/).pop() ?? f.name);
-  if (await addBatch(specs, "files", fileNames, fileGroups, { guides, views, required }))
+  if (
+    await addBatch(specs, "files", fileNames, fileGroups, {
+      guides,
+      views,
+      required,
+      flows,
+      screens,
+    })
+  )
     localFiles.value = "";
 });
 

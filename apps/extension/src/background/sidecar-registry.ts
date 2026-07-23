@@ -14,6 +14,7 @@ import type {
   TaggedSpec,
 } from "../shared/connection-types.js";
 import { isLocalConnectionId, localConnId } from "../shared/local-id.js";
+import type { ProjectFlowsScreens } from "../shared/messaging.js";
 import { originMatchesDomains } from "../shared/origin-match.js";
 import { resolveStalenessThreshold } from "../shared/provenance.js";
 import { type ConnectionDeps, SidecarConnection } from "./sidecar-connection.js";
@@ -324,6 +325,43 @@ export class SidecarRegistry {
       if (opts.origin && !conn.matchesOrigin(opts.origin)) continue;
       const got = bundle(conn);
       if (got) out.push(got);
+    }
+    return out;
+  }
+
+  /** Every sidecar connection's flows + screens configs, plus every enabled
+   *  Manual-import batch's imported `flows.json`/`screens.json`, one entry per
+   *  connection with a live cache (a down/never-loaded sidecar has nothing to
+   *  contribute) or per manual batch. Not origin-scoped -- the graph panel is a
+   *  standalone tab, not tied to a page -- so this returns every connected/manual
+   *  project regardless of which site it serves; a disabled manual batch is
+   *  skipped, mirroring the render gate elsewhere (specsForOrigin,
+   *  teamHiddenForOrigin). Each entry carries its own `connectionId` alongside
+   *  the display `project` name so the panel can distinguish two projects that
+   *  happen to share a name (a manual batch uses the same `manual:<id>` id scheme
+   *  as getViews/getGuides); flows/screens across entries are never merged (a
+   *  page can have multiple connected projects, each with its own
+   *  `application-status` flow that must not collide with another's). */
+  flowsScreensByProject(): ProjectFlowsScreens[] {
+    const out: ProjectFlowsScreens[] = [];
+    for (const conn of this.connections.values()) {
+      const specs = conn.getCache();
+      if (!specs) continue;
+      out.push({
+        connectionId: conn.id,
+        project: specs.manifest?.project || conn.label || conn.baseUrl,
+        flows: conn.getFlows(),
+        screens: conn.getScreens(),
+      });
+    }
+    for (const batch of this.manual) {
+      if (batch.enabled === false) continue;
+      out.push({
+        connectionId: localConnId(batch.id),
+        project: batch.specs.manifest?.project || batch.label,
+        flows: batch.flows ?? { version: "1.0", flows: [] },
+        screens: batch.screens ?? { version: "1.0", screens: [], transitions: [] },
+      });
     }
     return out;
   }
