@@ -104,7 +104,11 @@ export default defineConfig({
         {
           label: "Serving your specs",
           translations: { vi: "Phục vụ đặc tả của bạn", ja: "specを配信する" },
-          items: [{ slug: "sidecar/cli" }, { slug: "sidecar/spec-format" }],
+          items: [
+            { slug: "sidecar/cli" },
+            { slug: "sidecar/spec-format" },
+            { slug: "sidecar/ai-authoring" },
+          ],
         },
         {
           label: "Help",
