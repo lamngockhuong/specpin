@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "flows": [
+    {
+      "id": "f1",
+      "object": { "en": "Order" },
+      "states": [{ "id": "s1", "label": { "en": "New" } }],
+      "transitions": [{ "id": "t1", "from": "s1", "to": "s1", "trigger": "Submit" }]
+    }
+  ]
+}

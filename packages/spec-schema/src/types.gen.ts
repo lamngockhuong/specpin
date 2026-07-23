@@ -24,6 +24,8 @@ export interface SpecpinSchemaRoots {
   views: ViewsConfig;
   guides: GuidesConfig;
   required: RequiredConfig;
+  flows: FlowsConfig;
+  screens: ScreensConfig;
 }
 /**
  * A Specpin <area>.spec.json file: a named group of specs pinned to UI elements.
@@ -231,4 +233,164 @@ export interface RequiredConfig {
    * Spec ids that must exist in the project.
    */
   required: string[];
+}
+/**
+ * The .specs/flows.json config: a versioned file holding an array of status-flow FSMs, one per object type.
+ */
+export interface FlowsConfig {
+  /**
+   * Optional pointer to this schema for editor tooling.
+   */
+  $schema?: string;
+  version: string;
+  /**
+   * @maxItems 50
+   */
+  flows: Flow[];
+}
+/**
+ * A status-flow FSM for one object type (e.g. the lifecycle of an "application"): its states and the transitions between them.
+ */
+export interface Flow {
+  /**
+   * Stable unique id within the file, e.g. "application-status".
+   */
+  id: string;
+  object: LocalizedString1;
+  description?: LocalizedString2;
+  /**
+   * @maxItems 200
+   */
+  states: FlowState[];
+  /**
+   * @maxItems 2000
+   */
+  transitions: Transition[];
+}
+/**
+ * Locale-keyed text: a BCP-47 locale maps to a non-empty string. At least one entry. Flat strings are not accepted.
+ */
+export interface LocalizedString1 {
+  [k: string]: string;
+}
+/**
+ * Locale-keyed text: a BCP-47 locale maps to a non-empty string. At least one entry. Flat strings are not accepted.
+ */
+export interface LocalizedString2 {
+  [k: string]: string;
+}
+/**
+ * One state in a status-flow FSM (e.g. "pending", "approved").
+ */
+export interface FlowState {
+  /**
+   * Stable unique id within its Flow.
+   */
+  id: string;
+  label: LocalizedString3;
+  /**
+   * Role of the state in the FSM. Absent means a normal state.
+   */
+  kind?: "initial" | "normal" | "terminal";
+  /**
+   * Optional id of a pinned element that represents this state in the live UI.
+   */
+  specId?: string | null;
+}
+/**
+ * Locale-keyed text: a BCP-47 locale maps to a non-empty string. At least one entry. Flat strings are not accepted.
+ */
+export interface LocalizedString3 {
+  [k: string]: string;
+}
+/**
+ * A directed edge shared by both graph views: a state change in a status-flow FSM, or a navigation between screens. `trigger` names the action; the optional `specId` links the edge back to the pinned element that fires it.
+ */
+export interface Transition {
+  /**
+   * Stable unique id within its parent graph.
+   */
+  id: string;
+  /**
+   * Source node id (a FlowState.id or Screen.id).
+   */
+  from: string;
+  /**
+   * Target node id (a FlowState.id or Screen.id).
+   */
+  to: string;
+  trigger: LocalizedString4;
+  /**
+   * Optional condition that must hold for the transition to fire, e.g. "amount > 0".
+   */
+  guard?: string | null;
+  /**
+   * Optional actor/role that performs the transition, e.g. "admin".
+   */
+  role?: string | null;
+  /**
+   * Optional id of the pinned element that triggers this transition. Links the graph edge back to element-anchored knowledge.
+   */
+  specId?: string | null;
+  /**
+   * How this transition was authored. Defaults to manual authoring when absent.
+   */
+  source?: "manual" | "auto-captured" | "imported";
+}
+/**
+ * Locale-keyed text: a BCP-47 locale maps to a non-empty string. At least one entry. Flat strings are not accepted.
+ */
+export interface LocalizedString4 {
+  [k: string]: string;
+}
+/**
+ * The .specs/screens.json config: a versioned file holding the screen nodes and the navigation transitions between them.
+ */
+export interface ScreensConfig {
+  /**
+   * Optional pointer to this schema for editor tooling.
+   */
+  $schema?: string;
+  version: string;
+  /**
+   * @maxItems 500
+   */
+  screens: Screen[];
+  /**
+   * @maxItems 2000
+   */
+  transitions: Transition[];
+}
+/**
+ * One screen/page node in the screen-transition graph, matched to the live UI via a URL glob (same glob semantics as a spec's pageUrl).
+ */
+export interface Screen {
+  /**
+   * Stable unique id within the file, e.g. "checkout".
+   */
+  id: string;
+  name: LocalizedString5;
+  /**
+   * URL glob that identifies this screen in the live UI, reusing the pageUrl glob semantics, e.g. "/checkout/*".
+   */
+  urlGlob: string;
+  description?: LocalizedString6;
+  /**
+   * Optional ids of pinned elements that live on this screen.
+   *
+   * @maxItems 200
+   */
+  specIds?: string[];
+}
+/**
+ * Locale-keyed text: a BCP-47 locale maps to a non-empty string. At least one entry. Flat strings are not accepted.
+ */
+export interface LocalizedString5 {
+  [k: string]: string;
+}
+/**
+ * Locale-keyed text: a BCP-47 locale maps to a non-empty string. At least one entry. Flat strings are not accepted.
+ */
+export interface LocalizedString6 {
+  [k: string]: string;
 }

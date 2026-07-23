@@ -7,3 +7,5 @@ export const validateManifest: ValidateFunction;
 export const validateViews: ValidateFunction;
 export const validateGuides: ValidateFunction;
 export const validateRequired: ValidateFunction;
+export const validateFlows: ValidateFunction;
+export const validateScreens: ValidateFunction;

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "version": "1.0",
+  "screens": [
+    { "id": "home", "name": { "en": "Home" }, "urlGlob": "/", "specIds": ["nav-home"] },
+    {
+      "id": "checkout",
+      "name": { "en": "Checkout" },
+      "urlGlob": "/checkout/*",
+      "description": { "en": "Checkout flow" }
+    }
+  ],
+  "transitions": [
+    {
+      "id": "n1",
+      "from": "home",
+      "to": "checkout",
+      "trigger": { "en": "Buy now" },
+      "specId": "buy-btn"
+    }
+  ]
+}
