@@ -45,6 +45,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("PUT /flows", s.handlePutFlows)
 	mux.HandleFunc("GET /screens", s.handleGetScreens)
 	mux.HandleFunc("PUT /screens", s.handlePutScreens)
+	mux.HandleFunc("GET /shots", s.handleListShots)
+	mux.HandleFunc("GET /shots/{screenId}", s.handleGetShot)
+	mux.HandleFunc("PUT /shots/{screenId}", s.handlePutShot)
+	mux.HandleFunc("DELETE /shots/{screenId}", s.handleDeleteShot)
 	mux.HandleFunc("GET /events", s.handleEvents)
 	return s.cors(s.auth(mux))
 }
@@ -265,6 +269,81 @@ func (s *Server) handlePutScreens(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, body)
 }
 
+// handleListShots returns the screenIds of every stored shot artifact. An empty
+// list (no shots/ dir yet) is a normal 200 response, so clients need no
+// 404 special-case.
+func (s *Server) handleListShots(w http.ResponseWriter, _ *http.Request) {
+	ids, err := s.store.ListShots()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "load_failed", []string{err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"screenIds": ids})
+}
+
+// handleGetShot returns one shot artifact by screenId, or 404 when absent.
+func (s *Server) handleGetShot(w http.ResponseWriter, r *http.Request) {
+	raw, err := s.store.ReadShot(r.PathValue("screenId"))
+	if err != nil {
+		writeError(w, statusForStoreError(err), "load_failed", []string{err.Error()})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(raw)
+}
+
+// handlePutShot validates and writes one .specs/shots/<screenId>.shot.json.
+// The body carries an embedded screenshot (data URL), so it uses a larger read
+// limit than the flat singletons. On success it broadcasts a change over SSE
+// directly: the .specs/ watcher is non-recursive and does not observe the shots/
+// subdirectory, so a file-event path would not fire here.
+func (s *Server) handlePutShot(w http.ResponseWriter, r *http.Request) {
+	screenID := r.PathValue("screenId")
+	body, err := decodeShotBody(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "bad_request", []string{err.Error()})
+		return
+	}
+	if errs := s.validator.ValidateShot(body); errs != nil {
+		writeError(w, http.StatusBadRequest, "schema_invalid", errs)
+		return
+	}
+	// The URL screenId is the storage key; guard against a body whose screenId
+	// disagrees, which would silently store under the wrong screen.
+	if bodyID := shotScreenID(body); bodyID != "" && bodyID != screenID {
+		writeError(w, http.StatusBadRequest, "bad_request",
+			[]string{"screenId in body does not match URL"})
+		return
+	}
+	if err := s.store.WriteShot(screenID, body); err != nil {
+		writeError(w, statusForStoreError(err), "save_failed", []string{err.Error()})
+		return
+	}
+	s.hub.Broadcast(`{"type":"change"}`)
+	writeJSON(w, http.StatusOK, body)
+}
+
+// handleDeleteShot removes one shot artifact, broadcasting a change on success.
+func (s *Server) handleDeleteShot(w http.ResponseWriter, r *http.Request) {
+	if err := s.store.DeleteShot(r.PathValue("screenId")); err != nil {
+		writeError(w, statusForStoreError(err), "delete_failed", []string{err.Error()})
+		return
+	}
+	s.hub.Broadcast(`{"type":"change"}`)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// shotScreenID extracts the screenId from a shot body without full unmarshaling,
+// returning "" when absent (so callers can skip the cross-check).
+func shotScreenID(raw json.RawMessage) string {
+	var probe struct {
+		ScreenID string `json:"screenId"`
+	}
+	_ = json.Unmarshal(raw, &probe)
+	return probe.ScreenID
+}
+
 func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -314,6 +393,22 @@ func decodeBody(r *http.Request, v any) error {
 	defer r.Body.Close()
 	dec := json.NewDecoder(io.LimitReader(r.Body, 1<<20))
 	return dec.Decode(v)
+}
+
+// shotBodyLimit bounds a shot PUT body. A shot embeds a screenshot as a data
+// URL, so it needs far more headroom than the 1 MiB flat-file limit; 16 MiB
+// comfortably holds a full-page PNG while still capping a runaway upload.
+const shotBodyLimit = 16 << 20
+
+// decodeShotBody reads a shot PUT body (raw JSON) under the larger shot limit.
+func decodeShotBody(r *http.Request) (json.RawMessage, error) {
+	defer r.Body.Close()
+	var body json.RawMessage
+	dec := json.NewDecoder(io.LimitReader(r.Body, shotBodyLimit))
+	if err := dec.Decode(&body); err != nil {
+		return nil, err
+	}
+	return body, nil
 }
 
 // writeWriteError maps a spec-write store error to an HTTP response. A stale

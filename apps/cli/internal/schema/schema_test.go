@@ -31,11 +31,13 @@ func TestValidatorAcceptsValid(t *testing.T) {
 	}
 }
 
-func TestValidatorRejectsMissingFingerprint(t *testing.T) {
+func TestValidatorAcceptsMissingFingerprintAsPending(t *testing.T) {
+	// fingerprint is optional: absent ⇒ a pending (unpinned) spec authored before
+	// the UI exists. It must validate (backward compatible with pinned specs).
 	v, _ := NewValidator()
 	errs := v.ValidateSpec([]byte(`{"id":"x","title":{"en":"X"},"description":{"en":"d"}}`))
-	if errs == nil {
-		t.Fatal("expected validation errors for missing fingerprint")
+	if errs != nil {
+		t.Fatalf("pending spec (no fingerprint) should validate: %v", errs)
 	}
 }
 

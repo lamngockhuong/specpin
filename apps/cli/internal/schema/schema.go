@@ -27,6 +27,7 @@ type Validator struct {
 	required *jsonschema.Schema
 	flows    *jsonschema.Schema
 	screens  *jsonschema.Schema
+	shot     *jsonschema.Schema
 }
 
 // NewValidator compiles the embedded schema. Format assertions are enabled so
@@ -75,8 +76,12 @@ func NewValidator() (*Validator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compile ScreensConfig schema: %w", err)
 	}
+	shot, err := c.Compile(schemaID + "#/$defs/ShotConfig")
+	if err != nil {
+		return nil, fmt.Errorf("compile ShotConfig schema: %w", err)
+	}
 
-	return &Validator{spec: spec, manifest: manifest, specFile: specFile, views: views, guides: guides, required: required, flows: flows, screens: screens}, nil
+	return &Validator{spec: spec, manifest: manifest, specFile: specFile, views: views, guides: guides, required: required, flows: flows, screens: screens, shot: shot}, nil
 }
 
 func validate(sch *jsonschema.Schema, raw []byte) []string {
@@ -140,3 +145,6 @@ func (v *Validator) ValidateFlows(raw []byte) []string { return validate(v.flows
 
 // ValidateScreens validates a .specs/screens.json document (ScreensConfig).
 func (v *Validator) ValidateScreens(raw []byte) []string { return validate(v.screens, raw) }
+
+// ValidateShot validates a .specs/shots/<screenId>.shot.json document (ShotConfig).
+func (v *Validator) ValidateShot(raw []byte) []string { return validate(v.shot, raw) }
