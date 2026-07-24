@@ -1,0 +1,35 @@
+[
+  { "itemNo": "1", "position": { "startX": 0, "startY": 0, "endX": 1280, "endY": 56 } },
+  { "itemNo": "1.1", "position": { "startX": 20, "startY": 12, "endX": 140, "endY": 42 } },
+  { "itemNo": "1.2", "position": { "startX": 938, "startY": 15, "endX": 976, "endY": 41 } },
+  { "itemNo": "1.3", "position": { "startX": 1000, "startY": 13, "endX": 1034, "endY": 45 } },
+  { "itemNo": "1.4", "position": { "startX": 1064, "startY": 15, "endX": 1126, "endY": 41 } },
+  { "itemNo": "1.5", "position": { "startX": 1128, "startY": 15, "endX": 1230, "endY": 43 } },
+
+  { "itemNo": "2", "position": { "startX": 0, "startY": 56, "endX": 225, "endY": 972 } },
+  { "itemNo": "2.1", "position": { "startX": 14, "startY": 62, "endX": 212, "endY": 94 } },
+  { "itemNo": "2.2", "position": { "startX": 14, "startY": 112, "endX": 212, "endY": 144 } },
+  { "itemNo": "2.3", "position": { "startX": 14, "startY": 162, "endX": 212, "endY": 194 } },
+  { "itemNo": "2.4", "position": { "startX": 14, "startY": 212, "endX": 212, "endY": 244 } },
+  { "itemNo": "2.5", "position": { "startX": 14, "startY": 262, "endX": 212, "endY": 294 } },
+
+  { "itemNo": "3", "position": { "startX": 255, "startY": 89, "endX": 645, "endY": 110 } },
+  { "itemNo": "4", "position": { "startX": 255, "startY": 124, "endX": 458, "endY": 162 } },
+  { "itemNo": "5", "position": { "startX": 255, "startY": 175, "endX": 445, "endY": 195 } },
+
+  { "itemNo": "6", "position": { "startX": 256, "startY": 210, "endX": 1244, "endY": 762 } },
+  { "itemNo": "6.1", "position": { "startX": 278, "startY": 240, "endX": 428, "endY": 272 } },
+  { "itemNo": "6.2", "position": { "startX": 282, "startY": 298, "endX": 435, "endY": 455 } },
+  { "itemNo": "6.3", "position": { "startX": 435, "startY": 300, "endX": 937, "endY": 370 } },
+  { "itemNo": "6.4", "position": { "startX": 435, "startY": 385, "endX": 940, "endY": 445 } },
+  { "itemNo": "6.5", "position": { "startX": 278, "startY": 468, "endX": 762, "endY": 527 } },
+  { "itemNo": "6.6", "position": { "startX": 278, "startY": 548, "endX": 362, "endY": 585 } },
+  { "itemNo": "6.7", "position": { "startX": 282, "startY": 608, "endX": 435, "endY": 762 } },
+  { "itemNo": "6.8", "position": { "startX": 435, "startY": 638, "endX": 937, "endY": 678 } },
+  { "itemNo": "6.9", "position": { "startX": 435, "startY": 698, "endX": 940, "endY": 738 } },
+  { "itemNo": "6.10", "position": { "startX": 278, "startY": 793, "endX": 748, "endY": 840 } },
+
+  { "itemNo": "7", "position": { "startX": 636, "startY": 890, "endX": 918, "endY": 942 } },
+  { "itemNo": "7.1", "position": { "startX": 636, "startY": 895, "endX": 698, "endY": 935 } },
+  { "itemNo": "7.2", "position": { "startX": 758, "startY": 890, "endX": 918, "endY": 942 } }
+]
