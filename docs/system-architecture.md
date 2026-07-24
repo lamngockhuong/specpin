@@ -33,10 +33,13 @@ UI-chrome i18n: a custom runtime `t(key, params)` in `apps/extension/src/i18n/` 
 | Path | Role |
 |------|------|
 | `packages/spec-schema` | JSON Schema v1 (SSOT) + generated TS types + ajv validators |
-| `packages/fingerprint-core` | framework-agnostic `captureFingerprint` + `matchElement` (pure DOM) |
+| `packages/fingerprint-core` | framework-agnostic `captureFingerprint` + `matchElement` (pure DOM); also exports the `isPinned(spec)` type guard |
 | `packages/api-client` | typed `SidecarClient` over the sidecar HTTP contract + SSE helper |
+| `packages/specshot-core` | headless authoring core for specshot: MarkDoc model + numbering, canvas geometry, export builders, `buildShot`/`buildPendingSpec` schema bridges. Only depends on `spec-schema` |
+| `packages/specshot-react` | presentational specshot editor UI (canvas, toolbar, item list); `react`/`react-dom` peerDeps, depends on `specshot-core` |
+| `packages/specshot-app` | shared authoring composition (screen picker, spec form, export panel, optional sidecar persistence); `react`/`react-dom` peerDeps, depends on `specshot-core` + `specshot-react`; consumed only by the extension's `specshot` entrypoint |
 | `apps/cli` | Go sidecar: `init` + `serve` (CRUD, SSE, health) + `validate` + `report` (offline), hardened localhost |
-| `apps/extension` | WXT MV3 extension (Chrome + Firefox) |
+| `apps/extension` | WXT MV3 extension (Chrome + Firefox); also hosts the specshot authoring page (`specshot.html`, opened from the popup/side panel) |
 | `examples/demo-react-app` | demo UI + seeded `.specs/` |
 
 ## Element fingerprinting
@@ -50,6 +53,22 @@ The matcher's signature and `MatchResult` shape are stable across tiers; the sco
 ### Matching drift corpus (local, opt-in)
 
 To tune the scorer against real drift, the extension can collect a local training corpus (`storage.local`, default **OFF**, capped ring-buffer, exportable + clearable from Options, never uploaded). Two sources: **supervised** (a re-pin records the `(old → new)` fingerprint pair, ground truth) and **passive** (when a spec goes orphaned or mid-scored at match time, it snapshots the candidate fingerprints the scorer weighed, a tentative `chosenByScorer` label, never treated as truth). Fingerprints only (no HTML), with `textContent` redacted (emails + long digit runs) at write time. Lives in `apps/extension/src/shared/drift-corpus.ts`.
+
+## Spec-first authoring: pending specs and shot artifacts
+
+`Spec.fingerprint` is **optional** (backward compatible - every already-pinned spec still validates). This lets a spec be authored **before the UI it describes exists**, from a screenshot or design, not just captured live from the DOM. Three states share one `Spec` shape:
+
+- **Pending (unpinned)** - `fingerprint` absent. Authored via the extension's specshot page (`specshot.html`, opened from the popup/side panel's **Open spec sheet** button - see `docs/spec-sheet-authoring.md`), typically from a screenshot, before an element to link it to exists. Never rendered on the host page - `isPinned(spec)` (a type guard exported from `fingerprint-core`) gates it out of both `matchElement` and the extension's render loop (`orchestrator.ts`), which treat "no fingerprint" as "nothing to match" rather than a failed match.
+- **Pinned** - `fingerprint` present and currently matching an element. The normal case; a pending spec becomes pinned once someone captures a fingerprint for it (bind-later, planned in the extension - see `docs/specshot-integration.md` Phase 2, not yet shipped).
+- **Orphaned** - `fingerprint` present but no live match on the current page. Unlike pending, an orphaned spec once matched and needs relinking.
+
+`pageHealth()` (`apps/extension/src/shared/surface-data.ts`) counts pending specs in a separate `unpinned` bucket, distinct from `orphaned`, so the two failure-to-render reasons are never conflated. The popup and side panel list pending specs read-only in an **Unpinned** section; they are never injected into the page.
+
+**Geometry stays out of `Spec` (anti-bloat invariant).** Pixel coordinates for a manually-authored screenshot annotation live only in a separate `.specs/shots/<screenId>.shot.json` artifact (`ShotConfig`: `{ version, screenId, image, items: ShotItem[] }`, one per `Screen`, `screenId` referencing `Screen.id` in `screens.json` - grouping is reused, not reinvented). A `ShotItem` maps one numbered callout (`itemNo`, hierarchical up to depth 3) to a pixel `bbox` and, optionally, the `specId` (pending or pinned) it documents. A `Spec` never carries pixels, regardless of how it was authored. `packages/specshot-core` builds and validates both bridges: `buildPendingSpec()` (authored content -> a validated pending `Spec`) and `buildShot()` (a MarkDoc + itemNo->specId map -> a validated `ShotConfig`).
+
+The sidecar exposes `GET /shots`, `GET/PUT/DELETE /shots/{screenId}`, mirroring the CRUD pattern of `/views`/`/guides`/`/flows`/`/screens` (schema-validated, atomic, `.specs/`-confined), except: shots live under their own `shots/` subdirectory (many files, one per screen, not a flat singleton) and `PUT` accepts a larger request body (16 MiB vs. 1 MiB) to fit an embedded screenshot `data:` URL; since the `.specs/` watcher is non-recursive and does not observe `shots/`, a successful `PUT`/`DELETE` broadcasts its own SSE change rather than relying on the file watcher.
+
+The extension's `specshot.html` page (screenshot upload -> draw/number boxes -> author a pending spec per box -> export a spec sheet as HTML/MD) is the only authoring surface for this flow and runs fully offline; when a sidecar is connected it additionally persists pending specs and the shot artifact into `.specs/`. It is opened via an **"Open spec sheet"** button in both the popup and the side panel header (`shared/open-specshot.ts` -> `browser.tabs.create({ url: browser.runtime.getURL("/specshot.html") })`), and mounts the shared `@specpin/specshot-app` composition. A standalone web app hosting this surface was tried first and dropped: the sidecar's CORS policy accepts the extension origin but rejects web origins, so only an in-extension page can persist to `.specs/`. The revised invariant is not "never bundled into the extension" but that **React stays confined to this one entrypoint's bundle** - the content script (and every other part of the extension's always-on runtime) remains React-free; the extension gains, so far, only this authoring page, plus (planned, Phase 2) a bind-later picker.
 
 ## Multi-project registry
 
@@ -95,7 +114,7 @@ The background aggregates both into one origin-tagged list (`GET_GUIDES_FOR_ORIG
 - Writes are confined to `.specs/` (path-traversal guard), atomic, and pretty-printed for clean Git diffs. A `sync.Mutex` serializes every read-modify-write so concurrent multi-writer requests cannot drop an append; spec writes additionally support optimistic concurrency: `GET /specs` returns a bundle `ETag`, and a `POST`/`PUT`/`DELETE` whose `If-Match` no longer matches is rejected with `409` (the extension reloads and re-prompts) instead of clobbering a newer state. Views/guides get the mutex but not the ETag check (the extension re-reads them before each write).
 - `/events` emits a periodic SSE heartbeat (~20s) so an idle-timeout reverse proxy keeps the change stream open.
 - **Multi-token trust model.** With N connections the extension stores N localhost bearer tokens. Tokens stay in background/extension storage: they are never echoed into the Options DOM, never included in `ConnectionStatus` (so an unprivileged status query cannot read them), and connection-mutating messages are privileged (rejected from a web-page content script). Capture writes are routed only to a connection whose `domains` cover the page origin.
-- **Endpoints**: `GET /ping`, `GET /manifest`, `GET /specs`, `GET /specs/:id`, `POST /specs`, `PUT /specs/:id`, `DELETE /specs/:id`, `GET /views`, `PUT /views`, `GET /guides`, `PUT /guides`, `GET /events` (SSE). All except `/ping` require bearer auth; `PUT /views` and `PUT /guides` validate the payload against the `ViewsConfig` / `GuidesConfig` schema on both TS and Go sides.
+- **Endpoints**: `GET /ping`, `GET /manifest`, `GET /specs`, `GET /specs/:id`, `POST /specs`, `PUT /specs/:id`, `DELETE /specs/:id`, `GET /views`, `PUT /views`, `GET /guides`, `PUT /guides`, `GET /flows`, `PUT /flows`, `GET /screens`, `PUT /screens`, `GET /shots`, `GET /shots/{screenId}`, `PUT /shots/{screenId}`, `DELETE /shots/{screenId}`, `GET /events` (SSE). All except `/ping` require bearer auth; each `PUT` validates its payload against the matching schema entity (`ViewsConfig` / `GuidesConfig` / `FlowsConfig` / `ScreensConfig` / `ShotConfig`) on both TS and Go sides. `PUT /shots/{screenId}` accepts a larger body (16 MiB, for an embedded screenshot) than the other writes.
 
 ## Design references
 

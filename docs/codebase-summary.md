@@ -2,7 +2,7 @@
 
 > Tiếng Việt: [`vi/codebase-summary.md`](./vi/codebase-summary.md). English is the source of truth.
 
-Specpin monorepo (~4,620 LOC: 83 TS files, 17 Go files) implementing a Git-native spec layer for web UIs. Three packages (spec-schema, fingerprint-core, api-client), two apps (Go sidecar CLI, WXT browser extension), one demo.
+Specpin monorepo implementing a Git-native spec layer for web UIs. Six packages (spec-schema, fingerprint-core, api-client, specshot-core, specshot-react, specshot-app), two apps (Go sidecar CLI, WXT browser extension - which now also hosts the specshot authoring page), one demo.
 
 ## Package Dependencies
 
@@ -13,12 +13,21 @@ spec-schema (base, no deps)
   |     |
   |     +-> api-client (HTTP client over sidecar)
   |           |
-  |           +-> extension (WXT MV3, Chrome+Firefox)
+  |           +-> extension (WXT MV3, Chrome+Firefox; specshot.html entrypoint mounts specshot-app)
   |
   +-> cli (Go sidecar, embeds schema copy)
+  |
+  +-> specshot-core (headless authoring: MarkDoc model, shot + pending-spec builders)
+        |
+        +-> specshot-react (presentational editor UI; react/react-dom peerDeps)
+              |
+              +-> specshot-app (authoring composition: screen picker, spec form, export panel,
+                    optional sidecar persistence; react/react-dom peerDeps)
+                    |
+                    +-> extension's specshot entrypoint (mounts <SpecshotApp/> in specshot.html)
 ```
 
-All TS packages depend on `spec-schema` for types. Extension depends on all three TS packages. CLI embeds a synced copy of `v1.json` (never hand-edited).
+All TS packages depend on `spec-schema` for types. Extension depends on `spec-schema`, `fingerprint-core`, `api-client`, and (only for its `specshot` entrypoint bundle) `specshot-app`. `packages/specshot-app` depends on `spec-schema`, `specshot-core`, `specshot-react`, and (for optional sidecar persistence) `api-client` directly - it also runs fully offline with no sidecar. React is confined to the `specshot.html` bundle; the content script stays React-free. CLI embeds a synced copy of `v1.json` (never hand-edited).
 
 ## packages/spec-schema
 
@@ -57,6 +66,7 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 - `src/detect-framework.ts` - `detectFramework()` (39 lines). Heuristics for React, Vue, Angular, Svelte.
 - `src/generated-id.ts` - `isGeneratedId(id)` (49 lines). Filters framework-generated IDs (uuid, base64, hash patterns).
 - `src/css-escape.ts` - CSS identifier escaper (32 lines). Handles special chars in selectors.
+- `src/pinned.ts` - `isPinned(spec)` type guard (`fingerprint != null`). A spec with no fingerprint is PENDING (unpinned), authored before an element was linked; `matchElement` and the extension's render loop both gate on this rather than treating an absent fingerprint as a failed match.
 - `src/index.ts` - barrel export (23 lines).
 
 **Test coverage**: Vitest with happy-dom. Coverage tracked via `pnpm test:coverage`.
@@ -71,10 +81,10 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 **Purpose**: Typed HTTP client over sidecar REST contract + SSE helper.
 
 **Key files:**
-- `src/client.ts` - `SidecarClient` class (200+ lines). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`, `getGuides()`, `putGuides(guides)`. Handles Bearer token, JSON serialization, error mapping.
+- `src/client.ts` - `SidecarClient` class (200+ lines). Methods: `health()`, `getSpecs()`, `saveSpec(file, spec)`, `updateSpec(id, spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`, `getGuides()`, `putGuides(guides)`, `getFlows()`, `putFlows(flows)`, `getScreens()`, `putScreens(screens)`, `listShots()`, `getShot(screenId)`, `putShot(shot)`, `deleteShot(screenId)`, `subscribe(onChange, options)`. Handles Bearer token, JSON serialization, error mapping.
 - `src/events.ts` - `SidecarEventSource` class (74 lines). SSE wrapper with exponential backoff (min 1s, max 30s, reset after 5s stable). Emits `specsChanged`, `manifestChanged`, `error`.
 - `src/errors.ts` - `SidecarError` hierarchy (42 lines). `NotFoundError`, `ValidationError`, `UnauthorizedError`, `NetworkError`.
-- `src/types.ts` - HTTP contract types (40+ lines). Re-exports from spec-schema (`ViewsConfig`) + `SidecarConfig`, `ConnectionStatus`.
+- `src/types.ts` - HTTP contract types (40+ lines). Re-exports from spec-schema (`ViewsConfig`, `ShotConfig`, `ShotItem`) + `SidecarConfig`, `ConnectionStatus`.
 
 **Scripts:**
 - `pnpm build` - tsc only (no codegen).
@@ -83,6 +93,64 @@ All TS packages depend on `spec-schema` for types. Extension depends on all thre
 **Conventions:**
 - All API methods return `Promise<T>`, throw `SidecarError` on failure.
 - SSE reconnect resets backoff only after 5s stable connection (M3 fix from code review).
+
+## packages/specshot-core
+
+**Purpose**: Headless, framework-free authoring core for specshot (screenshot-annotation manual authoring). MarkDoc model + numbering, canvas viewport/interaction geometry, best-effort SVG shape detection, export string builders, and two schema bridges. Only dependency: `@specpin/spec-schema`.
+
+**Key files:**
+- `src/model/mark-doc.ts` - `MarkDoc`/`MarkItem` types, `parseMarkDoc`/`serializeMarkDoc`/`validateMarkDoc`, the hierarchical `ItemNo` pattern + validation.
+- `src/model/numbering.ts` - `compareItemNo`, `nextItemNo`, `readingOrderSort`, `reindexFlat`/`reindexHierarchical`.
+- `src/canvas/viewport.ts` - pan/zoom transform (`Viewport`, `imageToScreen`/`screenToImage`, `zoomAt`, `panBy`, `fitToContainer`, `clampScale`).
+- `src/canvas/interactions.ts` - box drag/resize geometry (`applyDrag`, `applyResize`, `normalize`, `clampToImage`, `defaultBoxAt`).
+- `src/detect/` - best-effort auto-detection of SVG shapes: `svg-geometry.ts` (safe SVG parse + detect), `cluster.ts` (box clustering), `path-bbox.ts` (path bbox), `image-source.ts` (image-source loading).
+- `src/export/` - export builders: `to-json.ts` / `to-legend.ts` / `to-svg.ts` (MarkDoc string exports), `spec-sheet-data.ts` / `spec-sheet-html.ts` / `spec-sheet-md.ts` (the spec-sheet exporter - image + numbered callouts + full per-number spec, as HTML or MD), `draw-annotations.ts` / `draw-style.ts` (canvas annotation drawing), `download.ts` (Blob download helper).
+- `src/shot/build-shot.ts` - `buildShot(doc, options)`: a MarkDoc + itemNo->specId map + screenId, validated into a `ShotConfig`.
+- `src/spec/build-pending-spec.ts` - `buildPendingSpec(options)`: authored localized title/description/businessRules/tags, validated into a pending `Spec` (fingerprint omitted).
+- `src/state/marks-reducer.ts` - `marksReducer` + `MarkAction`/`ReindexMode`, the editor's MarkDoc state machine.
+- `src/index.ts` - barrel export.
+
+**Conventions:**
+- Zero React, zero extension deps; pure functions over the MarkDoc/ShotConfig/Spec data shapes.
+- Pixel coordinates (`bbox`) live only in `ShotItem`/`MarkItem`, never copied into the `Spec` a box documents (anti-bloat invariant; see `docs/specshot-integration.md`).
+
+## packages/specshot-react
+
+**Purpose**: Presentational React editor UI for specshot authoring - canvas viewport + pointer interactions, toolbar, item list, keyboard shortcuts. Owns no business state: renders and forwards `MarkAction`/callbacks, with all geometry/numbering/export logic coming from `specshot-core`. `react`/`react-dom` are peerDependencies.
+
+**Key files:**
+- `src/canvas/editor-canvas.tsx` - `EditorCanvas`, the image + marks canvas.
+- `src/canvas/marks-layer.tsx` - `MarksLayer`, renders numbered boxes over the canvas.
+- `src/canvas/use-editor-interactions.ts` - `useEditorInteractions` hook + `Tool` type (select/draw/pan).
+- `src/ui/toolbar.tsx` - `Toolbar` (tool switch, reindex mode).
+- `src/ui/item-list-panel.tsx` - `ItemListPanel` (numbered item list, select/delete).
+- `src/ui/empty-state.tsx` - `EmptyState` (no-image-loaded placeholder).
+- `src/ui/use-keyboard-shortcuts.ts` - `useKeyboardShortcuts` hook.
+- `src/index.ts` - barrel export.
+
+**Conventions:**
+- Presentational only: no fetch/persistence/export logic (that lives in the consuming composition, `packages/specshot-app`).
+
+## packages/specshot-app
+
+**Purpose**: Shared React composition (`@specpin/specshot-app`) for specshot manual authoring + export - the "spec-first" surface: upload a screenshot, draw/number boxes, author a pending `Spec` per box (localized title/description/rules) or reference an existing `specId`, then export a spec sheet (image + numbered callouts + full per-number spec) as HTML or MD. Works fully **offline** (no sidecar required); when a sidecar is connected it also persists the pending specs (`saveSpec`) and the shot artifact (`putShot`) into `.specs/`. Hosted as the extension's `specshot.html` page (`apps/extension/src/entrypoints/specshot/`) - that entrypoint is the only consumer; `react`/`react-dom` are peerDependencies.
+
+**Key files:**
+- `src/specshot-app.tsx` - `SpecshotApp`, the composition root: wires the `specshot-react` editor + this package's authoring/persistence/export modules. Orchestration only; no domain logic lives here (numbering, validation, string-building all come from `specshot-core`/`spec-schema`).
+- `src/authoring/spec-form.tsx` - per-box form authoring a pending Spec, or referencing an existing `specId`.
+- `src/authoring/screen-picker.tsx` - pick/create the `Screen` (from `screens.json`) a shot belongs to.
+- `src/export/export-panel.tsx`, `use-export-handlers.ts`, `export-actions.ts` - spec-sheet export (HTML/MD, via `specshot-core`'s builders) + download.
+- `src/persist/use-sidecar.ts`, `use-sidecar-catalog.ts`, `sidecar-panel.tsx` - optional sidecar connection via `@specpin/api-client` (`saveSpec` for pending specs, `putShot` for the shot artifact); the app runs with none of this wired up too.
+- `src/state/editor-store.ts` - `useEditorStore`, the MarkDoc state (built on `specshot-core`'s `marksReducer`).
+- `src/index.ts` - barrel export (`SpecshotApp`); `./app.css` is a separate export for the shared stylesheet.
+
+**Build:**
+- `pnpm build` - `tsc` (library build, consumed by the extension's bundler).
+- `pnpm test` - Vitest.
+
+**Conventions:**
+- Orchestration-only composition root; all numbering/validation/export rules come from `@specpin/specshot-core` / `@specpin/spec-schema`.
+- The only consumer is the extension's `specshot` entrypoint (`apps/extension/src/entrypoints/specshot/main.tsx`), which mounts `<SpecshotApp/>` inside `specshot.html`. React never leaks into the content script; see `docs/specshot-integration.md` and `docs/system-architecture.md`.
 
 ## apps/cli (Go sidecar)
 
@@ -107,11 +175,12 @@ internal/
     schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views/Guides/Required` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
-    server.go   - HTTP handlers: CRUD + SSE hub (with ~20s heartbeat) + GET/PUT /views + GET/PUT /guides; ETag on GET /specs + If-Match 409 on stale spec writes (370+ lines)
+    server.go   - HTTP handlers: CRUD + SSE hub (with ~20s heartbeat) + GET/PUT /views + GET/PUT /guides + GET /shots, GET/PUT/DELETE /shots/{screenId} (370+ lines). Shot PUT accepts a larger body (16 MiB, for embedded screenshots) and broadcasts SSE directly since the non-recursive `.specs/` watcher does not observe the `shots/` subdir. ETag on GET /specs + If-Match 409 on stale spec writes
     middleware.go - token auth + CORS (89 lines)
     hub.go      - SSE broadcast hub (102 lines)
   store/
-    store.go    - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON; sync.Mutex-serialized writes + bundle ETag/If-Match optimistic concurrency)
+    store.go       - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON; sync.Mutex-serialized writes + bundle ETag/If-Match optimistic concurrency)
+    store_shots.go - per-screenId shot CRUD (`ListShots`/`ReadShot`/`WriteShot`/`DeleteShot`) under `.specs/shots/<screenId>.shot.json`; charset-guarded + symlink-guarded screenId, atomic pretty JSON
   watch/
     watch.go    - fsnotify watcher, triggers SSE (87 lines)
 ```
@@ -121,6 +190,7 @@ internal/
 - `init`: create `.specs/manifest.json` with default values.
 - Middleware: every request needs `Authorization: Bearer <token>`. CORS accepts only `chrome-extension://`, `moz-extension://`, `safari-web-extension://` origins. Rejects web origins.
 - Store: writes confined to `.specs/`, path-traversal guard (H1 review fix). File ops atomic (temp + rename). Pretty-printed JSON (2-space indent) for clean Git diffs. `GET /views` returns `.specs/views.json` or the empty default `{version:"1.0",hidden:[]}` when absent; `PUT /views` validates then writes. `GET /guides` / `PUT /guides` mirror this for `.specs/guides.json` (empty default `{version:"1.0",guides:[]}`); the spec scanner ignores `guides.json` (not a `*.spec.json`).
+- Shots: `GET /shots` lists screenIds (empty list when `shots/` is absent, no 404 special-case); `GET/PUT/DELETE /shots/{screenId}` operate one `.specs/shots/<screenId>.shot.json` at a time, schema-validated on write, `.specs/`-confined.
 
 **Makefile:**
 - `make sync-schema` - cp schema from packages/spec-schema.
@@ -147,9 +217,10 @@ src/
   entrypoints/
     background.ts     - SW; owns the SidecarRegistry, routes messages, SW-wake re-establish
     content.ts        - match+render loop, locale state, capture flow
-    popup/            - per-tab view: status, specs, project list, language picker, filter UI
+    popup/            - per-tab view: status, specs, project list, language picker, filter UI, read-only Unpinned (pending specs) list
     sidepanel/        - docked surface (Chrome side_panel / Firefox sidebar_action)
     options/          - connection manager (add/remove/reconnect) + manual import + per-batch rename/export + team views authoring + per-connection team-guides management (list + delete)
+    specshot/         - `specshot.html` authoring page (opened via "Open spec sheet" in popup/side panel); mounts `@specpin/specshot-app`'s `<SpecshotApp/>`, the only place in the extension that pulls in React
   background/
     sidecar-registry.ts   - map of connections + local (Manual) batch list; origin-gated aggregation (per-batch domains, cross-batch id dedup, per-batch `manual:<batchId>` tag) + views threading; `guidesForOrigin` (team guides: sidecar + local, origin-tagged) + re-read-before-write `upsertGuide`/`deleteGuide`; `localTargetsForOrigin` (writable-target gate) + `manualBatchesForExport`
     sidecar-connection.ts - one project's client + cache + SSE watch + team views cache + team guides cache (all in one reload group, isolated)
@@ -192,7 +263,7 @@ src/
     surface-renderers.ts       - shared helpers for popup/side panel: sourceBadge() (sidecar vs manual pill), setListControlsHidden() + enabled-gated locale/filter rendering (hide list controls when Specpin is off), noServingProject()/setSurfaceState() (drive the full-surface empty state when no project serves the page and the paused state when Specpin is off), filter-group collapse state preserved across rebuilds
     surface-states.css         - full-surface states shared by popup + side panel: empty state (no project -> create-a-project CTA; guided two-step in the panel) + paused state (Specpin off -> "N specs hidden" panel). body.no-project / body.paused collapse the spec-operating chrome via CSS
     provenance.ts              - provenance rendering + logic shared by all 4 reader surfaces: HTML-string helpers (status badge, links via classifyHref, declarative "linked tests", reviewed+stale) + resolveStalenessThreshold (clamp [1,3650], 90 default) + formatRelativeTime (Intl.RelativeTimeFormat) + PROVENANCE_CSS. provenanceSectionHtml(spec, opts) returns "" for a spec with no provenance (byte-identical legacy render)
-    surface-data.ts            - shared spec filtering: specMatchesQuery() (title/file/tags/description predicate); pageHealth() (exact/scored/fuzzy/needsReview/orphaned buckets)
+    surface-data.ts            - shared spec filtering: specMatchesQuery() (title/file/tags/description predicate); pageHealth() (exact/scored/fuzzy/needsReview/orphaned/unpinned buckets - `unpinned` counts pending specs, counted separately from `orphaned` which has a fingerprint that failed to match); pendingSpecs()/orphanedSpecs() list helpers
     drift-corpus.ts            - local matching corpus (opt-in, default OFF): storage.local ring-buffer (cap 500), supervised + passive entries, free-text redaction at write, JSON export/clear. Fed via unprivileged RECORD_DRIFT / RECORD_DRIFT_PASSIVE (background gates on opt-in)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
@@ -210,6 +281,7 @@ src/
 - Renderers: implement `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); read localized text via `localizeSpec`, and caption the project when more than one contributes to the page. Tooltip renderer: click badge to pin tip open (one at a time), close button, "Open in side panel" action that highlights the matching side-panel card (best-effort auto-open on Chrome, Firefox cannot programmatically open sidebar).
 - Sources: pluggable. Shipped: `SidecarSource` + a writable local (Manual) source (import, in-extension create, capture, edit, group-zip export). FileSystem Access deferred.
 - Visibility: `isVisible(spec, url, state)` merges team defaults from `.specs/views.json` (via `GET /views`) and personal overrides from `chrome.storage.sync`. `url:` page gate wins over everything; `spec:<id>` force-show is a hard rescue. Filter UI (popup + side panel) offers facet checklists (Tags / Files / This page) + per-spec eye toggle; Reset clears personal overrides. Options page authors team defaults (writes via `PUT /views`).
+- Pending specs: a spec authored with no fingerprint (e.g. via the extension's `specshot.html` page) is never rendered on the host page - `isPinned` gates it out of the match/render pipeline in `orchestrator.ts`, the same as `matchElement`. The popup and side panel instead list it read-only in an **Unpinned** section (`pageHealth().unpinned`), distinct from **orphaned** (has a fingerprint, no live match).
 
 **Build:**
 - `pnpm build` - WXT build for chrome-mv3 -> `.output/chrome-mv3/`.
@@ -350,7 +422,9 @@ Two jobs (JS, Go):
 
 **Fingerprint logic**: `packages/fingerprint-core/src/capture.ts` (capture signals), `match.ts` (matching order), `selector.ts` (CSS optimization).
 
-**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views + GET/PUT /guides), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views + GET/PUT /guides + GET/PUT/DELETE /shots), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+
+**Specshot authoring page**: the extension's `specshot.html` entrypoint (upload a screenshot -> draw/number boxes -> author pending specs -> export a spec sheet as HTML/MD, with optional sidecar persistence), opened via **Open spec sheet** in the popup/side panel. Composition in `packages/specshot-app`, editor UI in `packages/specshot-react`, all authoring/geometry logic in `packages/specshot-core`.
 
 **Guide mode**: `content/guide.ts` (tour runtime) + `content/resolve-guide.ts` (step resolution), `shared/guide-editor.ts` + `guide-section.ts` (curation + launch UI), background guide handlers in `entrypoints/background.ts`, sidecar `/guides` in `server.go`/`store.go`.
 

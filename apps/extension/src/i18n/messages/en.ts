@@ -78,6 +78,7 @@ const en = {
   "common.markerYouTitle": "Your personal override",
   "common.viewChangelog": "View changelog",
   "common.openGraphView": "Open graph view",
+  "common.openSpecshot": "Open spec sheet",
 
   // Popup-only.
   "popup.openSidepanel": "Open as side panel ⇥",
@@ -162,6 +163,8 @@ const en = {
   "health.orphanedNotFound": "Not found on this page",
   "health.fuzzy": "fuzzy",
   "health.scored": "scored",
+  "health.unpinnedTitle": "Unpinned ({count})",
+  "health.unpinnedHint": "These specs haven't been linked to an element yet.",
 
   // data-spec-id helper: weak-anchor capture hint + fragile-spec list. The list is
   // a collapsible group titled "helper.scanTitle (N)", hidden when the count is 0.

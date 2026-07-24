@@ -8,6 +8,7 @@ export { captureFingerprint, TEST_ID_ATTRS } from "./capture.js";
 export { detectFramework } from "./detect-framework.js";
 export { IDENTITY_ATTRS, isGeneratedClass, isGeneratedId, isUtilityClass } from "./generated-id.js";
 export { type MatchAnchor, type MatchResult, matchElement } from "./match.js";
+export { isPinned } from "./pinned.js";
 export {
   CANDIDATE_CAP,
   type CandidateSet,

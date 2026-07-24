@@ -28,7 +28,7 @@ const genRoot = {
   $id: "https://specpin.ohnice.app/schema/v1.types.json",
   title: "SpecpinSchemaRoots",
   type: "object",
-  required: ["specFile", "manifest", "views", "guides", "required", "flows", "screens"],
+  required: ["specFile", "manifest", "views", "guides", "required", "flows", "screens", "shot"],
   additionalProperties: false,
   properties: {
     specFile: { $ref: "#/$defs/SpecFile" },
@@ -46,6 +46,9 @@ const genRoot = {
     // unreferenced by the roots above; reference here so their interfaces are emitted.
     flows: { $ref: "#/$defs/FlowsConfig" },
     screens: { $ref: "#/$defs/ScreensConfig" },
+    // ShotConfig (and ShotItem) are likewise unreferenced by the roots above;
+    // reference here so their interfaces are emitted.
+    shot: { $ref: "#/$defs/ShotConfig" },
   },
   $defs: schema.$defs,
 };
@@ -108,6 +111,7 @@ const validatorsCode = standaloneCode(standaloneAjv, {
   validateRequired: `${schemaId}#/$defs/RequiredConfig`,
   validateFlows: `${schemaId}#/$defs/FlowsConfig`,
   validateScreens: `${schemaId}#/$defs/ScreensConfig`,
+  validateShot: `${schemaId}#/$defs/ShotConfig`,
 });
 
 const validatorsBanner = [
@@ -132,6 +136,7 @@ const validatorsDts = [
   "export const validateRequired: ValidateFunction;",
   "export const validateFlows: ValidateFunction;",
   "export const validateScreens: ValidateFunction;",
+  "export const validateShot: ValidateFunction;",
   "",
 ].join("\n");
 

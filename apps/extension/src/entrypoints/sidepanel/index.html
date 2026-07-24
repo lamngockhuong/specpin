@@ -176,6 +176,23 @@
       #orphaned .t { font-weight: 700; font-size: 15px; color: var(--sp-text-2); }
       #orphaned .muted { color: var(--sp-text-3); font-size: 13px; margin-top: 3px; }
 
+      /* Unpinned (pending) list: same card shape as orphaned, distinct accent
+         color since it is a different condition (never linked, not lost). */
+      #unpinned { margin-top: 14px; }
+      #unpinned[hidden] { display: none; }
+      #unpinned .unpinned-title {
+        font: 600 13px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--sp-text-3);
+      }
+      #unpinned .unpinned-hint { color: var(--sp-text-3); font-size: 13px; margin-top: 4px; }
+      #unpinned ul { list-style: none; margin: 8px 0 0; padding: 0; }
+      #unpinned li {
+        border: 1px dashed var(--sp-border); border-radius: var(--sp-radius-card);
+        padding: 10px 12px; margin-bottom: 8px; opacity: 0.85;
+      }
+      #unpinned .t { font-weight: 700; font-size: 15px; color: var(--sp-text-2); }
+      #unpinned .muted { color: var(--sp-text-3); font-size: 13px; margin-top: 3px; }
+
       /* Per-card match-tier badge (fuzzy only; exact is silent). */
       #specs .tier {
         flex: none;
@@ -309,6 +326,14 @@
           <line x1="17" y1="7.5" x2="13.5" y2="16"/>
         </svg>
       </button>
+      <button type="button" id="open-specshot" class="icon-btn" data-i18n-title="common.openSpecshot" data-i18n-aria="common.openSpecshot" title="Open spec sheet" aria-label="Open spec sheet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+          <polyline points="14 3 14 9 20 9"/>
+          <line x1="8" y1="13" x2="16" y2="13"/>
+          <line x1="8" y1="17" x2="13" y2="17"/>
+        </svg>
+      </button>
       <button type="button" id="open-options" class="icon-btn" data-i18n-title="common.connectionSettings" data-i18n-aria="common.connectionSettings" title="Connection settings" aria-label="Connection settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3"/>
@@ -406,6 +431,7 @@
     <input type="search" id="search" data-i18n-placeholder="common.searchPlaceholder" data-i18n-aria="common.searchAria" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
     <div id="orphaned" hidden></div>
+    <div id="unpinned" hidden></div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

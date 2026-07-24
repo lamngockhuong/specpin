@@ -35,10 +35,13 @@ i18n cho UI-chrome: một runtime `t(key, params)` tùy chỉnh trong `apps/exte
 | Path | Vai trò |
 |------|------|
 | `packages/spec-schema` | JSON Schema v1 (SSOT) + generated TS types + ajv validators |
-| `packages/fingerprint-core` | `captureFingerprint` + `matchElement` không phụ thuộc framework (pure DOM) |
+| `packages/fingerprint-core` | `captureFingerprint` + `matchElement` không phụ thuộc framework (pure DOM); còn export type guard `isPinned(spec)` |
 | `packages/api-client` | `SidecarClient` có kiểu (typed) trên HTTP contract của sidecar + SSE helper |
+| `packages/specshot-core` | authoring core headless cho specshot: MarkDoc model + đánh số, canvas geometry, export builders, bridge schema `buildShot`/`buildPendingSpec`. Chỉ phụ thuộc `spec-schema` |
+| `packages/specshot-react` | UI editor specshot presentational (canvas, toolbar, item list); `react`/`react-dom` peerDeps, phụ thuộc `specshot-core` |
+| `packages/specshot-app` | composition authoring dùng chung (screen picker, spec form, export panel, persist sidecar tùy chọn); `react`/`react-dom` peerDeps, phụ thuộc `specshot-core` + `specshot-react`; chỉ được entrypoint `specshot` của extension dùng |
 | `apps/cli` | Go sidecar: `init` + `serve` (CRUD, SSE, health) + `validate` + `report` (offline), localhost được hardened |
-| `apps/extension` | WXT MV3 extension (Chrome + Firefox) |
+| `apps/extension` | WXT MV3 extension (Chrome + Firefox); nay còn host trang soạn specshot (`specshot.html`, mở từ popup/side panel) |
 | `examples/demo-react-app` | demo UI + `.specs/` đã seed sẵn |
 
 ## Element fingerprinting
@@ -52,6 +55,22 @@ Signature của matcher và shape của `MatchResult` được giữ ổn địn
 ### Corpus drift cho matching (cục bộ, opt-in)
 
 Để tinh chỉnh scorer với drift thực tế, extension có thể thu thập một corpus huấn luyện cục bộ (`storage.local`, mặc định **TẮT**, ring-buffer có giới hạn, xuất + xóa được từ Options, không bao giờ tải lên). Hai nguồn: **supervised**, một lần re-pin ghi lại cặp fingerprint `(cũ → mới)` (ground truth); và **passive**, khi một spec trở nên mất liên kết hoặc scored-trung-bình lúc match, nó chụp lại các candidate fingerprint mà scorer đã cân nhắc (nhãn `chosenByScorer` tạm thời, không bao giờ coi là sự thật). Chỉ fingerprint, không HTML, với `textContent` được lược bỏ (email + chuỗi số dài) lúc ghi. Nằm ở `apps/extension/src/shared/drift-corpus.ts`.
+
+## Soạn spec-first: spec pending và shot artifact
+
+`Spec.fingerprint` giờ là **tùy chọn** (tương thích ngược - mọi spec đã pin từ trước vẫn hợp lệ). Điều này cho phép một spec được soạn **trước khi UI mà nó mô tả tồn tại**, từ một screenshot hoặc design, chứ không chỉ capture trực tiếp từ DOM. Ba trạng thái chia sẻ chung một shape `Spec`:
+
+- **Pending (chưa gắn)** - `fingerprint` không có. Được soạn qua trang specshot của extension (`specshot.html`, mở bằng nút **Open spec sheet** ở popup/side panel - xem `docs/spec-sheet-authoring.md`), thường từ một screenshot, trước khi có element để liên kết. Không bao giờ render trên trang host - `isPinned(spec)` (type guard export từ `fingerprint-core`) gate nó khỏi cả `matchElement` lẫn vòng lặp render của extension (`orchestrator.ts`), coi "không có fingerprint" là "không có gì để match" thay vì một lần match thất bại.
+- **Pinned** - `fingerprint` có và đang match một element. Trường hợp bình thường; một spec pending trở thành pinned khi ai đó capture fingerprint cho nó (bind-later, đã lên kế hoạch trong extension - xem `docs/specshot-integration.md` Phase 2, chưa ship).
+- **Orphaned** - `fingerprint` có nhưng không match được element nào trên trang hiện tại. Khác với pending, một spec orphaned từng match được và cần gắn lại.
+
+`pageHealth()` (`apps/extension/src/shared/surface-data.ts`) đếm spec pending vào một bucket `unpinned` riêng, tách khỏi `orphaned`, nên hai lý do không-render-được không bao giờ bị lẫn lộn. Popup và side panel liệt kê spec pending dạng chỉ-đọc trong mục **Unpinned**; chúng không bao giờ được chèn vào trang.
+
+**Geometry nằm ngoài `Spec` (bất biến chống bloat).** Tọa độ pixel cho một chú thích screenshot soạn thủ công chỉ nằm trong một artifact riêng `.specs/shots/<screenId>.shot.json` (`ShotConfig`: `{ version, screenId, image, items: ShotItem[] }`, một cái mỗi `Screen`, `screenId` tham chiếu `Screen.id` trong `screens.json` - tái dùng grouping sẵn có, không tạo cái mới). Một `ShotItem` map một callout đánh số (`itemNo`, phân cấp tối đa depth 3) tới một `bbox` pixel và, tùy chọn, `specId` (pending hoặc pinned) mà nó mô tả. Một `Spec` không bao giờ mang pixel, bất kể được soạn thế nào. `packages/specshot-core` dựng và validate cả hai bridge: `buildPendingSpec()` (nội dung soạn -> một `Spec` pending đã validate) và `buildShot()` (một MarkDoc + map itemNo->specId -> một `ShotConfig` đã validate).
+
+Sidecar expose `GET /shots`, `GET/PUT/DELETE /shots/{screenId}`, phản chiếu pattern CRUD của `/views`/`/guides`/`/flows`/`/screens` (schema-validated, atomic, giới hạn trong `.specs/`), ngoại trừ: shot nằm trong thư mục con `shots/` riêng (nhiều file, mỗi screen một cái, không phải singleton phẳng) và `PUT` chấp nhận body lớn hơn (16 MiB so với 1 MiB) để chứa URL `data:` của screenshot embed; vì watcher `.specs/` không đệ quy nên không quan sát `shots/`, một `PUT`/`DELETE` thành công tự bắn SSE thay vì dựa vào file watcher.
+
+Trang `specshot.html` của extension (tải lên screenshot -> vẽ/đánh số box -> soạn một spec pending mỗi box -> export spec sheet dạng HTML/MD) là bề mặt soạn duy nhất cho luồng này và chạy hoàn toàn offline; khi có sidecar kết nối, nó còn persist spec pending và shot artifact vào `.specs/`. Nó được mở qua nút **"Open spec sheet"** ở cả popup lẫn header của side panel (`shared/open-specshot.ts` -> `browser.tabs.create({ url: browser.runtime.getURL("/specshot.html") })`), và mount composition dùng chung `@specpin/specshot-app`. Một web app riêng để host bề mặt này từng được thử trước rồi bỏ: CORS policy của sidecar chấp nhận origin của extension nhưng từ chối web origin, nên chỉ một page trong extension mới persist được vào `.specs/`. Bất biến đã sửa lại không còn là "không bao giờ đóng gói vào extension" mà là **React chỉ nằm trong bundle của đúng một entrypoint này** - content script (và mọi phần khác trong runtime luôn-bật của extension) vẫn không có React; đến nay extension chỉ có thêm trang soạn này, cộng với (đã lên kế hoạch, Phase 2) một picker bind-later.
 
 ## Multi-project registry
 
@@ -97,7 +116,7 @@ Background tổng hợp cả hai vào một danh sách được tag theo origin 
 - Việc ghi (write) bị giới hạn trong `.specs/` (có path-traversal guard), atomic, và được pretty-print để Git diff sạch. Một `sync.Mutex` serialize mọi read-modify-write để các request nhiều-writer đồng thời không làm rớt một lần append; ngoài ra việc ghi spec còn hỗ trợ optimistic concurrency: `GET /specs` trả về một `ETag` của bundle, và một `POST`/`PUT`/`DELETE` mà `If-Match` không còn khớp sẽ bị từ chối với `409` (extension reload rồi hỏi lại) thay vì đè lên một state mới hơn. Views/guides dùng mutex nhưng không có kiểm tra ETag (extension đọc lại chúng trước mỗi lần ghi).
 - `/events` phát ra một SSE heartbeat định kỳ (~20s) để một reverse proxy có idle-timeout giữ change stream luôn mở.
 - **Mô hình tin cậy multi-token.** Với N connection, extension lưu N localhost bearer token. Token ở trong background/extension storage: chúng không bao giờ được echo vào DOM của Options, không bao giờ được bao gồm trong `ConnectionStatus` (nên một truy vấn status không có đặc quyền không thể đọc chúng), và các message thay đổi connection là có đặc quyền (bị từ chối từ content script của web-page). Capture write chỉ được định tuyến tới một connection mà `domains` của nó bao phủ page origin.
-- **Endpoint**: `GET /ping`, `GET /manifest`, `GET /specs`, `GET /specs/:id`, `POST /specs`, `PUT /specs/:id`, `DELETE /specs/:id`, `GET /views`, `PUT /views`, `GET /guides`, `PUT /guides`, `GET /events` (SSE). Tất cả ngoại trừ `/ping` yêu cầu bearer auth; `PUT /views` và `PUT /guides` validate payload theo schema `ViewsConfig` / `GuidesConfig` trên cả hai phía TS và Go.
+- **Endpoint**: `GET /ping`, `GET /manifest`, `GET /specs`, `GET /specs/:id`, `POST /specs`, `PUT /specs/:id`, `DELETE /specs/:id`, `GET /views`, `PUT /views`, `GET /guides`, `PUT /guides`, `GET /flows`, `PUT /flows`, `GET /screens`, `PUT /screens`, `GET /shots`, `GET /shots/{screenId}`, `PUT /shots/{screenId}`, `DELETE /shots/{screenId}`, `GET /events` (SSE). Tất cả ngoại trừ `/ping` yêu cầu bearer auth; mỗi `PUT` validate payload theo schema entity tương ứng (`ViewsConfig` / `GuidesConfig` / `FlowsConfig` / `ScreensConfig` / `ShotConfig`) trên cả hai phía TS và Go. `PUT /shots/{screenId}` chấp nhận body lớn hơn (16 MiB, cho screenshot embed) so với các write khác.
 
 ## Design references
 

@@ -1,0 +1,447 @@
+/*
+ * Host styles for the spec-sheet authoring app. Uses specpin's design tokens
+ * (--sp-*, see ./tokens.gen.css) so the palette + light/dark theming match the
+ * extension exactly. Light is the default; dark follows the OS via
+ * prefers-color-scheme, and an explicit :root[data-theme="light|dark"] wins.
+ *
+ * The specshot-react editor components are intentionally CSS-less
+ * (presentational only) — the host owns the look. The editor rules below carry
+ * over the original specshot layout but recolored onto the specpin tokens; the
+ * single teal accent replaces specshot's red/blue pair (unselected marks use the
+ * accent, selected marks brighten to accent-hover + a glow ring).
+ */
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: var(--sp-bg);
+  color: var(--sp-text);
+  font-family: var(--sp-font-ui);
+}
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- toolbar --- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  background: var(--sp-surface);
+  border-bottom: 1px solid var(--sp-border);
+  flex-wrap: wrap;
+}
+.toolbar .brand {
+  color: var(--sp-accent);
+  font-size: 15px;
+  font-weight: 600;
+}
+.toolbar .group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.toolbar .group-label {
+  color: var(--sp-text-2);
+  font-size: 12px;
+  margin-right: 2px;
+}
+button,
+select,
+input,
+textarea {
+  font: inherit;
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.toolbar button,
+.toolbar select {
+  background: var(--sp-control);
+  color: var(--sp-text);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  padding: 5px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.toolbar button:hover:not(:disabled) {
+  border-color: var(--sp-accent);
+}
+.toolbar button.active {
+  background: var(--sp-accent);
+  border-color: var(--sp-accent);
+  color: var(--sp-accent-on);
+}
+.mode-toggle {
+  display: inline-flex;
+  gap: 4px;
+}
+
+/* --- import error bar --- */
+.import-error {
+  margin: 0;
+  background: var(--sp-error-bg);
+  border-bottom: 1px solid var(--sp-error-border);
+  padding: 8px 12px;
+  color: var(--sp-error-text);
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+/* --- body (canvas + side panel) --- */
+.body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* --- canvas --- */
+.canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.canvas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--sp-bg);
+  touch-action: none;
+  cursor: grab;
+}
+.canvas.tool-add {
+  cursor: crosshair;
+}
+.canvas-image {
+  position: absolute;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.zoom-controls {
+  position: absolute;
+  z-index: 5;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  padding: 4px;
+}
+.zoom-controls button {
+  width: 30px;
+  height: 26px;
+  background: var(--sp-control);
+  color: var(--sp-text);
+  border: 1px solid var(--sp-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.zoom-controls .zoom-pct {
+  color: var(--sp-text-2);
+  font-size: 12px;
+  min-width: 42px;
+  text-align: center;
+}
+
+/* --- marks (single teal accent; selected = brighter + glow) --- */
+.marks-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mark-box {
+  position: absolute;
+  border: 2px solid var(--sp-accent);
+  pointer-events: auto;
+  cursor: move;
+}
+.mark-box.draft {
+  border-style: dashed;
+  background: var(--sp-accent-glow);
+  pointer-events: none;
+}
+.mark-box.selected {
+  border-color: var(--sp-accent-hover);
+  box-shadow: 0 0 0 2px var(--sp-brand-glow);
+}
+.mark-label {
+  position: absolute;
+  left: 0;
+  background: var(--sp-accent);
+  color: var(--sp-accent-on);
+  font-size: 12px;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: var(--sp-accent-hover);
+  border: 1px solid var(--sp-surface);
+  border-radius: 2px;
+}
+.handle-nw {
+  left: -5px;
+  top: -5px;
+  cursor: nwse-resize;
+}
+.handle-ne {
+  right: -5px;
+  top: -5px;
+  cursor: nesw-resize;
+}
+.handle-sw {
+  left: -5px;
+  bottom: -5px;
+  cursor: nesw-resize;
+}
+.handle-se {
+  right: -5px;
+  bottom: -5px;
+  cursor: nwse-resize;
+}
+.handle-n {
+  left: 50%;
+  top: -5px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.handle-s {
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+.handle-e {
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+.handle-w {
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+/* --- empty state (no image loaded) --- */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  border: 2px dashed transparent;
+  color: var(--sp-text-2);
+}
+.empty-state.drag-over {
+  border-color: var(--sp-accent);
+  background: var(--sp-accent-glow);
+}
+.empty-state h2 {
+  color: var(--sp-text);
+  margin: 0;
+}
+.empty-state .primary {
+  background: var(--sp-accent);
+  color: var(--sp-accent-on);
+  border: none;
+  border-radius: var(--sp-radius-control);
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.empty-state .hint {
+  max-width: 420px;
+  font-size: 12px;
+}
+
+/* --- side panel (authoring + export) --- */
+.side {
+  width: 340px;
+  flex-shrink: 0;
+  background: var(--sp-surface);
+  border-left: 1px solid var(--sp-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+.side > * {
+  border-bottom: 1px solid var(--sp-border);
+}
+.muted {
+  color: var(--sp-text-2);
+}
+
+/* item list */
+.item-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 40vh;
+}
+.item-panel-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-weight: 600;
+}
+.item-panel-head .count {
+  color: var(--sp-text-2);
+}
+.item-empty {
+  color: var(--sp-text-2);
+  font-size: 13px;
+  padding: 0 12px 12px;
+}
+.item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+.item-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--sp-border);
+  cursor: pointer;
+}
+.item-list li:hover {
+  background: var(--sp-control);
+}
+.item-list li.selected {
+  background: var(--sp-accent-glow);
+}
+.item-no {
+  font-variant-numeric: tabular-nums;
+  min-width: 40px;
+  color: var(--sp-accent);
+  font-weight: 600;
+}
+.item-label {
+  flex: 1;
+  background: var(--sp-bg);
+  color: var(--sp-text);
+  border: 1px solid var(--sp-border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.item-del {
+  background: none;
+  border: none;
+  color: var(--sp-text-2);
+  font-size: 16px;
+  cursor: pointer;
+}
+.item-del:hover {
+  color: var(--sp-accent);
+}
+
+/* authoring / persistence / export panels */
+.spec-form,
+.screen-picker,
+.sidecar-panel,
+.export-panel {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.spec-form-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+.spec-form input,
+.spec-form textarea,
+.screen-picker input,
+.sidecar-panel input {
+  width: 100%;
+  background: var(--sp-bg);
+  color: var(--sp-text);
+  border: 1px solid var(--sp-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+.spec-form textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+.spec-form button,
+.screen-picker button,
+.sidecar-panel button,
+.export-panel button,
+.mode-toggle button {
+  background: var(--sp-control);
+  color: var(--sp-text);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-control);
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.spec-form button:hover:not(:disabled),
+.screen-picker button:hover:not(:disabled),
+.sidecar-panel button:hover:not(:disabled),
+.export-panel button:hover:not(:disabled),
+.mode-toggle button:hover:not(:disabled) {
+  border-color: var(--sp-accent);
+}
+.mode-toggle button.active {
+  background: var(--sp-accent);
+  border-color: var(--sp-accent);
+  color: var(--sp-accent-on);
+}
+.form-error,
+.sidecar-error {
+  color: var(--sp-error-text);
+  font-size: 12px;
+}
+.sidecar-status {
+  font-size: 12px;
+  color: var(--sp-success-text);
+}
+.sidecar-hint,
+.known-screen {
+  font-size: 12px;
+  color: var(--sp-text-2);
+}
+.export-group {
+  display: flex;
+  gap: 6px;
+}
+.export-panel .group-label {
+  color: var(--sp-text-2);
+  font-size: 12px;
+}

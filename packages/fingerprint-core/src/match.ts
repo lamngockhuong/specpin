@@ -68,13 +68,24 @@ function matchExact(
 
 /**
  * Match a fingerprint against a live DOM. MVP order (no weighted scoring yet):
+ *   0. absent fingerprint (pending/unpinned spec) -> no element, needsReview
  *   1. exact anchors (testId/aria/id) -> confidence 1.0, strategy "exact"
  *   2. unique cssSelector hit         -> confidence 0.7, strategy "css"
  *   3. otherwise (absent or ambiguous) -> no element, needsReview
  * The signature and MatchResult shape are stable so the deferred hybrid scorer
  * slots in as extra steps without breaking callers.
+ *
+ * `fp` is optional: a pending (unpinned) spec has no fingerprint yet — authored
+ * before the UI exists. Rather than throw, matching is skipped and NO_MATCH is
+ * returned, so callers can pass `spec.fingerprint` directly without a null guard.
  */
-export function matchElement(fp: ElementFingerprint, root: ParentNode = document): MatchResult {
+export function matchElement(
+  fp: ElementFingerprint | null | undefined,
+  root: ParentNode = document,
+): MatchResult {
+  // Step 0: a pending spec (no fingerprint) can never match a live element.
+  if (!fp) return { ...NO_MATCH };
+
   const exact = matchExact(fp, root);
   if (exact)
     return {

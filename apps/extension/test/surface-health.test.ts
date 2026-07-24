@@ -39,6 +39,7 @@ describe("pageHealth", () => {
       scored: 0,
       needsReview: 0,
       orphaned: 1,
+      unpinned: 0,
     });
   });
 
@@ -54,7 +55,15 @@ describe("pageHealth", () => {
         strength: "weak",
       }),
     ]);
-    expect(h).toEqual({ total: 2, exact: 0, fuzzy: 0, scored: 2, needsReview: 1, orphaned: 0 });
+    expect(h).toEqual({
+      total: 2,
+      exact: 0,
+      fuzzy: 0,
+      scored: 2,
+      needsReview: 1,
+      orphaned: 0,
+      unpinned: 0,
+    });
   });
 
   it("does not count an orphaned spec toward needsReview or a tier", () => {
@@ -69,7 +78,15 @@ describe("pageHealth", () => {
         strength: "weak",
       }),
     ]);
-    expect(h).toEqual({ total: 1, exact: 0, fuzzy: 0, scored: 0, needsReview: 0, orphaned: 1 });
+    expect(h).toEqual({
+      total: 1,
+      exact: 0,
+      fuzzy: 0,
+      scored: 0,
+      needsReview: 0,
+      orphaned: 1,
+      unpinned: 0,
+    });
   });
 
   it("returns all-zero for an empty report", () => {
@@ -80,7 +97,27 @@ describe("pageHealth", () => {
       scored: 0,
       needsReview: 0,
       orphaned: 0,
+      unpinned: 0,
     });
+  });
+
+  it("counts a pending spec as unpinned, never orphaned", () => {
+    const h = pageHealth([
+      entry({ id: "a", strategy: "exact" }),
+      entry({
+        id: "pending",
+        matched: false,
+        strategy: "none",
+        confidence: 0,
+        anchor: null,
+        needsReview: true,
+        strength: "weak",
+        pending: true,
+      }),
+    ]);
+    expect(h.unpinned).toBe(1);
+    expect(h.orphaned).toBe(0);
+    expect(h.total).toBe(2);
   });
 });
 
@@ -91,5 +128,30 @@ describe("orphanedSpecs", () => {
 
   it("returns an empty list when everything matched", () => {
     expect(orphanedSpecs(report.filter((e) => e.matched))).toEqual([]);
+  });
+
+  it("excludes pending specs (unmatched but not orphaned)", () => {
+    const withPending: MatchReportEntry[] = [
+      entry({
+        id: "orphan",
+        matched: false,
+        strategy: "none",
+        confidence: 0,
+        anchor: null,
+        needsReview: true,
+        strength: "weak",
+      }),
+      entry({
+        id: "pending",
+        matched: false,
+        strategy: "none",
+        confidence: 0,
+        anchor: null,
+        needsReview: true,
+        strength: "weak",
+        pending: true,
+      }),
+    ];
+    expect(orphanedSpecs(withPending).map((e) => e.id)).toEqual(["orphan"]);
   });
 });

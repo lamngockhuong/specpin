@@ -128,6 +128,9 @@ export interface PageHealth {
   scored: number;
   needsReview: number;
   orphaned: number;
+  /** Pending (unpinned) specs: no fingerprint yet. Counted separately from
+   *  `orphaned` (which HAS a fingerprint that failed to match on this page). */
+  unpinned: number;
 }
 
 export function pageHealth(report: MatchReportEntry[]): PageHealth {
@@ -136,7 +139,14 @@ export function pageHealth(report: MatchReportEntry[]): PageHealth {
   let scored = 0;
   let needsReview = 0;
   let orphaned = 0;
+  let unpinned = 0;
   for (const e of report) {
+    // Pending specs were never matched (no fingerprint); classify before the
+    // orphaned branch so they never inflate the orphaned (relink-needed) count.
+    if (e.pending) {
+      unpinned += 1;
+      continue;
+    }
     if (!e.matched) {
       orphaned += 1;
       continue;
@@ -146,7 +156,7 @@ export function pageHealth(report: MatchReportEntry[]): PageHealth {
     else if (e.strategy === "css") fuzzy += 1;
     else if (e.strategy === "scored") scored += 1;
   }
-  return { total: report.length, exact, fuzzy, scored, needsReview, orphaned };
+  return { total: report.length, exact, fuzzy, scored, needsReview, orphaned, unpinned };
 }
 
 /** The orphaned specs: report entries whose fingerprint matched no element on the
@@ -154,7 +164,21 @@ export function pageHealth(report: MatchReportEntry[]): PageHealth {
  *  by `pageScopeAllows`), so a spec that fails only because it targets another
  *  route never enters the report — no extra url/visibility argument is needed. */
 export function orphanedSpecs(report: MatchReportEntry[]): MatchReportEntry[] {
-  return report.filter((e) => !e.matched);
+  // A pending spec is unmatched only because it has no fingerprint yet; it is not
+  // an orphan (nothing to relink), so keep it out of the orphaned list.
+  return report.filter((e) => !e.matched && !e.pending);
+}
+
+/** The pending (unpinned) specs: authored before an element was linked, so they
+ *  carry no `fingerprint` yet. These never match a page (nothing to match
+ *  against), so they are list-only in the "Unpinned" surface section rather
+ *  than rendered on the host page (see content/orchestrator.ts's `isPinned`
+ *  gate, which excludes them from the render pipeline the same way). A plain
+ *  `!fingerprint` check (mirroring `isPinned`'s definition) rather than the
+ *  guard itself, so the generic constraint stays the loose shape the surfaces'
+ *  `TaggedSpec[]` already satisfies. */
+export function pendingSpecs<T extends { fingerprint?: unknown }>(specs: T[]): T[] {
+  return specs.filter((s) => s.fingerprint == null);
 }
 
 /** Scope a spec list to the current page. "all" (or an unknown match set, i.e.

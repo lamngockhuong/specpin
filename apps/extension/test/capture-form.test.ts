@@ -222,8 +222,8 @@ describe("CaptureForm edit mode", () => {
     click(shadow, "#sp-save");
     await flush();
     const [, spec] = onSubmit.mock.calls[0];
-    expect(spec.fingerprint.cssSelector).toBe("nav button.signin");
-    expect(spec.fingerprint.testId).toBe("signin");
+    expect(spec.fingerprint?.cssSelector).toBe("nav button.signin");
+    expect(spec.fingerprint?.testId).toBe("signin");
   });
 
   it("re-link cancel (null) keeps the original fingerprint", async () => {
@@ -234,7 +234,7 @@ describe("CaptureForm edit mode", () => {
     click(shadow, "#sp-save");
     await flush();
     const [, spec] = onSubmit.mock.calls[0];
-    expect(spec.fingerprint.cssSelector).toBe("form.login button");
+    expect(spec.fingerprint?.cssSelector).toBe("form.login button");
   });
 
   it("renders a language tab per locale plus a + tab, no locale <select>", () => {

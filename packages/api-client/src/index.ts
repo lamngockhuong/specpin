@@ -8,6 +8,8 @@ export {
   type GuidesConfig,
   type HealthResponse,
   type ScreensConfig,
+  type ShotConfig,
+  type ShotItem,
   SidecarClient,
   type SidecarClientOptions,
   type SpecsResponse,

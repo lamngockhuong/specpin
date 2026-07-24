@@ -18,6 +18,12 @@ const iconSet = {
 
 export default defineConfig({
   srcDir: "src",
+  // React is scoped to the specshot page entrypoint ONLY (a lazy, per-page
+  // bundle). WXT builds each entrypoint independently, so the content script (the
+  // code injected into every page) never pulls in React — the anti-bloat concern
+  // behind keeping the extension React-free applies to the content script, not to
+  // an isolated extension page. See @specpin/specshot-app.
+  modules: ["@wxt-dev/module-react"],
   // Release zip naming: `specpin-{version}-{browser}.zip` (the default would be
   // the sanitized package name "specpinextension"). Keeps GitHub Release assets
   // readable; the release workflow attaches the chrome + firefox zips.

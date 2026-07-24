@@ -9,3 +9,4 @@ export const validateGuides: ValidateFunction;
 export const validateRequired: ValidateFunction;
 export const validateFlows: ValidateFunction;
 export const validateScreens: ValidateFunction;
+export const validateShot: ValidateFunction;

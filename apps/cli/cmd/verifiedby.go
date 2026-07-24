@@ -75,7 +75,7 @@ func appendVerifiedByProblem(problems []string, repoRoot, specID, p string) []st
 // paths and lexical `..`-escapes. Returns the absolute joined path, or a non-empty
 // reason when the path is unsafe.
 func resolveRepoPath(repoRoot, p string) (full, reason string) {
-	if filepath.IsAbs(p) {
+	if isAbsoluteAnyOS(p) {
 		return "", "absolute path not allowed"
 	}
 	full = filepath.Join(repoRoot, filepath.Clean(p))
@@ -83,6 +83,21 @@ func resolveRepoPath(repoRoot, p string) (full, reason string) {
 		return "", "path escapes the repo root"
 	}
 	return full, ""
+}
+
+// isAbsoluteAnyOS reports whether p is absolute under POSIX OR Windows rules,
+// independent of the host OS. verifiedBy paths are git-native, repo-relative
+// strings, so a POSIX-absolute path ("/etc/passwd") must be rejected even on
+// Windows — where filepath.IsAbs misses it for lacking a drive letter — and a
+// Windows path ("C:\\...", "\\\\host\\share") even on POSIX. filepath.IsAbs only
+// knows the host convention, so the other convention is checked explicitly.
+func isAbsoluteAnyOS(p string) bool {
+	if filepath.IsAbs(p) || strings.HasPrefix(p, "/") || strings.HasPrefix(p, `\`) {
+		return true
+	}
+	// Windows drive-letter absolute, e.g. "C:" or "C:\path".
+	return len(p) >= 2 && p[1] == ':' &&
+		((p[0] >= 'A' && p[0] <= 'Z') || (p[0] >= 'a' && p[0] <= 'z'))
 }
 
 // withinRepo reports whether target is repoRoot itself or a descendant of it,

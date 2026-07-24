@@ -79,6 +79,16 @@ func TestSharedScreensCorpus(t *testing.T) {
 	runFixtureCorpus(t, "screens", v.ValidateScreens)
 }
 
+// TestSharedShotsCorpus mirrors the ajv shots loop so the TS and Go validators
+// agree on the .specs/shots/<screenId>.shot.json (ShotConfig) schema too.
+func TestSharedShotsCorpus(t *testing.T) {
+	v, err := NewValidator()
+	if err != nil {
+		t.Fatalf("new validator: %v", err)
+	}
+	runFixtureCorpus(t, "shots", v.ValidateShot)
+}
+
 // runFixtureCorpus runs every fixture under tests/fixtures/<name>/{valid,invalid}
 // through validate, asserting valid ones pass and invalid ones fail.
 func runFixtureCorpus(t *testing.T, name string, validate func([]byte) []string) {

@@ -82,6 +82,40 @@ Independent review findings:
 
 Goal: robustness, flexibility, polish. No timeline committed.
 
+**Spec-first authoring (specshot integration, Phase 1) shipped (2026-07-24)** on branch `main`:
+- A spec can now be authored **before the UI exists**, from a screenshot, not just captured live from
+  the DOM. `Spec.fingerprint` is optional (backward compatible - existing pinned specs unaffected);
+  absent ⇒ a **pending (unpinned)** spec. Distinct from the existing **orphaned** state (has a
+  fingerprint, no live match).
+- New workspace: `packages/specshot-core` (headless authoring - MarkDoc model, numbering, canvas
+  geometry, export builders, `buildShot`/`buildPendingSpec` schema bridges), `packages/specshot-react`
+  (presentational editor UI, `react`/`react-dom` peerDeps), and `packages/specshot-app` (the
+  authoring composition: screen picker, spec form, export panel, optional sidecar persistence).
+- The authoring surface is hosted **inside the browser extension** as its own page (a WXT
+  entrypoint, `specshot.html`, mounting `@specpin/specshot-app`), opened via an **"Open spec sheet"**
+  button in both the popup and the side panel header - upload a screenshot, draw/number boxes,
+  author a pending spec per box (or reference an existing `specId`), export a spec sheet (image +
+  numbered callouts + full per-number spec) as HTML/MD. Works fully **offline** (no sidecar); with a
+  sidecar connected it also persists pending specs and the shot artifact into `.specs/`. A
+  standalone web app was considered and dropped: the sidecar's CORS policy rejects web origins but
+  accepts the extension's, so only an in-extension page can reach it. React stays confined to this
+  entrypoint's own bundle; the content script remains React-free. See `docs/spec-sheet-authoring.md`.
+- New schema entity `ShotConfig`/`ShotItem` (`.specs/shots/<screenId>.shot.json`): a screenshot plus
+  numbered callouts, each optionally mapped to a `specId`. Pixel coordinates live only here, never
+  inside a `Spec` (anti-bloat invariant). `screenId` reuses the existing `Screen`/`ScreensConfig`
+  grouping.
+- Sidecar: `GET /shots`, `GET/PUT/DELETE /shots/{screenId}`, mirroring the CRUD pattern of `/views`,
+  `/guides`, `/flows`, `/screens` (schema-validated, atomic, `.specs/`-confined), with a larger 16 MiB
+  body limit for the embedded screenshot and a direct SSE broadcast on write (the `.specs/` watcher is
+  non-recursive and does not observe the `shots/` subdirectory). `api-client` gains typed
+  `listShots`/`getShot`/`putShot`/`deleteShot`.
+- Extension: `fingerprint-core` exports `isPinned(spec)`, a type guard both `matchElement` and the
+  content-script render loop use to skip pending specs (never rendered on the host page).
+  `pageHealth()` gains a distinct `unpinned` bucket; the popup and side panel list pending specs
+  read-only in a new **Unpinned** section.
+- Design record + phasing: `docs/specshot-integration.md` (Phase 1 shipped; bind-later in the
+  extension is Phase 2, not yet started).
+
 **Graph views (status-flow FSM + screen-transition) shipped (2026-07-23)** on branch `main`:
 - Two new `.specs/` singleton configs mirroring the `guides.json`/`views.json` pattern: `flows.json` (`FlowsConfig` - one status-flow FSM per object type: `states` + `transitions`) and `screens.json` (`ScreensConfig` - `screens` nodes matched to the live UI by `urlGlob`, reusing a spec's `pageUrl` glob semantics, + `transitions`). Both share one `Transition` shape (`from`, `to`, `trigger: LocalizedString`, optional `guard`/`role`/`specId`/`source`). `specId` is the DRY spine: a graph node/edge optionally points at an already-pinned `Spec`, so graphs are a *view over* element-anchored knowledge, not a parallel silo.
 - Go sidecar: `GET/PUT /flows` and `GET/PUT /screens`, mirroring the existing views/guides endpoints exactly (schema-validated, atomic, `.specs/`-confined, empty default when absent, SSE on write via the existing watcher). `api-client` gains typed `getFlows`/`putFlows`/`getScreens`/`putScreens`.
@@ -338,3 +372,5 @@ Planned after public release:
 - Codebase summary: `docs/codebase-summary.md`
 - Code standards: `docs/code-standards.md`
 - PDR: `docs/project-overview-pdr.md`
+- Spec-sheet authoring (manual authoring + export): `docs/spec-sheet-authoring.md`
+- specshot integration design record: `docs/specshot-integration.md`

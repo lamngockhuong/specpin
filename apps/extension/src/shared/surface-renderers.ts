@@ -664,6 +664,53 @@ export function renderLocalePicker(locales: string[], activeLocale: string, enab
   }
 }
 
+/** Render the "Unpinned" section: pending specs (authored before an element was
+ *  linked, so they carry no fingerprint yet). List-only — no eye toggle, no
+ *  "show on page", no match-tier badge, since a pending spec has no fingerprint
+ *  to match against and never renders on the host page (Phase 2 adds the "pin to
+ *  element" action; this phase is read-only). Hidden when Specpin is off or
+ *  there are none. Shared by the popup and side panel; built with DOM nodes (no
+ *  innerHTML) so spec titles are never an injection sink. */
+export function renderUnpinnedSection(
+  container: HTMLElement,
+  pending: TaggedSpec[],
+  enabled: boolean,
+  locale: string,
+  defaultLocale: string | undefined,
+): void {
+  container.replaceChildren();
+  if (!enabled || pending.length === 0) {
+    container.hidden = true;
+    return;
+  }
+  container.hidden = false;
+
+  const head = document.createElement("div");
+  head.className = "unpinned-title";
+  head.textContent = t("health.unpinnedTitle", { count: pending.length });
+  const hint = document.createElement("div");
+  hint.className = "unpinned-hint";
+  hint.textContent = t("health.unpinnedHint");
+  container.append(head, hint);
+
+  const ul = document.createElement("ul");
+  for (const spec of pending) {
+    const li = document.createElement("li");
+    const title = document.createElement("div");
+    title.className = "t";
+    title.textContent = resolveLocalized(spec.title, locale, defaultLocale);
+    li.appendChild(title);
+    if (spec.project) {
+      const project = document.createElement("div");
+      project.className = "muted";
+      project.textContent = spec.project;
+      li.appendChild(project);
+    }
+    ul.appendChild(li);
+  }
+  container.appendChild(ul);
+}
+
 /** Render the "what changed since last visit" digest: a count + a "Mark all seen"
  *  control + a list of new/edited spec titles, each tagged new/edited. Hidden when
  *  the diff is null (unknown/off/first-visit) or empty. Shared by the popup and

@@ -75,6 +75,7 @@ const vi: Record<keyof Messages, string> = {
   "common.markerYouTitle": "Tùy chỉnh cá nhân của bạn",
   "common.viewChangelog": "Xem changelog",
   "common.openGraphView": "Mở chế độ xem đồ thị",
+  "common.openSpecshot": "Mở trang biên tập spec sheet",
 
   // Popup-only.
   "popup.openSidepanel": "Mở dạng thanh bên ⇥",
@@ -152,6 +153,8 @@ const vi: Record<keyof Messages, string> = {
   "health.orphanedNotFound": "Không tìm thấy trên trang này",
   "health.fuzzy": "gần đúng",
   "health.scored": "theo điểm",
+  "health.unpinnedTitle": "Chưa gắn ({count})",
+  "health.unpinnedHint": "Các spec này chưa được gắn vào phần tử nào.",
 
   // data-spec-id helper.
   "helper.weakAnchorTitle": "Điểm neo yếu",

@@ -77,6 +77,7 @@ const ja: Record<keyof Messages, string> = {
   "common.markerYouTitle": "あなたの個人設定",
   "common.viewChangelog": "変更履歴を見る",
   "common.openGraphView": "グラフビューを開く",
+  "common.openSpecshot": "スペックシートを開く",
 
   // Popup-only.
   "popup.openSidepanel": "サイドパネルで開く ⇥",
@@ -158,6 +159,8 @@ const ja: Record<keyof Messages, string> = {
   "health.orphanedNotFound": "このページに見つかりません",
   "health.fuzzy": "あいまい",
   "health.scored": "スコア",
+  "health.unpinnedTitle": "未リンク ({count})",
+  "health.unpinnedHint": "これらの spec はまだ要素にリンクされていません。",
 
   // data-spec-id helper.
   "helper.weakAnchorTitle": "壊れやすいアンカー",
