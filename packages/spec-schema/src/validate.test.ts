@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Manifest, Spec } from "./types.gen.js";
-import { formatErrors, validateManifest, validateSpec, validateSpecFile } from "./validate.js";
+import type { Manifest, ShotConfig, Spec } from "./types.gen.js";
+import { validateManifest, validateShot, validateSpec, validateSpecFile } from "./validate.js";
 
 // The canonical example from the Phase 1 spec, section 3.
 const exampleSpec: Spec = {
@@ -56,11 +56,11 @@ describe("validateSpec", () => {
     expect(r.errors).toEqual([]);
   });
 
-  it("rejects a spec missing fingerprint with a clear error path", () => {
+  it("accepts a spec missing fingerprint as a pending (unpinned) spec", () => {
     const { fingerprint: _fp, ...noFingerprint } = exampleSpec;
     const r = validateSpec(noFingerprint);
-    expect(r.valid).toBe(false);
-    expect(r.errors.some((e) => formatErrors([e]).includes("fingerprint"))).toBe(true);
+    expect(r.valid).toBe(true);
+    expect(r.errors).toEqual([]);
   });
 
   it("rejects an unknown extra property (additionalProperties:false)", () => {
@@ -86,6 +86,43 @@ describe("validateSpecFile", () => {
 
   it("rejects a file with a malformed spec inside", () => {
     const r = validateSpecFile({ group: "X", specs: [{ id: "x" }] });
+    expect(r.valid).toBe(false);
+  });
+});
+
+const exampleShot: ShotConfig = {
+  version: "1",
+  screenId: "checkout",
+  image:
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+  items: [{ itemNo: "1", bbox: { startX: 0, startY: 0, endX: 10, endY: 10 }, specId: "cta" }],
+};
+
+describe("validateShot", () => {
+  it("accepts a well-formed shot artifact", () => {
+    const r = validateShot(exampleShot);
+    expect(r.valid).toBe(true);
+    expect(r.errors).toEqual([]);
+  });
+
+  it("rejects a shot missing screenId", () => {
+    const { screenId: _s, ...noScreen } = exampleShot;
+    expect(validateShot(noScreen).valid).toBe(false);
+  });
+
+  it("rejects a negative bbox coordinate", () => {
+    const r = validateShot({
+      ...exampleShot,
+      items: [{ itemNo: "1", bbox: { startX: -1, startY: 0, endX: 10, endY: 10 } }],
+    });
+    expect(r.valid).toBe(false);
+  });
+
+  it("rejects a malformed itemNo", () => {
+    const r = validateShot({
+      ...exampleShot,
+      items: [{ itemNo: "0.1", bbox: { startX: 0, startY: 0, endX: 1, endY: 1 } }],
+    });
     expect(r.valid).toBe(false);
   });
 });

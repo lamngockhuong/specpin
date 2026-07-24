@@ -1,0 +1,17 @@
+{
+  "$schema": "https://specpin.ohnice.app/schema/v1.json",
+  "version": "1",
+  "screenId": "checkout",
+  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+  "items": [
+    {
+      "itemNo": "1",
+      "bbox": { "startX": 10, "startY": 20, "endX": 120, "endY": 60 },
+      "specId": "pending-checkout-cta"
+    },
+    {
+      "itemNo": "1.1",
+      "bbox": { "startX": 0, "startY": 0, "endX": 5, "endY": 5 }
+    }
+  ]
+}

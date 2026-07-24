@@ -8,6 +8,7 @@ import {
   validateManifest as manifestValidator,
   validateRequired as requiredValidator,
   validateScreens as screensValidator,
+  validateShot as shotValidator,
   validateSpecFile as specFileValidator,
   validateSpec as specValidator,
   validateViews as viewsValidator,
@@ -61,6 +62,11 @@ export function validateFlows(data: unknown): ValidationResult {
 /** Validate a .specs/screens.json screen-transition config. */
 export function validateScreens(data: unknown): ValidationResult {
   return run(screensValidator, data);
+}
+
+/** Validate a .specs/shots/<screenId>.shot.json screenshot-annotation artifact. */
+export function validateShot(data: unknown): ValidationResult {
+  return run(shotValidator, data);
 }
 
 /** Human-readable one-line summary of validation errors (e.g. for HTTP 400 bodies). */

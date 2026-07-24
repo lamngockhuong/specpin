@@ -230,13 +230,12 @@ export const schemaV1: Record<string, unknown> = {
     },
     "Spec": {
       "title": "Spec",
-      "description": "A business specification pinned to one UI element.",
+      "description": "A business specification pinned to one UI element. `fingerprint` is optional: absent ⇒ a pending (unpinned) spec authored before the UI exists (e.g. from a screenshot in the specshot authoring page); present ⇒ a normal pinned spec. Backward compatible — every already-pinned spec still validates.",
       "type": "object",
       "required": [
         "id",
         "title",
-        "description",
-        "fingerprint"
+        "description"
       ],
       "additionalProperties": false,
       "properties": {
@@ -718,6 +717,98 @@ export const schemaV1: Record<string, unknown> = {
           "maxItems": 2000,
           "items": {
             "$ref": "#/$defs/Transition"
+          }
+        }
+      }
+    },
+    "ShotItem": {
+      "title": "ShotItem",
+      "description": "One numbered callout on a screenshot: a hierarchical itemNo, its pixel bbox, and an optional link to the spec it documents. The itemNo pattern and the startX/startY/endX/endY bbox shape are byte-compatible with the number-ui-image skill (annotate-image-bboxes.py) and specshot's MarkItem.",
+      "type": "object",
+      "required": [
+        "itemNo",
+        "bbox"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "itemNo": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(\\.[1-9][0-9]*){0,2}$",
+          "description": "Hierarchical callout number up to depth 3, e.g. \"1\", \"1.2\", \"6.10\"."
+        },
+        "bbox": {
+          "type": "object",
+          "required": [
+            "startX",
+            "startY",
+            "endX",
+            "endY"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "startX": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "startY": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "endX": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "endY": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "description": "Pixel box in screenshot space. startX <= endX and startY <= endY are enforced by the authoring layer (specshot-core), not the schema."
+        },
+        "specId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Optional id of the Spec (pending or pinned) this callout documents."
+        }
+      }
+    },
+    "ShotConfig": {
+      "title": "ShotConfig",
+      "description": "A .specs/shots/<screenId>.shot.json artifact: a screenshot plus its numbered callouts, mapping each itemNo to a Spec. Pixel coordinates live ONLY here, never inside a Spec (anti-bloat invariant). Grouping into a screen reuses the existing Screen/ScreensConfig; screenId references a Screen.id.",
+      "type": "object",
+      "required": [
+        "version",
+        "screenId",
+        "image",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Optional pointer to this schema for editor tooling."
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "screenId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Id of the Screen this shot belongs to (references Screen.id in screens.json). Also the file basename: .specs/shots/<screenId>.shot.json."
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The screenshot: a data: URL (embedded, v1 default) or a relative path. Format/size validation is an app-layer concern; the schema only enforces non-empty."
+        },
+        "items": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "$ref": "#/$defs/ShotItem"
           }
         }
       }

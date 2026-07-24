@@ -1,0 +1,11 @@
+{
+  "version": "1",
+  "screenId": "checkout",
+  "image": "shots/checkout.png",
+  "items": [
+    {
+      "itemNo": "1",
+      "bbox": { "startX": -1, "startY": 0, "endX": 10, "endY": 10 }
+    }
+  ]
+}

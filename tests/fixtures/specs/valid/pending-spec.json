@@ -1,0 +1,17 @@
+{
+  "id": "pending-checkout-cta",
+  "title": { "en": "Checkout button", "vi": "Nút thanh toán" },
+  "description": {
+    "en": "Authored from a screenshot before the UI exists; no fingerprint yet (pending/unpinned).",
+    "vi": "Soạn từ ảnh chụp trước khi UI tồn tại; chưa có fingerprint (pending/chưa gắn)."
+  },
+  "businessRules": [{ "en": "Disabled until the cart has at least one item." }],
+  "tags": ["checkout", "pending"],
+  "status": "draft",
+  "meta": {
+    "createdBy": "pm-khuong",
+    "createdAt": "2026-07-23T22:00:00Z",
+    "updatedAt": "2026-07-23T22:00:00Z",
+    "source": "manual"
+  }
+}

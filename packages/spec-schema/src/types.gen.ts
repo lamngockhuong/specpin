@@ -26,6 +26,7 @@ export interface SpecpinSchemaRoots {
   required: RequiredConfig;
   flows: FlowsConfig;
   screens: ScreensConfig;
+  shot: ShotConfig;
 }
 /**
  * A Specpin <area>.spec.json file: a named group of specs pinned to UI elements.
@@ -42,7 +43,7 @@ export interface SpecFile {
   specs: Spec[];
 }
 /**
- * A business specification pinned to one UI element.
+ * A business specification pinned to one UI element. `fingerprint` is optional: absent ⇒ a pending (unpinned) spec authored before the UI exists (e.g. from a screenshot in the specshot authoring page); present ⇒ a normal pinned spec. Backward compatible — every already-pinned spec still validates.
  */
 export interface Spec {
   /**
@@ -67,7 +68,7 @@ export interface Spec {
   verifiedBy?: string[];
   status?: SpecStatus;
   preferredDisplayMode?: DisplayMode;
-  fingerprint: ElementFingerprint;
+  fingerprint?: ElementFingerprint;
   meta?: SpecMeta;
 }
 /**
@@ -393,4 +394,48 @@ export interface LocalizedString5 {
  */
 export interface LocalizedString6 {
   [k: string]: string;
+}
+/**
+ * A .specs/shots/<screenId>.shot.json artifact: a screenshot plus its numbered callouts, mapping each itemNo to a Spec. Pixel coordinates live ONLY here, never inside a Spec (anti-bloat invariant). Grouping into a screen reuses the existing Screen/ScreensConfig; screenId references a Screen.id.
+ */
+export interface ShotConfig {
+  /**
+   * Optional pointer to this schema for editor tooling.
+   */
+  $schema?: string;
+  version: string;
+  /**
+   * Id of the Screen this shot belongs to (references Screen.id in screens.json). Also the file basename: .specs/shots/<screenId>.shot.json.
+   */
+  screenId: string;
+  /**
+   * The screenshot: a data: URL (embedded, v1 default) or a relative path. Format/size validation is an app-layer concern; the schema only enforces non-empty.
+   */
+  image: string;
+  /**
+   * @maxItems 500
+   */
+  items: ShotItem[];
+}
+/**
+ * One numbered callout on a screenshot: a hierarchical itemNo, its pixel bbox, and an optional link to the spec it documents. The itemNo pattern and the startX/startY/endX/endY bbox shape are byte-compatible with the number-ui-image skill (annotate-image-bboxes.py) and specshot's MarkItem.
+ */
+export interface ShotItem {
+  /**
+   * Hierarchical callout number up to depth 3, e.g. "1", "1.2", "6.10".
+   */
+  itemNo: string;
+  /**
+   * Pixel box in screenshot space. startX <= endX and startY <= endY are enforced by the authoring layer (specshot-core), not the schema.
+   */
+  bbox: {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+  };
+  /**
+   * Optional id of the Spec (pending or pinned) this callout documents.
+   */
+  specId?: string;
 }

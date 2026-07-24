@@ -7,6 +7,7 @@ import {
   validateManifest,
   validateRequired,
   validateScreens,
+  validateShot,
   validateSpec,
   validateSpecFile,
   validateViews,
@@ -24,6 +25,7 @@ const manifestDir = resolve(here, "../../../tests/fixtures/manifest");
 const requiredDir = resolve(here, "../../../tests/fixtures/required");
 const flowsDir = resolve(here, "../../../tests/fixtures/flows");
 const screensDir = resolve(here, "../../../tests/fixtures/screens");
+const shotsDir = resolve(here, "../../../tests/fixtures/shots");
 
 async function readFixtures(
   baseDir: string,
@@ -118,6 +120,17 @@ async function main(): Promise<void> {
   for (const { name, data } of await readFixtures(screensDir, "invalid")) {
     const { valid } = validateScreens(data);
     if (valid) failures.push(`screens/invalid/${name} should fail but passed`);
+  }
+
+  // shots corpus, cross-checked against validateShot on both sides.
+  for (const { name, data } of await readFixtures(shotsDir, "valid")) {
+    const { valid, errors } = validateShot(data);
+    if (!valid)
+      failures.push(`shots/valid/${name} should pass but failed: ${JSON.stringify(errors)}`);
+  }
+  for (const { name, data } of await readFixtures(shotsDir, "invalid")) {
+    const { valid } = validateShot(data);
+    if (valid) failures.push(`shots/invalid/${name} should fail but passed`);
   }
 
   // Guard against demo rot: the seeded demo specs must stay schema-valid.
