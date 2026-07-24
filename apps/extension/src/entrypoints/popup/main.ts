@@ -11,6 +11,7 @@ import { chromeApi } from "../../shared/chrome-api.js";
 import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
 import { openGraphView } from "../../shared/open-graph-view.js";
+import { openSpecshot } from "../../shared/open-specshot.js";
 import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
@@ -45,6 +46,7 @@ import {
   fetchMatchState,
   fetchSurfaceState,
   pageHealth,
+  pendingSpecs,
   type SpecScope,
   scopeSpecs,
   specMatchesQuery,
@@ -61,6 +63,7 @@ import {
   renderLocalePicker,
   renderProjects,
   renderStatus,
+  renderUnpinnedSection,
   setSurfaceState,
   sourceBadge,
 } from "../../shared/surface-renderers.js";
@@ -219,6 +222,13 @@ async function refresh(): Promise<void> {
   // shared builder lists the local + sidecar export targets.
   projectActions.update(specs.enabled, buildExportTargets(status, origin));
   renderSpecs(specs);
+  renderUnpinnedSection(
+    byId("unpinned"),
+    pendingSpecs(specs.specs),
+    specs.enabled,
+    activeLocale,
+    specs.manifest?.settings?.defaultLocale,
+  );
   await digestReady;
 }
 
@@ -269,6 +279,11 @@ byId("open-options").addEventListener("click", () => browser.runtime.openOptions
 // no docked state to preserve, so close it once the new tab is open.
 byId("open-graph").addEventListener("click", () => {
   void openGraphView().then(() => window.close());
+});
+// Opens the full-page specshot authoring view in a new tab, then closes the
+// popup (like the graph view — the popup has no docked state to preserve).
+byId("open-specshot").addEventListener("click", () => {
+  void openSpecshot().then(() => window.close());
 });
 
 // Chrome only: offer to dock the panel from the popup (the click is the required

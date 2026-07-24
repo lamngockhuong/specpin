@@ -179,6 +179,26 @@
         box-shadow: 0 0 0 4px var(--sp-accent-glow);
       }
       #capture:hover { background: var(--sp-accent-hover); border-color: var(--sp-accent-hover); filter: none; }
+
+      /* Unpinned (pending) list: specs authored before an element was linked.
+         List-only (no toggle, no badge) -- a dashed card set apart from the
+         solid spec-list rows. */
+      #unpinned { margin-top: 14px; }
+      #unpinned[hidden] { display: none; }
+      #unpinned .unpinned-title {
+        font: 600 13px/1 var(--sp-font-ui); text-transform: uppercase; letter-spacing: 0.06em;
+        color: var(--sp-text-3);
+      }
+      #unpinned .unpinned-hint { color: var(--sp-text-3); font-size: 13px; margin-top: 4px; }
+      #unpinned ul { list-style: none; margin: 8px 0 0; padding: 0; max-height: none; overflow: visible; }
+      #unpinned li {
+        display: block;
+        border: 1px dashed var(--sp-border); border-radius: var(--sp-radius-control);
+        padding: 8px 10px; margin-bottom: 6px; opacity: 0.85;
+      }
+      #unpinned li::before { display: none; }
+      #unpinned .t { font-weight: 700; font-size: 14px; color: var(--sp-text-2); }
+      #unpinned .muted { color: var(--sp-text-3); font-size: 13px; margin-top: 2px; }
     </style>
   </head>
   <body>
@@ -212,6 +232,14 @@
           <circle cx="12" cy="18" r="2.5"/>
           <line x1="7" y1="7.5" x2="10.5" y2="16"/>
           <line x1="17" y1="7.5" x2="13.5" y2="16"/>
+        </svg>
+      </button>
+      <button type="button" id="open-specshot" class="icon-btn" data-i18n-title="common.openSpecshot" data-i18n-aria="common.openSpecshot" title="Open spec sheet" aria-label="Open spec sheet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+          <polyline points="14 3 14 9 20 9"/>
+          <line x1="8" y1="13" x2="16" y2="13"/>
+          <line x1="8" y1="17" x2="13" y2="17"/>
         </svg>
       </button>
       <button type="button" id="open-options" class="icon-btn" data-i18n-title="common.connectionSettings" data-i18n-aria="common.connectionSettings" title="Connection settings" aria-label="Connection settings">
@@ -292,6 +320,7 @@
     </details>
     <input type="search" id="search" data-i18n-placeholder="common.searchPlaceholder" data-i18n-aria="common.searchAria" placeholder="Search specs&hellip;" aria-label="Search specs" />
     <ul id="specs"></ul>
+    <div id="unpinned" hidden></div>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

@@ -1,3 +1,10 @@
 {
-  "extends": "./.wxt/tsconfig.json"
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    // React is used only by the specshot page entrypoint. The @wxt-dev/module-react
+    // module wires JSX into the Vite build, but the `tsc --noEmit` typecheck reads
+    // this config, so set the JSX transform here too (react-jsx = the automatic
+    // runtime, no `import React` needed).
+    "jsx": "react-jsx"
+  }
 }
