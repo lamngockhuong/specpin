@@ -94,6 +94,96 @@
           "source": "manual"
         }
       ]
+    },
+    {
+      "id": "deal-pipeline",
+      "object": {
+        "en": "deal-pipeline"
+      },
+      "states": [
+        {
+          "id": "Lead",
+          "label": {
+            "en": "Lead"
+          },
+          "kind": "initial"
+        },
+        {
+          "id": "Proposal",
+          "label": {
+            "en": "Proposal"
+          },
+          "kind": "normal"
+        },
+        {
+          "id": "Negotiation",
+          "label": {
+            "en": "Negotiation"
+          },
+          "kind": "normal"
+        },
+        {
+          "id": "Won",
+          "label": {
+            "en": "Won"
+          },
+          "kind": "terminal"
+        },
+        {
+          "id": "Lost",
+          "label": {
+            "en": "Lost"
+          },
+          "kind": "terminal"
+        }
+      ],
+      "transitions": [
+        {
+          "id": "lead-send-proposal-proposal",
+          "from": "Lead",
+          "to": "Proposal",
+          "trigger": {
+            "en": "Send proposal"
+          },
+          "source": "imported"
+        },
+        {
+          "id": "proposal-start-negotiation-negotiation",
+          "from": "Proposal",
+          "to": "Negotiation",
+          "trigger": {
+            "en": "Start negotiation"
+          },
+          "source": "imported"
+        },
+        {
+          "id": "negotiation-mark-won-won",
+          "from": "Negotiation",
+          "to": "Won",
+          "trigger": {
+            "en": "Mark won"
+          },
+          "source": "imported"
+        },
+        {
+          "id": "negotiation-mark-lost-lost",
+          "from": "Negotiation",
+          "to": "Lost",
+          "trigger": {
+            "en": "Mark lost"
+          },
+          "source": "imported"
+        },
+        {
+          "id": "lead-disqualify-lost",
+          "from": "Lead",
+          "to": "Lost",
+          "trigger": {
+            "en": "Disqualify"
+          },
+          "source": "imported"
+        }
+      ]
     }
   ]
 }

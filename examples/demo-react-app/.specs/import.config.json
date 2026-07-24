@@ -1,0 +1,17 @@
+{
+  "flows": [
+    {
+      "file": "src/data.ts",
+      "export": "DEAL_STAGE_TRANSITIONS",
+      "adapter": "fsm-table",
+      "id": "deal-pipeline"
+    }
+  ],
+  "screens": [
+    {
+      "file": "src/routes-catalog.ts",
+      "export": "IMPORTED_ROUTES",
+      "adapter": "react-router"
+    }
+  ]
+}

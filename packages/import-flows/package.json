@@ -1,0 +1,60 @@
+{
+  "name": "@specpin/import-flows",
+  "version": "0.0.0",
+  "description": "Import flows.json / screens.json from consumer TypeScript source (FSM tables, route tables).",
+  "license": "Apache-2.0",
+  "author": "Lam Ngoc Khuong",
+  "homepage": "https://specpin.ohnice.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lamngockhuong/specpin.git",
+    "directory": "packages/import-flows"
+  },
+  "bugs": {
+    "url": "https://github.com/lamngockhuong/specpin/issues"
+  },
+  "keywords": [
+    "specpin",
+    "codegen",
+    "import",
+    "flows",
+    "screens"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "specpin-import-flows": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "typescript": ">=5"
+  },
+  "dependencies": {
+    "@specpin/spec-schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.0",
+    "@vitest/coverage-v8": "4.1.10",
+    "tsx": "4.23.1",
+    "typescript": "6.0.3"
+  }
+}

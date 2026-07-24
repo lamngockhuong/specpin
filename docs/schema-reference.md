@@ -334,6 +334,31 @@ When `.specs/screens.json` is absent, the sidecar returns the empty default `{ "
 
 Both configs render in the extension's full-page **graph view** (dagre layout + hand-drawn SVG, launched from the popup/side panel); see [`run-guide.md`](./run-guide.md#19-graph-views) for the reader-facing walkthrough.
 
+## `import.config.json` (tooling config, not a `.specs/` schema artifact)
+
+`flows.json`/`screens.json` can also be populated by `@specpin/import-flows`, a per-repo devDependency CLI that extracts them from TypeScript source (see [`run-guide.md`](./run-guide.md#importing-flowsscreens-from-code)). It is driven by a committed `.specs/import.config.json`, which is **not** part of the `spec-schema` SSOT above - it is small, hand-written tooling config that neither the Go sidecar nor the browser extension read:
+
+```jsonc
+{
+  "flows": [
+    { "file": "src/order/fsm.ts", "export": "ORDER_STATUS_TRANSITIONS", "adapter": "fsm-table", "id": "order-status" }
+  ],
+  "screens": [
+    { "file": "src/routes.tsx", "adapter": "react-router" }
+  ]
+}
+```
+
+| Field | Notes |
+|-------|-------|
+| `flows[].file` / `screens[].file` | path to the TypeScript source, relative to the repo root that owns `.specs/` |
+| `flows[].export` | required: the named export holding the transition table |
+| `screens[].export` | optional: a named export holding a flat route-object array; omit it when the file only has JSX `<Route>` elements |
+| `flows[]`/`screens[].adapter` | `"fsm-table"` (flows only) or `"react-router"` (screens only) |
+| `flows[].id` | the `Flow.id` stamped onto the generated entry |
+
+`source: "imported"` on a `Transition` (see the Transition table above) marks an edge the CLI generated, as opposed to `"manual"`/`"auto-captured"`. A `Flow`/`Screen` id declared in `import.config.json` is **import-owned**: every run wholesale replaces it, tracked in a committed `.specs/.import-owned.json` companion file - so **don't hand-edit an imported entry**, the next run overwrites it. Any other id already present is left completely untouched, so hand-authored and imported entries coexist in the same file (the demo app's `.specs/` is a worked example of this).
+
 ## ShotConfig (`.specs/shots/<screenId>.shot.json`)
 
 A screenshot annotated with numbered callouts, each optionally mapped to a `Spec` (pending or pinned). Authored by the extension's specshot page (`specshot.html`, see `docs/spec-sheet-authoring.md`) via `@specpin/specshot-core`'s `buildShot()`. Unlike the flat singletons above (`views.json`, `guides.json`, `flows.json`, `screens.json`), a repo can have many shots, one per screen, so they live under their own `shots/` subdirectory rather than as a single top-level file. `screenId` references a `Screen.id` in `screens.json`, reusing the existing grouping rather than inventing a new one.

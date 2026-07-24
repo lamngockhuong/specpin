@@ -447,3 +447,48 @@ jobs:
 ```
 
 Pin `@<tag>` (không dùng `@main`) để an toàn supply-chain khi đã có release tag.
+
+## Import flows/screens từ code
+
+`flows.json`/`screens.json` (xem [Graph views](#19-graph-views)) không bắt buộc phải soạn tay: `@specpin/import-flows` là một CLI theo từng repo, trích xuất chúng từ chính source TypeScript của bạn - một const bảng transition FSM, hoặc các route khai báo bằng `react-router` - để graph luôn khớp với code thay vì lệch dần theo thời gian. Đây là tooling build-time độc lập, giống `prisma generate`: nó không bao giờ gọi tới Go sidecar hay extension, và không cần server nào đang chạy.
+
+Cài nó như một **devDependency** trong repo đích, cùng với `typescript` của chính repo đó (một peerDependency, để CLI dùng đúng phiên bản TS của project thay vì đóng gói sẵn một bản):
+
+```bash
+pnpm add -D @specpin/import-flows typescript
+```
+
+Thêm một script và một `.specs/import.config.json` được commit:
+
+```jsonc
+// package.json
+{ "scripts": { "specs:import": "specpin-import-flows" } }
+```
+
+```jsonc
+// .specs/import.config.json
+{
+  "flows": [
+    { "file": "src/order/fsm.ts", "export": "ORDER_STATUS_TRANSITIONS", "adapter": "fsm-table", "id": "order-status" }
+  ],
+  "screens": [
+    { "file": "src/routes.tsx", "adapter": "react-router" }
+  ]
+}
+```
+
+- Các entry `flows[]` dùng adapter `fsm-table`: `export` nêu tên một const export chứa mảng edge dạng `{ from, to, trigger, role?, guard? }` (hoặc dạng rút gọn `{ state: { trigger: state } }`); `id` là `Flow.id` được gán vào entry sinh ra.
+- Các entry `screens[]` dùng adapter `react-router`: nó đọc các phần tử JSX `<Route path="...">` và/hoặc một mảng route-object phẳng (`export` nêu tên mảng đó; bỏ qua nếu file chỉ có route dạng JSX) thành `Screen[]`, tổng quát hóa các segment `:param` thành `**`.
+- Xem [schema-reference.md](./schema-reference.md#importconfigjson-tooling-config-not-a-specs-schema-artifact) để có tham chiếu đầy đủ các trường.
+
+Chạy nó:
+
+```bash
+pnpm specs:import              # ghi flows.json / screens.json
+pnpm specs:import --dry-run    # xem trước diff, không ghi gì
+pnpm specs:import --check      # cổng CI: exit khác 0 nếu output sẽ thay đổi
+```
+
+Gắn `--check` vào CI để một PR đổi source mà quên chạy lại import sẽ làm build fail.
+
+**Merge và provenance.** Mọi id khai báo trong `import.config.json` là **import-owned** - mỗi lần chạy sẽ refresh toàn bộ id đó, và tập id sở hữu được ghi vào một file đi kèm `.specs/.import-owned.json` (commit vào Git) - nên **đừng sửa tay một entry đã import**: lần chạy sau sẽ ghi đè lên sửa đổi đó. Bất kỳ id nào khác đã có sẵn trong `flows.json`/`screens.json` (soạn tay, hoặc capture theo cách khác) đều được giữ nguyên hoàn toàn, nên entry thủ công và entry import cùng tồn tại trong một file; `transitions[]` của `screens.json` không bao giờ bị importer ghi vào (vẫn thuộc quyền soạn tay). Transition sinh ra mang `"source": "imported"`, phân biệt với edge `"manual"`/`"auto-captured"`. Demo app là một ví dụ thực tế: `examples/demo-react-app/.specs/import.config.json` import một flow `deal-pipeline` và một screen `reports`, sống cạnh flow `deal-status` và năm screen đã soạn tay sẵn có trong cùng thư mục `.specs/` đó.

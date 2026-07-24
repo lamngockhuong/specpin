@@ -510,3 +510,48 @@ jobs:
 ```
 
 Pin `@<tag>` (not `@main`) for supply-chain safety once a release is tagged.
+
+## Importing flows/screens from code
+
+`flows.json`/`screens.json` (see [Graph views](#19-graph-views)) don't have to be hand-authored: `@specpin/import-flows` is a per-repo CLI that extracts them from your own TypeScript source - an FSM transition-table const, or your `react-router` route declarations - so the graph stays in sync with the code instead of drifting from it. It is standalone build-time tooling, like `prisma generate`: it never talks to the Go sidecar or the browser extension, and it needs no server running.
+
+Install it as a **devDependency** in the target repo, alongside your own `typescript` (a peerDependency, so the CLI uses your project's TS version rather than bundling one):
+
+```bash
+pnpm add -D @specpin/import-flows typescript
+```
+
+Add a script and a committed `.specs/import.config.json`:
+
+```jsonc
+// package.json
+{ "scripts": { "specs:import": "specpin-import-flows" } }
+```
+
+```jsonc
+// .specs/import.config.json
+{
+  "flows": [
+    { "file": "src/order/fsm.ts", "export": "ORDER_STATUS_TRANSITIONS", "adapter": "fsm-table", "id": "order-status" }
+  ],
+  "screens": [
+    { "file": "src/routes.tsx", "adapter": "react-router" }
+  ]
+}
+```
+
+- `flows[]` entries use the `fsm-table` adapter: `export` names an exported const holding an array of `{ from, to, trigger, role?, guard? }` edges (or the shorthand `{ state: { trigger: state } }` record form); `id` is the `Flow.id` stamped onto the generated entry.
+- `screens[]` entries use the `react-router` adapter: it reads JSX `<Route path="...">` elements and/or a flat route-object array (`export` names that array; omit it when the file only has JSX routes) into `Screen[]`, generalizing `:param` segments to `**`.
+- See [schema-reference.md](./schema-reference.md#importconfigjson-tooling-config-not-a-specs-schema-artifact) for the full field reference.
+
+Run it:
+
+```bash
+pnpm specs:import              # writes flows.json / screens.json
+pnpm specs:import --dry-run    # preview the diff, write nothing
+pnpm specs:import --check      # CI gate: exit non-zero if the output would change
+```
+
+Wire `--check` into CI so a PR that changes the source without re-running the import fails the build.
+
+**Merge and provenance.** Every id declared in `import.config.json` is import-owned - each run wholesale refreshes it and records the owned set in a committed `.specs/.import-owned.json` companion file - so **don't hand-edit an imported entry**: your edit is overwritten on the next run. Any other id already in `flows.json`/`screens.json` (hand-authored, or captured another way) is left completely untouched, so manual and imported entries coexist side by side in the same file; `screens.json`'s `transitions[]` is never written by the importer (it stays owned by manual authoring). Generated transitions carry `"source": "imported"`, distinguishing them from `"manual"`/`"auto-captured"` edges. The demo app is a worked example: `examples/demo-react-app/.specs/import.config.json` imports a `deal-pipeline` flow and a `reports` screen alongside the hand-authored `deal-status` flow and five hand-authored screens already in that same `.specs/` directory.
