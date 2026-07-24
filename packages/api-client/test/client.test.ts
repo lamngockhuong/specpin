@@ -174,6 +174,53 @@ describe("SidecarClient requests", () => {
   });
 });
 
+describe("SidecarClient shots", () => {
+  const sampleShot = {
+    version: "1",
+    screenId: "checkout",
+    image: "shots/checkout.png",
+    items: [{ itemNo: "1", bbox: { startX: 0, startY: 0, endX: 10, endY: 10 }, specId: "cta" }],
+  };
+
+  it("listShots() unwraps { screenIds } from GET /shots", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ screenIds: ["checkout", "login"] }));
+    const res = await client(fetchImpl).listShots();
+    expect(res).toEqual(["checkout", "login"]);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/shots");
+    expect(init.method).toBe("GET");
+  });
+
+  it("getShot() GETs the screenId-scoped path", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(sampleShot));
+    const res = await client(fetchImpl).getShot("checkout");
+    expect(res).toEqual(sampleShot);
+    expect(fetchImpl.mock.calls[0][0]).toBe("http://127.0.0.1:9999/shots/checkout");
+  });
+
+  it("putShot() PUTs to the shot's own screenId path", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(sampleShot));
+    await client(fetchImpl).putShot(sampleShot);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/shots/checkout");
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(init.body as string)).toEqual(sampleShot);
+  });
+
+  it("deleteShot() DELETEs and handles a 204", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    await expect(client(fetchImpl).deleteShot("checkout")).resolves.toBeUndefined();
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://127.0.0.1:9999/shots/checkout");
+    expect(init.method).toBe("DELETE");
+  });
+
+  it("getShot() surfaces a 404 as SidecarError", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ error: "load_failed" }, 404));
+    await expect(client(fetchImpl).getShot("nope")).rejects.toBeInstanceOf(SidecarError);
+  });
+});
+
 describe("SidecarClient errors", () => {
   it("surfaces a 401 as SidecarError, not a raw fetch result", async () => {
     // Fresh Response per call: a Response body can only be read once.

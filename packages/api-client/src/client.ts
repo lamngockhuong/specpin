@@ -3,13 +3,21 @@ import type {
   GuidesConfig,
   Manifest,
   ScreensConfig,
+  ShotConfig,
   Spec,
   ViewsConfig,
 } from "@specpin/spec-schema";
 import { SidecarError } from "./errors.js";
 import { type ConnectionState, type SubscribeOptions, subscribeEvents } from "./events.js";
 
-export type { FlowsConfig, GuidesConfig, ScreensConfig, ViewsConfig } from "@specpin/spec-schema";
+export type {
+  FlowsConfig,
+  GuidesConfig,
+  ScreensConfig,
+  ShotConfig,
+  ShotItem,
+  ViewsConfig,
+} from "@specpin/spec-schema";
 
 export interface SidecarClientOptions {
   baseUrl: string;
@@ -163,6 +171,30 @@ export class SidecarClient {
   /** Write the screen-transition config (validated server-side). */
   async putScreens(config: ScreensConfig): Promise<void> {
     await this.request("PUT", "/screens", config);
+  }
+
+  /** List the screenIds of every stored shot artifact (.specs/shots/*.shot.json).
+   *  The sidecar returns { screenIds: [] } when no shots exist yet. */
+  async listShots(): Promise<string[]> {
+    const res = await this.request<{ screenIds: string[] }>("GET", "/shots");
+    return res?.screenIds ?? [];
+  }
+
+  /** Read one shot artifact by screenId. Rejects with a 404 SidecarError when absent. */
+  getShot(screenId: string): Promise<ShotConfig> {
+    return this.request<ShotConfig>("GET", `/shots/${encodeURIComponent(screenId)}`);
+  }
+
+  /** Write one shot artifact (validated server-side). The storage key is the
+   *  shot's own screenId, so the URL and body screenId always agree. Shots are
+   *  independent files, so no If-Match/ETag applies. */
+  async putShot(shot: ShotConfig): Promise<void> {
+    await this.request("PUT", `/shots/${encodeURIComponent(shot.screenId)}`, shot);
+  }
+
+  /** Delete one shot artifact by screenId. */
+  async deleteShot(screenId: string): Promise<void> {
+    await this.request("DELETE", `/shots/${encodeURIComponent(screenId)}`);
   }
 
   async saveSpec(file: string, spec: Spec): Promise<void> {
