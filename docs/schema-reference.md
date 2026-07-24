@@ -13,6 +13,8 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 ├── guides.json            # named onboarding tours (optional, Git-committed)
 ├── flows.json             # status-flow FSMs (optional, Git-committed)
 ├── screens.json           # screen-transition graph (optional, Git-committed)
+├── shots/
+│   └── <screenId>.shot.json  # a screenshot + numbered callouts (optional, one per Screen)
 └── <area>.spec.json       # a group of specs (SpecFile)
 ```
 
@@ -50,8 +52,18 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 | `verifiedBy` | string[] | no | repo-relative paths of tests that **declare** this spec; ≤20, each ≤200 chars. Declarative only; see the trust note below |
 | `status` | SpecStatus | no | `"draft" \| "approved" \| "deprecated"`; **absent = neutral** (no default, so existing specs are not relabelled) |
 | `preferredDisplayMode` | DisplayMode | no | overrides `settings.defaultDisplayMode` |
-| `fingerprint` | ElementFingerprint | yes | the element link |
+| `fingerprint` | ElementFingerprint | no | the element link; **absent ⇒ a pending (unpinned) spec** (see below) |
 | `meta` | SpecMeta | no | provenance + timestamps |
+
+### Pending vs. pinned vs. orphaned
+
+`fingerprint` is **optional**: every already-pinned spec still validates (additive, backward compatible), and a spec authored before a fingerprint exists is now valid too. Three states over the same `Spec` shape:
+
+- **Pending (unpinned)** - `fingerprint` absent. Authored from a screenshot/design before the UI exists, typically via the extension's specshot page (`specshot.html`, opened from the popup/side panel - see `docs/spec-sheet-authoring.md`) using `@specpin/specshot-core`'s `buildPendingSpec()`. Never rendered on the host page (nothing to match); the extension lists it read-only in the popup/side panel's **Unpinned** section.
+- **Pinned** - `fingerprint` present and currently matches an element. The normal case.
+- **Orphaned** - `fingerprint` present but no live match on the page (element moved/removed). Distinct from pending: an orphaned spec once matched and needs relinking, a pending spec was never linked at all.
+
+`@specpin/fingerprint-core` exports `isPinned(spec)`, a type guard (`fingerprint != null`) that both the content-script render loop and `matchElement` use to skip pending specs rather than treat an absent fingerprint as a failed match.
 
 ### Link
 
@@ -322,11 +334,48 @@ When `.specs/screens.json` is absent, the sidecar returns the empty default `{ "
 
 Both configs render in the extension's full-page **graph view** (dagre layout + hand-drawn SVG, launched from the popup/side panel); see [`run-guide.md`](./run-guide.md#19-graph-views) for the reader-facing walkthrough.
 
+## ShotConfig (`.specs/shots/<screenId>.shot.json`)
+
+A screenshot annotated with numbered callouts, each optionally mapped to a `Spec` (pending or pinned). Authored by the extension's specshot page (`specshot.html`, see `docs/spec-sheet-authoring.md`) via `@specpin/specshot-core`'s `buildShot()`. Unlike the flat singletons above (`views.json`, `guides.json`, `flows.json`, `screens.json`), a repo can have many shots, one per screen, so they live under their own `shots/` subdirectory rather than as a single top-level file. `screenId` references a `Screen.id` in `screens.json`, reusing the existing grouping rather than inventing a new one.
+
+**Anti-bloat invariant**: pixel coordinates (`bbox`) live **only** in `ShotItem`, never inside a `Spec` - a pending or pinned spec stays geometry-free.
+
+`ShotItem`:
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `itemNo` | string | yes | hierarchical callout number, up to depth 3, pattern `^[1-9][0-9]*(\.[1-9][0-9]*){0,2}$`, e.g. `"1"`, `"1.2"`, `"6.10"` |
+| `bbox` | object | yes | `{ startX, startY, endX, endY }`, each a non-negative integer in screenshot pixel space. `startX <= endX` / `startY <= endY` are enforced by `specshot-core`, not the schema |
+| `specId` | string | no | id of the `Spec` (pending or pinned) this callout documents; 1-200 chars |
+
+`ShotConfig`:
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `version` | string | yes | e.g. `"1"` |
+| `screenId` | string | yes | 1-100 chars; references `Screen.id`; also the file basename |
+| `image` | string | yes | the screenshot: a `data:` URL (embedded, the v1 default) or a relative path; the schema only asserts non-empty, format/size validation is an app-layer concern |
+| `items` | ShotItem[] | yes | at most 500 |
+
+```json
+{
+  "version": "1",
+  "screenId": "checkout",
+  "image": "data:image/png;base64,iVBORw0KGgo...",
+  "items": [
+    { "itemNo": "1", "bbox": { "startX": 10, "startY": 20, "endX": 120, "endY": 60 }, "specId": "pending-checkout-cta" },
+    { "itemNo": "1.1", "bbox": { "startX": 0, "startY": 0, "endX": 5, "endY": 5 } }
+  ]
+}
+```
+
+Sidecar endpoints: `GET /shots` (list screenIds), `GET /shots/{screenId}`, `PUT /shots/{screenId}` (schema-validated, atomic, pretty-printed), `DELETE /shots/{screenId}`. `PUT` accepts a larger request body (16 MiB, vs. 1 MiB for the flat singletons) to fit an embedded screenshot, and broadcasts an SSE change directly - the `.specs/` watcher is non-recursive and does not observe the `shots/` subdirectory. `screenId` is charset-guarded (`[A-Za-z0-9_-]`) and symlink-guarded before it touches the filesystem. `api-client` exposes typed `listShots()` / `getShot(screenId)` / `putShot(shot)` / `deleteShot(screenId)`.
+
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired, validateFlows, validateScreens } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired` / `ValidateFlows` / `ValidateScreens`.
-- Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`, `tests/fixtures/flows/{valid,invalid}`, `tests/fixtures/screens/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired, validateFlows, validateScreens, validateShot } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` then `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired` / `ValidateFlows` / `ValidateScreens` / `ValidateShot`.
+- Shared fixture corpus (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`, `tests/fixtures/flows/{valid,invalid}`, `tests/fixtures/screens/{valid,invalid}`, `tests/fixtures/shots/{valid,invalid}`) run through both in CI; objects with unknown properties are rejected (`additionalProperties: false`).
 
 ## Consuming the schema
 

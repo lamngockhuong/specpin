@@ -15,6 +15,8 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 ├── guides.json            # các tour onboarding có tên (tùy chọn, commit vào Git)
 ├── flows.json             # các status-flow FSM (tùy chọn, commit vào Git)
 ├── screens.json           # đồ thị screen-transition (tùy chọn, commit vào Git)
+├── shots/
+│   └── <screenId>.shot.json  # một screenshot + các callout đánh số (tùy chọn, mỗi Screen một file)
 └── <area>.spec.json       # a group of specs (SpecFile)
 ```
 
@@ -52,8 +54,18 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 | `verifiedBy` | string[] | no | đường dẫn tương đối theo repo của các test **khai báo** spec này; ≤20, mỗi đường dẫn ≤200 ký tự. Chỉ mang tính khai báo, xem lưu ý về trust phía dưới |
 | `status` | SpecStatus | no | `"draft" \| "approved" \| "deprecated"`; **không khai báo = trung tính (neutral)** (không có default, nên các spec cũ không bị gắn lại nhãn) |
 | `preferredDisplayMode` | DisplayMode | no | ghi đè `settings.defaultDisplayMode` |
-| `fingerprint` | ElementFingerprint | yes | liên kết tới element |
+| `fingerprint` | ElementFingerprint | no | liên kết tới element; **không có ⇒ một spec pending (chưa gắn)** (xem bên dưới) |
 | `meta` | SpecMeta | no | nguồn gốc (provenance) + timestamp |
+
+### Pending vs. pinned vs. orphaned
+
+`fingerprint` giờ là **tùy chọn**: mọi spec đã pin từ trước vẫn hợp lệ (thay đổi cộng thêm, tương thích ngược), và một spec được soạn trước khi có fingerprint giờ cũng hợp lệ. Ba trạng thái trên cùng một hình dạng `Spec`:
+
+- **Pending (chưa gắn)** - `fingerprint` không có. Được soạn từ một screenshot/design trước khi UI tồn tại, thường qua trang specshot của extension (`specshot.html`, mở từ popup/side panel - xem `docs/spec-sheet-authoring.md`) bằng `buildPendingSpec()` của `@specpin/specshot-core`. Không bao giờ render trên trang (không có gì để match); extension liệt kê nó dạng chỉ-đọc trong mục **Unpinned** của popup/side panel.
+- **Pinned** - `fingerprint` có và đang match một element. Trường hợp bình thường.
+- **Orphaned** - `fingerprint` có nhưng không match được element nào trên trang (element đã chuyển/bị xóa). Khác với pending: một spec orphaned từng match được và cần gắn lại, còn spec pending chưa bao giờ được gắn.
+
+`@specpin/fingerprint-core` export `isPinned(spec)`, một type guard (`fingerprint != null`) mà cả vòng lặp render ở content script lẫn `matchElement` đều dùng để bỏ qua spec pending thay vì coi fingerprint vắng mặt là một lần match thất bại.
 
 ### Link
 
@@ -324,11 +336,48 @@ Khi `.specs/screens.json` không có, sidecar trả về default rỗng `{ "vers
 
 Cả hai config này được render trong **graph view** toàn trang của extension (layout dagre + SVG vẽ tay, mở từ popup/side panel); xem [`run-guide.md`](./run-guide.md#19-graph-views) để có hướng dẫn dành cho người dùng.
 
+## ShotConfig (`.specs/shots/<screenId>.shot.json`)
+
+Một screenshot được chú thích bằng các callout đánh số, mỗi cái tùy chọn liên kết tới một `Spec` (pending hoặc pinned). Được soạn bởi trang specshot của extension (`specshot.html`, xem `docs/spec-sheet-authoring.md`) qua `buildShot()` của `@specpin/specshot-core`. Khác với các singleton phẳng ở trên (`views.json`, `guides.json`, `flows.json`, `screens.json`), một repo có thể có nhiều shot, mỗi screen một cái, nên chúng nằm trong thư mục con `shots/` riêng thay vì một file top-level duy nhất. `screenId` tham chiếu tới một `Screen.id` trong `screens.json`, tái dùng grouping sẵn có thay vì tạo cái mới.
+
+**Bất biến chống bloat**: tọa độ pixel (`bbox`) chỉ nằm trong `ShotItem`, không bao giờ vào trong `Spec` - một spec pending hay pinned vẫn không mang geometry.
+
+`ShotItem`:
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|-------|------|----------|-------|
+| `itemNo` | string | yes | số callout phân cấp, tối đa depth 3, pattern `^[1-9][0-9]*(\.[1-9][0-9]*){0,2}$`, ví dụ `"1"`, `"1.2"`, `"6.10"` |
+| `bbox` | object | yes | `{ startX, startY, endX, endY }`, mỗi giá trị là số nguyên không âm trong không gian pixel của screenshot. `startX <= endX` / `startY <= endY` được đảm bảo bởi `specshot-core`, không phải schema |
+| `specId` | string | no | id của `Spec` (pending hoặc pinned) mà callout này mô tả; 1-200 ký tự |
+
+`ShotConfig`:
+
+| Trường | Kiểu | Bắt buộc | Ghi chú |
+|-------|------|----------|-------|
+| `version` | string | yes | ví dụ `"1"` |
+| `screenId` | string | yes | 1-100 ký tự; tham chiếu `Screen.id`; cũng là basename của file |
+| `image` | string | yes | screenshot: một URL `data:` (embed, mặc định ở v1) hoặc một đường dẫn tương đối; schema chỉ assert không rỗng, validate format/size là việc của app layer |
+| `items` | ShotItem[] | yes | tối đa 500 |
+
+```json
+{
+  "version": "1",
+  "screenId": "checkout",
+  "image": "data:image/png;base64,iVBORw0KGgo...",
+  "items": [
+    { "itemNo": "1", "bbox": { "startX": 10, "startY": 20, "endX": 120, "endY": 60 }, "specId": "pending-checkout-cta" },
+    { "itemNo": "1.1", "bbox": { "startX": 0, "startY": 0, "endX": 5, "endY": 5 } }
+  ]
+}
+```
+
+Endpoint sidecar: `GET /shots` (liệt kê screenId), `GET /shots/{screenId}`, `PUT /shots/{screenId}` (schema-validated, atomic, pretty-printed), `DELETE /shots/{screenId}`. `PUT` chấp nhận body lớn hơn (16 MiB, so với 1 MiB của các singleton phẳng) để chứa screenshot embed, và bắn SSE trực tiếp - watcher `.specs/` không đệ quy nên không quan sát thư mục con `shots/`. `screenId` được guard theo charset (`[A-Za-z0-9_-]`) và guard symlink trước khi chạm vào filesystem. `api-client` expose `listShots()` / `getShot(screenId)` / `putShot(shot)` / `deleteShot(screenId)` đã được type.
+
 ## Validation
 
-- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired, validateFlows, validateScreens } from "@specpin/spec-schema"`.
-- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired` / `ValidateFlows` / `ValidateScreens`.
-- Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`, `tests/fixtures/flows/{valid,invalid}`, `tests/fixtures/screens/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).
+- TS: `import { validateSpec, validateManifest, validateSpecFile, validateViews, validateGuides, validateRequired, validateFlows, validateScreens, validateShot } from "@specpin/spec-schema"`.
+- Go: `schema.NewValidator()` rồi `ValidateSpec` / `ValidateManifest` / `ValidateSpecFile` / `ValidateViews` / `ValidateGuides` / `ValidateRequired` / `ValidateFlows` / `ValidateScreens` / `ValidateShot`.
+- Fixture corpus dùng chung (`tests/fixtures/specs/{valid,invalid}`, `tests/fixtures/views/{valid,invalid}`, `tests/fixtures/guides/{valid,invalid}`, `tests/fixtures/required/{valid,invalid}`, `tests/fixtures/flows/{valid,invalid}`, `tests/fixtures/screens/{valid,invalid}`, `tests/fixtures/shots/{valid,invalid}`) được chạy qua cả hai trong CI; các object có unknown property bị từ chối (`additionalProperties: false`).
 
 ## Dùng schema (consuming)
 

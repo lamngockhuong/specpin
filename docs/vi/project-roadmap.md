@@ -84,6 +84,40 @@ Phát hiện từ review độc lập:
 
 Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa cam kết timeline.
 
+**Đã ship Soạn spec-first (tích hợp specshot, Phase 1) (2026-07-24)** trên nhánh `main`:
+- Giờ một spec có thể được soạn **trước khi UI tồn tại**, từ một screenshot, chứ không chỉ capture
+  trực tiếp từ DOM. `Spec.fingerprint` là tùy chọn (tương thích ngược - spec đã pin từ trước không bị
+  ảnh hưởng); không có ⇒ một spec **pending (chưa gắn)**. Khác với trạng thái **orphaned** sẵn có (có
+  fingerprint, không match được).
+- Workspace mới: `packages/specshot-core` (authoring headless - MarkDoc model, đánh số, canvas
+  geometry, export builders, bridge schema `buildShot`/`buildPendingSpec`), `packages/specshot-react`
+  (UI editor presentational, `react`/`react-dom` peerDeps), và `packages/specshot-app` (composition
+  authoring: screen picker, spec form, export panel, persist sidecar tùy chọn).
+- Bề mặt authoring được host **ngay trong browser extension** dưới dạng một page riêng (một WXT
+  entrypoint, `specshot.html`, mount `@specpin/specshot-app`), mở qua nút **"Open spec sheet"** ở cả
+  popup lẫn header của side panel - tải lên một screenshot, vẽ/đánh số box, soạn một spec pending mỗi
+  box (hoặc tham chiếu một `specId` có sẵn), export một spec sheet (ảnh + callout đánh số + spec đầy
+  đủ mỗi số) dạng HTML/MD. Chạy hoàn toàn **offline** (không cần sidecar); khi có sidecar kết nối, nó
+  còn persist spec pending và shot artifact vào `.specs/`. Một web app riêng từng được cân nhắc rồi bỏ:
+  CORS policy của sidecar từ chối web origin nhưng chấp nhận origin của extension, nên chỉ một page
+  trong extension mới kết nối được. React chỉ nằm trong bundle riêng của entrypoint này; content
+  script vẫn không có React. Xem `docs/spec-sheet-authoring.md`.
+- Schema entity mới `ShotConfig`/`ShotItem` (`.specs/shots/<screenId>.shot.json`): một screenshot cùng
+  các callout đánh số, mỗi cái tùy chọn liên kết tới một `specId`. Tọa độ pixel chỉ nằm ở đây, không
+  bao giờ vào trong `Spec` (bất biến chống bloat). `screenId` tái dùng grouping `Screen`/`ScreensConfig`
+  sẵn có.
+- Sidecar: `GET /shots`, `GET/PUT/DELETE /shots/{screenId}`, phản chiếu pattern CRUD của `/views`,
+  `/guides`, `/flows`, `/screens` (schema-validated, atomic, giới hạn trong `.specs/`), với giới hạn
+  body lớn hơn (16 MiB) cho screenshot embed và bắn SSE trực tiếp khi ghi (watcher `.specs/` không đệ
+  quy nên không quan sát thư mục con `shots/`). `api-client` có thêm `listShots`/`getShot`/`putShot`/
+  `deleteShot` đã gõ kiểu.
+- Extension: `fingerprint-core` export `isPinned(spec)`, một type guard mà cả `matchElement` lẫn vòng
+  lặp render ở content script đều dùng để bỏ qua spec pending (không bao giờ render trên trang host).
+  `pageHealth()` có thêm bucket `unpinned` riêng; popup và side panel liệt kê spec pending dạng
+  chỉ-đọc trong mục **Unpinned** mới.
+- Bản ghi thiết kế + phasing: `docs/specshot-integration.md` (Phase 1 đã ship; bind-later trong
+  extension là Phase 2, chưa bắt đầu).
+
 **Đã ship Graph views (status-flow FSM + screen-transition) (2026-07-23)** trên nhánh `main`:
 - Hai config singleton mới trong `.specs/`, theo đúng pattern của `guides.json`/`views.json`: `flows.json` (`FlowsConfig` - một status-flow FSM cho mỗi kiểu đối tượng: `states` + `transitions`) và `screens.json` (`ScreensConfig` - các node `screens` khớp với UI đang chạy qua `urlGlob`, dùng lại đúng ngữ nghĩa glob `pageUrl` của một spec, + `transitions`). Cả hai dùng chung một kiểu `Transition` (`from`, `to`, `trigger: LocalizedString`, tùy chọn `guard`/`role`/`specId`/`source`). `specId` là trục DRY của cả tính năng: một node/edge của graph có thể trỏ tới một `Spec` đã pin sẵn, nên graph là **view over** kiến thức đã pin theo element, không phải một silo song song.
 - Go sidecar: `GET/PUT /flows` và `GET/PUT /screens`, mô phỏng đúng các endpoint views/guides sẵn có (schema-validated, atomic, giới hạn trong `.specs/`, default rỗng khi không có, SSE khi ghi qua watcher sẵn có). `api-client` có thêm các hàm `getFlows`/`putFlows`/`getScreens`/`putScreens` đã gõ kiểu.
@@ -340,3 +374,5 @@ Dự kiến sau khi release public:
 - Codebase summary: `docs/codebase-summary.md`
 - Code standards: `docs/code-standards.md`
 - PDR: `docs/project-overview-pdr.md`
+- Soạn spec-sheet (authoring thủ công + export): `docs/spec-sheet-authoring.md`
+- Bản ghi thiết kế tích hợp specshot: `docs/specshot-integration.md`

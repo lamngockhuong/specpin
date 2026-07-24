@@ -4,7 +4,7 @@
 > nếu hai bản lệch nhau, ưu tiên bản tiếng Anh. Các thuật ngữ kỹ thuật, lệnh,
 > đường dẫn và tên file được giữ nguyên tiếng Anh.
 
-Monorepo Specpin (~4,620 LOC: 83 file TS, 17 file Go) triển khai một lớp spec Git-native cho các web UI. Ba package (spec-schema, fingerprint-core, api-client), hai app (Go sidecar CLI, WXT browser extension), một demo.
+Monorepo Specpin triển khai một lớp spec Git-native cho các web UI. Sáu package (spec-schema, fingerprint-core, api-client, specshot-core, specshot-react, specshot-app), hai app (Go sidecar CLI, WXT browser extension - nay còn host luôn trang soạn specshot), một demo.
 
 ## Package Dependencies
 
@@ -15,12 +15,21 @@ spec-schema (base, no deps)
   |     |
   |     +-> api-client (HTTP client over sidecar)
   |           |
-  |           +-> extension (WXT MV3, Chrome+Firefox)
+  |           +-> extension (WXT MV3, Chrome+Firefox; entrypoint specshot.html mount specshot-app)
   |
   +-> cli (Go sidecar, embeds schema copy)
+  |
+  +-> specshot-core (authoring headless: MarkDoc model, shot + pending-spec builders)
+        |
+        +-> specshot-react (UI editor presentational; react/react-dom là peerDeps)
+              |
+              +-> specshot-app (composition authoring: screen picker, spec form, export panel,
+                    persist sidecar tùy chọn; react/react-dom là peerDeps)
+                    |
+                    +-> entrypoint specshot của extension (mount <SpecshotApp/> trong specshot.html)
 ```
 
-Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension phụ thuộc cả ba package TS. CLI nhúng một bản copy đã sync của `v1.json` (không bao giờ sửa tay).
+Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension phụ thuộc `spec-schema`, `fingerprint-core`, `api-client`, và (chỉ cho bundle entrypoint `specshot` của nó) `specshot-app`. `packages/specshot-app` phụ thuộc `spec-schema`, `specshot-core`, `specshot-react`, và (để persist sidecar tùy chọn) `api-client` trực tiếp - nó cũng chạy hoàn toàn offline không cần sidecar. React chỉ nằm trong bundle `specshot.html`; content script vẫn không có React. CLI nhúng một bản copy đã sync của `v1.json` (không bao giờ sửa tay).
 
 ## packages/spec-schema
 
@@ -59,6 +68,7 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 - `src/detect-framework.ts` - `detectFramework()` (39 dòng). Heuristics cho React, Vue, Angular, Svelte.
 - `src/generated-id.ts` - `isGeneratedId(id)` (49 dòng). Lọc các ID do framework sinh (pattern uuid, base64, hash).
 - `src/css-escape.ts` - CSS identifier escaper (32 dòng). Xử lý ký tự đặc biệt trong selector.
+- `src/pinned.ts` - type guard `isPinned(spec)` (`fingerprint != null`). Một spec không có fingerprint là PENDING (chưa gắn), được soạn trước khi có element liên kết; cả `matchElement` lẫn vòng lặp render của extension đều gate theo cái này thay vì coi fingerprint vắng mặt là một lần match thất bại.
 - `src/index.ts` - barrel export (23 dòng).
 
 **Test coverage**: Vitest với happy-dom. Coverage theo dõi qua `pnpm test:coverage`.
@@ -73,10 +83,10 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 **Purpose**: Typed HTTP client trên REST contract của sidecar + SSE helper.
 
 **Key files:**
-- `src/client.ts` - class `SidecarClient` (200+ dòng). Methods: `ping()`, `getManifest()`, `listSpecs()`, `getSpec(id)`, `saveSpec(spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`, `getGuides()`, `putGuides(guides)`. Xử lý Bearer token, JSON serialization, error mapping.
+- `src/client.ts` - class `SidecarClient` (200+ dòng). Methods: `health()`, `getSpecs()`, `saveSpec(file, spec)`, `updateSpec(id, spec)`, `deleteSpec(id)`, `getViews()`, `putViews(views)`, `getGuides()`, `putGuides(guides)`, `getFlows()`, `putFlows(flows)`, `getScreens()`, `putScreens(screens)`, `listShots()`, `getShot(screenId)`, `putShot(shot)`, `deleteShot(screenId)`, `subscribe(onChange, options)`. Xử lý Bearer token, JSON serialization, error mapping.
 - `src/events.ts` - class `SidecarEventSource` (74 dòng). SSE wrapper với exponential backoff (min 1s, max 30s, reset sau 5s ổn định). Phát `specsChanged`, `manifestChanged`, `error`.
 - `src/errors.ts` - cây kế thừa `SidecarError` (42 dòng). `NotFoundError`, `ValidationError`, `UnauthorizedError`, `NetworkError`.
-- `src/types.ts` - HTTP contract types (40+ dòng). Re-export từ spec-schema (`ViewsConfig`) + `SidecarConfig`, `ConnectionStatus`.
+- `src/types.ts` - HTTP contract types (40+ dòng). Re-export từ spec-schema (`ViewsConfig`, `ShotConfig`, `ShotItem`) + `SidecarConfig`, `ConnectionStatus`.
 
 **Scripts:**
 - `pnpm build` - chỉ tsc (không codegen).
@@ -85,6 +95,64 @@ Tất cả package TS phụ thuộc `spec-schema` để lấy type. Extension ph
 **Conventions:**
 - Tất cả API method trả về `Promise<T>`, throw `SidecarError` khi thất bại.
 - SSE reconnect chỉ reset backoff sau 5s kết nối ổn định (fix M3 từ code review).
+
+## packages/specshot-core
+
+**Purpose**: Authoring core headless, framework-free cho specshot (soạn thủ công bằng chú thích screenshot). MarkDoc model + đánh số, canvas viewport/interaction geometry, phát hiện shape SVG best-effort, export string builders, và hai bridge sang schema. Chỉ phụ thuộc `@specpin/spec-schema`.
+
+**Key files:**
+- `src/model/mark-doc.ts` - type `MarkDoc`/`MarkItem`, `parseMarkDoc`/`serializeMarkDoc`/`validateMarkDoc`, pattern `ItemNo` phân cấp + validate.
+- `src/model/numbering.ts` - `compareItemNo`, `nextItemNo`, `readingOrderSort`, `reindexFlat`/`reindexHierarchical`.
+- `src/canvas/viewport.ts` - transform pan/zoom (`Viewport`, `imageToScreen`/`screenToImage`, `zoomAt`, `panBy`, `fitToContainer`, `clampScale`).
+- `src/canvas/interactions.ts` - geometry drag/resize box (`applyDrag`, `applyResize`, `normalize`, `clampToImage`, `defaultBoxAt`).
+- `src/detect/` - tự phát hiện shape SVG best-effort: `svg-geometry.ts` (parse SVG an toàn + detect), `cluster.ts` (gom cụm box), `path-bbox.ts` (bbox của path), `image-source.ts` (load image-source).
+- `src/export/` - export builders: `to-json.ts` / `to-legend.ts` / `to-svg.ts` (export string MarkDoc), `spec-sheet-data.ts` / `spec-sheet-html.ts` / `spec-sheet-md.ts` (bộ export spec sheet - ảnh + callout đánh số + spec đầy đủ mỗi số, dạng HTML hoặc MD), `draw-annotations.ts` / `draw-style.ts` (vẽ annotation trên canvas), `download.ts` (helper tải Blob).
+- `src/shot/build-shot.ts` - `buildShot(doc, options)`: một MarkDoc + map itemNo->specId + screenId, validate thành một `ShotConfig`.
+- `src/spec/build-pending-spec.ts` - `buildPendingSpec(options)`: nội dung soạn (title/description/businessRules/tags đã localize), validate thành một `Spec` pending (bỏ fingerprint).
+- `src/state/marks-reducer.ts` - `marksReducer` + `MarkAction`/`ReindexMode`, state machine MarkDoc của editor.
+- `src/index.ts` - barrel export.
+
+**Conventions:**
+- Zero React, zero phụ thuộc extension; hàm thuần trên các data shape MarkDoc/ShotConfig/Spec.
+- Tọa độ pixel (`bbox`) chỉ nằm trong `ShotItem`/`MarkItem`, không bao giờ copy vào `Spec` mà box đó mô tả (bất biến chống bloat; xem `docs/specshot-integration.md`).
+
+## packages/specshot-react
+
+**Purpose**: UI editor React presentational cho việc soạn specshot - canvas viewport + pointer interaction, toolbar, item list, phím tắt. Không giữ business state: render và forward `MarkAction`/callback, mọi logic geometry/đánh số/export đến từ `specshot-core`. `react`/`react-dom` là peerDependencies.
+
+**Key files:**
+- `src/canvas/editor-canvas.tsx` - `EditorCanvas`, canvas ảnh + mark.
+- `src/canvas/marks-layer.tsx` - `MarksLayer`, render các box đánh số trên canvas.
+- `src/canvas/use-editor-interactions.ts` - hook `useEditorInteractions` + type `Tool` (select/draw/pan).
+- `src/ui/toolbar.tsx` - `Toolbar` (đổi tool, reindex mode).
+- `src/ui/item-list-panel.tsx` - `ItemListPanel` (danh sách item đánh số, select/delete).
+- `src/ui/empty-state.tsx` - `EmptyState` (placeholder khi chưa có ảnh).
+- `src/ui/use-keyboard-shortcuts.ts` - hook `useKeyboardShortcuts`.
+- `src/index.ts` - barrel export.
+
+**Conventions:**
+- Chỉ presentational: không có logic fetch/persist/export (nằm ở composition dùng nó, `packages/specshot-app`).
+
+## packages/specshot-app
+
+**Purpose**: Composition React dùng chung (`@specpin/specshot-app`) cho việc soạn thủ công + export specshot - bề mặt "spec-first": tải lên một screenshot, vẽ/đánh số box, soạn một `Spec` pending cho mỗi box (title/description/rules đã localize) hoặc tham chiếu một `specId` có sẵn, rồi export một spec sheet (ảnh + callout đánh số + spec đầy đủ mỗi số) dạng HTML hoặc MD. Chạy hoàn toàn **offline** (không cần sidecar); khi có sidecar kết nối, nó còn persist các spec pending (`saveSpec`) và shot artifact (`putShot`) vào `.specs/`. Được host dưới dạng trang `specshot.html` của extension (`apps/extension/src/entrypoints/specshot/`) - entrypoint đó là consumer duy nhất; `react`/`react-dom` là peerDependencies.
+
+**Key files:**
+- `src/specshot-app.tsx` - `SpecshotApp`, composition root: nối editor `specshot-react` với các module authoring/persist/export của package này. Chỉ orchestration; không có domain logic ở đây (đánh số, validate, dựng string đều đến từ `specshot-core`/`spec-schema`).
+- `src/authoring/spec-form.tsx` - form theo box, soạn một Spec pending, hoặc tham chiếu một `specId` có sẵn.
+- `src/authoring/screen-picker.tsx` - chọn/tạo `Screen` (từ `screens.json`) mà shot thuộc về.
+- `src/export/export-panel.tsx`, `use-export-handlers.ts`, `export-actions.ts` - export spec sheet (HTML/MD, qua builder của `specshot-core`) + tải về.
+- `src/persist/use-sidecar.ts`, `use-sidecar-catalog.ts`, `sidecar-panel.tsx` - kết nối sidecar tùy chọn qua `@specpin/api-client` (`saveSpec` cho spec pending, `putShot` cho shot artifact); app vẫn chạy được khi không nối gì cả.
+- `src/state/editor-store.ts` - `useEditorStore`, state MarkDoc (dựng trên `marksReducer` của `specshot-core`).
+- `src/index.ts` - barrel export (`SpecshotApp`); `./app.css` là export riêng cho stylesheet dùng chung.
+
+**Build:**
+- `pnpm build` - `tsc` (build thư viện, được bundler của extension tiêu thụ).
+- `pnpm test` - Vitest.
+
+**Conventions:**
+- Composition root chỉ orchestration; mọi rule đánh số/validate/export đến từ `@specpin/specshot-core` / `@specpin/spec-schema`.
+- Consumer duy nhất là entrypoint `specshot` của extension (`apps/extension/src/entrypoints/specshot/main.tsx`), mount `<SpecshotApp/>` bên trong `specshot.html`. React không bao giờ lọt vào content script; xem `docs/specshot-integration.md` và `docs/system-architecture.md`.
 
 ## apps/cli (Go sidecar)
 
@@ -109,11 +177,12 @@ internal/
     schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views/Guides/Required` (50+ lines)
     v1.json     - COPY of packages/spec-schema/schema/v1.json (synced via make)
   server/
-    server.go   - HTTP handlers: CRUD + SSE hub (kèm heartbeat ~20s) + GET/PUT /views + GET/PUT /guides; ETag trên GET /specs + If-Match 409 khi ghi spec đã cũ (370+ lines)
+    server.go   - HTTP handlers: CRUD + SSE hub (kèm heartbeat ~20s) + GET/PUT /views + GET/PUT /guides + GET /shots, GET/PUT/DELETE /shots/{screenId} (370+ lines). PUT shot chấp nhận body lớn hơn (16 MiB, cho screenshot embed) và bắn SSE trực tiếp vì watcher `.specs/` không đệ quy nên không quan sát thư mục con `shots/`. ETag trên GET /specs + If-Match 409 khi ghi spec đã cũ
     middleware.go - token auth + CORS (89 lines)
     hub.go      - SSE broadcast hub (102 lines)
   store/
-    store.go    - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON; ghi được serialize qua sync.Mutex + optimistic concurrency bằng bundle ETag/If-Match)
+    store.go       - file-based spec store + views.json + guides.json read/write (300+ lines, atomic, pretty JSON; ghi được serialize qua sync.Mutex + optimistic concurrency bằng bundle ETag/If-Match)
+    store_shots.go - CRUD shot per-screenId (`ListShots`/`ReadShot`/`WriteShot`/`DeleteShot`) dưới `.specs/shots/<screenId>.shot.json`; guard charset + guard symlink cho screenId, atomic pretty JSON
   watch/
     watch.go    - fsnotify watcher, triggers SSE (87 lines)
 ```
@@ -123,6 +192,7 @@ internal/
 - `init`: tạo `.specs/manifest.json` với giá trị mặc định.
 - Middleware: mọi request cần `Authorization: Bearer <token>`. CORS chỉ chấp nhận origin `chrome-extension://`, `moz-extension://`, `safari-web-extension://`. Từ chối web origin.
 - Store: ghi giới hạn trong `.specs/`, path-traversal guard (fix review H1). File ops atomic (temp + rename). JSON pretty-printed (indent 2 space) cho Git diff sạch. `GET /views` trả về `.specs/views.json` hoặc default rỗng `{version:"1.0",hidden:[]}` khi không có; `PUT /views` validate rồi ghi. `GET /guides` / `PUT /guides` phản chiếu điều này cho `.specs/guides.json` (default rỗng `{version:"1.0",guides:[]}`); spec scanner bỏ qua `guides.json` (không phải `*.spec.json`).
+- Shots: `GET /shots` liệt kê screenId (danh sách rỗng khi không có `shots/`, không cần case đặc biệt 404); `GET/PUT/DELETE /shots/{screenId}` thao tác từng file `.specs/shots/<screenId>.shot.json`, schema-validated khi ghi, giới hạn trong `.specs/`.
 
 **Makefile:**
 - `make sync-schema` - cp schema từ packages/spec-schema.
@@ -149,9 +219,10 @@ src/
   entrypoints/
     background.ts     - SW; sở hữu SidecarRegistry, định tuyến message, SW-wake re-establish
     content.ts        - vòng lặp match+render, locale state, capture flow
-    popup/            - view per-tab: status, specs, project list, language picker, filter UI
+    popup/            - view per-tab: status, specs, project list, language picker, filter UI, danh sách Unpinned (spec pending) chỉ-đọc
     sidepanel/        - docked surface (Chrome side_panel / Firefox sidebar_action)
     options/          - connection manager (add/remove/reconnect) + manual import + rename/export per-batch + team views authoring + quản lý team-guides per-connection (liệt kê + xóa)
+    specshot/         - trang soạn `specshot.html` (mở qua "Open spec sheet" ở popup/side panel); mount `<SpecshotApp/>` của `@specpin/specshot-app`, nơi duy nhất trong extension kéo vào React
   background/
     sidecar-registry.ts   - map của các connection + danh sách batch cục bộ (Manual); tổng hợp được gate theo origin (domains theo từng batch, dedupe id giữa các batch, tag `manual:<batchId>` theo từng batch) + views threading; `guidesForOrigin` (team guides: sidecar + local, tag theo origin) + `upsertGuide`/`deleteGuide` đọc-lại-trước-khi-ghi; `localTargetsForOrigin` (gate mục tiêu ghi được) + `manualBatchesForExport`
     sidecar-connection.ts - client + cache + SSE watch + team views cache + team guides cache của một project (tất cả trong một nhóm reload, được cô lập)
@@ -194,7 +265,7 @@ src/
     surface-renderers.ts       - helper dùng chung cho popup/side panel: sourceBadge() (pill sidecar vs manual), setListControlsHidden() + render locale/filter có gate theo enabled (ẩn list controls khi Specpin off), noServingProject()/setSurfaceState() (điều khiển empty state khi không có dự án phục vụ trang và paused state khi Specpin off), giữ trạng thái đóng/mở của filter-group qua các lần rebuild
     surface-states.css         - các trạng thái toàn bề mặt dùng chung cho popup + side panel: empty state (không có dự án -> CTA tạo dự án; hai bước có hướng dẫn ở panel) + paused state (Specpin off -> panel "N spec đang ẩn"). body.no-project / body.paused thu gọn phần chrome thao tác spec bằng CSS
     provenance.ts              - render + logic provenance dùng chung cho cả 4 reader surface: các helper HTML-string (status badge, links qua classifyHref, "linked tests" mang tính khai báo, reviewed+stale) + resolveStalenessThreshold (chặn khoảng [1,3650], mặc định 90) + formatRelativeTime (Intl.RelativeTimeFormat) + PROVENANCE_CSS. provenanceSectionHtml(spec, opts) trả về "" cho một spec không có provenance (render legacy giống hệt từng byte)
-    surface-data.ts            - lọc spec dùng chung: specMatchesQuery() (predicate title/file/tags/description); pageHealth() (bucket exact/scored/fuzzy/needsReview/orphaned)
+    surface-data.ts            - lọc spec dùng chung: specMatchesQuery() (predicate title/file/tags/description); pageHealth() (bucket exact/scored/fuzzy/needsReview/orphaned/unpinned - `unpinned` đếm spec pending, tách riêng khỏi `orphaned` là spec có fingerprint nhưng match thất bại); helper danh sách pendingSpecs()/orphanedSpecs()
     drift-corpus.ts            - corpus khớp cục bộ (opt-in, mặc định TẮT): ring-buffer storage.local (cap 500), entry supervised + passive, lược bỏ free-text lúc ghi, export/clear JSON. Nạp qua RECORD_DRIFT / RECORD_DRIFT_PASSIVE không đặc quyền (background kiểm cổng opt-in)
   i18n/
     index.ts                   - runtime t(key, params), initI18n, plural, hydrateI18n, watchUiLocaleChanges
@@ -212,6 +283,7 @@ src/
 - Renderers: triển khai `SpecRenderer` (`render(spec, target, meta)`, `destroy()`); đọc localized text qua `localizeSpec`, và caption project khi nhiều hơn một đóng góp cho page. Tooltip renderer: click badge để pin tip mở (một lúc một cái), nút đóng, action "Open in side panel" highlight card side-panel tương ứng (best-effort auto-open trên Chrome, Firefox không thể mở sidebar lập trình).
 - Sources: pluggable. Đã ship: `SidecarSource` + một nguồn cục bộ (Manual) ghi được (import, tạo trong extension, capture, sửa, export zip theo group). FileSystem Access hoãn lại.
 - Visibility: `isVisible(spec, url, state)` gộp team defaults từ `.specs/views.json` (qua `GET /views`) và personal overrides từ `chrome.storage.sync`. `url:` page gate được ưu tiên hơn tất cả; `spec:<id>` force-show là hard rescue. Filter UI (popup + side panel) cung cấp facet checklists (Tags / Files / This page) + per-spec eye toggle; Reset xóa personal overrides. Options page soạn team defaults (ghi qua `PUT /views`).
+- Spec pending: một spec được soạn không có fingerprint (ví dụ qua trang `specshot.html` của extension) không bao giờ render trên trang host - `isPinned` gate nó khỏi pipeline match/render trong `orchestrator.ts`, giống hệt `matchElement`. Popup và side panel thay vào đó liệt kê nó dạng chỉ-đọc trong mục **Unpinned** (`pageHealth().unpinned`), khác với **orphaned** (có fingerprint, không match được).
 
 **Build:**
 - `pnpm build` - WXT build cho chrome-mv3 -> `.output/chrome-mv3/`.
@@ -352,7 +424,9 @@ Hai job (JS, Go):
 
 **Logic fingerprint**: `packages/fingerprint-core/src/capture.ts` (capture signals), `match.ts` (thứ tự matching), `selector.ts` (tối ưu CSS).
 
-**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views + GET/PUT /guides), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+**Sidecar HTTP handlers**: `apps/cli/internal/server/server.go` (CRUD endpoints + GET/PUT /views + GET/PUT /guides + GET/PUT/DELETE /shots), `middleware.go` (auth+CORS), `hub.go` (SSE broadcast).
+
+**Trang soạn specshot**: entrypoint `specshot.html` của extension (tải lên screenshot -> vẽ/đánh số box -> soạn spec pending -> export spec sheet dạng HTML/MD, persist sidecar tùy chọn), mở qua **Open spec sheet** ở popup/side panel. Composition ở `packages/specshot-app`, editor UI ở `packages/specshot-react`, mọi logic authoring/geometry ở `packages/specshot-core`.
 
 **Guide mode**: `content/guide.ts` (runtime tour) + `content/resolve-guide.ts` (giải quyết bước), `shared/guide-editor.ts` + `guide-section.ts` (UI biên soạn + khởi chạy), các guide handler ở background trong `entrypoints/background.ts`, sidecar `/guides` trong `server.go`/`store.go`.
 
