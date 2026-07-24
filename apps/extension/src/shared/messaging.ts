@@ -460,6 +460,10 @@ export interface MatchReportEntry {
   needsReview: boolean;
   /** Stored-fingerprint anchor resilience (Phase 1 `anchorStrength`). */
   strength: AnchorStrength;
+  /** True for a pending (unpinned) spec: no fingerprint yet, so it was never
+   *  matched. Distinct from `matched:false` orphaned (which HAS a fingerprint that
+   *  failed to resolve). pageHealth counts these as `unpinned`, not `orphaned`. */
+  pending?: boolean;
 }
 
 /** The spec ids that resolved to an element on the current page (the content

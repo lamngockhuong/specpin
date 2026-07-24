@@ -1,4 +1,9 @@
-import { anchorStrength, captureFingerprint, matchElement } from "@specpin/fingerprint-core";
+import {
+  anchorStrength,
+  captureFingerprint,
+  isPinned,
+  matchElement,
+} from "@specpin/fingerprint-core";
 import type { DisplayMode, ElementFingerprint, Manifest, Spec } from "@specpin/spec-schema";
 import { browser, defineContentScript } from "#imports";
 import { BulkCaptureForm, type BulkRowResult } from "../content/bulk-capture-form.js";
@@ -320,6 +325,9 @@ export default defineContentScript({
     function matchedElementSet(): Set<Element> {
       const set = new Set<Element>();
       for (const s of specs) {
+        // A pending (unpinned) spec has no fingerprint — it documents no element
+        // yet, so it contributes nothing to coverage.
+        if (!isPinned(s)) continue;
         if (!pageScopeAllows(s.fingerprint.pageUrl, location.href)) continue;
         const m = matchElement(s.fingerprint, document);
         if (m.el) set.add(m.el);
@@ -765,6 +773,10 @@ export default defineContentScript({
       // spec's connectionId (manual:<batchId> for local), which routes the write.
       const spec = specs.find((s) => s.id === specId);
       if (!spec) return;
+      // A pending (unpinned) spec has no fingerprint to relink or re-pin — binding
+      // it to an element is Phase 2. The edit form needs a fingerprint, so ignore.
+      // isPinned narrows spec.fingerprint to non-null (survives into onSubmit).
+      if (!isPinned(spec)) return;
       // How the stored fingerprint was matching just before the re-pin, so a
       // recorded drift pair carries the motivating (orphaned/fuzzy) state.
       const prevMatch = matchElement(spec.fingerprint, document);
@@ -792,8 +804,8 @@ export default defineContentScript({
             void sendToBackground({
               type: "RECORD_DRIFT",
               old: spec.fingerprint,
-              new: updated.fingerprint,
-              pageUrl: updated.fingerprint.pageUrl ?? spec.fingerprint.pageUrl ?? null,
+              new: updated.fingerprint ?? spec.fingerprint,
+              pageUrl: updated.fingerprint?.pageUrl ?? spec.fingerprint.pageUrl ?? null,
               prevStrategy: prevMatch.strategy,
               prevConfidence: prevMatch.confidence,
               project: spec.project,
@@ -839,6 +851,8 @@ export default defineContentScript({
     function confirmMatch(specId: string): void {
       const spec = specs.find((s) => s.id === specId);
       if (!spec) return;
+      // Confirming a match needs a fingerprint; a pending spec has none.
+      if (!isPinned(spec)) return;
       const match = matchElement(spec.fingerprint, document);
       void sendToBackground({
         type: "RECORD_DRIFT",
@@ -1087,6 +1101,22 @@ export default defineContentScript({
           if (!enabled) return Promise.resolve({ ids: [], report: [] });
           const report: MatchReportEntry[] = [];
           for (const s of specs) {
+            // A pending (unpinned) spec has no fingerprint: it can neither be
+            // page-scoped nor matched. Surface it as pending (on every page) so the
+            // popup/side-panel counts it as unpinned rather than orphaned.
+            if (!isPinned(s)) {
+              report.push({
+                id: s.id,
+                matched: false,
+                strategy: "none",
+                confidence: 0,
+                anchor: null,
+                needsReview: true,
+                strength: "weak",
+                pending: true,
+              });
+              continue;
+            }
             if (!pageScopeAllows(s.fingerprint.pageUrl, location.href)) continue;
             const m = matchElement(s.fingerprint, document);
             report.push({

@@ -2,6 +2,7 @@ import {
   captureFingerprint,
   generateCandidates,
   hasContentSignal,
+  isPinned,
   matchElement,
   rankCandidates,
 } from "@specpin/fingerprint-core";
@@ -56,7 +57,9 @@ function capturePassiveDrift(
   matchedEl: Element | null,
 ): PassiveDriftInput | null {
   const fp = spec.fingerprint;
-  if (!hasContentSignal(fp)) return null;
+  // Pending specs never enter the render pipeline that calls this, but guard the
+  // optional fingerprint so the type narrows for the candidate generation below.
+  if (!fp || !hasContentSignal(fp)) return null;
   const { candidates } = generateCandidates(fp, doc);
   const ranked = rankCandidates(fp, candidates).slice(0, PASSIVE_K);
   const chosen = matchedEl ? ranked.findIndex((r) => r.el === matchedEl) : -1;
@@ -141,6 +144,10 @@ export function renderSession(
   const visible = makeVisibilityFilter(url, state);
   const visibleSpecs = specs.filter(
     (spec) =>
+      // A pending (unpinned) spec has no fingerprint: it documents no element yet,
+      // so it never renders on the page (it surfaces only in the "unpinned" list).
+      // isPinned also narrows fingerprint to non-null for the pageUrl deref below.
+      isPinned(spec) &&
       pageScopeAllows(spec.fingerprint.pageUrl, url) &&
       visible({ id: spec.id, tags: spec.tags, file: (spec as Partial<TaggedSpec>)._file }),
   );
