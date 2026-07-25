@@ -7,17 +7,21 @@ import path from "node:path";
 import type { ImportConfig } from "./config-types.js";
 
 /** Resolve `relFile` under `repoRoot`, rejecting absolute paths and any
- * traversal that escapes the root. Works with both `/` and `\` separators
- * (Node's `path` module normalizes both on Windows). */
+ * traversal that escapes the root. Handles both `/` and `\` separators on
+ * EVERY OS: a committed `import.config.json` may be authored on Windows with
+ * `..\..` separators, but on POSIX Node's `path` treats `\` as an ordinary
+ * filename char and would miss the traversal. Normalizing backslashes to `/`
+ * up front makes the escape guard OS-independent (defense in depth). */
 export function resolveWithinRoot(
   repoRoot: string,
   relFile: string,
 ): { ok: true; absPath: string } | { ok: false; error: string } {
-  if (path.isAbsolute(relFile)) {
+  const normalized = relFile.replace(/\\/g, "/");
+  if (path.isAbsolute(normalized)) {
     return { ok: false, error: `path must be relative to the repo root: "${relFile}"` };
   }
   const absRoot = path.resolve(repoRoot);
-  const absPath = path.resolve(absRoot, relFile);
+  const absPath = path.resolve(absRoot, normalized);
   const rootWithSep = absRoot.endsWith(path.sep) ? absRoot : absRoot + path.sep;
   if (absPath !== absRoot && !absPath.startsWith(rootWithSep)) {
     return { ok: false, error: `path escapes the repo root: "${relFile}"` };
