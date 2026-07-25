@@ -69,7 +69,7 @@ Tạo `.specs/screens.json` để mô tả điều hướng của ứng dụng:
 
 ## Mở graph view
 
-Click **Open graph view** trong popup hoặc side panel. Nó mở trong một tab trình duyệt mới. Nếu một project đã kết nối có cả đồ thị status-flow lẫn screen-transition, một bộ chọn dataset xuất hiện phía trên canvas để bạn chuyển qua lại; nếu một trang được nhiều project phục vụ, một bộ chọn project cũng xuất hiện.
+Click **Open graph view** trong menu **⋯ More actions** ở header của popup hoặc side panel. Nó mở trong một tab trình duyệt mới. Nếu một project đã kết nối có cả đồ thị status-flow lẫn screen-transition, một bộ chọn dataset xuất hiện phía trên canvas để bạn chuyển qua lại; nếu một trang được nhiều project phục vụ, một bộ chọn project cũng xuất hiện.
 
 ## Duyệt graph
 

@@ -18,6 +18,8 @@
         background:
           radial-gradient(120% 80% at 50% 0%, var(--sp-grad-top), var(--sp-grad-bottom));
       }
+      /* The "..." (More actions) menu bounds the header to a fixed, small button
+         count on this fixed-width surface, so the row never needs to wrap. */
       .header { display: flex; align-items: center; gap: 8px; }
       .logo { width: 22px; height: 22px; display: block; }
       /* .icon-btn (header settings gear) lives in shared/icon-btn.css. */
@@ -207,39 +209,20 @@
       <h1 data-i18n="common.specpin">Specpin</h1>
       <a class="pill" id="version" href="https://specpin.ohnice.app/changelog" target="_blank" rel="noopener noreferrer" data-i18n-title="common.viewChangelog" data-i18n-aria="common.viewChangelog" title="View changelog" aria-label="View changelog"></a>
       <div class="header-actions">
-      <button type="button" id="new-project" class="icon-btn" hidden data-i18n-title="popup.newProject" data-i18n-aria="popup.newProject" title="New project" aria-label="New project">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 5v14M5 12h14"/>
-        </svg>
-      </button>
-      <button type="button" id="export" class="icon-btn" hidden data-i18n-title="popup.exportLocal" data-i18n-aria="popup.exportLocal" title="Export local specs" aria-label="Export local specs">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-      </button>
       <button type="button" id="open-sidepanel" class="icon-btn" hidden data-i18n-title="popup.openSidepanel" data-i18n-aria="popup.openSidepanel" title="Open as side panel" aria-label="Open as side panel">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <line x1="15" y1="3" x2="15" y2="21"/>
         </svg>
       </button>
-      <button type="button" id="open-graph" class="icon-btn" data-i18n-title="common.openGraphView" data-i18n-aria="common.openGraphView" title="Open graph view" aria-label="Open graph view">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="5" cy="6" r="2.5"/>
-          <circle cx="19" cy="6" r="2.5"/>
-          <circle cx="12" cy="18" r="2.5"/>
-          <line x1="7" y1="7.5" x2="10.5" y2="16"/>
-          <line x1="17" y1="7.5" x2="13.5" y2="16"/>
-        </svg>
-      </button>
-      <button type="button" id="open-specshot" class="icon-btn" data-i18n-title="common.openSpecshot" data-i18n-aria="common.openSpecshot" title="Open spec sheet" aria-label="Open spec sheet">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-          <polyline points="14 3 14 9 20 9"/>
-          <line x1="8" y1="13" x2="16" y2="13"/>
-          <line x1="8" y1="17" x2="13" y2="17"/>
+      <!-- Overflow menu: the graph + specshot launchers live behind one kebab so
+           the header stays compact (they were direct icons but overflowed the
+           fixed 400px popup). Opens shared/overflow-menu.ts against this button. -->
+      <button type="button" id="open-more" class="icon-btn" aria-haspopup="menu" data-i18n-title="common.moreActions" data-i18n-aria="common.moreActions" title="More actions" aria-label="More actions">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="5" r="1.6"/>
+          <circle cx="12" cy="12" r="1.6"/>
+          <circle cx="12" cy="19" r="1.6"/>
         </svg>
       </button>
       <button type="button" id="open-options" class="icon-btn" data-i18n-title="common.connectionSettings" data-i18n-aria="common.connectionSettings" title="Connection settings" aria-label="Connection settings">

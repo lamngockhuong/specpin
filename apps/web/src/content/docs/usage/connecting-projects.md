@@ -11,7 +11,7 @@ On first install, Specpin opens a one-time welcome tab that links straight here.
 
 ## Add a new project
 
-Open the Specpin popup or side panel, then click the settings gear (top-right) or the **+ New project** button. You will see two options:
+Open the Specpin popup or side panel, then click the settings gear (top-right), or open the **⋯ More actions** menu and click **New project**. You will see two options:
 
 ### Sidecar connection
 

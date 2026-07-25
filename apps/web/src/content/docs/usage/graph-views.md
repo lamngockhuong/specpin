@@ -69,7 +69,7 @@ Each screen's `urlGlob` identifies it on the live UI, reusing the same glob synt
 
 ## Open the graph view
 
-Click **Open graph view** in the popup or side panel. It opens in a new browser tab. If a connected project has both a status-flow and a screen-transition graph configured, a dataset picker appears above the canvas so you can switch between them; if a page serves more than one project, a project picker appears too.
+Click **Open graph view** from the header's **⋯ More actions** menu in the popup or side panel. It opens in a new browser tab. If a connected project has both a status-flow and a screen-transition graph configured, a dataset picker appears above the canvas so you can switch between them; if a page serves more than one project, a project picker appears too.
 
 ## Browse the graph
 

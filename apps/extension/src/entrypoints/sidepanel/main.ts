@@ -9,10 +9,9 @@ import {
 } from "../../i18n/index.js";
 import { getUiLocale, setLocale } from "../../shared/config.js";
 import { wireDisplayModePicker } from "../../shared/display-mode-picker.js";
+import { headerMoreMenuItems } from "../../shared/header-more-menu.js";
 import { appendTrustedHtml, setTrustedHtml } from "../../shared/html.js";
 import { renderInlineMarkdown, renderMarkdownBlock } from "../../shared/markdown.js";
-import { openGraphView } from "../../shared/open-graph-view.js";
-import { openSpecshot } from "../../shared/open-specshot.js";
 import { provenanceSectionHtml } from "../../shared/provenance.js";
 import { applyStoredTheme, watchThemeChanges } from "../../shared/theme.js";
 import "../../shared/inter-font.css";
@@ -22,7 +21,6 @@ import "../../shared/switch.css";
 import "../../shared/icon-btn.css";
 import "../../shared/link.css";
 import "../../shared/add-project.css";
-import "../../shared/project-menu.css";
 import "../../shared/overflow-menu.css";
 import "../../shared/surface-toast.css";
 import "../../shared/guide-section.css";
@@ -580,12 +578,12 @@ byId("search").addEventListener("input", (e) => {
   if (lastSpecs) renderSpecs(lastSpecs);
 });
 byId("open-options").addEventListener("click", () => browser.runtime.openOptionsPage());
-// Opens the full-page graph view (Phase 5) in a new tab; the panel stays
-// docked (unlike the popup, which closes on launch) since it isn't ephemeral.
-byId("open-graph").addEventListener("click", () => void openGraphView());
-// Opens the full-page specshot authoring view in a new tab; the panel stays
-// docked (like the graph view, unlike the popup).
-byId("open-specshot").addEventListener("click", () => void openSpecshot());
+// The header "..." (More actions) menu collapses every secondary action to keep
+// the header row compact. The panel stays docked (unlike the popup, which closes
+// on launch) since it isn't ephemeral, so no post-launch callback is passed.
+byId("open-more").addEventListener("click", () => {
+  openOverflowMenu(byId("open-more"), headerMoreMenuItems(projectActions));
+});
 
 // Same-origin spec-text links carry `data-specpin-internal` and no `target`. In
 // the in-page renderers a plain <a> navigates the host tab directly, but the side

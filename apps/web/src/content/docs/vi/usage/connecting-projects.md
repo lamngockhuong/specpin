@@ -11,7 +11,7 @@ Specpin kết nối với dự án theo hai cách: kết nối **Sidecar** (mộ
 
 ## Thêm dự án mới
 
-Mở popup Specpin hoặc side panel, rồi nhấp vào biểu tượng bánh răng (góc trên bên phải) hoặc nút **+ Dự án mới**. Bạn sẽ thấy hai lựa chọn:
+Mở popup Specpin hoặc side panel, rồi nhấp vào biểu tượng bánh răng (góc trên bên phải), hoặc mở menu **⋯ More actions** và nhấp **Dự án mới**. Bạn sẽ thấy hai lựa chọn:
 
 ### Kết nối sidecar
 

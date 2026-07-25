@@ -11,7 +11,7 @@ the shared `@specpin/specshot-app` composition), and it works fully **offline**.
 
 ## Open it
 
-Load/install the Specpin extension, then click **Open spec sheet**:
+Load/install the Specpin extension, then open the header's **⋯ More actions** menu and click **Open spec sheet**:
 
 - from the toolbar **popup**, or
 - from the **side panel** header.

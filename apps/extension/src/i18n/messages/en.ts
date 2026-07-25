@@ -84,7 +84,6 @@ const en = {
   "popup.openSidepanel": "Open as side panel ⇥",
   "popup.newProject": "New project",
   "popup.exportLocal": "Export local specs",
-  "popup.exportPickProject": "Export which project?",
 
   // Shared "+ New project" inline form (popup + side panel).
   "addProject.modeLocal": "Local project",

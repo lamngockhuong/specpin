@@ -83,7 +83,6 @@ const ja: Record<keyof Messages, string> = {
   "popup.openSidepanel": "サイドパネルで開く ⇥",
   "popup.newProject": "新規プロジェクト",
   "popup.exportLocal": "ローカルのspecをエクスポート",
-  "popup.exportPickProject": "どのプロジェクトをエクスポートしますか？",
 
   // Shared "+ New project" inline form (popup + side panel).
   "addProject.modeLocal": "ローカルプロジェクト",
