@@ -817,3 +817,20 @@ export function setLocalBatchScreens(
   const nextBatch: ManualBatch = { ...(state.batches[idx] as ManualBatch), screens };
   return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
 }
+
+/** Set a local batch's status-flow FSM config: the flows-side twin of
+ *  `setLocalBatchScreens` (Track C's C1 editor Save), the local equivalent of
+ *  a sidecar's `PUT /flows`. Always stores the config outright -- like
+ *  `setLocalBatchScreens`, it is only ever called with a just-merged,
+ *  non-empty result (graph-write-back-flows.ts), never a reset-to-default.
+ *  Unknown batch id -> ok:false. */
+export function setLocalBatchFlows(
+  state: LocalSpecsState,
+  batchId: string,
+  flows: FlowsConfig,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const nextBatch: ManualBatch = { ...(state.batches[idx] as ManualBatch), flows };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}

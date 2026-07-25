@@ -132,3 +132,57 @@ export function mergeScreensConfig(input: ScreensMergeInput): ScreensMergeResult
   if (!validation.valid) return { ok: false, errors: [formatErrors(validation.errors)] };
   return { ok: true, config: merged };
 }
+
+// --- Track C (C1): the in-browser editor's screens save path. Unlike B3's
+// additive-only approve (which only ever ADDS a candidate), the editor freely
+// rewrites -- including DELETING -- the entries it owns. So the merge here is
+// "replace the owned slice, preserve everything else" rather than upsert-only:
+// every transition whose *effective* source (missing defaults to "manual")
+// equals the caller's `source` is fully replaced by the draft's version of
+// that slice (a deletion in the draft really disappears); any transition under
+// a DIFFERENT source is carried over from `current` untouched, and the merge
+// still refuses to drop a node such a preserved transition needs (defense in
+// depth on top of the editor's own live delete-guard). graph-write-back-flows.ts
+// applies the identical rule to FlowsConfig -- exported here so it stays one
+// definition, not two.
+
+/** True when `t`'s effective source (undefined defaults to "manual", per the
+ *  schema) is the one this merge call owns. */
+export function isOwnedBy(t: Transition, source: TransitionSource): boolean {
+  return (t.source ?? "manual") === source;
+}
+
+export interface ScreensDraftMergeInput {
+  /** The current (freshly-read) ScreensConfig to merge into. */
+  config: ScreensConfig;
+  /** The draft's full desired screen list (additions AND removals apply). */
+  screens: Screen[];
+  /** The draft's full desired transition list, of any source (see
+   *  FlowsMergeInput.transitions -- same "only the owned slice applies" rule). */
+  transitions: Transition[];
+  source: TransitionSource;
+}
+
+/** The editor's screens save path: same "replace the owned slice, preserve +
+ *  never-orphan the rest" semantics as mergeFlowsConfig, composed on top of
+ *  the UNCHANGED mergeScreensConfig (B3's contract stays exact) by pre-pruning
+ *  `config` to what must survive, then letting mergeScreensConfig's existing
+ *  upsert/dedupe/validate do the rest for the owned slice being added back. */
+export function mergeScreensDraft(input: ScreensDraftMergeInput): ScreensMergeResult {
+  const { config, source } = input;
+  const preserved = config.transitions.filter((t) => !isOwnedBy(t, source));
+  const neededIds = new Set(preserved.flatMap((t) => [t.from, t.to]));
+  const screensById = new Map(input.screens.map((s) => [s.id, s]));
+  for (const id of neededIds) {
+    if (screensById.has(id)) continue;
+    const orig = config.screens.find((s) => s.id === id);
+    if (orig) screensById.set(id, orig);
+  }
+  const strippedConfig: ScreensConfig = {
+    ...config,
+    screens: [...screensById.values()],
+    transitions: preserved,
+  };
+  const owned = input.transitions.filter((t) => isOwnedBy(t, source));
+  return mergeScreensConfig({ config: strippedConfig, transitions: owned, source });
+}

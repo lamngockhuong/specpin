@@ -1,4 +1,5 @@
 import {
+  type FlowsConfig,
   type GuidesConfig,
   type ScreensConfig,
   SidecarError,
@@ -342,17 +343,23 @@ export class SidecarRegistry {
    *  happen to share a name (a manual batch uses the same `manual:<id>` id scheme
    *  as getViews/getGuides); flows/screens across entries are never merged (a
    *  page can have multiple connected projects, each with its own
-   *  `application-status` flow that must not collide with another's). */
+   *  `application-status` flow that must not collide with another's). Each
+   *  entry also carries `specs` (C2): this project's known spec ids for the
+   *  graph editor's specId picker, tagged pending when a spec has no
+   *  fingerprint yet -- not origin-scoped either, so the picker offers the
+   *  same ids regardless of which page the graph tab was opened from. */
   flowsScreensByProject(): ProjectFlowsScreens[] {
     const out: ProjectFlowsScreens[] = [];
     for (const conn of this.connections.values()) {
-      const specs = conn.getCache();
-      if (!specs) continue;
+      const cache = conn.getCache();
+      if (!cache) continue;
       out.push({
         connectionId: conn.id,
-        project: specs.manifest?.project || conn.label || conn.baseUrl,
+        project: cache.manifest?.project || conn.label || conn.baseUrl,
         flows: conn.getFlows(),
         screens: conn.getScreens(),
+        specs: cache.specs.map((s) => ({ id: s.id, pending: !s.fingerprint })),
+        shotScreenIds: conn.getShotScreenIds(),
       });
     }
     for (const batch of this.manual) {
@@ -362,6 +369,10 @@ export class SidecarRegistry {
         project: batch.specs.manifest?.project || batch.label,
         flows: batch.flows ?? { version: "1.0", flows: [] },
         screens: batch.screens ?? { version: "1.0", screens: [], transitions: [] },
+        specs: batch.specs.specs.map((s) => ({ id: s.id, pending: !s.fingerprint })),
+        // A local/manual project has no sidecar /shots endpoint: unknown, not
+        // "no shots" -- the C3 orphan-warning degrades to a generic caution.
+        shotScreenIds: null,
       });
     }
     return out;
@@ -431,6 +442,23 @@ export class SidecarRegistry {
     if (!conn) return { ok: false, errors: ["unknown connection"] };
     try {
       await conn.saveScreens(config);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, errors: [String(e)] };
+    }
+  }
+
+  /** Persist a status-flow FSM config to one sidecar connection (Track C's C1
+   *  editor Save). Local-batch writes go through the background's own storage
+   *  path (setLocalBatchFlows), not here -- mirrors saveScreens. */
+  async saveFlows(
+    connectionId: string,
+    config: FlowsConfig,
+  ): Promise<{ ok: boolean; errors?: string[] }> {
+    const conn = this.connections.get(connectionId);
+    if (!conn) return { ok: false, errors: ["unknown connection"] };
+    try {
+      await conn.saveFlows(config);
       return { ok: true };
     } catch (e) {
       return { ok: false, errors: [String(e)] };

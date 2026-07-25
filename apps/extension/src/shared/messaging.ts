@@ -319,7 +319,20 @@ export type Message =
   | { type: "APPROVE_CAPTURED_TRANSITION"; project: string; transitionId: string }
   // Discard ONE buffered transition (B3): drop it from the draft buffer, no
   // `.specs/` write. Privileged, like CLEAR_CAPTURE_BUFFER.
-  | { type: "DISCARD_CAPTURED_TRANSITION"; project: string; transitionId: string };
+  | { type: "DISCARD_CAPTURED_TRANSITION"; project: string; transitionId: string }
+  // Track C (C1) editor Save: an already-merged, already-validated config for a
+  // SIDECAR project (graph-write-back(-flows).ts ran the provenance-preserving
+  // merge client-side; this just persists it, like APPROVE_CAPTURED_TRANSITION's
+  // sidecar branch). Privileged: extension-page only -- a web content script
+  // must never be able to commit into `.specs/`.
+  | { type: "SAVE_GRAPH_FLOWS"; connectionId: string; config: FlowsConfig }
+  | { type: "SAVE_GRAPH_SCREENS"; connectionId: string; config: ScreensConfig }
+  // Track C (C1) editor Save for a LOCAL (Manual) project: the local write path
+  // `setLocalBatchScreens` already has for B3, plus its flows-side twin
+  // `setLocalBatchFlows` (new). `id` is the batch id (not the `manual:<id>`
+  // connection id -- mirrors SET_LOCAL_BATCH_ENABLED). Privileged.
+  | { type: "SET_LOCAL_BATCH_FLOWS"; id: string; config: FlowsConfig }
+  | { type: "SET_LOCAL_BATCH_SCREENS"; id: string; config: ScreensConfig };
 
 /** A passive drift entry as sent from content; the background stamps `ts`. */
 export type PassiveDriftInput = Omit<PassiveDriftEntry, "ts">;
@@ -371,6 +384,12 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   // a web content script.
   "APPROVE_CAPTURED_TRANSITION",
   "DISCARD_CAPTURED_TRANSITION",
+  // Track C (C1) editor Save: commits an already-merged graph config into
+  // `.specs/` (sidecar) or a local batch -- never from a web content script.
+  "SAVE_GRAPH_FLOWS",
+  "SAVE_GRAPH_SCREENS",
+  "SET_LOCAL_BATCH_FLOWS",
+  "SET_LOCAL_BATCH_SCREENS",
 ]);
 
 export interface SaveSpecResult {
@@ -468,16 +487,37 @@ export interface GuidesForOrigin {
   guides: TaggedGuide[];
 }
 
+/** One known spec id for the graph editor's specId picker (C2), tagged pending
+ *  when it carries no fingerprint yet -- specshot's unpinned-from-screenshot
+ *  authoring (PR #187). A pending id is still a valid `specId` target, but
+ *  won't highlight on-page until it is bound to an element, so the picker
+ *  must label the two differently. */
+export interface KnownSpecId {
+  id: string;
+  pending: boolean;
+}
+
 /** One connected sidecar project's flows + screens configs, tagged with its
  *  connection id + display project name so the graph panel can tell apart two
  *  projects that happen to share a name. Raw configs only -- `specId`
  *  resolution against the live page is a panel/overlay concern (Phase 5/6),
- *  not this layer's. */
+ *  not this layer's. `specs` is this SAME project's known spec ids (C2's
+ *  specId picker feed) -- fetched alongside flows/screens rather than via a
+ *  separate round trip, since both come from the identical per-connection
+ *  cache the registry already aggregates project-by-project. */
 export interface ProjectFlowsScreens {
   connectionId: string;
   project: string;
   flows: FlowsConfig;
   screens: ScreensConfig;
+  specs: KnownSpecId[];
+  /** C3's shot inventory: the screenIds every stored
+   *  `.specs/shots/*.shot.json` references, for the graph editor's
+   *  orphaned-shot Save warning. `null` when it could not be enumerated
+   *  (a local/manual project, an older sidecar with no /shots endpoint, or a
+   *  failed load) -- the editor must degrade to a generic caution, never
+   *  treat `null` as "no shots". */
+  shotScreenIds: string[] | null;
 }
 
 /** Result of GET_FLOWS_SCREENS: every connected project's flows/screens,
@@ -512,6 +552,13 @@ export interface CaptureBufferResult {
 
 /** Result of APPROVE_CAPTURED_TRANSITION. */
 export interface ApproveCapturedResult {
+  ok: boolean;
+  errors?: string[];
+}
+
+/** Result of the four Track C (C1) editor-Save write messages
+ *  (SAVE_GRAPH_FLOWS/SCREENS, SET_LOCAL_BATCH_FLOWS/SCREENS). */
+export interface GraphWriteResult {
   ok: boolean;
   errors?: string[];
 }

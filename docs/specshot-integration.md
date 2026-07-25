@@ -11,8 +11,13 @@
 > original `apps/spec-sheet` design and is kept for historical context - read `docs/spec-sheet-authoring.md`
 > and `docs/system-architecture.md` for the current, shipped shape.
 > **Decision date:** 2026-07-23 (revised same day).
-> Full trade-off analysis (VI): `mark-number/plans/reports/brainstorm-260723-2021-marknumber-specpin-integration.md`
-> (project renamed specshot; on-disk folder still `mark-number/` until you rename it).
+> Full trade-off analysis (VI): `plans/reports/brainstorm-260723-2021-marknumber-specpin-integration.md`
+> (salvaged from the standalone repo before it was retired; `plans/` is git-ignored, so this file is
+> local-only. Decision record: `docs/journals/260723-integration-decision-specshot-into-specpin.md`.)
+> **Update (2026-07-25):** the standalone `mark-number`/specshot repo is **retired** — specpin is the
+> only maintained home for this code (`packages/specshot-core`, `packages/specshot-react`,
+> `packages/specshot-app`). Its unique records were salvaged here; the folder itself is pending
+> deletion. The shared MarkDoc contract lives at `docs/mark-doc-schema.md`.
 > Tiếng Việt: mirror to `vi/specshot-integration.md` when convenient (English is source of truth).
 
 ## Goal

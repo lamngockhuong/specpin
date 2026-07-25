@@ -8,14 +8,18 @@ import {
   type GraphFilterState,
   mountGraphControls,
 } from "../../graph/graph-controls.js";
+import { type EditWiringHandle, wireEditMode } from "../../graph/graph-edit-wiring.js";
 import { overlayGhostBuffer } from "../../graph/graph-ghost.js";
 import { createGhostController } from "../../graph/graph-ghost-controller.js";
 import { mountGhostPanel } from "../../graph/graph-ghost-panel.js";
 import { type GhostReviewHandle, wireGhostReview } from "../../graph/graph-ghost-review.js";
 import { createHighlightController, parseOriginTabId } from "../../graph/graph-highlight.js";
 import { layoutGraph } from "../../graph/graph-layout.js";
-import type { Dataset } from "../../graph/graph-project-picker.js";
-import { wireProjectPicker } from "../../graph/graph-project-picker.js";
+import {
+  confirmOrphanShots,
+  confirmLeaveIfDirty as guardConfirmLeaveIfDirty,
+} from "../../graph/graph-leave-guard.js";
+import { type Dataset, wireProjectPicker } from "../../graph/graph-project-picker.js";
 import { renderGraphSvg } from "../../graph/graph-svg.js";
 import { renderGraphTable } from "../../graph/graph-table.js";
 import { attachPanZoom, type PanZoomController } from "../../graph/pan-zoom.js";
@@ -27,10 +31,9 @@ import { applyStoredTheme } from "../../shared/theme.js";
 import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
 
-// The graph panel: fetches every connected project's flows/screens (Phase 4),
-// lets the reader pick a project + dataset, and renders it as an SVG graph
-// (dagre layout) or a flat table. Orchestration only -- the graph math lives in
-// src/graph/*.ts, unit-tested independently of this DOM wiring.
+// The graph panel: fetches every connected project's flows/screens, lets the
+// reader pick a project + dataset, and renders it as an SVG graph (dagre) or a
+// flat table. Orchestration only -- the graph math lives in src/graph/*.ts.
 
 const canvasEl = document.getElementById("canvas") as HTMLElement;
 const tableEl = document.getElementById("table") as HTMLElement;
@@ -40,6 +43,7 @@ const projectSelect = document.getElementById("project-select") as HTMLSelectEle
 const datasetSelect = document.getElementById("dataset-select") as HTMLSelectElement;
 const ghostPanelEl = document.getElementById("ghost-panel") as HTMLElement;
 const captureBannerEl = document.getElementById("capture-banner") as HTMLElement;
+const editFormEl = document.getElementById("edit-form") as HTMLElement;
 
 const originTabId = parseOriginTabId(new URLSearchParams(location.search).get("originTab"));
 const highlight = createHighlightController(hintEl, originTabId);
@@ -56,6 +60,7 @@ let svgView: ReturnType<typeof renderGraphSvg> | null = null;
 let controls: ReturnType<typeof mountGraphControls> | null = null;
 let ghostReview: GhostReviewHandle | null = null;
 let captureRecording: CaptureRecordingHandle | null = null;
+let editWiring: EditWiringHandle | null = null;
 const ghostController = createGhostController();
 
 function applyFilter(): void {
@@ -72,6 +77,7 @@ function applyFilter(): void {
 }
 
 async function handleNodeClick(node: GraphNode): Promise<void> {
+  if (editWiring?.handleNodeClick(node)) return;
   filterState = focusNode(filterState, node.id);
   applyFilter();
   if (node.specId) {
@@ -80,6 +86,7 @@ async function handleNodeClick(node: GraphNode): Promise<void> {
 }
 
 async function handleEdgeClick(edge: GraphEdge): Promise<void> {
+  if (editWiring?.handleEdgeClick(edge)) return;
   if (edge.pending) {
     ghostReview?.show(edge);
     return;
@@ -107,12 +114,36 @@ function renderCanvas(): void {
     onBackgroundClick: () => {
       filterState = { ...filterState, focusNodeId: null };
       ghostReview?.hide();
+      editWiring?.clearSelection();
       applyFilter();
     },
   });
   canvasEl.appendChild(svgView.svg);
   panZoom = attachPanZoom(svgView.svg, svgView.root);
   applyFilter();
+}
+
+// Shared onChanged for ghostReview + editWiring (both re-fetch on write).
+function applyRefreshedProjects(list: ProjectFlowsScreens[] | null): void {
+  if (list) projects = list;
+  refreshAll();
+}
+
+function toggleEditMode(enabled: boolean): void {
+  editWiring?.setEnabled(enabled);
+  refreshAll();
+}
+
+// C3's confirm-discard guard: shared by the edit-mode toggle (turning OFF) and
+// the project/dataset picker (either switch also exits edit mode), both of
+// which call this BEFORE applying the change. See graph-leave-guard.ts for the
+// actual confirm flow; `beforeunload` (below) uses editWiring directly since
+// the browser's own prompt there needs no Save option.
+function confirmLeaveIfDirty(): Promise<boolean> {
+  return guardConfirmLeaveIfDirty({
+    isDirty: () => editWiring?.isDirty() ?? false,
+    save: () => editWiring?.save() ?? Promise.resolve(false),
+  });
 }
 
 function setView(next: "graph" | "table"): void {
@@ -122,18 +153,18 @@ function setView(next: "graph" | "table"): void {
   applyFilter();
 }
 
+function deriveGraph(project: ProjectFlowsScreens | undefined): Graph {
+  if (!project) return { nodes: [], edges: [] };
+  if (editWiring?.isEnabled()) return editWiring.getGraph(contentLocale);
+  if (dataset === "flows") return flowsToGraph(project.flows, contentLocale);
+  const buffer = ghostController.forProject(project.connectionId);
+  return overlayGhostBuffer(screensToGraph(project.screens, contentLocale), buffer, contentLocale);
+}
+
 function refreshAll(): void {
   ghostReview?.hide();
   const project = projects[projectIdx];
-  graph = !project
-    ? { nodes: [], edges: [] }
-    : dataset === "flows"
-      ? flowsToGraph(project.flows, contentLocale)
-      : overlayGhostBuffer(
-          screensToGraph(project.screens, contentLocale),
-          ghostController.forProject(project.connectionId),
-          contentLocale,
-        );
+  graph = deriveGraph(project);
   filterState = { category: "all", query: "", focusNodeId: null };
 
   if (controls) controls.setGraph(graph);
@@ -144,6 +175,8 @@ function refreshAll(): void {
         applyFilter();
       },
       onViewChange: setView,
+      onEditModeChange: toggleEditMode,
+      canLeaveEditMode: confirmLeaveIfDirty,
     });
   }
   // renderCanvas() applies the (freshly reset) filter exactly once -- for the
@@ -152,10 +185,25 @@ function refreshAll(): void {
   captureRecording?.refresh();
 }
 
-const picker = wireProjectPicker(projectSelect, datasetSelect, (choice) => {
-  projectIdx = choice.projectIdx;
-  dataset = choice.dataset;
-  refreshAll();
+const picker = wireProjectPicker(
+  projectSelect,
+  datasetSelect,
+  (choice) => {
+    projectIdx = choice.projectIdx;
+    dataset = choice.dataset;
+    toggleEditMode(false);
+  },
+  confirmLeaveIfDirty,
+);
+
+// C3's beforeunload guard: browsers show only their own generic leave/stay
+// prompt here (no custom Save/Discard buttons possible synchronously), so this
+// is a plainer backstop than confirmLeaveIfDirty -- it protects a closed tab
+// or reload, which the in-app guard above cannot.
+window.addEventListener("beforeunload", (e) => {
+  if (!editWiring?.isDirty()) return;
+  e.preventDefault();
+  e.returnValue = "";
 });
 
 async function init(): Promise<void> {
@@ -165,14 +213,19 @@ async function init(): Promise<void> {
   contentLocale = (await getLocale()) ?? "en";
   ghostReview = wireGhostReview(mountGhostPanel(ghostPanelEl), ghostController, {
     currentProject: () => projects[projectIdx],
-    onChanged: (refreshedProjects) => {
-      if (refreshedProjects) projects = refreshedProjects;
-      refreshAll();
-    },
+    onChanged: applyRefreshedProjects,
   });
   captureRecording = wireCaptureRecording(captureBannerEl, ghostController, {
     currentProjectId: () => projects[projectIdx]?.connectionId,
     onCleared: () => refreshAll(),
+  });
+  editWiring = wireEditMode(controlsEl, editFormEl, {
+    currentProject: () => projects[projectIdx],
+    currentDataset: () => dataset,
+    applySelection: (nodeIds, edgeIds) => svgView?.setSelected(nodeIds, edgeIds),
+    onChanged: applyRefreshedProjects,
+    locale: () => contentLocale,
+    confirmOrphanShots,
   });
 
   const result = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });

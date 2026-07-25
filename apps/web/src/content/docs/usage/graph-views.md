@@ -6,7 +6,7 @@ description: Author status-flow and screen-transition diagrams and browse them i
 Two optional `.specs/` files render as diagrams in a dedicated full-page **graph view**: a **status-flow** graph (how an object's status moves between states) and a **screen-transition** graph (which screen navigates to which, and through what action). Both are authored by hand in `.specs/` alongside your specs.
 
 :::note
-Graph views are a **read-only diagram** over data in `.specs/flows.json` and `.specs/screens.json`. There is no in-extension editor for hand-editing nodes/fields yet - author them directly as JSON (see [Spec format](/sidecar/spec-format/) for the general `.specs/` authoring model, and [`flows.json`/`screens.json` on GitHub](https://github.com/lamngockhuong/specpin/blob/main/docs/schema-reference.md#flowsconfig-specsflowsjson) for the exact field-by-field format). `screens.json` transitions can also be populated *without* touching the JSON, by turning on auto-capture and approving what it observes - see [Auto-capture screen transitions](#auto-capture-screen-transitions) below.
+Graph views render data from `.specs/flows.json` and `.specs/screens.json`. Author them directly as JSON (see [Spec format](/sidecar/spec-format/) for the general `.specs/` authoring model, and [`flows.json`/`screens.json` on GitHub](https://github.com/lamngockhuong/specpin/blob/main/docs/schema-reference.md#flowsconfig-specsflowsjson) for the exact field-by-field format) - or edit nodes and transitions directly in the graph view itself, with no JSON hand-editing at all; see [Edit flows/screens in the browser](#edit-flowsscreens-in-the-browser) below. `screens.json` transitions can also be populated by turning on auto-capture and approving what it observes - see [Auto-capture screen transitions](#auto-capture-screen-transitions).
 :::
 
 ## Author a status-flow graph
@@ -107,4 +107,28 @@ Off by default. Read what's captured before turning it on.
 
 :::note
 Full privacy chain: opt-in, default **off** -> generalized URL shape only (query/hash dropped, id-like path segments generalized to `**`) -> local per-device draft buffer, never auto-written -> requires your explicit Approve before anything reaches `.specs/`. Nothing captured ever leaves your machine.
+:::
+
+## Edit flows/screens in the browser
+
+The graph view isn't only a diagram to look at - turn on **Edit mode** to add, edit, and delete nodes and transitions directly on the canvas, with no JSON hand-editing at all.
+
+**Turn it on.** Click **Edit mode** in the graph view's control bar. A toolbar appears (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), and clicking a node or edge now selects it for editing instead of navigating or click-to-highlighting.
+
+**Add a node.** Click **Add node** and fill in the side form: a localized name/label (add a row per locale), a `urlGlob` (screens) or `kind` (flows' states: initial/normal/terminal), and an optional linked spec picked from the project's known specs. **Create** adds it to the draft. On the status-flow dataset, a new node belongs to whichever flow is currently active - use the flow controls to create one first if the project has none yet.
+
+**Edit a node or edge.** Click an existing one to open the same side form, pre-filled. Every valid field change applies to the in-memory draft right away; **Save** is still what persists the draft to `.specs/`. A transition that came from code-import or auto-capture renders read-only here - change it through its own flow instead (re-run the import, or Approve/Discard the ghost edge).
+
+**Add an edge.** Click two nodes in order (from, then to) to arm them, then **Add edge** to open a form for the trigger label plus optional guard, role, and linked spec.
+
+**Delete.** Select exactly one node or edge, then **Delete selected**. A node still referenced by an imported/auto-captured edge refuses to delete outright - resolve that edge first (a manually-added edge cascades away with the node). Deleting a screen that a specshot spec sheet still references is allowed here; that gets checked at Save instead (next).
+
+**Undo.** **Undo** reverts the single most recent change - one step, not a full history. Use it right after a slip, before making another edit.
+
+**Save, and the orphaned-shot check.** **Save** persists the whole draft: validated and merged the same provenance-preserving way as the auto-capture Approve flow above - your edits never clobber an entry from another source, and vice versa. If this session removed a screen that a spec sheet still references, Save asks you to confirm first, naming how many would be orphaned (or a general caution when it can't check) - Cancel to reconsider, or continue to save anyway.
+
+**Leaving with unsaved edits.** Turning Edit mode off, switching project, or switching the flows/screens dataset while a draft has unsaved changes asks you to save or discard first; a clean draft never prompts. Closing or reloading the tab with unsaved edits triggers the browser's own leave-page warning too.
+
+:::note
+The editor writes only `.specs/flows.json` and `.specs/screens.json`, through the same read-merge-validate-write path every other writer here uses - no new schema, no new write surface.
 :::

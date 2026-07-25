@@ -334,7 +334,7 @@ Trong popup hoặc side panel, **+ New project → Sidecar** (hoặc form add �
 
 ## 19. Graph views
 
-Hai file `.specs/` tùy chọn được render thành sơ đồ chỉ-đọc trong một **graph view** toàn trang riêng: `flows.json` (một status-flow FSM cho mỗi kiểu đối tượng, ví dụ một "Deal" di chuyển `draft -> negotiation -> won/lost`) và `screens.json` (screen nào điều hướng tới screen nào, và qua hành động gì). Cả hai đều là JSON soạn tay ở v1 - xem [schema-reference.md](./schema-reference.md#flowsconfig-specsflowsjson) để biết định dạng từng trường và ví dụ đầy đủ (demo app đã có sẵn cả hai tại `examples/demo-react-app/.specs/flows.json` và `screens.json`).
+Hai file `.specs/` tùy chọn được render thành sơ đồ trong một **graph view** toàn trang riêng: `flows.json` (một status-flow FSM cho mỗi kiểu đối tượng, ví dụ một "Deal" di chuyển `draft -> negotiation -> won/lost`) và `screens.json` (screen nào điều hướng tới screen nào, và qua hành động gì). Cả hai có thể soạn tay dưới dạng JSON - xem [schema-reference.md](./schema-reference.md#flowsconfig-specsflowsjson) để biết định dạng từng trường và ví dụ đầy đủ (demo app đã có sẵn cả hai tại `examples/demo-react-app/.specs/flows.json` và `screens.json`) - hoặc chỉnh sửa trực tiếp ngay trong graph view; xem [Chỉnh sửa flows/screens ngay trong trình duyệt](#chỉnh-sửa-flowsscreens-ngay-trong-trình-duyệt) bên dưới.
 
 **Mở nó.** Click **Open graph view** trong popup hoặc side panel; nó mở graph trong một tab mới. Khi một project đã kết nối phục vụ nhiều hơn một dataset, một bộ chọn project/dataset xuất hiện phía trên canvas (bộ chọn dataset chỉ hiện khi một project có **cả** flows lẫn screens được cấu hình).
 
@@ -506,3 +506,25 @@ Gắn `--check` vào CI để một PR đổi source mà quên chạy lại impo
 **Xóa một bộ đệm nháp.** Dùng **Xóa tất cả đã ghi** trong graph panel (chỉ áp dụng cho project đang chọn trong bộ chọn) để bỏ toàn bộ bản nháp chưa được duyệt của project đó trong một bước - tiện khi bạn thử bật ghi hình trên một site mà chưa muốn đưa vào graph.
 
 > **Chuỗi riêng tư, từ đầu đến cuối:** tự chọn tham gia, mặc định **TẮT** -> chỉ bao giờ suy ra dạng URL đã tổng quát hóa (query string và hash bị bỏ qua, còn các đoạn path trông giống id sẽ được tổng quát hóa thành `**` - dùng đúng cách tổng quát hóa mà adapter `react-router` của `@specpin/import-flows` dùng cho các tham số path) -> giữ trong một bộ đệm nháp cục bộ theo từng thiết bị, không bao giờ tự động ghi -> cần bạn **Duyệt** rõ ràng trong graph panel trước khi bất cứ thứ gì chạm tới `.specs/`. Không có dữ liệu ghi lại nào rời khỏi máy của bạn.
+
+## Chỉnh sửa flows/screens ngay trong trình duyệt
+
+`flows.json`/`screens.json` (xem [Graph views](#19-graph-views)) không chỉ lớn lên nhờ soạn tay, code-import, hay auto-capture: graph view còn có sẵn một trình biên tập ngay trong trình duyệt để thêm, sửa, xóa node và transition trực tiếp trên sơ đồ, không cần chỉnh tay file JSON.
+
+**Bật nó.** Click **Edit mode** trên thanh điều khiển của graph view. Một thanh công cụ hiện ra (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), và giờ click vào một node hoặc edge sẽ chọn nó để chỉnh sửa thay vì điều hướng hay click-to-highlight.
+
+**Thêm node.** Click **Add node** rồi điền vào form bên cạnh: tên/nhãn theo từng ngôn ngữ (thêm một dòng cho mỗi locale), `urlGlob` (screens) hoặc `kind` (state của flows: initial/normal/terminal), và một `specId` liên kết tùy chọn chọn từ danh sách spec đã biết của project. **Create** thêm nó vào bản nháp. Ở dataset flows, một node thuộc về flow đang active - dùng các nút điều khiển flow (**New flow** / đổi tên / xóa) để tạo một flow trước nếu project chưa có flow nào.
+
+**Sửa một node hoặc edge.** Click vào một cái đã có để mở đúng form đó, đã điền sẵn dữ liệu. Mọi thay đổi hợp lệ áp dụng vào bản nháp trong bộ nhớ ngay lập tức (graph sẽ vẽ lại sau một khoảng ngắn); **Save** vẫn là bước lưu bản nháp xuống `.specs/`. Một transition imported hay auto-captured (`"source": "imported"` / `"auto-captured"`) hiện ở đây dạng chỉ đọc - hãy xử lý nó qua đúng luồng của Track A/B (code-import, hoặc Duyệt/Bỏ qua ghost edge), không phải qua form này.
+
+**Thêm edge.** Click hai node theo đúng thứ tự (from rồi to) để chọn chúng, sau đó **Add edge** để mở form nhập nhãn trigger cùng guard/role/`specId` tùy chọn.
+
+**Xóa.** Chọn đúng một node hoặc edge, rồi **Delete selected**. Một node còn bị một edge imported/auto-captured tham chiếu sẽ từ chối xóa (hãy xử lý edge đó trước - edge manual sẽ tự động xóa theo cùng node). Xóa một screen mà một spec sheet của specshot (`.specs/shots/<screenId>.shot.json`) vẫn tham chiếu vẫn được cho phép ở đây; việc kiểm tra điều đó diễn ra lúc Save (bên dưới).
+
+**Undo.** **Undo** hoàn tác đúng một thay đổi gần nhất - một bước, không phải cả lịch sử. Dùng nó ngay sau một sai sót, trước khi thực hiện chỉnh sửa khác.
+
+**Save, và kiểm tra shot mồ côi.** **Save** lưu toàn bộ bản nháp: đã xác thực và gộp bảo toàn provenance, hệt như luồng Duyệt của auto-capture ở trên - chỉnh sửa của bạn (`"source": "manual"`) không bao giờ ghi đè lên một entry imported hay auto-captured, và ngược lại. Nếu phiên chỉnh sửa này đã xóa một screen mà một spec sheet vẫn tham chiếu, Save sẽ hỏi xác nhận trước, nêu rõ có bao nhiêu shot sẽ trở thành mồ côi (hoặc một cảnh báo chung khi không thể kiểm tra được kho shot, ví dụ sidecar phiên bản cũ) - Cancel để xem lại, hoặc tiếp tục lưu.
+
+**Rời đi khi còn thay đổi chưa lưu.** Tắt Edit mode, chuyển project, hoặc chuyển dataset flows/screens khi bản nháp còn thay đổi chưa lưu sẽ hỏi bạn lưu hay bỏ trước; một bản nháp sạch (chưa đổi gì, hoặc đã lưu) không bao giờ hỏi. Đóng hay tải lại tab khi còn chỉnh sửa chưa lưu cũng kích hoạt cảnh báo rời trang mặc định của trình duyệt.
+
+> **Provenance, không đổi:** mọi lượt ghi ở đây đi qua đúng luồng đọc-gộp-xác thực-ghi mà Duyệt của auto-capture và bộ ghi của code-import dùng - chỉnh sửa thủ công được đóng dấu `"source": "manual"` và không bao giờ ghi đè lên một entry do nguồn khác sở hữu. Trình biên tập không thêm schema mới, không thêm bề mặt ghi mới; nó chỉ là một lớp giao diện trên cùng những file `.specs/` đó.

@@ -47,6 +47,11 @@ export class SidecarConnection {
   private guidesCache: GuidesConfig | null = null;
   private flowsCache: FlowsConfig | null = null;
   private screensCache: ScreensConfig | null = null;
+  /** C3's shot inventory (screenIds owning a `.specs/shots/*.shot.json`).
+   *  `null` = unknown (never loaded, or the last load failed / an older
+   *  sidecar with no /shots endpoint) -- distinct from an empty array (loaded
+   *  successfully, genuinely zero shots). */
+  private shotScreenIdsCache: string[] | null = null;
   private unwatch: (() => void) | null = null;
   private connected = false;
   private lastError: string | null = null;
@@ -101,12 +106,13 @@ export class SidecarConnection {
     // marks the connection disconnected regardless of the other results. Each
     // config being in this same group is exactly what gives it SSE liveness: a
     // config-only .specs/ change triggers a reload that refreshes its cache here.
-    const [specs, views, guides, flows, screens] = await Promise.allSettled([
+    const [specs, views, guides, flows, screens, shotScreenIds] = await Promise.allSettled([
       this.source.loadSpecs(),
       this.source.loadViews?.() ?? Promise.resolve(null),
       this.source.loadGuides?.() ?? Promise.resolve(null),
       this.source.loadFlows?.() ?? Promise.resolve(null),
       this.source.loadScreens?.() ?? Promise.resolve(null),
+      this.source.loadShotScreenIds?.() ?? Promise.resolve(null),
     ]);
     if (specs.status === "fulfilled") {
       this.cache = specs.value;
@@ -120,6 +126,7 @@ export class SidecarConnection {
       this.guidesCache = null;
       this.flowsCache = null;
       this.screensCache = null;
+      this.shotScreenIdsCache = null;
       this.connected = false;
       if (specs.reason instanceof SidecarError) {
         this.lastError = specs.reason.code;
@@ -136,6 +143,8 @@ export class SidecarConnection {
     this.guidesCache = guides.status === "fulfilled" ? (guides.value ?? null) : null;
     this.flowsCache = flows.status === "fulfilled" ? (flows.value ?? null) : null;
     this.screensCache = screens.status === "fulfilled" ? (screens.value ?? null) : null;
+    this.shotScreenIdsCache =
+      shotScreenIds.status === "fulfilled" ? (shotScreenIds.value ?? null) : null;
   }
 
   getCache(): SpecsResponse | null {
@@ -177,6 +186,13 @@ export class SidecarConnection {
     return this.flowsCache ?? { version: "1.0", flows: [] };
   }
 
+  /** The shot inventory (C3), or `null` when unknown (never loaded, a failed
+   *  reload, or an old sidecar with no /shots endpoint) -- callers must treat
+   *  `null` as "cannot verify", never as "no shots". */
+  getShotScreenIds(): string[] | null {
+    return this.shotScreenIdsCache;
+  }
+
   /** The screen-transition config, or the empty default when unavailable (no
    *  screens.json, or an old sidecar with no /screens endpoint). */
   getScreens(): ScreensConfig {
@@ -188,6 +204,14 @@ export class SidecarConnection {
   async saveScreens(config: ScreensConfig): Promise<void> {
     if (!this.source.saveScreens) throw new Error("source does not support screens");
     await this.source.saveScreens(config);
+    await this.reload();
+  }
+
+  /** Persist a status-flow FSM config (Track C's C1 editor Save), then
+   *  refresh the cache. Mirrors saveScreens. */
+  async saveFlows(config: FlowsConfig): Promise<void> {
+    if (!this.source.saveFlows) throw new Error("source does not support flows");
+    await this.source.saveFlows(config);
     await this.reload();
   }
 
@@ -254,6 +278,7 @@ export class SidecarConnection {
     this.guidesCache = null;
     this.flowsCache = null;
     this.screensCache = null;
+    this.shotScreenIdsCache = null;
     this.lastDomains = [];
   }
 

@@ -397,7 +397,7 @@ connection, so the default install carries no broad-host permission.
 
 ## 19. Graph views
 
-Two optional `.specs/` files render as read-only diagrams in a dedicated full-page graph view: `flows.json` (a status-flow FSM per object type, e.g. how a "Deal" moves `draft -> negotiation -> won/lost`) and `screens.json` (which screen navigates to which, and through what action). Both are hand-authored JSON in v1 - see [schema-reference.md](./schema-reference.md#flowsconfig-specsflowsjson) for the field-by-field format and worked examples (the demo app ships both at `examples/demo-react-app/.specs/flows.json` and `screens.json`).
+Two optional `.specs/` files render as diagrams in a dedicated full-page graph view: `flows.json` (a status-flow FSM per object type, e.g. how a "Deal" moves `draft -> negotiation -> won/lost`) and `screens.json` (which screen navigates to which, and through what action). Both can be hand-authored JSON - see [schema-reference.md](./schema-reference.md#flowsconfig-specsflowsjson) for the field-by-field format and worked examples (the demo app ships both at `examples/demo-react-app/.specs/flows.json` and `screens.json`) - or edited directly in the graph view itself; see [Editing flows/screens in the browser](#editing-flowsscreens-in-the-browser) below.
 
 **Open it.** Click **Open graph view** in the popup or side panel; it opens the graph in a new tab. When a connected project serves more than one dataset, a project/dataset picker appears above the canvas (the dataset select only shows when a project has *both* flows and screens configured).
 
@@ -569,3 +569,25 @@ Wire `--check` into CI so a PR that changes the source without re-running the im
 **Clear a draft buffer.** Use **Clear all captured** in the graph panel (scoped to the project currently selected in the picker) to discard every not-yet-approved draft for that project in one step - handy after experimenting with recording on a site you don't want to graph yet.
 
 > **Privacy chain, end to end:** opt-in, default **OFF** -> only a generalized URL shape is ever derived (query strings and hashes are dropped, and id-like path segments are generalized to `**` - the same generalization `@specpin/import-flows`' `react-router` adapter uses for path params) -> held in a local, per-device draft buffer, never auto-written -> requires your explicit **Approve** in the graph panel before anything reaches `.specs/`. No captured data ever leaves your machine.
+
+## Editing flows/screens in the browser
+
+`flows.json`/`screens.json` (see [Graph views](#19-graph-views)) don't only grow by hand-authoring, code-import, or auto-capture: the graph view has its own in-browser editor for adding, editing, and deleting nodes and transitions directly on the diagram, no JSON hand-editing required.
+
+**Turn it on.** Click **Edit mode** in the graph view's control bar. A toolbar appears (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), and clicking a node or edge now selects it for editing instead of navigating or click-to-highlighting.
+
+**Add a node.** Click **Add node** and fill in the side form: a localized name/label (add a row per locale), a `urlGlob` (screens) or `kind` (flows' states: initial/normal/terminal), and an optional linked `specId` picked from the project's known specs. **Create** adds it to the draft. On the flows dataset, a node belongs to whichever flow is currently active - use the flow controls (**New flow** / rename / delete) to create one first if the project has none yet.
+
+**Edit a node or edge.** Click an existing one to open the same side form, pre-filled. Every valid field change applies to the in-memory draft immediately (the graph re-renders shortly after); **Save** is still what persists the draft to `.specs/`. An imported or auto-captured transition (`"source": "imported"` / `"auto-captured"`) renders read-only here - reassign that in Track A/B's own flow (code-import or the ghost-edge Approve/Discard), not this form.
+
+**Add an edge.** Click two nodes in order (from, then to) to arm them, then **Add edge** to open a form for the trigger label plus optional guard, role, and `specId`.
+
+**Delete.** Select exactly one node or edge, then **Delete selected**. A node still referenced by an imported/auto-captured edge refuses to delete outright (resolve that edge first - manual edges cascade-delete along with the node). Deleting a screen a specshot spec sheet (`.specs/shots/<screenId>.shot.json`) still references is allowed here; the check for that happens at Save (next).
+
+**Undo.** **Undo** reverts the single most recent change - one step, not a full history. Use it right after a slip, before making another edit.
+
+**Save, and the orphaned-shot check.** **Save** persists the whole draft: validated and merged provenance-preserving, exactly like the auto-capture Approve flow above - your edits (`"source": "manual"`) never clobber an imported or auto-captured entry, and vice versa. If this session removed a screen that a shot sheet still references, Save asks you to confirm first, naming how many shots would be orphaned (or a general caution when the shot inventory can't be checked, e.g. an older sidecar) - Cancel to reconsider, or continue to save anyway.
+
+**Leaving with unsaved edits.** Turning Edit mode off, switching project, or switching the flows/screens dataset while a draft has unsaved changes asks you to save or discard first; a clean draft (nothing changed, or already saved) never prompts. Closing or reloading the tab with unsaved edits triggers the browser's own leave-page warning too.
+
+> **Provenance, unchanged:** every write here goes through the same read-merge-validate-write path as auto-capture's Approve and code-import's writer - manual edits are stamped `"source": "manual"` and never overwrite an entry owned by another source. The editor adds no new schema and no new write surface; it is a UI on top of the same `.specs/` files.

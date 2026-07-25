@@ -48,6 +48,19 @@ export interface Graph {
   edges: GraphEdge[];
 }
 
+/** Inverse of the `${flow.id}:` prefixing `flowsToGraph` applies: strip it
+ *  back off a flows-graph node/edge id to get the raw draft id
+ *  FlowsEditHandle's mutations (addNode/deleteNode/updateNode/addEdge/...)
+ *  expect. Returns null when `id` doesn't carry `flowId`'s own prefix -- e.g.
+ *  a different flow's node rendered read-only alongside the one being edited
+ *  -- so callers can refuse to translate (and therefore refuse to select or
+ *  mutate) an id that belongs to the wrong flow instead of silently
+ *  comparing a still-prefixed id against raw state. */
+export function unprefixFlowId(flowId: string, id: string): string | null {
+  const prefix = `${flowId}:`;
+  return id.startsWith(prefix) ? id.slice(prefix.length) : null;
+}
+
 /** Drop any edge whose `from`/`to` references a node id absent from `nodes`.
  *  Exported so graph-ghost.ts (Phase B3) can apply the same guard to its
  *  merged committed+ghost node/edge lists. The schema does not enforce that a

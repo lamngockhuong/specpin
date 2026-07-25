@@ -56,6 +56,7 @@ import {
   setEnabled,
   setLastVersion,
   setLocalBatchEnabled,
+  setLocalBatchFlows,
   setLocalBatchScreens,
   setLocalBatchViews,
   setLocalSpecs,
@@ -84,6 +85,7 @@ import {
   type CreateLocalProjectResult,
   type ExportBundle,
   type FlowsScreensResult,
+  type GraphWriteResult,
   type GuideMutationResult,
   type GuidesForOrigin,
   type ManualMutationResult,
@@ -390,6 +392,14 @@ export default defineBackground(() => {
         return handleApproveCapturedTransition(message.project, message.transitionId);
       case "DISCARD_CAPTURED_TRANSITION":
         return handleDiscardCapturedTransition(message.project, message.transitionId);
+      case "SAVE_GRAPH_FLOWS":
+        return handleSaveGraphFlows(message.connectionId, message.config);
+      case "SAVE_GRAPH_SCREENS":
+        return handleSaveGraphScreens(message.connectionId, message.config);
+      case "SET_LOCAL_BATCH_FLOWS":
+        return handleSetLocalBatchFlows(message.id, message.config);
+      case "SET_LOCAL_BATCH_SCREENS":
+        return handleSetLocalBatchScreens(message.id, message.config);
       case "ADD_LOCAL_BATCH":
         return handleAddLocalBatch(message);
       case "REMOVE_LOCAL_BATCH":
@@ -1004,6 +1014,66 @@ export default defineBackground(() => {
     transitionId: string,
   ): Promise<{ ok: true }> {
     return discardCapturedTransition(project, transitionId);
+  }
+
+  // Track C (C1) editor Save, sidecar branch. `config` already went through
+  // the client-side provenance-preserving merge + schema validation
+  // (graph-write-back(-flows).ts) before this message was ever sent -- this
+  // just persists it, the sidecar's own PUT validates again server-side
+  // (defense in depth). Mirrors handleApproveCapturedTransition's sidecar path.
+  function handleSaveGraphFlows(
+    connectionId: string,
+    config: FlowsConfig,
+  ): Promise<GraphWriteResult> {
+    return mutate(async () => {
+      const result = await registry.saveFlows(connectionId, config);
+      if (result.ok) await broadcastSpecsChanged();
+      return result;
+    });
+  }
+
+  function handleSaveGraphScreens(
+    connectionId: string,
+    config: ScreensConfig,
+  ): Promise<GraphWriteResult> {
+    return mutate(async () => {
+      const result = await registry.saveScreens(connectionId, config);
+      if (result.ok) await broadcastSpecsChanged();
+      return result;
+    });
+  }
+
+  // Track C (C1) editor Save, local (Manual) project branch: RMW under
+  // mutate() like every other local-batch writer (persist FIRST, storage is
+  // truth, then sync the registry from it). `id` is the batch id, not the
+  // `manual:<id>` connection id (mirrors handleSetLocalBatchEnabled).
+  function handleSetLocalBatchFlows(id: string, config: FlowsConfig): Promise<GraphWriteResult> {
+    return mutate(async () => {
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const result = setLocalBatchFlows(state, id, config);
+      if (!result.ok || !result.state)
+        return { ok: false, errors: [result.error ?? "local write failed"] };
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      await broadcastSpecsChanged();
+      return { ok: true };
+    });
+  }
+
+  function handleSetLocalBatchScreens(
+    id: string,
+    config: ScreensConfig,
+  ): Promise<GraphWriteResult> {
+    return mutate(async () => {
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const result = setLocalBatchScreens(state, id, config);
+      if (!result.ok || !result.state)
+        return { ok: false, errors: [result.error ?? "local write failed"] };
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      await broadcastSpecsChanged();
+      return { ok: true };
+    });
   }
 
   async function handleDeleteSpec(
