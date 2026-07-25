@@ -14,6 +14,7 @@ import {
   removeLocalSpecById,
   renameLocalBatch,
   setLocalBatchEnabled,
+  setLocalBatchScreens,
   setLocalBatchViews,
   setLocalSpecs,
   upsertLocalSpec,
@@ -208,6 +209,33 @@ describe("setLocalBatchViews", () => {
 
   it("rejects an unknown batch id", () => {
     expect(setLocalBatchViews(empty, "nope", { version: "1.0", hidden: [] }).ok).toBe(false);
+  });
+});
+
+// Phase B3's "one new plumbing bit" (Risks): a local project had no screens
+// WRITE path before this -- only the ADD_LOCAL_BATCH import path -- so the
+// ghost-edge approve write-back needed one, mirroring setLocalBatchViews.
+describe("setLocalBatchScreens", () => {
+  const screens = {
+    version: "1.0",
+    screens: [{ id: "home", name: { en: "Home" }, urlGlob: "/" }],
+    transitions: [],
+  };
+
+  it("stores the screens config on the batch", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", ["p.test"])] };
+    const res = setLocalBatchScreens(base, "b1", screens);
+    expect((res.state?.batches[0] as ManualBatch).screens).toEqual(screens);
+  });
+
+  it("does not mutate the input state", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", [])] };
+    setLocalBatchScreens(base, "b1", screens);
+    expect((base.batches[0] as ManualBatch).screens).toBeUndefined();
+  });
+
+  it("rejects an unknown batch id", () => {
+    expect(setLocalBatchScreens(empty, "nope", screens).ok).toBe(false);
   });
 });
 

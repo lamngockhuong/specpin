@@ -40,6 +40,9 @@ export interface SpecSource {
    *  support it omit this; the connection treats a missing loadScreens as "no
    *  screens.json". */
   loadScreens?(): Promise<ScreensConfig>;
+  /** Write the screen-transition config (Phase B3's ghost-edge approve).
+   *  Sources that do not support writing (FileSystem/Manual) omit this. */
+  saveScreens?(config: ScreensConfig): Promise<void>;
   /** Optional live-change subscription; returns an unsubscribe function.
    *  `options.jitterMs` randomizes reconnect timing across concurrent watches. */
   watch?(onChange: () => void, options?: { jitterMs?: number }): () => void;

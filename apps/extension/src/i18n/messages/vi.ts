@@ -226,6 +226,7 @@ const vi: Record<keyof Messages, string> = {
   "options.navAppearance": "Giao diện",
   "options.navToolbar": "Thanh công cụ",
   "options.navCorpus": "Đối sánh",
+  "options.navCapture": "Tự động ghi",
   "options.navSupport": "Hỗ trợ",
   // Segmented control trong mục Spec: sidecar trực tiếp so với bundle dán tay.
   "options.specTabLive": "Trực tiếp",
@@ -367,6 +368,16 @@ const vi: Record<keyof Messages, string> = {
   "options.corpusDetails": "Chi tiết",
   "options.confirmDeleteCorpusEntry": "Xóa mục này khỏi kho? Không thể hoàn tác.",
   "options.corpusEntryDeleted": "Đã xóa mục.",
+
+  // Thẻ tự động ghi (Track B, cục bộ, tự chọn): công tắc chế độ ghi + chỉ báo.
+  "options.captureTitle": "Tự động ghi (cục bộ, tự chọn)",
+  "options.captureLead":
+    "Ghi lại việc điều hướng giữa các màn hình trên thiết bị này để đề xuất chuyển tiếp mới cho phần xem xét ở bảng đồ thị. Mặc định tắt; chỉ lưu dạng URL đã được ẩn danh -- query string và hash bị bỏ qua, còn các đoạn path trông giống id sẽ được tổng quát hóa thành `**` -- không bao giờ lưu địa chỉ gốc.",
+  "options.captureOptIn": "Ghi lại điều hướng trên thiết bị này",
+  "options.captureRecording": "Đang ghi điều hướng",
+  // Toàn bộ cam kết riêng tư (B4): những gì được/không được ghi lại + điều kiện Duyệt.
+  "options.capturePrivacyDetail":
+    "Được ghi lại: dạng đường dẫn màn hình đã tổng quát hóa cho mỗi trang (ví dụ /orders/**) và transition giữa chúng. Không bao giờ ghi lại: query string, hash, hay nội dung trang. Các đoạn path trông giống id sẽ được tổng quát hóa thành `**` trước khi lưu -- nhưng hãy xem lại từng transition trước khi Duyệt. Không có gì được ghi vào .specs/ của project cho đến khi bạn Duyệt (Approve) rõ ràng trong graph panel.",
   "match.correct": "Đúng",
 
   // Support & Feedback card.
@@ -555,6 +566,22 @@ const vi: Record<keyof Messages, string> = {
   "graph.colKind": "Loại",
   "graph.colSpec": "Spec",
   "graph.noMatch": "Không có node nào khớp với bộ lọc hiện tại.",
+  // Phase B3: bảng xem xét ghost edge (đã ghi lại tự động, chưa được duyệt).
+  "graph.ghost.note": "Điều hướng đã ghi lại - chưa được lưu.",
+  "graph.ghost.approve": "Duyệt",
+  "graph.ghost.discard": "Bỏ qua",
+  "graph.ghost.approveError": "Không thể lưu: {error}",
+  // Phase B4: banner ghi hình hiển thị trên graph panel khi Track B đang bật.
+  "graph.capture.recordingEmpty":
+    "Đang ghi - hãy duyệt trang để ghi lại các screen transition mới cho phần xem xét.",
+  "graph.capture.recording":
+    "Đang ghi - {count} transition đã được ghi lại, đang chờ xem xét bên dưới.",
+  "graph.capture.recordingFull":
+    "Đang ghi - bộ đệm ghi đã đầy ({cap}). Hãy duyệt hoặc bỏ qua bớt trước khi có thể ghi thêm.",
+  "graph.capture.turnOff": "Tắt",
+  "graph.capture.clearAll": "Xóa tất cả đã ghi",
+  "graph.capture.confirmClearAll":
+    "Bỏ toàn bộ transition đã ghi (chưa được duyệt) cho project này? Không thể hoàn tác.",
 
   "welcome.title": "Chào mừng đến với Specpin",
   "welcome.lead":

@@ -183,6 +183,14 @@ export class SidecarConnection {
     return this.screensCache ?? { version: "1.0", screens: [], transitions: [] };
   }
 
+  /** Persist a screen-transition config (Phase B3's ghost-edge approve), then
+   *  refresh the cache. Mirrors saveViews/saveGuides. */
+  async saveScreens(config: ScreensConfig): Promise<void> {
+    if (!this.source.saveScreens) throw new Error("source does not support screens");
+    await this.source.saveScreens(config);
+    await this.reload();
+  }
+
   /** Sidecar currently reachable (last reload succeeded). Cheaper than building
    *  a full ConnectionStatus just to read this flag. */
   isConnected(): boolean {

@@ -44,6 +44,13 @@ Rendered PNGs: `<surface>.light.png` and `<surface>.dark.png`. `overview.png` is
 a 2x4 montage (columns = light | dark). The tooltip renderer
 (`src/renderers/tooltip.ts`) has no mockup yet.
 
+## Auto-capture (Track B) UI patterns
+
+Reusable patterns introduced by the Track B auto-capture recorder (graph panel + Options), not overlays on a host page:
+
+- **Recording indicator**: a pulsing red dot (`--sp-error-text`, `1.6s` opacity keyframe) paired with a short label, on an error-tinted chip (`--sp-error-bg` fill, `--sp-error-border` border). Two instances, kept visually identical so recording reads as one state wherever it surfaces: the Options page's **Auto-capture** card (`#recIndicator`, next to the opt-in checkbox) and a full-width banner in the graph panel (`#capture-banner`, shown whenever the popup/side-panel's graph view is open and recording is on). Both carry a reachable "off" control next to the indicator rather than requiring a trip back to a settings page - the graph panel banner also adds a **Clear all captured** action for the currently-selected project's draft buffer. No new tokens: both reuse the existing `--sp-error-*` triad. When the per-project draft buffer is at its bounded cap, the graph panel banner drops the pulse (a steady dot - `#capture-banner.full`), since nothing new can be recorded until some drafts are approved or discarded.
+- **Ghost edge/node (pending)**: a committed-looking node or edge rendered with a dashed outline (`stroke-dasharray`), reduced opacity, and (for edges) an italicized label - `.graph-node.pending` / `.graph-edge.pending` in `graph-svg.ts`. Marks a Track B auto-captured screen/transition that has not yet been approved into `screens.json`; visually distinct from a committed node/edge at a glance, so "pending, not yet saved" is never mistaken for already-graphed. No new tokens - the dash/opacity/italic treatment layers on top of the same `--sp-border`/`--sp-text` values committed nodes use, so it themes automatically. Clicking a pending edge opens an inline Approve/Discard panel (`.ghost-panel-*`), which uses `--sp-error-text` for its error state (not a hardcoded literal), matching every other error-state surface in the extension.
+
 ## Single source of truth: tokens
 
 `design-tokens.json` holds shared `brand`/`font`/`radius` plus `themes.light` and

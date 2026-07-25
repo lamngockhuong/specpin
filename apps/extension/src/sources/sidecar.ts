@@ -66,6 +66,10 @@ export class SidecarSource implements SpecSource {
     return this.client.getScreens();
   }
 
+  saveScreens(config: ScreensConfig): Promise<void> {
+    return this.client.putScreens(config);
+  }
+
   watch(onChange: () => void, options?: Omit<SubscribeOptions, "fetch">): () => void {
     return this.client.subscribe(onChange, options);
   }

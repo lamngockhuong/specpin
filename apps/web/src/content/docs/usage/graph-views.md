@@ -6,7 +6,7 @@ description: Author status-flow and screen-transition diagrams and browse them i
 Two optional `.specs/` files render as diagrams in a dedicated full-page **graph view**: a **status-flow** graph (how an object's status moves between states) and a **screen-transition** graph (which screen navigates to which, and through what action). Both are authored by hand in `.specs/` alongside your specs.
 
 :::note
-Graph views are a **read-only diagram** over data you author in `.specs/flows.json` and `.specs/screens.json`. There is no in-extension editor for them yet - edit the JSON files directly (see [Spec format](/sidecar/spec-format/) for the general `.specs/` authoring model, and [`flows.json`/`screens.json` on GitHub](https://github.com/lamngockhuong/specpin/blob/main/docs/schema-reference.md#flowsconfig-specsflowsjson) for the exact field-by-field format).
+Graph views are a **read-only diagram** over data in `.specs/flows.json` and `.specs/screens.json`. There is no in-extension editor for hand-editing nodes/fields yet - author them directly as JSON (see [Spec format](/sidecar/spec-format/) for the general `.specs/` authoring model, and [`flows.json`/`screens.json` on GitHub](https://github.com/lamngockhuong/specpin/blob/main/docs/schema-reference.md#flowsconfig-specsflowsjson) for the exact field-by-field format). `screens.json` transitions can also be populated *without* touching the JSON, by turning on auto-capture and approving what it observes - see [Auto-capture screen transitions](#auto-capture-screen-transitions) below.
 :::
 
 ## Author a status-flow graph
@@ -89,4 +89,22 @@ If the spec isn't matched on that tab (you're on the wrong page, or the element 
 
 :::tip
 Give a state or transition a `specId` whenever a real UI element represents it (a status badge, a submit button) so the graph and the live page stay connected. Nodes that are purely conceptual (like a terminal status with no dedicated element) can safely leave `specId` unset.
+:::
+
+## Auto-capture screen transitions
+
+Instead of hand-writing every entry in `screens.json`, you can turn on an opt-in recorder that watches your own navigation and proposes new screen transitions for you to approve.
+
+:::caution
+Off by default. Read what's captured before turning it on.
+:::
+
+**Enable it.** Open the extension's Options page -> **Auto-capture**, read the privacy statement on that card, then check **Record navigation transitions on this device**. A pulsing **Recording navigation** indicator appears right next to the checkbox with the off switch one click away; the graph view shows the same indicator in a banner, with its own **Turn off** and **Clear all captured** (for the selected project) actions.
+
+**What's captured.** Only a generalized screen path per page (e.g. `/orders/**`, never `/orders/1938`) and the navigation between two such screens. Never captured: query strings, hash fragments, or page content. Path segments that look like ids are generalized to `**` before storage - review each transition before you Approve it. Nothing reaches `.specs/` at capture time - every observed transition lands in a local, per-project draft buffer (bounded, `storage.local`, never uploaded) and stays a proposal.
+
+**Review and approve.** With recording on, browse the site, then open the graph view's **Screens** dataset: newly-observed screens/transitions render as dashed, translucent "ghost" nodes/edges among the committed ones. Click a ghost edge to **Approve** (merges it into `screens.json` with `"source": "auto-captured"`, never overwriting an existing manual/imported entry with the same id) or **Discard** (drops it, no write either way). The banner also tells you when recording is on but nothing's captured yet, and when a project's draft buffer is full.
+
+:::note
+Full privacy chain: opt-in, default **off** -> generalized URL shape only (query/hash dropped, id-like path segments generalized to `**`) -> local per-device draft buffer, never auto-written -> requires your explicit Approve before anything reaches `.specs/`. Nothing captured ever leaves your machine.
 :::

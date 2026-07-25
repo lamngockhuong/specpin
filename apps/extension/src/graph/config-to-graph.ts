@@ -21,6 +21,10 @@ export interface GraphNode {
   /** Screens only: the URL glob that identifies the screen in the live UI, shown
    *  as a hint when the element isn't resolvable on the current page. */
   urlGlob?: string;
+  /** True for a Track B ghost node -- a captured-but-not-yet-approved screen
+   *  candidate overlaid on the committed graph (graph-ghost.ts). Absent for
+   *  every committed node; renderers key off this to style the difference. */
+  pending?: boolean;
 }
 
 /** One directed edge, whichever config it came from: a flow Transition (state ->
@@ -35,6 +39,8 @@ export interface GraphEdge {
   guard: string | null;
   role: string | null;
   specId: string | null;
+  /** True for a Track B ghost edge (graph-ghost.ts); see GraphNode.pending. */
+  pending?: boolean;
 }
 
 export interface Graph {
@@ -42,11 +48,13 @@ export interface Graph {
   edges: GraphEdge[];
 }
 
-/** Drop any edge whose `from`/`to` references a node id absent from `nodes`. The
- *  schema does not enforce that a Transition's endpoints exist among the
- *  states/screens (referential integrity is a runtime concern), so a hand-edited
+/** Drop any edge whose `from`/`to` references a node id absent from `nodes`.
+ *  Exported so graph-ghost.ts (Phase B3) can apply the same guard to its
+ *  merged committed+ghost node/edge lists. The schema does not enforce that a
+ *  Transition's endpoints exist among the states/screens (referential
+ *  integrity is a runtime concern), so a hand-edited
  *  config can carry a dangling edge; rendering it would draw a line to nothing. */
-function dropDanglingEdges(nodes: GraphNode[], edges: GraphEdge[]): GraphEdge[] {
+export function dropDanglingEdges(nodes: GraphNode[], edges: GraphEdge[]): GraphEdge[] {
   const ids = new Set(nodes.map((n) => n.id));
   return edges.filter((e) => ids.has(e.from) && ids.has(e.to));
 }

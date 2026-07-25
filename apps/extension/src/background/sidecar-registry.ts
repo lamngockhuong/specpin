@@ -1,5 +1,6 @@
 import {
   type GuidesConfig,
+  type ScreensConfig,
   SidecarError,
   type SpecsResponse,
   type ViewsConfig,
@@ -392,6 +393,44 @@ export class SidecarRegistry {
     if (!conn) return { ok: false, errors: ["unknown connection"] };
     try {
       await conn.saveViews(config);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, errors: [String(e)] };
+    }
+  }
+
+  /** The cached screen-transition config for one project (Phase B3's approve
+   *  write-back merge base), or the empty default when unknown. Resolves a
+   *  local `manual:<id>` id to that batch's imported/committed screens. Callers
+   *  that need a FRESH read before merging (RT-H3) should `reload(connectionId)`
+   *  first for a sidecar target; a local batch has no separate reload step --
+   *  its caller re-reads storage directly (see background's writeLocalSpec). */
+  getScreens(connectionId: string): ScreensConfig {
+    if (isLocalConnectionId(connectionId)) {
+      return (
+        this.localBatch(connectionId)?.screens ?? { version: "1.0", screens: [], transitions: [] }
+      );
+    }
+    return (
+      this.connections.get(connectionId)?.getScreens() ?? {
+        version: "1.0",
+        screens: [],
+        transitions: [],
+      }
+    );
+  }
+
+  /** Persist a screen-transition config to one sidecar connection (Phase B3's
+   *  approve write-back). Local-batch writes go through the background's own
+   *  storage path (setLocalBatchScreens), not here -- mirrors saveViews. */
+  async saveScreens(
+    connectionId: string,
+    config: ScreensConfig,
+  ): Promise<{ ok: boolean; errors?: string[] }> {
+    const conn = this.connections.get(connectionId);
+    if (!conn) return { ok: false, errors: ["unknown connection"] };
+    try {
+      await conn.saveScreens(config);
       return { ok: true };
     } catch (e) {
       return { ok: false, errors: [String(e)] };

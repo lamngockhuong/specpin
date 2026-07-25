@@ -38,6 +38,20 @@ function svgEl<K extends keyof SVGElementTagNameMap>(tag: K): SVGElementTagNameM
   return document.createElementNS(SVG_NS, tag) as SVGElementTagNameMap[K];
 }
 
+// Committed rendering stays byte-identical: `pending` only ever appears via
+// graph-ghost.ts's overlay (Phase B3).
+function nodeClasses(node: PositionedNode): string {
+  return ["graph-node", node.specId && "has-spec", node.pending && "pending"]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function edgeClasses(edge: PositionedEdge): string {
+  return ["graph-edge", edge.specId && "has-spec", edge.pending && "pending"]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function pointsToPath(points: { x: number; y: number }[]): string {
   if (points.length === 0) return "";
   const [first, ...rest] = points;
@@ -47,7 +61,7 @@ function pointsToPath(points: { x: number; y: number }[]): string {
 function buildNode(node: PositionedNode, handlers: GraphSvgHandlers): SVGGElement {
   const g = svgEl("g");
   g.dataset.nodeId = node.id;
-  g.setAttribute("class", node.specId ? "graph-node has-spec" : "graph-node");
+  g.setAttribute("class", nodeClasses(node));
   const hue = categoryHue(node.category);
 
   const rect = svgEl("rect");
@@ -81,7 +95,7 @@ function buildNode(node: PositionedNode, handlers: GraphSvgHandlers): SVGGElemen
 function buildEdge(edge: PositionedEdge, handlers: GraphSvgHandlers): SVGGElement {
   const g = svgEl("g");
   g.dataset.edgeId = edge.id;
-  g.setAttribute("class", edge.specId ? "graph-edge has-spec" : "graph-edge");
+  g.setAttribute("class", edgeClasses(edge));
 
   const path = svgEl("path");
   path.setAttribute("d", pointsToPath(edge.points));

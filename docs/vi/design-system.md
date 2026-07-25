@@ -47,6 +47,13 @@ PNG đã render: `<surface>.light.png` và `<surface>.dark.png`. `overview.png` 
 montage 2x4 (cột = light | dark). Tooltip renderer (`src/renderers/tooltip.ts`) chưa
 có mockup.
 
+## Các pattern giao diện Auto-capture (Track B)
+
+Các pattern dùng lại được giới thiệu bởi recorder auto-capture Track B (graph panel + Options), không phải overlay đè lên trang host:
+
+- **Chỉ báo đang ghi**: một chấm đỏ nhấp nháy (`--sp-error-text`, keyframe opacity `1.6s`) đi kèm một nhãn ngắn, trên một chip tông màu lỗi (nền `--sp-error-bg`, viền `--sp-error-border`). Hai instance được giữ giống hệt nhau về hình ảnh để trạng thái "đang ghi" đọc như một trạng thái duy nhất dù xuất hiện ở đâu: thẻ **Tự động ghi** trên trang Options (`#recIndicator`, cạnh checkbox opt-in) và một banner full-width trong graph panel (`#capture-banner`, hiện bất cứ khi nào graph view từ popup/side panel đang mở và đang ghi). Cả hai đều có một điều khiển "tắt" ngay cạnh chỉ báo thay vì bắt phải quay lại trang cài đặt - banner của graph panel còn thêm hành động **Xóa tất cả đã ghi** cho bộ đệm nháp của project đang chọn. Không có token mới: cả hai dùng lại đúng bộ ba `--sp-error-*` sẵn có. Khi bộ đệm nháp theo project đã chạm giới hạn, banner của graph panel bỏ hiệu ứng nhấp nháy (chấm đứng yên - `#capture-banner.full`), vì không thể ghi thêm gì cho tới khi một số bản nháp được duyệt hoặc bỏ qua.
+- **Ghost edge/node (đang chờ)**: một node hay edge trông như đã lưu nhưng được render với viền nét đứt (`stroke-dasharray`), độ mờ giảm, và (với edge) nhãn in nghiêng - `.graph-node.pending` / `.graph-edge.pending` trong `graph-svg.ts`. Đánh dấu một screen/transition đã được Track B auto-capture ghi lại nhưng chưa được duyệt vào `screens.json`; khác biệt rõ ràng với một node/edge đã lưu ngay từ cái nhìn đầu tiên, nên "đang chờ, chưa lưu" không bao giờ bị nhầm là đã có trên graph. Không có token mới - cách xử lý nét đứt/độ mờ/in nghiêng chỉ là lớp phủ lên trên đúng giá trị `--sp-border`/`--sp-text` mà node đã lưu dùng, nên tự động theo theme. Click vào một edge đang chờ sẽ mở bảng Duyệt/Bỏ qua nội tuyến (`.ghost-panel-*`), dùng `--sp-error-text` cho trạng thái lỗi của nó (không phải giá trị hardcode), khớp với mọi bề mặt trạng thái-lỗi khác trong extension.
+
 ## Single source of truth: tokens
 
 `design-tokens.json` chứa các khối `brand`/`font`/`radius` dùng chung cùng với

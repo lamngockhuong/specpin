@@ -5,7 +5,15 @@
 // in `location.hash` so it is deep-linkable and survives a reload; no storage
 // and no message round-trips.
 
-const PANES = ["spec", "appearance", "toolbar", "corpus", "support", "shortcuts"] as const;
+const PANES = [
+  "spec",
+  "appearance",
+  "toolbar",
+  "corpus",
+  "capture",
+  "support",
+  "shortcuts",
+] as const;
 type Pane = (typeof PANES)[number];
 
 // Sub-tabs of the Spec pane. Selected via `#spec/<tab>`; bare `#spec` falls

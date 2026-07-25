@@ -232,6 +232,7 @@ const ja: Record<keyof Messages, string> = {
   "options.navAppearance": "外観",
   "options.navToolbar": "ツールバー",
   "options.navCorpus": "マッチング",
+  "options.navCapture": "自動記録",
   "options.navSupport": "サポート",
   // Spec ペイン内のセグメントコントロール: ライブ sidecar と貼り付けバンドル。
   "options.specTabLive": "ライブ",
@@ -375,6 +376,16 @@ const ja: Record<keyof Messages, string> = {
   "options.corpusDetails": "詳細",
   "options.confirmDeleteCorpusEntry": "このコーパス項目を削除しますか？元に戻せません。",
   "options.corpusEntryDeleted": "項目を削除しました。",
+
+  // 自動記録カード (Track B、ローカル、オプトイン): 記録モードの切替 + インジケーター。
+  "options.captureTitle": "自動記録 (ローカル、オプトイン)",
+  "options.captureLead":
+    "この端末で画面間のナビゲーションを記録し、グラフパネルのレビュー用に新しい遷移を提案します。デフォルトはオフ。保持するのはプライバシー保護済みの URL 形状のみ -- クエリ文字列とハッシュは破棄され、id らしいパスセグメントは `**` に一般化されます -- 実際のアドレスは保存しません。",
+  "options.captureOptIn": "この端末でナビゲーション遷移を記録する",
+  "options.captureRecording": "ナビゲーションを記録中",
+  // プライバシー契約の全文 (B4): 記録される/されないもの + 承認ゲート。
+  "options.capturePrivacyDetail":
+    "記録されるもの: 各ページの一般化された画面パス (例: /orders/**) とその間の遷移。記録されないもの: クエリ文字列、ハッシュ、ページの内容。id らしいパスセグメントは保存前に `**` に一般化されますが、承認する前に各遷移を確認してください。グラフパネルで明示的に承認するまで、このプロジェクトの .specs/ には何も書き込まれません。",
   "match.correct": "正しい",
 
   // Support & Feedback card.
@@ -565,6 +576,21 @@ const ja: Record<keyof Messages, string> = {
   "graph.colKind": "種類",
   "graph.colSpec": "Spec",
   "graph.noMatch": "現在のフィルターに一致するノードはありません。",
+  // Phase B3: ゴーストエッジのレビューパネル (自動キャプチャ済み、未承認)。
+  "graph.ghost.note": "キャプチャしたナビゲーション - まだ保存されていません。",
+  "graph.ghost.approve": "承認",
+  "graph.ghost.discard": "破棄",
+  "graph.ghost.approveError": "保存できませんでした: {error}",
+  // Phase B4: Track B の記録がオンの間、グラフパネルに表示する記録バナー。
+  "graph.capture.recordingEmpty":
+    "記録中 - サイトを閲覧すると、レビュー用の新しい画面遷移を記録します。",
+  "graph.capture.recording": "記録中 - {count} 件の遷移を記録済み、下でレビュー待ちです。",
+  "graph.capture.recordingFull":
+    "記録中 - キャプチャバッファが満杯です ({cap})。さらに記録するには、いくつか承認または破棄してください。",
+  "graph.capture.turnOff": "オフにする",
+  "graph.capture.clearAll": "記録をすべてクリア",
+  "graph.capture.confirmClearAll":
+    "このプロジェクトの記録済み (未承認) の遷移をすべて破棄しますか？元に戻せません。",
 
   "welcome.title": "Specpin へようこそ",
   "welcome.lead":

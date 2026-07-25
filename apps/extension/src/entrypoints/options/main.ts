@@ -9,11 +9,13 @@ import {
   getBadgeColor,
   getBadgeNumbering,
   getDefaultSurface,
+  getRecordMode,
   getTheme,
   getUiLocale,
   setBadgeColor,
   setBadgeNumbering,
   setDefaultSurface,
+  setRecordMode,
   setTheme,
   setUiLocale,
   type Theme,
@@ -84,6 +86,8 @@ const corpusEnabled = byId("corpusEnabled") as HTMLInputElement;
 const corpusCount = byId("corpusCount");
 const corpusList = byId("corpusList");
 const corpusResult = byId("corpusResult");
+const recordModeEnabled = byId("recordModeEnabled") as HTMLInputElement;
+const recIndicator = byId("recIndicator");
 
 // Auto-hide result banners so they don't linger until the next action or a page
 // reload (the earlier behaviour). Success clears sooner than errors, which the
@@ -1047,6 +1051,20 @@ corpusEnabled.addEventListener("change", async () => {
   await setCorpusEnabled(corpusEnabled.checked);
 });
 
+// Reflect the record-mode opt-in: checkbox state + the clearly-visible
+// "Recording" indicator, which is the primary way a user confirms capture is
+// actually live (never just a checked checkbox easy to miss on a settings page).
+async function refreshCaptureMode(): Promise<void> {
+  const on = await getRecordMode();
+  recordModeEnabled.checked = on;
+  recIndicator.classList.toggle("active", on);
+}
+
+recordModeEnabled.addEventListener("change", async () => {
+  await setRecordMode(recordModeEnabled.checked);
+  recIndicator.classList.toggle("active", recordModeEnabled.checked);
+});
+
 byId("corpusExport").addEventListener("click", async () => {
   const count = await getCorpusCount();
   if (count === 0) {
@@ -1094,6 +1112,7 @@ async function renderAll(): Promise<void> {
   renderShortcuts();
   await refresh();
   await refreshCorpus();
+  await refreshCaptureMode();
 }
 
 // Resolve the UI-chrome language, reflect the control, then render. initI18n runs

@@ -44,6 +44,12 @@ const CONFIG_FILE_NAMES = new Set([
   "screens.json",
 ]);
 
+// Files that live in a real `.specs/` folder but the extension never consumes:
+// `import.config.json` is @specpin/import-flows codegen config (tooling, not a
+// spec artifact) and `.import-owned.json` is that importer's provenance sidecar.
+// On a full-folder import both must be skipped silently, not flagged as unknown.
+const IGNORED_FILE_NAMES = new Set(["import.config.json", ".import-owned.json"]);
+
 export interface BundleResult {
   specs?: SpecsResponse;
   /** Map of `<name>.spec.json` -> its file-level `group`, captured here because
@@ -231,6 +237,10 @@ export function parseLocalFiles(files: NamedFile[]): BundleResult {
       parsed = JSON.parse(text);
     } catch (e) {
       errors.push(`${base}: invalid JSON: ${e instanceof Error ? e.message : String(e)}`);
+      continue;
+    }
+    if (IGNORED_FILE_NAMES.has(base)) {
+      // Importer tooling artifact — present in the folder, not an extension input.
       continue;
     }
     if (base === "manifest.json") {

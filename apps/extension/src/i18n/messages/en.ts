@@ -237,6 +237,7 @@ const en = {
   "options.navAppearance": "Appearance",
   "options.navToolbar": "Toolbar",
   "options.navCorpus": "Matching",
+  "options.navCapture": "Auto-capture",
   "options.navSupport": "Support",
   // Segmented control inside the Spec pane: live sidecar vs pasted bundle.
   "options.specTabLive": "Live",
@@ -377,6 +378,16 @@ const en = {
   "options.corpusDetails": "Details",
   "options.confirmDeleteCorpusEntry": "Delete this corpus entry? This cannot be undone.",
   "options.corpusEntryDeleted": "Entry deleted.",
+
+  // Auto-capture card (Track B, local, opt-in): record-mode toggle + indicator.
+  "options.captureTitle": "Auto-capture (local, opt-in)",
+  "options.captureLead":
+    "Record screen-to-screen navigation on this device to suggest new transitions for the graph panel's review. Off by default; only a privacy-scrubbed URL shape is kept -- query strings and hashes are dropped, and id-like path segments are generalized to `**` -- never the raw address.",
+  "options.captureOptIn": "Record navigation transitions on this device",
+  "options.captureRecording": "Recording navigation",
+  // Full privacy contract (B4): what is/isn't captured + the Approve gate.
+  "options.capturePrivacyDetail":
+    "Captured: a generalized screen path for each page (e.g. /orders/**) and the transition between them. Never captured: query strings, hash fragments, or page content. Path segments that look like ids are generalized to `**` before storage -- review each transition before you Approve it. Nothing reaches this project's .specs/ until you explicitly Approve it in the graph panel.",
   "match.correct": "Correct",
 
   // Support & Feedback card.
@@ -566,6 +577,23 @@ const en = {
   "graph.colKind": "Kind",
   "graph.colSpec": "Spec",
   "graph.noMatch": "No nodes match the current filter.",
+  // Phase B3: ghost-edge review panel (auto-captured, not yet approved).
+  "graph.ghost.note": "Captured navigation - not yet saved.",
+  "graph.ghost.approve": "Approve",
+  "graph.ghost.discard": "Discard",
+  "graph.ghost.approveError": "Could not save: {error}",
+  // Phase B4: recording banner (recording state, empty/full buffer edge
+  // states) shown in the graph panel whenever Track B auto-capture is on.
+  "graph.capture.recordingEmpty":
+    "Recording is on - browse the site to capture new screen transitions for review.",
+  "graph.capture.recording":
+    "Recording is on - {count} transition(s) captured, awaiting review below.",
+  "graph.capture.recordingFull":
+    "Recording is on - capture buffer is full ({cap}). Approve or discard some before more can be recorded.",
+  "graph.capture.turnOff": "Turn off",
+  "graph.capture.clearAll": "Clear all captured",
+  "graph.capture.confirmClearAll":
+    "Discard every captured (not yet approved) transition for this project? This cannot be undone.",
 
   // First-run welcome page (entrypoints/welcome), opened once on install.
   "welcome.title": "Welcome to Specpin",

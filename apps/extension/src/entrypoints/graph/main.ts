@@ -1,11 +1,18 @@
 import type { Graph, GraphEdge, GraphNode } from "../../graph/config-to-graph.js";
 import { flowsToGraph, screensToGraph } from "../../graph/config-to-graph.js";
+import type { CaptureRecordingHandle } from "../../graph/graph-capture-recording.js";
+import { wireCaptureRecording } from "../../graph/graph-capture-recording.js";
 import {
   computeGraphVisibility,
   focusNode,
   type GraphFilterState,
   mountGraphControls,
 } from "../../graph/graph-controls.js";
+import { overlayGhostBuffer } from "../../graph/graph-ghost.js";
+import { createGhostController } from "../../graph/graph-ghost-controller.js";
+import { mountGhostPanel } from "../../graph/graph-ghost-panel.js";
+import { type GhostReviewHandle, wireGhostReview } from "../../graph/graph-ghost-review.js";
+import { createHighlightController, parseOriginTabId } from "../../graph/graph-highlight.js";
 import { layoutGraph } from "../../graph/graph-layout.js";
 import type { Dataset } from "../../graph/graph-project-picker.js";
 import { wireProjectPicker } from "../../graph/graph-project-picker.js";
@@ -15,7 +22,7 @@ import { attachPanZoom, type PanZoomController } from "../../graph/pan-zoom.js";
 import { hydrateI18n, initI18n, resolveUiLocale, t } from "../../i18n/index.js";
 import { getLocale, getUiLocale } from "../../shared/config.js";
 import type { FlowsScreensResult, ProjectFlowsScreens } from "../../shared/messaging.js";
-import { sendToBackground, sendToTab } from "../../shared/messaging.js";
+import { sendToBackground } from "../../shared/messaging.js";
 import { applyStoredTheme } from "../../shared/theme.js";
 import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
@@ -31,21 +38,11 @@ const hintEl = document.getElementById("hint") as HTMLElement;
 const controlsEl = document.getElementById("controls") as HTMLElement;
 const projectSelect = document.getElementById("project-select") as HTMLSelectElement;
 const datasetSelect = document.getElementById("dataset-select") as HTMLSelectElement;
+const ghostPanelEl = document.getElementById("ghost-panel") as HTMLElement;
+const captureBannerEl = document.getElementById("capture-banner") as HTMLElement;
 
-// Parses the "originTab" query param into a tab id, or null if absent/invalid.
-// A plain `Number(...) || null` would misread tab id 0 as null; Number.isNaN
-// keeps a valid 0 intact (tab ids start at 1 in practice, but this stays precise).
-function parseOriginTabId(raw: string | null): number | null {
-  if (raw === null) return null;
-  const n = Number(raw);
-  return Number.isNaN(n) ? null : n;
-}
-
-// The tab this graph page was opened FROM (query param set by the popup/side
-// panel launcher, see shared/open-graph-view.ts). Not the "active tab": once
-// the graph tab has focus, the active tab IS this one, so specId clicks must
-// target this remembered id directly via sendToTab, never sendToActiveTab.
 const originTabId = parseOriginTabId(new URLSearchParams(location.search).get("originTab"));
+const highlight = createHighlightController(hintEl, originTabId);
 
 let projects: ProjectFlowsScreens[] = [];
 let projectIdx = 0;
@@ -57,29 +54,9 @@ let filterState: GraphFilterState = { category: "all", query: "", focusNodeId: n
 let panZoom: PanZoomController | null = null;
 let svgView: ReturnType<typeof renderGraphSvg> | null = null;
 let controls: ReturnType<typeof mountGraphControls> | null = null;
-
-function showHint(text: string): void {
-  hintEl.textContent = text;
-  hintEl.classList.add("visible");
-}
-function hideHint(): void {
-  hintEl.classList.remove("visible");
-}
-
-async function attemptHighlight(specId: string, urlGlob: string | undefined): Promise<void> {
-  const project = projects[projectIdx];
-  if (originTabId === null || !project) {
-    showHint(t("graph.notOnPage", { page: urlGlob ?? specId }));
-    return;
-  }
-  const delivered = await sendToTab(originTabId, {
-    type: "HIGHLIGHT_SPEC_ON_TAB",
-    specId,
-    connectionId: project.connectionId,
-  });
-  if (delivered) hideHint();
-  else showHint(t("graph.notOnPage", { page: urlGlob ?? specId }));
-}
+let ghostReview: GhostReviewHandle | null = null;
+let captureRecording: CaptureRecordingHandle | null = null;
+const ghostController = createGhostController();
 
 function applyFilter(): void {
   const vis = computeGraphVisibility(graph, filterState);
@@ -97,11 +74,18 @@ function applyFilter(): void {
 async function handleNodeClick(node: GraphNode): Promise<void> {
   filterState = focusNode(filterState, node.id);
   applyFilter();
-  if (node.specId) await attemptHighlight(node.specId, node.urlGlob);
+  if (node.specId) {
+    await highlight.attempt(projects[projectIdx]?.connectionId, node.specId, node.urlGlob);
+  }
 }
 
 async function handleEdgeClick(edge: GraphEdge): Promise<void> {
-  if (edge.specId) await attemptHighlight(edge.specId, undefined);
+  if (edge.pending) {
+    ghostReview?.show(edge);
+    return;
+  }
+  if (edge.specId)
+    await highlight.attempt(projects[projectIdx]?.connectionId, edge.specId, undefined);
 }
 
 function renderCanvas(): void {
@@ -122,6 +106,7 @@ function renderCanvas(): void {
     onEdgeClick: (e) => void handleEdgeClick(e),
     onBackgroundClick: () => {
       filterState = { ...filterState, focusNodeId: null };
+      ghostReview?.hide();
       applyFilter();
     },
   });
@@ -138,12 +123,17 @@ function setView(next: "graph" | "table"): void {
 }
 
 function refreshAll(): void {
+  ghostReview?.hide();
   const project = projects[projectIdx];
   graph = !project
     ? { nodes: [], edges: [] }
     : dataset === "flows"
       ? flowsToGraph(project.flows, contentLocale)
-      : screensToGraph(project.screens, contentLocale);
+      : overlayGhostBuffer(
+          screensToGraph(project.screens, contentLocale),
+          ghostController.forProject(project.connectionId),
+          contentLocale,
+        );
   filterState = { category: "all", query: "", focusNodeId: null };
 
   if (controls) controls.setGraph(graph);
@@ -159,6 +149,7 @@ function refreshAll(): void {
   // renderCanvas() applies the (freshly reset) filter exactly once -- for the
   // non-empty graph after building the SVG, or in its empty-graph branch.
   renderCanvas();
+  captureRecording?.refresh();
 }
 
 const picker = wireProjectPicker(projectSelect, datasetSelect, (choice) => {
@@ -172,12 +163,25 @@ async function init(): Promise<void> {
   initI18n(resolveUiLocale(await getUiLocale()));
   hydrateI18n(document);
   contentLocale = (await getLocale()) ?? "en";
+  ghostReview = wireGhostReview(mountGhostPanel(ghostPanelEl), ghostController, {
+    currentProject: () => projects[projectIdx],
+    onChanged: (refreshedProjects) => {
+      if (refreshedProjects) projects = refreshedProjects;
+      refreshAll();
+    },
+  });
+  captureRecording = wireCaptureRecording(captureBannerEl, ghostController, {
+    currentProjectId: () => projects[projectIdx]?.connectionId,
+    onCleared: () => refreshAll(),
+  });
 
   const result = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
   projects = result.projects;
+  await ghostController.refresh();
   const initial = picker.populate(projects);
   if (!initial) {
     canvasEl.textContent = t("graph.noData");
+    captureRecording.refresh();
     return;
   }
   projectIdx = initial.projectIdx;
