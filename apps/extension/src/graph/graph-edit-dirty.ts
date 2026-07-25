@@ -23,23 +23,21 @@ export interface DirtyTracker<S> {
   /** Clear the dirty flag and drop any pending undo snapshot (called after a
    *  successful Save -- the draft now matches what was persisted). */
   resetDirty(): void;
-  /** Record `current` as the snapshot to restore on the next `undoLast()`.
-   *  `current` must be the state from BEFORE the mutation it corresponds to,
-   *  but the call itself should only happen once the caller knows that
-   *  mutation actually succeeded -- calling this for a refused mutation
-   *  would overwrite the one kept snapshot with state indistinguishable from
-   *  current, making the next undoLast() a silent no-op. */
-  beforeMutate(current: S): void;
-  /** Call AFTER a mutation SUCCEEDED (an EditOpResult with `ok: true`). */
-  markDirty(): void;
+  /** Record a SUCCESSFUL mutation: mark dirty AND keep `before` (the state
+   *  from immediately BEFORE that mutation) as the single snapshot to restore
+   *  on the next `undoLast()`. Call this ONLY once the caller knows the
+   *  mutation actually succeeded -- committing a refused mutation would
+   *  overwrite the kept snapshot with state indistinguishable from current,
+   *  making the next undoLast() a silent no-op. */
+  commit(before: S): void;
   /** Restore and consume the single kept snapshot, or `null` when there is
    *  nothing to undo (no mutation yet, or already undone once). */
   undoLast(): S | null;
 }
 
-/** `clone` must return a value independent of the live draft (a shallow copy
- *  of the arrays the caller mutates is enough, since every mutation replaces
- *  those arrays wholesale rather than mutating in place). */
+// The snapshot handed to `commit` must be independent of the live draft (a
+// shallow copy of the arrays the caller mutates is enough, since every
+// mutation replaces those arrays wholesale rather than mutating in place).
 export function createDirtyTracker<S>(): DirtyTracker<S> {
   let dirty = false;
   let pending: S | null = null;
@@ -50,10 +48,8 @@ export function createDirtyTracker<S>(): DirtyTracker<S> {
       dirty = false;
       pending = null;
     },
-    beforeMutate(current: S): void {
-      pending = current;
-    },
-    markDirty(): void {
+    commit(before: S): void {
+      pending = before;
       dirty = true;
     },
     undoLast(): S | null {

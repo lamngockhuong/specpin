@@ -3,6 +3,7 @@ import { t } from "../i18n/index.js";
 import {
   fieldRow,
   type KnownSpecsSource,
+  localizedRow,
   resetForm,
   showFormError,
   specIdRow,
@@ -10,7 +11,6 @@ import {
   textInput,
 } from "./graph-edit-form-shared.js";
 import type { EditOpResult } from "./graph-edit-mode.js";
-import { mountLocalizedEditor } from "./graph-localized-editor.js";
 
 // Transition edge fields (trigger/guard/role/specId) -- the edge-side twin of
 // graph-edit-form-screen.ts/-state.ts; see graph-edit-form.ts for the shared
@@ -31,10 +31,7 @@ export function showCreateTransition(
   onCreate: (values: TransitionFieldValues) => EditOpResult,
 ): void {
   const { body, errorEl } = resetForm(container, "graph.edit.titleNewTransition");
-  const triggerWrap = document.createElement("div");
-  body.appendChild(fieldRow(t("graph.edit.fieldTrigger"), triggerWrap));
-  const trigger = mountLocalizedEditor(triggerWrap, () => {});
-  trigger.setValue({}, deps.locale());
+  const trigger = localizedRow(body, "graph.edit.fieldTrigger", {}, deps.locale());
   const guard = textInput("", "amount > 0");
   body.appendChild(fieldRow(t("graph.edit.guardLabel"), guard));
   const role = textInput("", "admin");
@@ -68,8 +65,13 @@ export function showEditTransition(
     notice.textContent = t("graph.edit.notEditableOwned");
     body.appendChild(notice);
   }
-  const triggerWrap = document.createElement("div");
-  body.appendChild(fieldRow(t("graph.edit.fieldTrigger"), triggerWrap));
+  const trigger = localizedRow(
+    body,
+    "graph.edit.fieldTrigger",
+    current.trigger,
+    deps.locale(),
+    apply,
+  );
   const guard = textInput(current.guard ?? "");
   body.appendChild(fieldRow(t("graph.edit.guardLabel"), guard));
   const role = textInput(current.role ?? "");
@@ -88,8 +90,6 @@ export function showEditTransition(
     });
     showFormError(errorEl, result.ok ? undefined : result.error);
   }
-  const trigger = mountLocalizedEditor(triggerWrap, apply);
-  trigger.setValue(current.trigger, deps.locale());
   guard.addEventListener("input", apply);
   role.addEventListener("input", apply);
   const specId = specIdRow(body, deps, current.specId, editable ? apply : undefined);

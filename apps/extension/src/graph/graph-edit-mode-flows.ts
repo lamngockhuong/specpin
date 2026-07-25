@@ -67,10 +67,7 @@ export function createFlowsEditMode(config: FlowsConfig, flowId: string): FlowsE
   function withUndo(mutate: () => EditOpResult): EditOpResult {
     const before = { states, transitions };
     const result = mutate();
-    if (result.ok) {
-      tracker.beforeMutate(before);
-      tracker.markDirty();
-    }
+    if (result.ok) tracker.commit(before);
     return result;
   }
 

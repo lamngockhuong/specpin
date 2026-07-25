@@ -68,7 +68,7 @@ describe("createScreensEditMode dirty tracking (C3)", () => {
     expect(ids).not.toContain("wishlist");
   });
 
-  // Regression: a refused mutation used to call tracker.beforeMutate()
+  // Regression: a refused mutation used to snapshot into the tracker
   // unconditionally, overwriting the one kept undo snapshot with the CURRENT
   // (already-mutated) draft -- so undoLast() after a refusal restored a
   // snapshot equal to current and silently did nothing.

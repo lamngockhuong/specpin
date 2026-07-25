@@ -1,6 +1,7 @@
-import type { FlowState } from "@specpin/spec-schema";
+import type { FlowState, LocalizedString } from "@specpin/spec-schema";
 import type { MessageKey } from "../i18n/index.js";
 import { t } from "../i18n/index.js";
+import { type LocalizedEditorHandle, mountLocalizedEditor } from "./graph-localized-editor.js";
 import { mountSpecIdPicker, type SpecIdPickerHandle } from "./graph-specid-picker.js";
 
 // Shared DOM-building helpers for the per-kind form modules
@@ -87,6 +88,25 @@ export function specIdRow(
   picker.setValue(initial);
   body.appendChild(fieldRow(t("graph.edit.specIdLabel"), wrap));
   return picker;
+}
+
+/** A LocalizedString field row: build the wrapper, append it via `fieldRow`,
+ *  mount the multi-locale editor, and seed it -- the identical four-line dance
+ *  every node/edge/flow form repeats for its label/name/object/trigger field.
+ *  `onChange` fires on every edit (edit forms save live; create forms pass a
+ *  no-op and read `getValue()` at submit). `initial` is `{}` for a create. */
+export function localizedRow(
+  body: HTMLElement,
+  labelKey: MessageKey,
+  initial: LocalizedString,
+  locale: string,
+  onChange: () => void = () => {},
+): LocalizedEditorHandle {
+  const wrap = document.createElement("div");
+  body.appendChild(fieldRow(t(labelKey), wrap));
+  const editor = mountLocalizedEditor(wrap, onChange);
+  editor.setValue(initial, locale);
+  return editor;
 }
 
 export function submitButton(): HTMLButtonElement {

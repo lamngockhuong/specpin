@@ -95,10 +95,7 @@ export function createScreensEditMode(
   function withUndo(mutate: () => EditOpResult): EditOpResult {
     const before = { screens, transitions };
     const result = mutate();
-    if (result.ok) {
-      tracker.beforeMutate(before);
-      tracker.markDirty();
-    }
+    if (result.ok) tracker.commit(before);
     return result;
   }
 

@@ -50,6 +50,12 @@ const PREV_URL_KEY = "specpin:navRecorder:prevUrl";
 
 let active = false;
 let onCaptured: OnCapturedTransition | null = null;
+// In-memory mirror of the last URL we processed, seeded once from sessionStorage
+// at startRecorder. The MutationObserver fires on essentially every DOM change,
+// the vast majority of which are NOT navigations (nextUrl === lastSeenUrl); this
+// lets those no-op signals return before touching synchronous storage, so the
+// hot path pays a string compare instead of a getItem + redundant setItem.
+let lastSeenUrl: string | null = null;
 let originalPushState: History["pushState"] | null = null;
 let originalReplaceState: History["replaceState"] | null = null;
 let mutationObserver: MutationObserver | null = null;
@@ -93,9 +99,11 @@ function humanize(screenId: string): string {
  *  not actually change (a MutationObserver firing on an unrelated mutation, or
  *  a redundant signal from a second detection mechanism for the same nav). */
 function handleUrlChange(nextUrl: string): void {
-  const prevUrl = readPrevUrl();
-  writePrevUrl(nextUrl);
-  if (!prevUrl || prevUrl === nextUrl) return; // no `from` yet, or not a real change
+  if (nextUrl === lastSeenUrl) return; // unchanged since last signal -- no storage touch
+  const prevUrl = lastSeenUrl; // seeded from sessionStorage in startRecorder
+  lastSeenUrl = nextUrl;
+  writePrevUrl(nextUrl); // persist only on a real change, for cross-reload derivation
+  if (!prevUrl) return; // no `from` yet (fresh tab, or first nav after a full load)
   const transition = deriveTransition(prevUrl, nextUrl);
   if (!transition) return; // self-navigation (same generalized screen)
   onCaptured?.(transition, candidateFor(prevUrl), candidateFor(nextUrl));
@@ -120,6 +128,9 @@ export function startRecorder(onTransition: OnCapturedTransition): void {
   if (active) return;
   active = true;
   onCaptured = onTransition;
+  // Seed from persisted state ONCE (cross-load `from`), then the in-memory
+  // mirror carries forward so per-mutation signals never re-read storage.
+  lastSeenUrl = readPrevUrl();
 
   // Store the raw (unbound) function references -- not a `.bind()` copy -- so
   // `stopRecorder` can restore `history.pushState` to something reference-equal
@@ -171,6 +182,7 @@ export function stopRecorder(): void {
   if (!active) return;
   active = false;
   onCaptured = null;
+  lastSeenUrl = null; // next startRecorder re-seeds from persisted state
 
   if (originalPushState) history.pushState = originalPushState;
   if (originalReplaceState) history.replaceState = originalReplaceState;

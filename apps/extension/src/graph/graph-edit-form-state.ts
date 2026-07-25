@@ -4,6 +4,7 @@ import {
   fieldRow,
   type KnownSpecsSource,
   kindSelect,
+  localizedRow,
   resetForm,
   showFormError,
   specIdRow,
@@ -11,7 +12,6 @@ import {
   textInput,
 } from "./graph-edit-form-shared.js";
 import type { EditOpResult } from "./graph-edit-mode.js";
-import { mountLocalizedEditor } from "./graph-localized-editor.js";
 
 // FlowState node fields (label/kind/specId) -- the flows-side twin of
 // graph-edit-form-screen.ts; see that file / graph-edit-form.ts for the
@@ -31,10 +31,7 @@ export function showCreateState(
   const { body, errorEl } = resetForm(container, "graph.edit.titleNewState");
   const idInput = textInput("", t("graph.edit.idPlaceholder"));
   body.appendChild(fieldRow(t("graph.edit.idLabel"), idInput));
-  const labelWrap = document.createElement("div");
-  body.appendChild(fieldRow(t("graph.edit.fieldLabel"), labelWrap));
-  const label = mountLocalizedEditor(labelWrap, () => {});
-  label.setValue({}, deps.locale());
+  const label = localizedRow(body, "graph.edit.fieldLabel", {}, deps.locale());
   const kind = kindSelect(undefined);
   body.appendChild(fieldRow(t("graph.edit.kindLabel"), kind));
   const specId = specIdRow(body, deps, null);
@@ -59,8 +56,7 @@ export function showEditState(
   onChange: (values: StateFieldValues) => EditOpResult,
 ): void {
   const { body, errorEl } = resetForm(container, "graph.edit.titleEditState");
-  const labelWrap = document.createElement("div");
-  body.appendChild(fieldRow(t("graph.edit.fieldLabel"), labelWrap));
+  const label = localizedRow(body, "graph.edit.fieldLabel", current.label, deps.locale(), apply);
   const kind = kindSelect(current.kind);
   body.appendChild(fieldRow(t("graph.edit.kindLabel"), kind));
   function apply(): void {
@@ -75,8 +71,6 @@ export function showEditState(
     });
     showFormError(errorEl, result.ok ? undefined : result.error);
   }
-  const label = mountLocalizedEditor(labelWrap, apply);
-  label.setValue(current.label, deps.locale());
   kind.addEventListener("change", apply);
   const specId = specIdRow(body, deps, current.specId, apply);
 }

@@ -2,12 +2,12 @@ import type { LocalizedString } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import {
   fieldRow,
+  localizedRow,
   resetForm,
   showFormError,
   submitButton,
   textInput,
 } from "./graph-edit-form-shared.js";
-import { mountLocalizedEditor } from "./graph-localized-editor.js";
 
 // The whole-Flow lifecycle mini-forms (Track C, C2): "New flow" (id + object)
 // and "Rename flow" (object only), the create-from-scratch counterpart to
@@ -28,10 +28,7 @@ export function showCreateFlow(
   const { body, errorEl } = resetForm(container, "graph.edit.titleNewFlow");
   const idInput = textInput("", t("graph.edit.idPlaceholder"));
   body.appendChild(fieldRow(t("graph.edit.idLabel"), idInput));
-  const objectWrap = document.createElement("div");
-  body.appendChild(fieldRow(t("graph.edit.fieldObject"), objectWrap));
-  const object = mountLocalizedEditor(objectWrap, () => {});
-  object.setValue({}, locale);
+  const object = localizedRow(body, "graph.edit.fieldObject", {}, locale);
   const btn = submitButton();
   btn.textContent = t("graph.edit.newFlow");
   body.appendChild(btn);
@@ -54,10 +51,7 @@ export function showRenameFlow(
   onRename: (object: LocalizedString) => Promise<FlowActionOutcome>,
 ): void {
   const { body, errorEl } = resetForm(container, "graph.edit.titleRenameFlow");
-  const objectWrap = document.createElement("div");
-  body.appendChild(fieldRow(t("graph.edit.fieldObject"), objectWrap));
-  const object = mountLocalizedEditor(objectWrap, () => {});
-  object.setValue(currentObject, locale);
+  const object = localizedRow(body, "graph.edit.fieldObject", currentObject, locale);
   const btn = submitButton();
   btn.textContent = t("graph.edit.rename");
   body.appendChild(btn);

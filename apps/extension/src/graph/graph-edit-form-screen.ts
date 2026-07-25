@@ -3,6 +3,7 @@ import { t } from "../i18n/index.js";
 import {
   fieldRow,
   type KnownSpecsSource,
+  localizedRow,
   resetForm,
   showFormError,
   specIdRow,
@@ -10,7 +11,6 @@ import {
   textInput,
 } from "./graph-edit-form-shared.js";
 import type { EditOpResult } from "./graph-edit-mode.js";
-import { mountLocalizedEditor } from "./graph-localized-editor.js";
 
 // Screen node fields (name/urlGlob/specId), split out of graph-edit-form.ts to
 // hold that orchestrator under the plan's 200-line budget -- see its header
@@ -31,10 +31,7 @@ export function showCreateScreen(
   const { body, errorEl } = resetForm(container, "graph.edit.titleNewScreen");
   const idInput = textInput("", t("graph.edit.idPlaceholder"));
   body.appendChild(fieldRow(t("graph.edit.idLabel"), idInput));
-  const nameWrap = document.createElement("div");
-  body.appendChild(fieldRow(t("graph.edit.fieldName"), nameWrap));
-  const name = mountLocalizedEditor(nameWrap, () => {});
-  name.setValue({}, deps.locale());
+  const name = localizedRow(body, "graph.edit.fieldName", {}, deps.locale());
   const urlGlob = textInput("/", "/checkout/*");
   body.appendChild(fieldRow(t("graph.edit.urlGlobLabel"), urlGlob));
   const specId = specIdRow(body, deps, null);
@@ -59,8 +56,7 @@ export function showEditScreen(
   onChange: (values: ScreenFieldValues) => EditOpResult,
 ): void {
   const { body, errorEl } = resetForm(container, "graph.edit.titleEditScreen");
-  const nameWrap = document.createElement("div");
-  body.appendChild(fieldRow(t("graph.edit.fieldName"), nameWrap));
+  const name = localizedRow(body, "graph.edit.fieldName", current.name, deps.locale(), apply);
   const urlGlob = textInput(current.urlGlob);
   body.appendChild(fieldRow(t("graph.edit.urlGlobLabel"), urlGlob));
   function apply(): void {
@@ -75,8 +71,6 @@ export function showEditScreen(
     });
     showFormError(errorEl, result.ok ? undefined : result.error);
   }
-  const name = mountLocalizedEditor(nameWrap, apply);
-  name.setValue(current.name, deps.locale());
   urlGlob.addEventListener("input", apply);
   const specId = specIdRow(body, deps, current.specId, apply);
 }
