@@ -230,6 +230,20 @@
       .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--sp-text-3); flex: none; }
       .dot.ok { background: var(--sp-success-dot); }
       .dot.err { background: var(--sp-error-text); }
+      /* Recording indicator (auto-capture pane): a pulsing red dot so record
+         mode being ON is unmissable, never just a checked checkbox. */
+      .dot.rec { background: var(--sp-error-text); animation: rec-pulse 1.6s ease-in-out infinite; }
+      @keyframes rec-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+      .rec-indicator {
+        display: none; align-items: center; gap: 8px; margin-top: 14px;
+        padding: 9px 12px; font-weight: 700;
+        color: var(--sp-error-text); background: var(--sp-error-bg);
+        border: 1px solid var(--sp-error-border); border-radius: var(--sp-radius-control);
+      }
+      .rec-indicator.active { display: inline-flex; }
+      /* Full privacy contract (what is/isn't captured + the Approve gate),
+         set apart from the shorter intro lead above it. */
+      .capture-privacy-note { margin-top: 14px; font-size: 14px; }
       .conn-meta { color: var(--sp-text-3); font: 14px/1.5 var(--sp-font-mono); margin-top: 6px; word-break: break-all; }
       .conn-actions { display: flex; gap: 8px; flex: none; align-items: center; }
       /* Per-project on/off toggle inside a connection row. */
@@ -391,6 +405,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
           <span data-i18n="options.navCorpus">Matching</span>
         </button>
+        <button class="nav-item" type="button" data-pane="capture">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>
+          <span data-i18n="options.navCapture">Auto-capture</span>
+        </button>
         <button class="nav-item" type="button" data-pane="support">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3 2.4c-.6.2-1 .8-1 1.6M12 17h.01"/></svg>
           <span data-i18n="options.navSupport">Support</span>
@@ -520,6 +538,30 @@
             <button id="corpusExport" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusExport">Export corpus (JSON)</button>
             <button id="corpusClear" type="button" class="secondary" style="width: 100%; margin-top: 10px" data-i18n="options.corpusClear">Clear corpus</button>
             <div id="corpusResult"></div>
+          </div>
+        </section>
+
+        <section class="pane" id="pane-capture">
+          <div class="pane-card">
+            <h2 data-i18n="options.captureTitle">Auto-capture (local, opt-in)</h2>
+            <p class="lead" data-i18n="options.captureLead">
+              Record screen-to-screen navigation on this device to suggest new transitions for
+              the graph panel's review. Off by default; only a privacy-scrubbed URL shape is
+              kept -- query strings and hashes are dropped, and id-like path segments are
+              generalized to `**` -- never the raw address.
+            </p>
+            <label class="inline"><input id="recordModeEnabled" type="checkbox" /> <span data-i18n="options.captureOptIn">Record navigation transitions on this device</span></label>
+            <div class="rec-indicator" id="recIndicator">
+              <span class="dot rec" aria-hidden="true"></span>
+              <span data-i18n="options.captureRecording">Recording navigation</span>
+            </div>
+            <p class="lead capture-privacy-note" data-i18n="options.capturePrivacyDetail">
+              Captured: a generalized screen path for each page (e.g. /orders/**) and the
+              transition between them. Never captured: query strings, hash fragments, or page
+              content. Path segments that look like ids are generalized to `**` before storage --
+              review each transition before you Approve it. Nothing reaches this project's
+              .specs/ until you explicitly Approve it in the graph panel.
+            </p>
           </div>
         </section>
 

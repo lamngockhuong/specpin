@@ -28,6 +28,9 @@ export function Layout() {
         <NavLink to="/deals/new" style={linkStyle}>
           New deal
         </NavLink>
+        <NavLink to="/reports" style={linkStyle}>
+          Reports
+        </NavLink>
         <NavLink to="/settings" style={linkStyle}>
           Settings
         </NavLink>

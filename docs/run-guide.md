@@ -397,7 +397,7 @@ connection, so the default install carries no broad-host permission.
 
 ## 19. Graph views
 
-Two optional `.specs/` files render as read-only diagrams in a dedicated full-page graph view: `flows.json` (a status-flow FSM per object type, e.g. how a "Deal" moves `draft -> negotiation -> won/lost`) and `screens.json` (which screen navigates to which, and through what action). Both are hand-authored JSON in v1 - see [schema-reference.md](./schema-reference.md#flowsconfig-specsflowsjson) for the field-by-field format and worked examples (the demo app ships both at `examples/demo-react-app/.specs/flows.json` and `screens.json`).
+Two optional `.specs/` files render as diagrams in a dedicated full-page graph view: `flows.json` (a status-flow FSM per object type, e.g. how a "Deal" moves `draft -> negotiation -> won/lost`) and `screens.json` (which screen navigates to which, and through what action). Both can be hand-authored JSON - see [schema-reference.md](./schema-reference.md#flowsconfig-specsflowsjson) for the field-by-field format and worked examples (the demo app ships both at `examples/demo-react-app/.specs/flows.json` and `screens.json`) - or edited directly in the graph view itself; see [Editing flows/screens in the browser](#editing-flowsscreens-in-the-browser) below.
 
 **Open it.** Click **Open graph view** in the popup or side panel; it opens the graph in a new tab. When a connected project serves more than one dataset, a project/dataset picker appears above the canvas (the dataset select only shows when a project has *both* flows and screens configured).
 
@@ -510,3 +510,84 @@ jobs:
 ```
 
 Pin `@<tag>` (not `@main`) for supply-chain safety once a release is tagged.
+
+## Importing flows/screens from code
+
+`flows.json`/`screens.json` (see [Graph views](#19-graph-views)) don't have to be hand-authored: `@specpin/import-flows` is a per-repo CLI that extracts them from your own TypeScript source - an FSM transition-table const, or your `react-router` route declarations - so the graph stays in sync with the code instead of drifting from it. It is standalone build-time tooling, like `prisma generate`: it never talks to the Go sidecar or the browser extension, and it needs no server running.
+
+Install it as a **devDependency** in the target repo, alongside your own `typescript` (a peerDependency, so the CLI uses your project's TS version rather than bundling one):
+
+```bash
+pnpm add -D @specpin/import-flows typescript
+```
+
+Add a script and a committed `.specs/import.config.json`:
+
+```jsonc
+// package.json
+{ "scripts": { "specs:import": "specpin-import-flows" } }
+```
+
+```jsonc
+// .specs/import.config.json
+{
+  "flows": [
+    { "file": "src/order/fsm.ts", "export": "ORDER_STATUS_TRANSITIONS", "adapter": "fsm-table", "id": "order-status" }
+  ],
+  "screens": [
+    { "file": "src/routes.tsx", "adapter": "react-router" }
+  ]
+}
+```
+
+- `flows[]` entries use the `fsm-table` adapter: `export` names an exported const holding an array of `{ from, to, trigger, role?, guard? }` edges (or the shorthand `{ state: { trigger: state } }` record form); `id` is the `Flow.id` stamped onto the generated entry.
+- `screens[]` entries use the `react-router` adapter: it reads JSX `<Route path="...">` elements and/or a flat route-object array (`export` names that array; omit it when the file only has JSX routes) into `Screen[]`, generalizing `:param` segments to `**`.
+- See [schema-reference.md](./schema-reference.md#importconfigjson-tooling-config-not-a-specs-schema-artifact) for the full field reference.
+
+Run it:
+
+```bash
+pnpm specs:import              # writes flows.json / screens.json
+pnpm specs:import --dry-run    # preview the diff, write nothing
+pnpm specs:import --check      # CI gate: exit non-zero if the output would change
+```
+
+Wire `--check` into CI so a PR that changes the source without re-running the import fails the build.
+
+**Merge and provenance.** Every id declared in `import.config.json` is import-owned - each run wholesale refreshes it and records the owned set in a committed `.specs/.import-owned.json` companion file - so **don't hand-edit an imported entry**: your edit is overwritten on the next run. Any other id already in `flows.json`/`screens.json` (hand-authored, or captured another way) is left completely untouched, so manual and imported entries coexist side by side in the same file; `screens.json`'s `transitions[]` is never written by the importer (it stays owned by manual authoring). Generated transitions carry `"source": "imported"`, distinguishing them from `"manual"`/`"auto-captured"` edges. The demo app is a worked example: `examples/demo-react-app/.specs/import.config.json` imports a `deal-pipeline` flow and a `reports` screen alongside the hand-authored `deal-status` flow and five hand-authored screens already in that same `.specs/` directory.
+
+## Auto-capturing screen transitions
+
+`screens.json` (see [Graph views](#19-graph-views)) doesn't only grow by hand-authoring or code-import: the extension can also **observe your own navigation as you browse** and propose new screen transitions for review, right inside the graph panel. This is **opt-in and off by default** - review the privacy contract below before turning it on.
+
+**Enable it.** Open the extension Options page -> **Auto-capture**. Read the privacy statement on that card, then check **Record navigation transitions on this device**. A **Recording navigation** indicator appears immediately next to the checkbox, and stays visible on that card for as long as recording is on - the reachable **off switch is right there**, one click away. The graph panel (opened via **Open graph view** in the popup or side panel) also shows its own recording banner whenever recording is on, with the same **Turn off** action and a **Clear all captured** action for the currently-selected project, so you never have to leave the panel to manage it.
+
+**What is and isn't captured.** Captured: a generalized screen path for each page you visit (e.g. `/orders/**`, never the concrete `/orders/1938`) and the navigation between two such screens. Never captured: query strings, hash fragments, or page content - only the URL *shape*. Path segments that look like ids (numbers, UUIDs, short mixed-alphanumeric codes, etc.) are generalized to `**` before anything is stored, but the heuristic is not a formal guarantee - review each transition before you Approve it. **Nothing is written to `.specs/` at capture time.** Every observed transition lands first in a local, per-project draft buffer (`storage.local`, never uploaded, bounded per project), and stays a proposal until you explicitly act on it.
+
+**Review and approve.** Browse the site with recording on, then open the graph view's **Screens** dataset: newly-observed screens and transitions render as dashed, slightly translucent "ghost" nodes/edges among your committed ones - visually distinct so pending-and-unconfirmed is never mistaken for already-saved. Click a ghost edge to open an inline **Approve / Discard** panel. **Approve** validates and merges it into `screens.json` with `"source": "auto-captured"` (the same provenance-preserving merge code-import and manual authoring use - it never clobbers an existing manual/imported entry with the same id) and the entry leaves the draft buffer; **Discard** just drops it from the buffer, no `.specs/` write either way. The graph panel also tells you when recording is on but the buffer is still empty (browse to capture something), and when a project's buffer has hit its bounded cap (approve or discard some before more can be recorded).
+
+**Clear a draft buffer.** Use **Clear all captured** in the graph panel (scoped to the project currently selected in the picker) to discard every not-yet-approved draft for that project in one step - handy after experimenting with recording on a site you don't want to graph yet.
+
+> **Privacy chain, end to end:** opt-in, default **OFF** -> only a generalized URL shape is ever derived (query strings and hashes are dropped, and id-like path segments are generalized to `**` - the same generalization `@specpin/import-flows`' `react-router` adapter uses for path params) -> held in a local, per-device draft buffer, never auto-written -> requires your explicit **Approve** in the graph panel before anything reaches `.specs/`. No captured data ever leaves your machine.
+
+## Editing flows/screens in the browser
+
+`flows.json`/`screens.json` (see [Graph views](#19-graph-views)) don't only grow by hand-authoring, code-import, or auto-capture: the graph view has its own in-browser editor for adding, editing, and deleting nodes and transitions directly on the diagram, no JSON hand-editing required.
+
+**Turn it on.** Click **Edit mode** in the graph view's control bar. A toolbar appears (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), and clicking a node or edge now selects it for editing instead of navigating or click-to-highlighting.
+
+**Add a node.** Click **Add node** and fill in the side form: a localized name/label (add a row per locale), a `urlGlob` (screens) or `kind` (flows' states: initial/normal/terminal), and an optional linked `specId` picked from the project's known specs. **Create** adds it to the draft. On the flows dataset, a node belongs to whichever flow is currently active - use the flow controls (**New flow** / rename / delete) to create one first if the project has none yet.
+
+**Edit a node or edge.** Click an existing one to open the same side form, pre-filled. Every valid field change applies to the in-memory draft immediately (the graph re-renders shortly after); **Save** is still what persists the draft to `.specs/`. An imported or auto-captured transition (`"source": "imported"` / `"auto-captured"`) renders read-only here - reassign that in Track A/B's own flow (code-import or the ghost-edge Approve/Discard), not this form.
+
+**Add an edge.** Click two nodes in order (from, then to) to arm them, then **Add edge** to open a form for the trigger label plus optional guard, role, and `specId`.
+
+**Delete.** Select exactly one node or edge, then **Delete selected**. A node still referenced by an imported/auto-captured edge refuses to delete outright (resolve that edge first - manual edges cascade-delete along with the node). Deleting a screen a specshot spec sheet (`.specs/shots/<screenId>.shot.json`) still references is allowed here; the check for that happens at Save (next).
+
+**Undo.** **Undo** reverts the single most recent change - one step, not a full history. Use it right after a slip, before making another edit.
+
+**Save, and the orphaned-shot check.** **Save** persists the whole draft: validated and merged provenance-preserving, exactly like the auto-capture Approve flow above - your edits (`"source": "manual"`) never clobber an imported or auto-captured entry, and vice versa. If this session removed a screen that a shot sheet still references, Save asks you to confirm first, naming how many shots would be orphaned (or a general caution when the shot inventory can't be checked, e.g. an older sidecar) - Cancel to reconsider, or continue to save anyway.
+
+**Leaving with unsaved edits.** Turning Edit mode off, switching project, or switching the flows/screens dataset while a draft has unsaved changes asks you to save or discard first; a clean draft (nothing changed, or already saved) never prompts. Closing or reloading the tab with unsaved edits triggers the browser's own leave-page warning too.
+
+> **Provenance, unchanged:** every write here goes through the same read-merge-validate-write path as auto-capture's Approve and code-import's writer - manual edits are stamped `"source": "manual"` and never overwrite an entry owned by another source. The editor adds no new schema and no new write surface; it is a UI on top of the same `.specs/` files.

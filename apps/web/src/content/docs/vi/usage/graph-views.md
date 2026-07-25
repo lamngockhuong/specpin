@@ -6,7 +6,7 @@ description: Soạn sơ đồ status-flow và screen-transition rồi xem chúng
 Hai file `.specs/` tùy chọn được render thành sơ đồ trong một **graph view** toàn trang riêng: một đồ thị **status-flow** (trạng thái của một đối tượng di chuyển giữa các state ra sao) và một đồ thị **screen-transition** (screen nào điều hướng tới screen nào, qua hành động gì). Cả hai đều được soạn tay trong `.specs/` cùng với các spec của bạn.
 
 :::note
-Graph views là một **sơ đồ chỉ-đọc** dựa trên dữ liệu bạn soạn trong `.specs/flows.json` và `.specs/screens.json`. Hiện chưa có editor trong extension cho chúng - hãy sửa trực tiếp file JSON (xem [Spec format](/vi/sidecar/spec-format/) để biết mô hình soạn `.specs/` nói chung, và [`flows.json`/`screens.json` trên GitHub](https://github.com/lamngockhuong/specpin/blob/main/docs/schema-reference.md#flowsconfig-specsflowsjson) để biết định dạng chính xác từng trường).
+Graph views render dữ liệu từ `.specs/flows.json` và `.specs/screens.json`. Hãy soạn trực tiếp dưới dạng JSON (xem [Spec format](/vi/sidecar/spec-format/) để biết mô hình soạn `.specs/` nói chung, và [`flows.json`/`screens.json` trên GitHub](https://github.com/lamngockhuong/specpin/blob/main/docs/schema-reference.md#flowsconfig-specsflowsjson) để biết định dạng chính xác từng trường) - hoặc sửa node/transition trực tiếp ngay trong graph view, không cần chỉnh tay JSON chút nào; xem [Chỉnh sửa flows/screens ngay trong trình duyệt](#chỉnh-sửa-flowsscreens-ngay-trong-trình-duyệt) bên dưới. Các transition trong `screens.json` cũng có thể được lấp đầy bằng cách bật auto-capture và duyệt những gì nó quan sát được - xem [Tự động ghi lại screen transition](#tự-động-ghi-lại-screen-transition).
 :::
 
 ## Soạn một đồ thị status-flow
@@ -89,4 +89,46 @@ Nếu spec không khớp trên tab đó (bạn đang ở sai trang, hoặc phầ
 
 :::tip
 Hãy gán `specId` cho một state hay transition bất cứ khi nào có một phần tử UI thật đại diện cho nó (một badge trạng thái, một nút submit) để graph và trang đang chạy luôn gắn kết với nhau. Các node thuần khái niệm (như một trạng thái terminal không có phần tử riêng) có thể an tâm để trống `specId`.
+:::
+
+## Tự động ghi lại screen transition
+
+Thay vì soạn tay từng entry trong `screens.json`, bạn có thể bật một recorder tự chọn tham gia (opt-in) quan sát chính việc điều hướng của bạn và đề xuất các screen transition mới để bạn duyệt.
+
+:::caution
+Mặc định tắt. Hãy đọc những gì được ghi lại trước khi bật.
+:::
+
+**Bật nó.** Mở trang Options của extension -> **Tự động ghi**, đọc tuyên bố riêng tư trên thẻ đó, rồi tick **Ghi lại điều hướng trên thiết bị này**. Một chỉ báo **Đang ghi điều hướng** nhấp nháy hiện ra ngay cạnh checkbox với công tắc tắt chỉ một click; graph view hiện cùng chỉ báo đó trong một banner, với các hành động **Tắt** và **Xóa tất cả đã ghi** (cho project đang chọn) riêng.
+
+**Những gì được ghi lại.** Chỉ dạng đường dẫn màn hình đã tổng quát hóa cho mỗi trang (ví dụ `/orders/**`, không bao giờ là `/orders/1938`) và lượt điều hướng giữa hai màn hình như vậy. Không bao giờ ghi lại: query string, hash, hay nội dung trang. Các đoạn path trông giống id sẽ được tổng quát hóa thành `**` trước khi lưu - hãy xem lại từng transition trước khi Duyệt. Không có gì chạm tới `.specs/` tại thời điểm ghi hình - mỗi transition quan sát được rơi vào một bộ đệm nháp cục bộ theo từng project (có giới hạn, `storage.local`, không bao giờ tải lên) và vẫn chỉ là đề xuất.
+
+**Xem xét và duyệt.** Khi đang ghi, hãy duyệt trang web rồi mở dataset **Screens** của graph view: các screen/transition mới quan sát được render dưới dạng node/edge "ghost" nét đứt, trong suốt, xen giữa các node/edge đã lưu. Click vào một ghost edge để **Duyệt** (gộp nó vào `screens.json` với `"source": "auto-captured"`, không bao giờ ghi đè lên một entry manual/imported đã có cùng id) hoặc **Bỏ qua** (xóa nó, không ghi gì vào `.specs/` ở cả hai trường hợp). Banner cũng báo cho bạn biết khi đang ghi nhưng chưa ghi được gì, và khi bộ đệm nháp của một project đã đầy.
+
+:::note
+Chuỗi riêng tư đầy đủ: tự chọn tham gia, mặc định **tắt** -> chỉ suy ra dạng URL đã tổng quát hóa (bỏ query/hash, các đoạn path trông giống id được tổng quát hóa thành `**`) -> bộ đệm nháp cục bộ theo từng thiết bị, không bao giờ tự động ghi -> cần bạn Duyệt rõ ràng trước khi bất cứ thứ gì chạm tới `.specs/`. Không có gì ghi lại được rời khỏi máy của bạn.
+:::
+
+## Chỉnh sửa flows/screens ngay trong trình duyệt
+
+Graph view không chỉ là một sơ đồ để xem - hãy bật **Edit mode** để thêm, sửa, xóa node và transition trực tiếp trên canvas, không cần chỉnh tay JSON chút nào.
+
+**Bật nó.** Click **Edit mode** trên thanh điều khiển của graph view. Một thanh công cụ hiện ra (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), và giờ click vào một node hoặc edge sẽ chọn nó để chỉnh sửa thay vì điều hướng hay click-to-highlight.
+
+**Thêm node.** Click **Add node** rồi điền vào form bên cạnh: tên/nhãn theo từng ngôn ngữ (thêm một dòng cho mỗi locale), `urlGlob` (screens) hoặc `kind` (state của flows: initial/normal/terminal), và một spec liên kết tùy chọn chọn từ danh sách spec đã biết của project. **Create** thêm nó vào bản nháp. Ở dataset status-flow, một node mới thuộc về flow đang active - dùng các nút điều khiển flow để tạo một flow trước nếu project chưa có flow nào.
+
+**Sửa một node hoặc edge.** Click vào một cái đã có để mở đúng form đó, đã điền sẵn dữ liệu. Mọi thay đổi hợp lệ áp dụng vào bản nháp trong bộ nhớ ngay lập tức; **Save** vẫn là bước lưu bản nháp xuống `.specs/`. Một transition đến từ code-import hay auto-capture hiện ở đây dạng chỉ đọc - hãy đổi nó qua đúng luồng riêng của nó (chạy lại import, hoặc Duyệt/Bỏ qua ghost edge).
+
+**Thêm edge.** Click hai node theo đúng thứ tự (from rồi to) để chọn chúng, sau đó **Add edge** để mở form nhập nhãn trigger cùng guard/role/spec liên kết tùy chọn.
+
+**Xóa.** Chọn đúng một node hoặc edge, rồi **Delete selected**. Một node còn bị một edge imported/auto-captured tham chiếu sẽ từ chối xóa - hãy xử lý edge đó trước (một edge thêm tay sẽ tự động xóa theo cùng node). Xóa một screen mà một spec sheet của specshot vẫn tham chiếu vẫn được cho phép ở đây; việc kiểm tra điều đó diễn ra lúc Save (bên dưới).
+
+**Undo.** **Undo** hoàn tác đúng một thay đổi gần nhất - một bước, không phải cả lịch sử. Dùng nó ngay sau một sai sót, trước khi thực hiện chỉnh sửa khác.
+
+**Save, và kiểm tra shot mồ côi.** **Save** lưu toàn bộ bản nháp: đã xác thực và gộp bảo toàn provenance hệt như luồng Duyệt của auto-capture ở trên - chỉnh sửa của bạn không bao giờ ghi đè lên một entry từ nguồn khác, và ngược lại. Nếu phiên chỉnh sửa này đã xóa một screen mà một spec sheet vẫn tham chiếu, Save sẽ hỏi xác nhận trước, nêu rõ có bao nhiêu sẽ trở thành mồ côi (hoặc một cảnh báo chung khi không thể kiểm tra được) - Cancel để xem lại, hoặc tiếp tục lưu.
+
+**Rời đi khi còn thay đổi chưa lưu.** Tắt Edit mode, chuyển project, hoặc chuyển dataset flows/screens khi bản nháp còn thay đổi chưa lưu sẽ hỏi bạn lưu hay bỏ trước; một bản nháp sạch không bao giờ hỏi. Đóng hay tải lại tab khi còn chỉnh sửa chưa lưu cũng kích hoạt cảnh báo rời trang mặc định của trình duyệt.
+
+:::note
+Trình biên tập chỉ ghi vào `.specs/flows.json` và `.specs/screens.json`, qua đúng luồng đọc-gộp-xác thực-ghi mà mọi bộ ghi khác ở đây dùng - không schema mới, không bề mặt ghi mới.
 :::

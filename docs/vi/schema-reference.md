@@ -336,6 +336,31 @@ Khi `.specs/screens.json` không có, sidecar trả về default rỗng `{ "vers
 
 Cả hai config này được render trong **graph view** toàn trang của extension (layout dagre + SVG vẽ tay, mở từ popup/side panel); xem [`run-guide.md`](./run-guide.md#19-graph-views) để có hướng dẫn dành cho người dùng.
 
+## `import.config.json` (config cho tooling, không phải schema artifact của `.specs/`)
+
+`flows.json`/`screens.json` cũng có thể được sinh ra bởi `@specpin/import-flows`, một CLI theo từng repo (devDependency) trích xuất chúng từ source TypeScript (xem [`run-guide.md`](./run-guide.md#import-flowsscreens-từ-code)). Nó được điều khiển bởi một `.specs/import.config.json` đã commit, **không** thuộc SSOT `spec-schema` ở trên - đây chỉ là config nhỏ, viết tay cho tooling mà cả Go sidecar lẫn extension đều không đọc:
+
+```jsonc
+{
+  "flows": [
+    { "file": "src/order/fsm.ts", "export": "ORDER_STATUS_TRANSITIONS", "adapter": "fsm-table", "id": "order-status" }
+  ],
+  "screens": [
+    { "file": "src/routes.tsx", "adapter": "react-router" }
+  ]
+}
+```
+
+| Trường | Ghi chú |
+|-------|-------|
+| `flows[].file` / `screens[].file` | đường dẫn tới source TypeScript, tương đối so với repo root sở hữu `.specs/` |
+| `flows[].export` | bắt buộc: tên export chứa bảng transition |
+| `screens[].export` | tùy chọn: tên export chứa một mảng route-object phẳng; bỏ qua nếu file chỉ có route dạng JSX `<Route>` |
+| `flows[]`/`screens[].adapter` | `"fsm-table"` (chỉ cho flows) hoặc `"react-router"` (chỉ cho screens) |
+| `flows[].id` | `Flow.id` được gán vào entry sinh ra |
+
+`source: "imported"` trên một `Transition` (xem bảng Transition ở trên) đánh dấu một edge do CLI sinh ra, khác với `"manual"`/`"auto-captured"`. Một id `Flow`/`Screen` khai báo trong `import.config.json` là **import-owned**: mỗi lần chạy sẽ thay thế toàn bộ id đó, được ghi lại trong một file đi kèm `.specs/.import-owned.json` đã commit - nên **đừng sửa tay một entry đã import**, lần chạy sau sẽ ghi đè lên. Bất kỳ id nào khác đã có sẵn đều được giữ nguyên hoàn toàn, nên entry soạn tay và entry import cùng tồn tại trong một file (thư mục `.specs/` của demo app là một ví dụ thực tế cho việc này).
+
 ## ShotConfig (`.specs/shots/<screenId>.shot.json`)
 
 Một screenshot được chú thích bằng các callout đánh số, mỗi cái tùy chọn liên kết tới một `Spec` (pending hoặc pinned). Được soạn bởi trang specshot của extension (`specshot.html`, xem `docs/spec-sheet-authoring.md`) qua `buildShot()` của `@specpin/specshot-core`. Khác với các singleton phẳng ở trên (`views.json`, `guides.json`, `flows.json`, `screens.json`), một repo có thể có nhiều shot, mỗi screen một cái, nên chúng nằm trong thư mục con `shots/` riêng thay vì một file top-level duy nhất. `screenId` tham chiếu tới một `Screen.id` trong `screens.json`, tái dùng grouping sẵn có thay vì tạo cái mới.

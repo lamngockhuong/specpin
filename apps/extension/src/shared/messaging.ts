@@ -9,6 +9,7 @@ import type {
   Spec,
 } from "@specpin/spec-schema";
 import { browser } from "#imports";
+import type { CapturedTransition } from "../content/derive-transition.js";
 import type { UiLocale } from "../i18n/locales.js";
 import type {
   ConnectionStatus,
@@ -26,6 +27,17 @@ export type {
   TaggedGuide,
   TaggedSpec,
 } from "./connection-types.js";
+
+/** One side (from/to) of a captured navigation (Track B auto-capture): B1's
+ *  generalized screen identity plus a human-readable display-name suggestion,
+ *  so a not-yet-existing Screen has something better than a bare id to show in
+ *  the graph panel's ghost-edge review (B3). Privacy-scrubbed like the rest of
+ *  B1's output -- no raw URL, query, or hash ever reaches this shape. */
+export interface CapturedScreenCandidate {
+  id: string;
+  urlGlob: string;
+  name: string;
+}
 
 // Message protocol between content script, popup, options, and the background
 // service worker. The SW owns the api-client + token + cache + SSE.
@@ -275,7 +287,52 @@ export type Message =
   // so the content script snapshotted the candidate fingerprints the scorer weighed.
   // UNprivileged (content-originated, like RECORD_DRIFT); the background gates on
   // the opt-in flag and dedupes per (project, specId, pageUrl) before persisting.
-  | { type: "RECORD_DRIFT_PASSIVE"; entries: PassiveDriftInput[] };
+  | { type: "RECORD_DRIFT_PASSIVE"; entries: PassiveDriftInput[] }
+  // Track B auto-capture: the content-script recorder observed a navigation and
+  // reduced it to a privacy-scrubbed candidate transition via B1's pure
+  // deriveTransition/generalizeUrl. UNprivileged -- content-originated, like
+  // RECORD_DRIFT -- the background gates on the recordMode opt-in flag before
+  // resolving the owning project (the same origin -> connection resolution
+  // GET_WRITE_TARGETS uses) and appending to that project's draft buffer.
+  | {
+      type: "RECORD_CAPTURED_TRANSITION";
+      transition: CapturedTransition;
+      from: CapturedScreenCandidate;
+      to: CapturedScreenCandidate;
+    }
+  // Read the draft capture buffer for one project (by connection id), or every
+  // project's when omitted -- the graph panel (B3) aggregates across every
+  // connected project, like GET_FLOWS_SCREENS. Read-only, unprivileged (mirrors
+  // GET_FLOWS_SCREENS: team-scoped draft data, not private data).
+  | { type: "GET_CAPTURE_BUFFER"; project?: string }
+  // Discard every draft entry for one project (B3's discard-all). Privileged:
+  // extension-page only, like the other buffer-mutating types -- a web content
+  // script must never be able to wipe another surface's draft (B3 adds
+  // per-entry approve/discard on top of this).
+  | { type: "CLEAR_CAPTURE_BUFFER"; project: string }
+  // Approve ONE buffered transition (B3): read-merge-validate-write into the
+  // owning project's screens.json (source: "auto-captured"), then drop the
+  // buffer entry on success. `project` is the connection id, matching
+  // GET_CAPTURE_BUFFER/CLEAR_CAPTURE_BUFFER's field. Privileged: extension-page
+  // only -- a web content script must never be able to commit a capture into
+  // `.specs/`.
+  | { type: "APPROVE_CAPTURED_TRANSITION"; project: string; transitionId: string }
+  // Discard ONE buffered transition (B3): drop it from the draft buffer, no
+  // `.specs/` write. Privileged, like CLEAR_CAPTURE_BUFFER.
+  | { type: "DISCARD_CAPTURED_TRANSITION"; project: string; transitionId: string }
+  // Track C (C1) editor Save: an already-merged, already-validated config for a
+  // SIDECAR project (graph-write-back(-flows).ts ran the provenance-preserving
+  // merge client-side; this just persists it, like APPROVE_CAPTURED_TRANSITION's
+  // sidecar branch). Privileged: extension-page only -- a web content script
+  // must never be able to commit into `.specs/`.
+  | { type: "SAVE_GRAPH_FLOWS"; connectionId: string; config: FlowsConfig }
+  | { type: "SAVE_GRAPH_SCREENS"; connectionId: string; config: ScreensConfig }
+  // Track C (C1) editor Save for a LOCAL (Manual) project: the local write path
+  // `setLocalBatchScreens` already has for B3, plus its flows-side twin
+  // `setLocalBatchFlows` (new). `id` is the batch id (not the `manual:<id>`
+  // connection id -- mirrors SET_LOCAL_BATCH_ENABLED). Privileged.
+  | { type: "SET_LOCAL_BATCH_FLOWS"; id: string; config: FlowsConfig }
+  | { type: "SET_LOCAL_BATCH_SCREENS"; id: string; config: ScreensConfig };
 
 /** A passive drift entry as sent from content; the background stamps `ts`. */
 export type PassiveDriftInput = Omit<PassiveDriftEntry, "ts">;
@@ -319,6 +376,20 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   "SAVE_TEAM_GUIDE",
   "SAVE_PERSONAL_GUIDE",
   "DELETE_GUIDE",
+  // Discards a project's whole draft capture buffer; a web content script must
+  // never be able to wipe another surface's auto-capture draft.
+  "CLEAR_CAPTURE_BUFFER",
+  // Approve/discard a single captured transition: approve commits into
+  // `.specs/`, discard mutates the draft buffer -- neither may originate from
+  // a web content script.
+  "APPROVE_CAPTURED_TRANSITION",
+  "DISCARD_CAPTURED_TRANSITION",
+  // Track C (C1) editor Save: commits an already-merged graph config into
+  // `.specs/` (sidecar) or a local batch -- never from a web content script.
+  "SAVE_GRAPH_FLOWS",
+  "SAVE_GRAPH_SCREENS",
+  "SET_LOCAL_BATCH_FLOWS",
+  "SET_LOCAL_BATCH_SCREENS",
 ]);
 
 export interface SaveSpecResult {
@@ -416,22 +487,80 @@ export interface GuidesForOrigin {
   guides: TaggedGuide[];
 }
 
+/** One known spec id for the graph editor's specId picker (C2), tagged pending
+ *  when it carries no fingerprint yet -- specshot's unpinned-from-screenshot
+ *  authoring (PR #187). A pending id is still a valid `specId` target, but
+ *  won't highlight on-page until it is bound to an element, so the picker
+ *  must label the two differently. */
+export interface KnownSpecId {
+  id: string;
+  pending: boolean;
+}
+
 /** One connected sidecar project's flows + screens configs, tagged with its
  *  connection id + display project name so the graph panel can tell apart two
  *  projects that happen to share a name. Raw configs only -- `specId`
  *  resolution against the live page is a panel/overlay concern (Phase 5/6),
- *  not this layer's. */
+ *  not this layer's. `specs` is this SAME project's known spec ids (C2's
+ *  specId picker feed) -- fetched alongside flows/screens rather than via a
+ *  separate round trip, since both come from the identical per-connection
+ *  cache the registry already aggregates project-by-project. */
 export interface ProjectFlowsScreens {
   connectionId: string;
   project: string;
   flows: FlowsConfig;
   screens: ScreensConfig;
+  specs: KnownSpecId[];
+  /** C3's shot inventory: the screenIds every stored
+   *  `.specs/shots/*.shot.json` references, for the graph editor's
+   *  orphaned-shot Save warning. `null` when it could not be enumerated
+   *  (a local/manual project, an older sidecar with no /shots endpoint, or a
+   *  failed load) -- the editor must degrade to a generic caution, never
+   *  treat `null` as "no shots". */
+  shotScreenIds: string[] | null;
 }
 
 /** Result of GET_FLOWS_SCREENS: every connected project's flows/screens,
  *  namespaced by project (never silently merged across connections). */
 export interface FlowsScreensResult {
   projects: ProjectFlowsScreens[];
+}
+
+/** Per-project cap on the Track B draft capture buffer (background/
+ *  capture-buffer.ts enforces it; re-exported from there for back-compat with
+ *  existing imports). Defined here -- rather than in the background-only
+ *  module -- so extension pages (e.g. the graph panel's capture banner, B4)
+ *  can read the SAME bound to render "buffer full" messaging without
+ *  importing background-only code. */
+export const MAX_CAPTURE_ENTRIES_PER_PROJECT = 200;
+
+/** One draft entry in a project's Track B auto-capture buffer: B1's derived
+ *  transition, the candidate screens on either end (for a not-yet-existing
+ *  Screen), the owning project/connection id, and when it was captured. */
+export interface CaptureBufferEntry {
+  transition: CapturedTransition;
+  from: CapturedScreenCandidate;
+  to: CapturedScreenCandidate;
+  project: string;
+  capturedAt: number;
+}
+
+/** Result of GET_CAPTURE_BUFFER. */
+export interface CaptureBufferResult {
+  entries: CaptureBufferEntry[];
+}
+
+/** Result of APPROVE_CAPTURED_TRANSITION. */
+export interface ApproveCapturedResult {
+  ok: boolean;
+  errors?: string[];
+}
+
+/** Result of the four Track C (C1) editor-Save write messages
+ *  (SAVE_GRAPH_FLOWS/SCREENS, SET_LOCAL_BATCH_FLOWS/SCREENS). */
+export interface GraphWriteResult {
+  ok: boolean;
+  errors?: string[];
 }
 
 /** Result of a guide save/delete. `error` carries a single human-readable reason

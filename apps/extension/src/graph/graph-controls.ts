@@ -99,12 +99,16 @@ export type GraphView = "graph" | "table";
 export interface GraphControlsCallbacks {
   onFilterChange(state: GraphFilterState): void;
   onViewChange(view: GraphView): void;
+  /** Track C (C1) edit-mode toggle, default OFF. Optional: predates C1. */
+  onEditModeChange?(enabled: boolean): void;
+  /** C3: checked only when turning OFF edit mode; `false` cancels the toggle.
+   *  Omitted = always allowed. */
+  canLeaveEditMode?(): boolean | Promise<boolean>;
 }
 
 export interface GraphControlsHandle {
   /** Re-derive + repaint the category tabs (e.g. after switching flows<->screens).
-   *  Resets the filter state but does NOT re-render -- the caller re-renders the
-   *  canvas right after (main.ts refreshAll), which applies the reset filter once. */
+   *  Resets the filter state but does not re-render; main.ts's refreshAll does. */
   setGraph(graph: Graph): void;
 }
 
@@ -139,6 +143,26 @@ export function mountGraphControls(
   graphBtn.addEventListener("click", () => setView("graph"));
   tableBtn.addEventListener("click", () => setView("table"));
 
+  // Track C (C1) opt-in edit mode, default OFF. C3: turning OFF is gated by
+  // canLeaveEditMode (a dirty-draft confirm) -- never flips optimistically.
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.textContent = t("graph.editMode");
+  editBtn.addEventListener("click", () => {
+    const next = !editBtn.classList.contains("active");
+    if (next) {
+      editBtn.classList.add("active");
+      callbacks.onEditModeChange?.(true);
+      return;
+    }
+    void (async () => {
+      const allowed = (await callbacks.canLeaveEditMode?.()) ?? true;
+      if (!allowed) return;
+      editBtn.classList.remove("active");
+      callbacks.onEditModeChange?.(false);
+    })();
+  });
+
   const tabsRow = document.createElement("div");
   tabsRow.className = "graph-category-tabs";
 
@@ -168,7 +192,7 @@ export function mountGraphControls(
   }
   renderTabs();
 
-  container.append(toggleRow, tabsRow, searchInput);
+  container.append(toggleRow, editBtn, tabsRow, searchInput);
 
   return {
     setGraph: (next) => {

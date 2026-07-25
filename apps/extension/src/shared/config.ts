@@ -127,6 +127,9 @@ export const DEFAULT_BADGE_COLOR = "#2DD4BF";
 /** Whether coverage mode is on: ghost markers over undocumented interactive
  *  elements. Default OFF so a page is byte-identical to today unless invoked. */
 export const COVERAGE_ENABLED_KEY = "specpin:coverageEnabled";
+/** Whether Track B auto-capture (opt-in navigation recording) is on. Default
+ *  OFF so a page is byte-identical to today unless invoked. */
+export const RECORD_MODE_KEY = "specpin:recordMode";
 /** The user's chosen UI-chrome language (`"en" | "vi"`), or null to follow the
  *  browser/system UI language. Independent from the spec-content LOCALE_KEY. */
 export const UI_LOCALE_KEY = "specpin:uiLocale";
@@ -310,6 +313,40 @@ export async function setCoverageEnabled(on: boolean): Promise<void> {
     return;
   }
   await browser.storage.local.set({ [COVERAGE_ENABLED_KEY]: true });
+}
+
+/** Track B auto-capture opt-in (default OFF): whether the content-script
+ *  recorder observes navigation at all. This is the hard opt-in gate -- the
+ *  recorder must not attach a single listener while this is false, and the
+ *  background must ignore an append even if one somehow arrives (defense in
+ *  depth, mirrors getCorpusEnabled's gate on RECORD_DRIFT). */
+export async function getRecordMode(): Promise<boolean> {
+  const stored = await browser.storage.local.get(RECORD_MODE_KEY);
+  return stored[RECORD_MODE_KEY] === true;
+}
+
+export async function setRecordMode(on: boolean): Promise<void> {
+  // false is the default: drop the key so a default profile carries nothing
+  // (mirrors setCoverageEnabled/setBadgeNumbering).
+  if (!on) {
+    await browser.storage.local.remove(RECORD_MODE_KEY);
+    return;
+  }
+  await browser.storage.local.set({ [RECORD_MODE_KEY]: true });
+}
+
+/** Re-invoke `onChange` with the live value whenever the record-mode flag
+ *  changes in storage, so a content script already running on a page can
+ *  attach/detach its recorder the moment the Options-page toggle flips --
+ *  without a reload. Mirrors watchThemeChanges's storage.onChanged subscription
+ *  (shared/theme.ts), but hands the raw boolean to a caller-supplied callback
+ *  instead of applying a DOM attribute directly: the reaction here (start/stop
+ *  the recorder) belongs to content.ts, not this module. */
+export function watchRecordMode(onChange: (on: boolean) => void): void {
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local" || !(RECORD_MODE_KEY in changes)) return;
+    onChange(changes[RECORD_MODE_KEY]?.newValue === true);
+  });
 }
 
 /** The user's chosen UI-chrome language, or null to follow the browser/system UI
@@ -760,5 +797,40 @@ export function setLocalBatchViews(
   const nextBatch: ManualBatch = { ...(state.batches[idx] as ManualBatch) };
   if (views.hidden.length) nextBatch.views = views;
   else delete nextBatch.views;
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Set a local batch's screen-transition config: the local equivalent of a
+ *  sidecar's `PUT /screens` (Phase B3's approve write-back, the "one new
+ *  plumbing bit" the phase's Risks section anticipated -- a local project had
+ *  no screens WRITE path before this, only the ADD_LOCAL_BATCH import path).
+ *  Unlike `setLocalBatchViews` this always stores the config: it is only ever
+ *  called with a just-merged, non-empty result (graph-write-back.ts), never a
+ *  reset-to-default. Unknown batch id -> ok:false. */
+export function setLocalBatchScreens(
+  state: LocalSpecsState,
+  batchId: string,
+  screens: ScreensConfig,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const nextBatch: ManualBatch = { ...(state.batches[idx] as ManualBatch), screens };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Set a local batch's status-flow FSM config: the flows-side twin of
+ *  `setLocalBatchScreens` (Track C's C1 editor Save), the local equivalent of
+ *  a sidecar's `PUT /flows`. Always stores the config outright -- like
+ *  `setLocalBatchScreens`, it is only ever called with a just-merged,
+ *  non-empty result (graph-write-back-flows.ts), never a reset-to-default.
+ *  Unknown batch id -> ok:false. */
+export function setLocalBatchFlows(
+  state: LocalSpecsState,
+  batchId: string,
+  flows: FlowsConfig,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const nextBatch: ManualBatch = { ...(state.batches[idx] as ManualBatch), flows };
   return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
 }

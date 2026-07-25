@@ -60,6 +60,13 @@
       "specIds": [
         "settings-save"
       ]
+    },
+    {
+      "id": "reports",
+      "name": {
+        "en": "Reports"
+      },
+      "urlGlob": "/reports"
     }
   ],
   "transitions": [

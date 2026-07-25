@@ -56,6 +56,18 @@ export function findCustomer(id: string | undefined): Customer | undefined {
 
 export const dealStages: Deal["stage"][] = ["Lead", "Proposal", "Negotiation", "Won", "Lost"];
 
+// Transition table for the deal pipeline, kept separate from `dealStages`
+// (a states-only array) so `@specpin/import-flows`'s `fsm-table` adapter has
+// a real edge list to extract. See examples/demo-react-app/.specs/import.config.json
+// and docs/run-guide.md "Importing flows/screens from code".
+export const DEAL_STAGE_TRANSITIONS = [
+  { from: "Lead", to: "Proposal", trigger: "Send proposal" },
+  { from: "Proposal", to: "Negotiation", trigger: "Start negotiation" },
+  { from: "Negotiation", to: "Won", trigger: "Mark won" },
+  { from: "Negotiation", to: "Lost", trigger: "Mark lost" },
+  { from: "Lead", to: "Lost", trigger: "Disqualify" },
+];
+
 export const owners = ["Hana Tran", "Minh Le", "Sofia Pham", "You"];
 
 const allDeals: Deal[] = customers.flatMap((c) => c.deals);

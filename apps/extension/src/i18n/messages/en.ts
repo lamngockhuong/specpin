@@ -237,6 +237,7 @@ const en = {
   "options.navAppearance": "Appearance",
   "options.navToolbar": "Toolbar",
   "options.navCorpus": "Matching",
+  "options.navCapture": "Auto-capture",
   "options.navSupport": "Support",
   // Segmented control inside the Spec pane: live sidecar vs pasted bundle.
   "options.specTabLive": "Live",
@@ -377,6 +378,16 @@ const en = {
   "options.corpusDetails": "Details",
   "options.confirmDeleteCorpusEntry": "Delete this corpus entry? This cannot be undone.",
   "options.corpusEntryDeleted": "Entry deleted.",
+
+  // Auto-capture card (Track B, local, opt-in): record-mode toggle + indicator.
+  "options.captureTitle": "Auto-capture (local, opt-in)",
+  "options.captureLead":
+    "Record screen-to-screen navigation on this device to suggest new transitions for the graph panel's review. Off by default; only a privacy-scrubbed URL shape is kept -- query strings and hashes are dropped, and id-like path segments are generalized to `**` -- never the raw address.",
+  "options.captureOptIn": "Record navigation transitions on this device",
+  "options.captureRecording": "Recording navigation",
+  // Full privacy contract (B4): what is/isn't captured + the Approve gate.
+  "options.capturePrivacyDetail":
+    "Captured: a generalized screen path for each page (e.g. /orders/**) and the transition between them. Never captured: query strings, hash fragments, or page content. Path segments that look like ids are generalized to `**` before storage -- review each transition before you Approve it. Nothing reaches this project's .specs/ until you explicitly Approve it in the graph panel.",
   "match.correct": "Correct",
 
   // Support & Feedback card.
@@ -566,6 +577,89 @@ const en = {
   "graph.colKind": "Kind",
   "graph.colSpec": "Spec",
   "graph.noMatch": "No nodes match the current filter.",
+  // Phase B3: ghost-edge review panel (auto-captured, not yet approved).
+  "graph.ghost.note": "Captured navigation - not yet saved.",
+  "graph.ghost.approve": "Approve",
+  "graph.ghost.discard": "Discard",
+  "graph.ghost.approveError": "Could not save: {error}",
+  // Phase B4: recording banner (recording state, empty/full buffer edge
+  // states) shown in the graph panel whenever Track B auto-capture is on.
+  "graph.capture.recordingEmpty":
+    "Recording is on - browse the site to capture new screen transitions for review.",
+  "graph.capture.recording":
+    "Recording is on - {count} transition(s) captured, awaiting review below.",
+  "graph.capture.recordingFull":
+    "Recording is on - capture buffer is full ({cap}). Approve or discard some before more can be recorded.",
+  "graph.capture.turnOff": "Turn off",
+  "graph.capture.clearAll": "Clear all captured",
+  "graph.capture.confirmClearAll":
+    "Discard every captured (not yet approved) transition for this project? This cannot be undone.",
+  // Track C (C1): opt-in edit-mode toolbar (add/delete node/edge, Save).
+  "graph.editMode": "Edit",
+  "graph.edit.addNode": "Add node",
+  "graph.edit.addEdge": "Add edge",
+  "graph.edit.deleteSelected": "Delete selected",
+  "graph.edit.save": "Save",
+  "graph.edit.saving": "Saving…",
+  "graph.edit.saved": "Saved",
+  "graph.edit.saveError": "Could not save: {error}",
+  "graph.edit.selectedNode": "Selected {label}. Click another node to connect, or Delete.",
+  "graph.edit.selectedEdge": "Selected edge {label}. Delete to remove it.",
+  "graph.edit.readyForEdge": "Two nodes selected - click Add edge to connect them.",
+  "graph.edit.selectOneToDelete": "Select exactly one node or one edge to delete.",
+  "graph.edit.noProject": "No project selected.",
+  "graph.edit.noFlow": "This project has no flow to edit yet.",
+  // Track C (C2): the field-edit / create side form + flow lifecycle.
+  "graph.edit.create": "Create",
+  "graph.edit.idLabel": "Id",
+  "graph.edit.idPlaceholder": "e.g. checkout",
+  "graph.edit.fieldName": "Name",
+  "graph.edit.fieldLabel": "Label",
+  "graph.edit.fieldTrigger": "Trigger",
+  "graph.edit.fieldObject": "Object",
+  "graph.edit.urlGlobLabel": "URL glob",
+  "graph.edit.guardLabel": "Guard (optional)",
+  "graph.edit.roleLabel": "Role (optional)",
+  "graph.edit.kindLabel": "Kind",
+  "graph.edit.kindNormal": "Normal",
+  "graph.edit.kindInitial": "Initial",
+  "graph.edit.kindTerminal": "Terminal",
+  "graph.edit.titleNewScreen": "New screen",
+  "graph.edit.titleEditScreen": "Edit screen",
+  "graph.edit.titleNewState": "New state",
+  "graph.edit.titleEditState": "Edit state",
+  "graph.edit.titleNewTransition": "New transition",
+  "graph.edit.titleEditTransition": "Edit transition",
+  "graph.edit.titleNewFlow": "New flow",
+  "graph.edit.titleRenameFlow": "Rename flow",
+  "graph.edit.notEditableOwned": "Imported/auto-captured -- not editable here.",
+  "graph.edit.localizedEmpty": "Enter at least one non-empty value.",
+  "graph.edit.addLocale": "Add locale",
+  "graph.edit.removeLocale": "Remove this locale",
+  "graph.edit.specIdLabel": "Linked spec",
+  "graph.edit.specIdNone": "— none —",
+  "graph.edit.specIdFilterPlaceholder": "Filter spec ids…",
+  "graph.edit.specPending": "{id} (pending)",
+  "graph.edit.newFlow": "New flow",
+  "graph.edit.renameFlowAction": "Rename flow",
+  "graph.edit.deleteFlowAction": "Delete flow",
+  "graph.edit.confirmDeleteFlow": "Delete this flow? This cannot be undone.",
+  "graph.edit.rename": "Rename",
+
+  // C3: dirty-state guard, undo, and the orphaned-shot Save confirm.
+  "graph.edit.undo": "Undo",
+  "graph.edit.undoNone": "Nothing to undo.",
+  "graph.edit.undone": "Reverted the last edit.",
+  "graph.edit.confirmSaveBeforeLeave":
+    "You have unsaved edits. Click OK to save them now, or Cancel to keep editing or discard them.",
+  "graph.edit.confirmDiscard": "Discard your unsaved edits and leave?",
+  "graph.edit.saveFailedStay": "Save failed -- your edits were kept. Please try again.",
+  "graph.edit.orphanShotWarningOne":
+    "{count} shot references this screen and will be orphaned. Save anyway?",
+  "graph.edit.orphanShotWarningOther":
+    "{count} shots reference this screen and will be orphaned. Save anyway?",
+  "graph.edit.orphanShotWarningGeneric":
+    "Some shots may reference a screen you removed and could be orphaned (could not verify). Save anyway?",
 
   // First-run welcome page (entrypoints/welcome), opened once on install.
   "welcome.title": "Welcome to Specpin",

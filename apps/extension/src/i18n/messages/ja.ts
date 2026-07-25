@@ -232,6 +232,7 @@ const ja: Record<keyof Messages, string> = {
   "options.navAppearance": "外観",
   "options.navToolbar": "ツールバー",
   "options.navCorpus": "マッチング",
+  "options.navCapture": "自動記録",
   "options.navSupport": "サポート",
   // Spec ペイン内のセグメントコントロール: ライブ sidecar と貼り付けバンドル。
   "options.specTabLive": "ライブ",
@@ -375,6 +376,16 @@ const ja: Record<keyof Messages, string> = {
   "options.corpusDetails": "詳細",
   "options.confirmDeleteCorpusEntry": "このコーパス項目を削除しますか？元に戻せません。",
   "options.corpusEntryDeleted": "項目を削除しました。",
+
+  // 自動記録カード (Track B、ローカル、オプトイン): 記録モードの切替 + インジケーター。
+  "options.captureTitle": "自動記録 (ローカル、オプトイン)",
+  "options.captureLead":
+    "この端末で画面間のナビゲーションを記録し、グラフパネルのレビュー用に新しい遷移を提案します。デフォルトはオフ。保持するのはプライバシー保護済みの URL 形状のみ -- クエリ文字列とハッシュは破棄され、id らしいパスセグメントは `**` に一般化されます -- 実際のアドレスは保存しません。",
+  "options.captureOptIn": "この端末でナビゲーション遷移を記録する",
+  "options.captureRecording": "ナビゲーションを記録中",
+  // プライバシー契約の全文 (B4): 記録される/されないもの + 承認ゲート。
+  "options.capturePrivacyDetail":
+    "記録されるもの: 各ページの一般化された画面パス (例: /orders/**) とその間の遷移。記録されないもの: クエリ文字列、ハッシュ、ページの内容。id らしいパスセグメントは保存前に `**` に一般化されますが、承認する前に各遷移を確認してください。グラフパネルで明示的に承認するまで、このプロジェクトの .specs/ には何も書き込まれません。",
   "match.correct": "正しい",
 
   // Support & Feedback card.
@@ -565,6 +576,87 @@ const ja: Record<keyof Messages, string> = {
   "graph.colKind": "種類",
   "graph.colSpec": "Spec",
   "graph.noMatch": "現在のフィルターに一致するノードはありません。",
+  // Phase B3: ゴーストエッジのレビューパネル (自動キャプチャ済み、未承認)。
+  "graph.ghost.note": "キャプチャしたナビゲーション - まだ保存されていません。",
+  "graph.ghost.approve": "承認",
+  "graph.ghost.discard": "破棄",
+  "graph.ghost.approveError": "保存できませんでした: {error}",
+  // Phase B4: Track B の記録がオンの間、グラフパネルに表示する記録バナー。
+  "graph.capture.recordingEmpty":
+    "記録中 - サイトを閲覧すると、レビュー用の新しい画面遷移を記録します。",
+  "graph.capture.recording": "記録中 - {count} 件の遷移を記録済み、下でレビュー待ちです。",
+  "graph.capture.recordingFull":
+    "記録中 - キャプチャバッファが満杯です ({cap})。さらに記録するには、いくつか承認または破棄してください。",
+  "graph.capture.turnOff": "オフにする",
+  "graph.capture.clearAll": "記録をすべてクリア",
+  "graph.capture.confirmClearAll":
+    "このプロジェクトの記録済み (未承認) の遷移をすべて破棄しますか？元に戻せません。",
+  "graph.editMode": "編集",
+  "graph.edit.addNode": "ノードを追加",
+  "graph.edit.addEdge": "エッジを追加",
+  "graph.edit.deleteSelected": "選択項目を削除",
+  "graph.edit.save": "保存",
+  "graph.edit.saving": "保存中…",
+  "graph.edit.saved": "保存しました",
+  "graph.edit.saveError": "保存できませんでした: {error}",
+  "graph.edit.selectedNode":
+    "{label} を選択しました。別のノードをクリックして接続するか、削除してください。",
+  "graph.edit.selectedEdge": "エッジ {label} を選択しました。削除して取り除けます。",
+  "graph.edit.readyForEdge": "ノードを2つ選択しました - [エッジを追加] で接続します。",
+  "graph.edit.selectOneToDelete": "削除するノードまたはエッジを1つだけ選択してください。",
+  "graph.edit.noProject": "プロジェクトが選択されていません。",
+  "graph.edit.noFlow": "このプロジェクトにはまだ編集できるフローがありません。",
+  "graph.edit.create": "作成",
+  "graph.edit.idLabel": "Id",
+  "graph.edit.idPlaceholder": "例: checkout",
+  "graph.edit.fieldName": "名前",
+  "graph.edit.fieldLabel": "ラベル",
+  "graph.edit.fieldTrigger": "トリガー",
+  "graph.edit.fieldObject": "オブジェクト",
+  "graph.edit.urlGlobLabel": "URLグロブ",
+  "graph.edit.guardLabel": "ガード条件（任意）",
+  "graph.edit.roleLabel": "ロール（任意）",
+  "graph.edit.kindLabel": "種別",
+  "graph.edit.kindNormal": "通常",
+  "graph.edit.kindInitial": "初期状態",
+  "graph.edit.kindTerminal": "終端状態",
+  "graph.edit.titleNewScreen": "新しい画面",
+  "graph.edit.titleEditScreen": "画面を編集",
+  "graph.edit.titleNewState": "新しい状態",
+  "graph.edit.titleEditState": "状態を編集",
+  "graph.edit.titleNewTransition": "新しいトランジション",
+  "graph.edit.titleEditTransition": "トランジションを編集",
+  "graph.edit.titleNewFlow": "新しいフロー",
+  "graph.edit.titleRenameFlow": "フロー名を変更",
+  "graph.edit.notEditableOwned": "インポート/自動キャプチャ由来のため、ここでは編集できません。",
+  "graph.edit.localizedEmpty": "空でない値を少なくとも1つ入力してください。",
+  "graph.edit.addLocale": "言語を追加",
+  "graph.edit.removeLocale": "この言語を削除",
+  "graph.edit.specIdLabel": "リンクするspec",
+  "graph.edit.specIdNone": "— なし —",
+  "graph.edit.specIdFilterPlaceholder": "spec idを絞り込み…",
+  "graph.edit.specPending": "{id}（保留中）",
+  "graph.edit.newFlow": "新しいフロー",
+  "graph.edit.renameFlowAction": "フロー名を変更",
+  "graph.edit.deleteFlowAction": "フローを削除",
+  "graph.edit.confirmDeleteFlow": "このフローを削除しますか？元に戻せません。",
+  "graph.edit.rename": "名前を変更",
+
+  // C3: 未保存の変更ガード、取り消し、shot孤立化の保存確認。
+  "graph.edit.undo": "取り消し",
+  "graph.edit.undoNone": "取り消せる操作がありません。",
+  "graph.edit.undone": "直前の編集を取り消しました。",
+  "graph.edit.confirmSaveBeforeLeave":
+    "未保存の変更があります。OKで今すぐ保存するか、キャンセルして編集を続ける・変更を破棄してください。",
+  "graph.edit.confirmDiscard": "未保存の変更を破棄して離れますか？",
+  "graph.edit.saveFailedStay":
+    "保存に失敗しました -- 変更内容は保持されています。もう一度お試しください。",
+  "graph.edit.orphanShotWarningOne":
+    "{count}件のshotがこの画面を参照しており、孤立してしまいます。保存を続けますか？",
+  "graph.edit.orphanShotWarningOther":
+    "{count}件のshotがこの画面を参照しており、孤立してしまいます。保存を続けますか？",
+  "graph.edit.orphanShotWarningGeneric":
+    "削除した画面を参照しているshotがあり、孤立する可能性があります（確認できませんでした）。保存を続けますか？",
 
   "welcome.title": "Specpin へようこそ",
   "welcome.lead":

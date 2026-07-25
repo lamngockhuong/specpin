@@ -7,10 +7,14 @@ import { localConnId } from "../src/shared/local-id.js";
 import { PRIVILEGED_MESSAGE_TYPES } from "../src/shared/messaging.js";
 import type { SpecSource } from "../src/sources/source.js";
 
-function resp(project: string, domains: string[]): SpecsResponse {
+function resp(
+  project: string,
+  domains: string[],
+  specs: { id: string; fingerprint?: unknown }[] = [],
+): SpecsResponse {
   return {
     manifest: { version: "1.0", project, domains, specFiles: [] },
-    specs: [],
+    specs,
   } as unknown as SpecsResponse;
 }
 
@@ -111,7 +115,14 @@ describe("SidecarConnection flows/screens cache", () => {
     });
     await r.reestablish([conn("a")], false);
     expect(r.flowsScreensByProject()).toEqual([
-      { connectionId: "a", project: "A", flows: { version: "1.0", flows: [] }, screens },
+      {
+        connectionId: "a",
+        project: "A",
+        flows: { version: "1.0", flows: [] },
+        screens,
+        specs: [],
+        shotScreenIds: null,
+      },
     ]);
 
     // A flows/screens-only change lands; a reload (what an SSE change triggers) picks it up.
@@ -215,6 +226,38 @@ describe("SidecarRegistry.flowsScreensByProject (namespaced by project)", () => 
     expect(out[0]?.project).toBe("Local");
     expect(out[0]?.flows.flows.map((f) => f.id)).toEqual(["application-status"]);
     expect(out[0]?.screens.screens.map((s) => s.id)).toEqual(["home"]);
+  });
+
+  it("tags each known spec id pending when it carries no fingerprint yet (C2 picker feed)", async () => {
+    const r = registryWith({
+      a: flowsSource(
+        resp(
+          "A",
+          ["a.test"],
+          [{ id: "pinned-1", fingerprint: { strategy: "css", value: "#x" } }, { id: "pending-1" }],
+        ),
+        flowsWith("f1"),
+        screensWith("s1"),
+      ),
+    });
+    await r.reestablish([conn("a")], false);
+    const out = r.flowsScreensByProject();
+    expect(out[0]?.specs).toEqual([
+      { id: "pinned-1", pending: false },
+      { id: "pending-1", pending: true },
+    ]);
+  });
+
+  it("includes a manual batch's known spec ids too, tagged pending the same way", () => {
+    const r = registryWith({});
+    const batch = localBatch("b1", "Local", ["loc.test"]);
+    batch.specs = {
+      manifest: { version: "1.0", project: "Local", domains: ["loc.test"], specFiles: [] },
+      specs: [{ id: "pending-1" }] as unknown as SpecsResponse["specs"],
+    } as unknown as SpecsResponse;
+    r.setLocalBatches([batch]);
+    const out = r.flowsScreensByProject();
+    expect(out[0]?.specs).toEqual([{ id: "pending-1", pending: true }]);
   });
 
   it("defaults a manual batch with no imported flows/screens to the empty config", () => {

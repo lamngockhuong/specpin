@@ -24,25 +24,53 @@ function resolveDataset(datasetSelect: HTMLSelectElement, project: ProjectFlowsS
   return dataset;
 }
 
+/** C3: checked before a project OR dataset switch takes effect (switching
+ *  either exits edit mode -- see main.ts's toggleEditMode(false) on every
+ *  picker change). Resolving `false` reverts the `<select>` back to its
+ *  last-committed value instead of applying the change; omitted = always
+ *  allowed (no dirty draft to guard). */
+export type CanChangeProject = () => boolean | Promise<boolean>;
+
 export function wireProjectPicker(
   projectSelect: HTMLSelectElement,
   datasetSelect: HTMLSelectElement,
   onChange: (choice: DatasetChoice) => void,
+  canChange?: CanChangeProject,
 ): { populate(projects: ProjectFlowsScreens[]): DatasetChoice | null } {
   let projects: ProjectFlowsScreens[] = [];
+  let lastProjectValue = "0";
+  let lastDatasetValue = "";
 
   function currentDataset(): Dataset {
     return datasetSelect.value === "screens" ? "screens" : "flows";
   }
 
+  /** Run the guard (if any); on refusal, snap the `<select>`s back to their
+   *  last-committed values instead of applying the just-made change. */
+  async function guarded(apply: () => void): Promise<void> {
+    const allowed = (await canChange?.()) ?? true;
+    if (!allowed) {
+      projectSelect.value = lastProjectValue;
+      datasetSelect.value = lastDatasetValue;
+      return;
+    }
+    apply();
+    lastProjectValue = projectSelect.value;
+    lastDatasetValue = datasetSelect.value;
+  }
+
   projectSelect.addEventListener("change", () => {
-    const projectIdx = Number(projectSelect.value) || 0;
-    const project = projects[projectIdx];
-    const dataset = project ? resolveDataset(datasetSelect, project) : currentDataset();
-    onChange({ projectIdx, dataset });
+    void guarded(() => {
+      const projectIdx = Number(projectSelect.value) || 0;
+      const project = projects[projectIdx];
+      const dataset = project ? resolveDataset(datasetSelect, project) : currentDataset();
+      onChange({ projectIdx, dataset });
+    });
   });
   datasetSelect.addEventListener("change", () => {
-    onChange({ projectIdx: Number(projectSelect.value) || 0, dataset: currentDataset() });
+    void guarded(() => {
+      onChange({ projectIdx: Number(projectSelect.value) || 0, dataset: currentDataset() });
+    });
   });
 
   return {
@@ -58,7 +86,10 @@ export function wireProjectPicker(
         projectSelect.appendChild(opt);
       }
       projectSelect.value = "0";
-      return { projectIdx: 0, dataset: resolveDataset(datasetSelect, projects[0]) };
+      const dataset = resolveDataset(datasetSelect, projects[0]);
+      lastProjectValue = "0";
+      lastDatasetValue = datasetSelect.value;
+      return { projectIdx: 0, dataset };
     },
   };
 }

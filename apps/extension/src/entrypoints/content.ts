@@ -18,6 +18,7 @@ import { highlightElement } from "../content/highlight.js";
 import { highlightSpecOnTab } from "../content/highlight-spec.js";
 import { registerKeyboard } from "../content/keyboard.js";
 import { LOCALE_CHANGE_EVENT, pickLocale } from "../content/localize-spec.js";
+import { type OnCapturedTransition, startRecorder, stopRecorder } from "../content/nav-recorder.js";
 import { type RenderSession, renderSession } from "../content/orchestrator.js";
 import { resolveGuideSteps } from "../content/resolve-guide.js";
 import { showToast } from "../content/toast.js";
@@ -34,6 +35,7 @@ import {
   getDisplayMode,
   getLauncherPosition,
   getLocale,
+  getRecordMode,
   getTheme,
   getUiLocale,
   type LauncherPosition,
@@ -41,6 +43,7 @@ import {
   setDisplayMode,
   setLauncherPosition,
   setLocale,
+  watchRecordMode,
 } from "../shared/config.js";
 import type { TaggedSpec } from "../shared/connection-types.js";
 import { parseSpecLink } from "../shared/deep-link.js";
@@ -422,6 +425,23 @@ export default defineContentScript({
       } else {
         destroyCoverageOverlay();
       }
+    }
+
+    // Track B auto-capture: forward one derived navigation to the background's
+    // per-project draft buffer. Fire-and-forget, like RECORD_DRIFT_PASSIVE; the
+    // background re-checks the recordMode flag (defense in depth) and resolves
+    // the owning project from this tab's own origin.
+    const onCapturedTransition: OnCapturedTransition = (transition, from, to) => {
+      void sendToBackground({ type: "RECORD_CAPTURED_TRANSITION", transition, from, to });
+    };
+
+    // Attach/detach the nav-recorder to match the record-mode opt-in flag. The
+    // recorder itself is idempotent (nav-recorder.ts guards against a duplicate
+    // start/stop), so this can be called freely on both the initial read and
+    // every live flag change from the Options page.
+    function applyRecordMode(on: boolean): void {
+      if (on) startRecorder(onCapturedTransition);
+      else stopRecorder();
     }
 
     // Reposition markers on scroll/resize without a re-scan (the gap set is
@@ -1173,6 +1193,7 @@ export default defineContentScript({
       storedBadgeNumbering,
       storedBadgeColor,
       storedCoverageEnabled,
+      storedRecordMode,
     ] = await Promise.all([
       getDisplayMode(),
       getTheme(),
@@ -1181,6 +1202,7 @@ export default defineContentScript({
       getBadgeNumbering(),
       getBadgeColor(),
       getCoverageEnabled(),
+      getRecordMode(),
     ]);
     forcedMode = storedMode;
     theme = storedTheme;
@@ -1191,6 +1213,10 @@ export default defineContentScript({
     // ignore list first so dismissed gaps stay hidden on the first scan.
     coverageEnabled = storedCoverageEnabled;
     if (coverageEnabled) coverageIgnore = new Set(await getCoverageIgnore(location.origin));
+    // Restore Track B auto-capture (opt-in, default OFF) so a reload keeps
+    // recording on; a live Options-page toggle re-applies it without a reload.
+    applyRecordMode(storedRecordMode);
+    watchRecordMode(applyRecordMode);
     initI18n(resolveUiLocale(storedUiLocale));
     await refresh();
     // Seed after the first render so a stray early mutation doesn't trigger a

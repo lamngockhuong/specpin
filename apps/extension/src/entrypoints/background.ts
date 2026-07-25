@@ -11,6 +11,12 @@ import {
 } from "@specpin/spec-schema";
 import { browser, defineBackground } from "#imports";
 import {
+  type ApproveTarget,
+  approveCapturedTransition,
+  discardCapturedTransition,
+} from "../background/approve-captured.js";
+import { appendCaptured, clearBuffer, getBuffer } from "../background/capture-buffer.js";
+import {
   retitleContextMenu,
   setupContextMenu,
   updateContextMenuVisibility,
@@ -34,6 +40,7 @@ import {
   getLocalSpecs,
   getPersonalGuides,
   getPersonalVisibility,
+  getRecordMode,
   getUiLocale,
   getWelcomeSeen,
   LOCAL_SPECS_KEY,
@@ -49,6 +56,8 @@ import {
   setEnabled,
   setLastVersion,
   setLocalBatchEnabled,
+  setLocalBatchFlows,
+  setLocalBatchScreens,
   setLocalBatchViews,
   setLocalSpecs,
   setPersonalGuides,
@@ -71,9 +80,12 @@ import { removeHostPermissionIfUnused } from "../shared/host-permission.js";
 import { isLocalConnectionId, localBatchId, localConnId } from "../shared/local-id.js";
 import {
   type AddLocalBatchResult,
+  type ApproveCapturedResult,
+  type CaptureBufferResult,
   type CreateLocalProjectResult,
   type ExportBundle,
   type FlowsScreensResult,
+  type GraphWriteResult,
   type GuideMutationResult,
   type GuidesForOrigin,
   type ManualMutationResult,
@@ -370,6 +382,24 @@ export default defineBackground(() => {
         return handleRecordDrift(message);
       case "RECORD_DRIFT_PASSIVE":
         return handleRecordDriftPassive(message);
+      case "RECORD_CAPTURED_TRANSITION":
+        return handleRecordCapturedTransition(message, sender);
+      case "GET_CAPTURE_BUFFER":
+        return handleGetCaptureBuffer(message.project);
+      case "CLEAR_CAPTURE_BUFFER":
+        return handleClearCaptureBuffer(message.project);
+      case "APPROVE_CAPTURED_TRANSITION":
+        return handleApproveCapturedTransition(message.project, message.transitionId);
+      case "DISCARD_CAPTURED_TRANSITION":
+        return handleDiscardCapturedTransition(message.project, message.transitionId);
+      case "SAVE_GRAPH_FLOWS":
+        return handleSaveGraphFlows(message.connectionId, message.config);
+      case "SAVE_GRAPH_SCREENS":
+        return handleSaveGraphScreens(message.connectionId, message.config);
+      case "SET_LOCAL_BATCH_FLOWS":
+        return handleSetLocalBatchFlows(message.id, message.config);
+      case "SET_LOCAL_BATCH_SCREENS":
+        return handleSetLocalBatchScreens(message.id, message.config);
       case "ADD_LOCAL_BATCH":
         return handleAddLocalBatch(message);
       case "REMOVE_LOCAL_BATCH":
@@ -882,6 +912,168 @@ export default defineBackground(() => {
   ): Promise<void> {
     if (!(await getCorpusEnabled())) return;
     await appendDriftPassiveMany(message.entries);
+  }
+
+  // Append one Track B auto-captured transition to its owning project's draft
+  // buffer. Gated on the recordMode opt-in flag -- defense in depth: the
+  // recorder content-side also refuses to attach while OFF, but a stale
+  // in-flight message (flag flipped OFF mid-navigation) must still be dropped
+  // here. The owning project is resolved from the SENDER tab's origin (never
+  // trusted from the message payload), reusing the exact same origin ->
+  // connection resolution GET_WRITE_TARGETS uses, so a page can only ever
+  // attribute a capture to a project that actually serves it. No project
+  // serving the origin (or no tab origin at all) -> drop silently; there is
+  // nowhere to attribute the capture.
+  async function handleRecordCapturedTransition(
+    message: Extract<Message, { type: "RECORD_CAPTURED_TRANSITION" }>,
+    sender: { tab?: { url?: string } } | undefined,
+  ): Promise<void> {
+    if (!(await getRecordMode())) return;
+    const origin = originOf(sender);
+    if (!origin) return;
+    const target = handleGetWriteTargets(origin)[0];
+    if (!target) return;
+    await appendCaptured(target.id, {
+      transition: message.transition,
+      from: message.from,
+      to: message.to,
+    });
+  }
+
+  // Read-only, unprivileged (mirrors GET_FLOWS_SCREENS): the graph panel (B3)
+  // reads the draft buffer for every project it aggregates.
+  async function handleGetCaptureBuffer(project?: string): Promise<CaptureBufferResult> {
+    return { entries: await getBuffer(project) };
+  }
+
+  // Discard-all for one project's draft buffer. Privileged (PRIVILEGED_MESSAGE_TYPES):
+  // only an extension page (the graph panel) may wipe a draft.
+  async function handleClearCaptureBuffer(project: string): Promise<{ ok: boolean }> {
+    await clearBuffer(project);
+    return { ok: true };
+  }
+
+  // Build the read/write pair approveCapturedTransition merges through, for
+  // whichever kind of project `connectionId` names. A sidecar target re-reads
+  // the LIVE screens.json via a fresh reload() before merging (RT-H3, mirrors
+  // upsertGuide); a local target re-reads storage.local directly (mirrors
+  // writeLocalSpec) rather than trusting the in-memory registry cache. Null for
+  // an unknown connection id (neither a live connection nor a known batch).
+  function buildApproveTarget(connectionId: string): ApproveTarget | null {
+    if (isLocalConnectionId(connectionId)) {
+      const batchId = localBatchId(connectionId);
+      if (!batchId) return null;
+      return {
+        getScreens: async () => {
+          const state = (await getLocalSpecs()) ?? { batches: [] };
+          const batch = state.batches.find((b) => b.id === batchId);
+          return batch?.screens ?? { version: "1.0", screens: [], transitions: [] };
+        },
+        writeScreens: async (config) => {
+          const state = (await getLocalSpecs()) ?? { batches: [] };
+          const result = setLocalBatchScreens(state, batchId, config);
+          if (!result.ok || !result.state) throw new Error(result.error ?? "local write failed");
+          await setLocalSpecs(result.state);
+          registry.setLocalBatches(result.state.batches);
+        },
+      };
+    }
+    if (!registry.statuses().some((s) => s.id === connectionId)) return null;
+    return {
+      getScreens: async () => {
+        await registry.reload(connectionId);
+        return registry.getScreens(connectionId);
+      },
+      writeScreens: async (config) => {
+        const result = await registry.saveScreens(connectionId, config);
+        if (!result.ok) throw new Error(result.errors?.join("; ") ?? "sidecar write failed");
+      },
+    };
+  }
+
+  // Approve one buffered transition (Phase B3). Runs under mutate() so it
+  // serializes with every other storage/registry writer (single SW thread, no
+  // seq guard, same discipline as writeLocalSpec/handleSaveTeamGuide).
+  function handleApproveCapturedTransition(
+    project: string,
+    transitionId: string,
+  ): Promise<ApproveCapturedResult> {
+    return mutate(async () => {
+      const target = buildApproveTarget(project);
+      if (!target) return { ok: false, errors: ["unknown project"] };
+      const result = await approveCapturedTransition(project, transitionId, target);
+      if (result.ok) await broadcastSpecsChanged();
+      return result;
+    });
+  }
+
+  // Discard one buffered transition (Phase B3). No `.specs/` write, so it does
+  // not need the mutate() chain (capture-buffer.ts serializes its own writes).
+  async function handleDiscardCapturedTransition(
+    project: string,
+    transitionId: string,
+  ): Promise<{ ok: true }> {
+    return discardCapturedTransition(project, transitionId);
+  }
+
+  // Track C (C1) editor Save, sidecar branch. `config` already went through
+  // the client-side provenance-preserving merge + schema validation
+  // (graph-write-back(-flows).ts) before this message was ever sent -- this
+  // just persists it, the sidecar's own PUT validates again server-side
+  // (defense in depth). Mirrors handleApproveCapturedTransition's sidecar path.
+  function handleSaveGraphFlows(
+    connectionId: string,
+    config: FlowsConfig,
+  ): Promise<GraphWriteResult> {
+    return mutate(async () => {
+      const result = await registry.saveFlows(connectionId, config);
+      if (result.ok) await broadcastSpecsChanged();
+      return result;
+    });
+  }
+
+  function handleSaveGraphScreens(
+    connectionId: string,
+    config: ScreensConfig,
+  ): Promise<GraphWriteResult> {
+    return mutate(async () => {
+      const result = await registry.saveScreens(connectionId, config);
+      if (result.ok) await broadcastSpecsChanged();
+      return result;
+    });
+  }
+
+  // Track C (C1) editor Save, local (Manual) project branch: RMW under
+  // mutate() like every other local-batch writer (persist FIRST, storage is
+  // truth, then sync the registry from it). `id` is the batch id, not the
+  // `manual:<id>` connection id (mirrors handleSetLocalBatchEnabled).
+  function handleSetLocalBatchFlows(id: string, config: FlowsConfig): Promise<GraphWriteResult> {
+    return mutate(async () => {
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const result = setLocalBatchFlows(state, id, config);
+      if (!result.ok || !result.state)
+        return { ok: false, errors: [result.error ?? "local write failed"] };
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      await broadcastSpecsChanged();
+      return { ok: true };
+    });
+  }
+
+  function handleSetLocalBatchScreens(
+    id: string,
+    config: ScreensConfig,
+  ): Promise<GraphWriteResult> {
+    return mutate(async () => {
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const result = setLocalBatchScreens(state, id, config);
+      if (!result.ok || !result.state)
+        return { ok: false, errors: [result.error ?? "local write failed"] };
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      await broadcastSpecsChanged();
+      return { ok: true };
+    });
   }
 
   async function handleDeleteSpec(

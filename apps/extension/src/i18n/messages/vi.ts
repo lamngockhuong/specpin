@@ -226,6 +226,7 @@ const vi: Record<keyof Messages, string> = {
   "options.navAppearance": "Giao diện",
   "options.navToolbar": "Thanh công cụ",
   "options.navCorpus": "Đối sánh",
+  "options.navCapture": "Tự động ghi",
   "options.navSupport": "Hỗ trợ",
   // Segmented control trong mục Spec: sidecar trực tiếp so với bundle dán tay.
   "options.specTabLive": "Trực tiếp",
@@ -367,6 +368,16 @@ const vi: Record<keyof Messages, string> = {
   "options.corpusDetails": "Chi tiết",
   "options.confirmDeleteCorpusEntry": "Xóa mục này khỏi kho? Không thể hoàn tác.",
   "options.corpusEntryDeleted": "Đã xóa mục.",
+
+  // Thẻ tự động ghi (Track B, cục bộ, tự chọn): công tắc chế độ ghi + chỉ báo.
+  "options.captureTitle": "Tự động ghi (cục bộ, tự chọn)",
+  "options.captureLead":
+    "Ghi lại việc điều hướng giữa các màn hình trên thiết bị này để đề xuất chuyển tiếp mới cho phần xem xét ở bảng đồ thị. Mặc định tắt; chỉ lưu dạng URL đã được ẩn danh -- query string và hash bị bỏ qua, còn các đoạn path trông giống id sẽ được tổng quát hóa thành `**` -- không bao giờ lưu địa chỉ gốc.",
+  "options.captureOptIn": "Ghi lại điều hướng trên thiết bị này",
+  "options.captureRecording": "Đang ghi điều hướng",
+  // Toàn bộ cam kết riêng tư (B4): những gì được/không được ghi lại + điều kiện Duyệt.
+  "options.capturePrivacyDetail":
+    "Được ghi lại: dạng đường dẫn màn hình đã tổng quát hóa cho mỗi trang (ví dụ /orders/**) và transition giữa chúng. Không bao giờ ghi lại: query string, hash, hay nội dung trang. Các đoạn path trông giống id sẽ được tổng quát hóa thành `**` trước khi lưu -- nhưng hãy xem lại từng transition trước khi Duyệt. Không có gì được ghi vào .specs/ của project cho đến khi bạn Duyệt (Approve) rõ ràng trong graph panel.",
   "match.correct": "Đúng",
 
   // Support & Feedback card.
@@ -555,6 +566,87 @@ const vi: Record<keyof Messages, string> = {
   "graph.colKind": "Loại",
   "graph.colSpec": "Spec",
   "graph.noMatch": "Không có node nào khớp với bộ lọc hiện tại.",
+  // Phase B3: bảng xem xét ghost edge (đã ghi lại tự động, chưa được duyệt).
+  "graph.ghost.note": "Điều hướng đã ghi lại - chưa được lưu.",
+  "graph.ghost.approve": "Duyệt",
+  "graph.ghost.discard": "Bỏ qua",
+  "graph.ghost.approveError": "Không thể lưu: {error}",
+  // Phase B4: banner ghi hình hiển thị trên graph panel khi Track B đang bật.
+  "graph.capture.recordingEmpty":
+    "Đang ghi - hãy duyệt trang để ghi lại các screen transition mới cho phần xem xét.",
+  "graph.capture.recording":
+    "Đang ghi - {count} transition đã được ghi lại, đang chờ xem xét bên dưới.",
+  "graph.capture.recordingFull":
+    "Đang ghi - bộ đệm ghi đã đầy ({cap}). Hãy duyệt hoặc bỏ qua bớt trước khi có thể ghi thêm.",
+  "graph.capture.turnOff": "Tắt",
+  "graph.capture.clearAll": "Xóa tất cả đã ghi",
+  "graph.capture.confirmClearAll":
+    "Bỏ toàn bộ transition đã ghi (chưa được duyệt) cho project này? Không thể hoàn tác.",
+  "graph.editMode": "Chỉnh sửa",
+  "graph.edit.addNode": "Thêm node",
+  "graph.edit.addEdge": "Thêm edge",
+  "graph.edit.deleteSelected": "Xóa mục đã chọn",
+  "graph.edit.save": "Lưu",
+  "graph.edit.saving": "Đang lưu…",
+  "graph.edit.saved": "Đã lưu",
+  "graph.edit.saveError": "Không lưu được: {error}",
+  "graph.edit.selectedNode": "Đã chọn {label}. Click node khác để nối, hoặc Xóa.",
+  "graph.edit.selectedEdge": "Đã chọn edge {label}. Xóa để gỡ bỏ.",
+  "graph.edit.readyForEdge": "Đã chọn 2 node - bấm Thêm edge để nối chúng.",
+  "graph.edit.selectOneToDelete": "Chọn đúng một node hoặc một edge để xóa.",
+  "graph.edit.noProject": "Chưa chọn project nào.",
+  "graph.edit.noFlow": "Project này chưa có flow nào để chỉnh sửa.",
+  "graph.edit.create": "Tạo",
+  "graph.edit.idLabel": "Id",
+  "graph.edit.idPlaceholder": "vd: checkout",
+  "graph.edit.fieldName": "Tên",
+  "graph.edit.fieldLabel": "Nhãn",
+  "graph.edit.fieldTrigger": "Trigger",
+  "graph.edit.fieldObject": "Đối tượng",
+  "graph.edit.urlGlobLabel": "URL glob",
+  "graph.edit.guardLabel": "Điều kiện (guard, tùy chọn)",
+  "graph.edit.roleLabel": "Vai trò (tùy chọn)",
+  "graph.edit.kindLabel": "Loại",
+  "graph.edit.kindNormal": "Bình thường",
+  "graph.edit.kindInitial": "Khởi đầu",
+  "graph.edit.kindTerminal": "Kết thúc",
+  "graph.edit.titleNewScreen": "Màn hình mới",
+  "graph.edit.titleEditScreen": "Sửa màn hình",
+  "graph.edit.titleNewState": "Trạng thái mới",
+  "graph.edit.titleEditState": "Sửa trạng thái",
+  "graph.edit.titleNewTransition": "Transition mới",
+  "graph.edit.titleEditTransition": "Sửa transition",
+  "graph.edit.titleNewFlow": "Flow mới",
+  "graph.edit.titleRenameFlow": "Đổi tên flow",
+  "graph.edit.notEditableOwned": "Được import/tự động ghi nhận -- không thể chỉnh sửa ở đây.",
+  "graph.edit.localizedEmpty": "Nhập ít nhất một giá trị không để trống.",
+  "graph.edit.addLocale": "Thêm ngôn ngữ",
+  "graph.edit.removeLocale": "Xóa ngôn ngữ này",
+  "graph.edit.specIdLabel": "Spec liên kết",
+  "graph.edit.specIdNone": "— không có —",
+  "graph.edit.specIdFilterPlaceholder": "Lọc spec id…",
+  "graph.edit.specPending": "{id} (chưa pin)",
+  "graph.edit.newFlow": "Flow mới",
+  "graph.edit.renameFlowAction": "Đổi tên flow",
+  "graph.edit.deleteFlowAction": "Xóa flow",
+  "graph.edit.confirmDeleteFlow": "Xóa flow này? Không thể hoàn tác.",
+  "graph.edit.rename": "Đổi tên",
+
+  // C3: cảnh báo dữ liệu chưa lưu, undo, và xác nhận khi Save có thể làm mồ côi shot.
+  "graph.edit.undo": "Hoàn tác",
+  "graph.edit.undoNone": "Không có gì để hoàn tác.",
+  "graph.edit.undone": "Đã hoàn tác chỉnh sửa gần nhất.",
+  "graph.edit.confirmSaveBeforeLeave":
+    "Bạn có chỉnh sửa chưa lưu. Bấm OK để lưu ngay, hoặc Cancel để tiếp tục chỉnh sửa hoặc bỏ chúng.",
+  "graph.edit.confirmDiscard": "Bỏ các chỉnh sửa chưa lưu và rời khỏi trang?",
+  "graph.edit.saveFailedStay":
+    "Lưu thất bại -- các chỉnh sửa của bạn vẫn được giữ. Vui lòng thử lại.",
+  "graph.edit.orphanShotWarningOne":
+    "{count} shot đang tham chiếu đến màn hình này và sẽ trở thành mồ côi. Vẫn lưu?",
+  "graph.edit.orphanShotWarningOther":
+    "{count} shot đang tham chiếu đến màn hình này và sẽ trở thành mồ côi. Vẫn lưu?",
+  "graph.edit.orphanShotWarningGeneric":
+    "Có thể một số shot đang tham chiếu đến màn hình bạn vừa xóa và sẽ mồ côi (không thể xác minh). Vẫn lưu?",
 
   "welcome.title": "Chào mừng đến với Specpin",
   "welcome.lead":

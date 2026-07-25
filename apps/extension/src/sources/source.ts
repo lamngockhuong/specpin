@@ -40,6 +40,19 @@ export interface SpecSource {
    *  support it omit this; the connection treats a missing loadScreens as "no
    *  screens.json". */
   loadScreens?(): Promise<ScreensConfig>;
+  /** Write the screen-transition config (Phase B3's ghost-edge approve).
+   *  Sources that do not support writing (FileSystem/Manual) omit this. */
+  saveScreens?(config: ScreensConfig): Promise<void>;
+  /** Write the status-flow FSM config (Track C's C1 editor Save). Sources
+   *  that do not support writing (FileSystem/Manual) omit this. */
+  saveFlows?(config: FlowsConfig): Promise<void>;
+  /** Optional shot inventory (sidecar GET /shots): the screenIds every stored
+   *  `.specs/shots/*.shot.json` references (Track C's C3 orphaned-shot
+   *  warning). Sources that do not support it (FileSystem/Manual, or an older
+   *  sidecar with no /shots endpoint) omit this; the connection treats a
+   *  missing/failed loadShotScreenIds as "unknown" (never a hard block --
+   *  the caller degrades to a generic caution). */
+  loadShotScreenIds?(): Promise<string[]>;
   /** Optional live-change subscription; returns an unsubscribe function.
    *  `options.jitterMs` randomizes reconnect timing across concurrent watches. */
   watch?(onChange: () => void, options?: { jitterMs?: number }): () => void;
