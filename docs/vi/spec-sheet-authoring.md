@@ -13,7 +13,7 @@ thích một ảnh tham chiếu. Nó được host **ngay trong browser extensio
 
 ## Mở trang
 
-Cài/load extension Specpin, rồi bấm **Open spec sheet**:
+Cài/load extension Specpin, rồi mở menu **⋯ More actions** ở header và bấm **Open spec sheet**:
 
 - từ **popup** trên toolbar, hoặc
 - từ header của **side panel**.

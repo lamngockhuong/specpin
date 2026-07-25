@@ -149,7 +149,7 @@ This ensures an approved source spec never silently clone into "approved" on a n
 
 Local projects can be exported as a `.specs.zip` bundle:
 
-1. In the popup or side panel, click **Export** (top-right). If several projects serve the page, a picker appears.
+1. In the popup or side panel, open the **⋯ More actions** menu (top-right) and click **Export**. If several projects serve the page, the menu lists one Export item per project.
 2. In the Options page, click **Export** on a local project's card.
 
 The bundle contains `manifest.json` plus one `*.spec.json` per group, and any `.specs/` config files that hold content: `guides.json`, `views.json`, and (local projects only) `required.json`. Empty config files are omitted. Unzip it into a repo's `.specs/` directory, or re-import the files through the multi-file picker in Options - the round-trip keeps guides and views, not just specs.

@@ -81,7 +81,6 @@ const vi: Record<keyof Messages, string> = {
   "popup.openSidepanel": "Mở dạng thanh bên ⇥",
   "popup.newProject": "Dự án mới",
   "popup.exportLocal": "Xuất spec cục bộ",
-  "popup.exportPickProject": "Xuất dự án nào?",
 
   // Shared "+ New project" inline form (popup + side panel).
   "addProject.modeLocal": "Dự án cục bộ",

@@ -1,8 +1,8 @@
 /* Generic overflow ("...") dropdown, shared by any surface via openOverflowMenu
    (shared/overflow-menu.ts). Appended to <body> and positioned with
    position: fixed against the kebab button's bounding rect, so it does not depend
-   on the surface's layout. Mirrors the export project-picker (project-menu.css)
-   with a destructive `danger` item variant. All values reference --sp-* tokens. */
+   on the surface's layout. Carries a destructive `danger` item variant. All
+   values reference --sp-* tokens. */
 .sp-menu {
   position: fixed;
   z-index: 2147483000;

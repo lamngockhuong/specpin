@@ -1,11 +1,9 @@
 // A single-instance overflow ("...") dropdown, shared by any surface that needs
-// to collapse a row of actions behind one kebab button. Generalized from the
-// export project-picker in project-actions.ts (same proven approach: appended to
-// <body>, positioned with position: fixed against the anchor's bounding rect,
-// dismissed on outside-click / Escape / scroll), plus a `danger` item variant.
-// The export picker predates this and still carries its own copy of the lifecycle;
-// it could later migrate onto openOverflowMenu (needs an optional header row + a
-// close/is-open hook for its live-target rebuild). Keep the two in sync until then.
+// to collapse a row of actions behind one kebab button (appended to <body>,
+// positioned with position: fixed against the anchor's bounding rect, dismissed
+// on outside-click / Escape / scroll), plus a `danger` item variant. The popup +
+// side panel header "More actions" menu and the per-spec kebab both build on it;
+// the project New-project/Export actions feed items in via projectActions.menuItems.
 //
 // Injection-safe: item labels go through textContent, never innerHTML.
 
