@@ -656,6 +656,8 @@ const en = {
   "graph.edit.newFlow": "New flow",
   "graph.edit.renameFlowAction": "Rename flow",
   "graph.edit.deleteFlowAction": "Delete flow",
+  "graph.edit.flowPicker": "Flow to edit",
+  "graph.edit.switchedFlow": "Now editing flow {label}.",
   "graph.edit.confirmDeleteFlow": "Delete this flow? This cannot be undone.",
   "graph.edit.rename": "Rename",
 

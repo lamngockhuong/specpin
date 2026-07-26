@@ -642,6 +642,8 @@ const vi: Record<keyof Messages, string> = {
   "graph.edit.newFlow": "Flow mới",
   "graph.edit.renameFlowAction": "Đổi tên flow",
   "graph.edit.deleteFlowAction": "Xóa flow",
+  "graph.edit.flowPicker": "Flow cần sửa",
+  "graph.edit.switchedFlow": "Đang sửa flow {label}.",
   "graph.edit.confirmDeleteFlow": "Xóa flow này? Không thể hoàn tác.",
   "graph.edit.rename": "Đổi tên",
 

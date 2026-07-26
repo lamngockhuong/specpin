@@ -61,6 +61,20 @@ export function unprefixFlowId(flowId: string, id: string): string | null {
   return id.startsWith(prefix) ? id.slice(prefix.length) : null;
 }
 
+/** The flow that owns a display id (`${flowId}:...`): the flow whose prefix
+ *  matches, longest match winning so a flow id that is itself a prefix of
+ *  another can't shadow it. Null when none match. The inverse of
+ *  `unprefixFlowId`, kept here so the `${flowId}:` scheme lives in one place. */
+export function ownerFlowId(flowIds: string[], displayId: string): string | null {
+  let owner: string | null = null;
+  for (const id of flowIds) {
+    if (unprefixFlowId(id, displayId) !== null && (owner === null || id.length > owner.length)) {
+      owner = id;
+    }
+  }
+  return owner;
+}
+
 /** Drop any edge whose `from`/`to` references a node id absent from `nodes`.
  *  Exported so graph-ghost.ts (Phase B3) can apply the same guard to its
  *  merged committed+ghost node/edge lists. The schema does not enforce that a

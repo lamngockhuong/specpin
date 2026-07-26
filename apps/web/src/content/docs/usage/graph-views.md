@@ -121,6 +121,8 @@ The graph view isn't only a diagram to look at - turn on **Edit mode** to add, e
 
 **Edit a node or edge.** Click an existing one to open the same side form, pre-filled. Every valid field change applies to the in-memory draft right away; **Save** is still what persists the draft to `.specs/`. A transition that came from code-import or auto-capture renders read-only here - change it through its own flow instead (re-run the import, or Approve/Discard the ghost edge).
 
+**Editing across multiple flows (status-flow only).** A `flows.json` can hold several independent flows, all drawn on one canvas, but only one is *active* for editing at a time - the rest render read-only. When two or more flows are present, a **flow picker** appears in the edit bar: pick which flow to edit from it, or just click any node or edge of another flow and editing switches to it automatically. If the current flow has unsaved changes, switching asks you to save or discard first.
+
 **Add an edge.** Click two nodes in order (from, then to) to arm them, then **Add edge** to open a form for the trigger label plus optional guard, role, and linked spec.
 
 **Delete.** Select exactly one node or edge, then **Delete selected**. A node still referenced by an imported/auto-captured edge refuses to delete outright - resolve that edge first (a manually-added edge cascades away with the node). Deleting a screen that a specshot spec sheet still references is allowed here; that gets checked at Save instead (next).
@@ -129,7 +131,7 @@ The graph view isn't only a diagram to look at - turn on **Edit mode** to add, e
 
 **Save, and the orphaned-shot check.** **Save** persists the whole draft: validated and merged the same provenance-preserving way as the auto-capture Approve flow above - your edits never clobber an entry from another source, and vice versa. If this session removed a screen that a spec sheet still references, Save asks you to confirm first, naming how many would be orphaned (or a general caution when it can't check) - Cancel to reconsider, or continue to save anyway.
 
-**Leaving with unsaved edits.** Turning Edit mode off, switching project, or switching the flows/screens dataset while a draft has unsaved changes asks you to save or discard first; a clean draft never prompts. Closing or reloading the tab with unsaved edits triggers the browser's own leave-page warning too.
+**Leaving with unsaved edits.** Turning Edit mode off, switching project, switching the active flow, or switching the flows/screens dataset while a draft has unsaved changes asks you to save or discard first; a clean draft never prompts. Closing or reloading the tab with unsaved edits triggers the browser's own leave-page warning too.
 
 :::note
 The editor writes only `.specs/flows.json` and `.specs/screens.json`, through the same read-merge-validate-write path every other writer here uses - no new schema, no new write surface.

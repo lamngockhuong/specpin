@@ -179,26 +179,85 @@ describe("wireEditMode -- flows id-prefix leak regression (click -> mutate chain
     expect(created).toBeDefined();
   });
 
-  it("ignores a click on a node belonging to a DIFFERENT flow than the one being edited (does not mutate the active flow)", () => {
+  it("clicking a node from another flow switches editing to that flow, then selects it", () => {
     const { handle, container } = setup();
-    const foreign = findNode(handle, "signup:start"); // active flow is "checkout" (the first flow)
-    expect(handle.handleNodeClick(foreign)).toBe(true); // consumed, but not selected
-
-    toolbarButtons(container).deleteSelected.click(); // nothing selected -> no-op
+    // active flow starts as the first flow ("checkout"); click "signup"'s node
+    expect(handle.handleNodeClick(findNode(handle, "signup:start"))).toBe(true);
+    // now scoped to "signup" -> Delete acts on its state (manual loop cascades)
+    toolbarButtons(container).deleteSelected.click();
     const graph = handle.getGraph("en");
-    expect(graph.nodes.map((n) => n.id)).toContain("signup:start");
+    expect(graph.nodes.map((n) => n.id)).not.toContain("signup:start");
+    expect(graph.edges.map((e) => e.id)).not.toContain("signup:loop");
+    // the previously-active flow is untouched
     expect(graph.nodes.map((n) => n.id)).toContain("checkout:draft");
   });
 
-  it("ignores a click on an edge belonging to a DIFFERENT flow than the one being edited", () => {
+  it("clicking an edge from another flow switches editing to that flow, then selects it", () => {
     const { handle, container } = setup();
-    const foreignEdge = findEdge(handle, "signup:loop");
-    expect(handle.handleEdgeClick(foreignEdge)).toBe(true); // consumed, but not selected
-
-    toolbarButtons(container).deleteSelected.click(); // nothing selected -> no-op
+    expect(handle.handleEdgeClick(findEdge(handle, "signup:loop"))).toBe(true);
+    toolbarButtons(container).deleteSelected.click(); // deletes the selected signup edge
     const graph = handle.getGraph("en");
-    expect(graph.edges.map((e) => e.id)).toContain("signup:loop");
+    expect(graph.edges.map((e) => e.id)).not.toContain("signup:loop");
+    // checkout's edge is untouched
     expect(graph.edges.map((e) => e.id)).toContain("checkout:pay");
+  });
+});
+
+describe("wireEditMode -- multi-flow picker + active-flow switching", () => {
+  function flowSelect(container: HTMLElement): HTMLSelectElement {
+    return must(container.querySelector<HTMLSelectElement>(".graph-edit-flow-select"));
+  }
+
+  it("lists every flow with the active one selected, and hides itself with a single flow", () => {
+    const { container } = setup();
+    const select = flowSelect(container);
+    expect([...select.options].map((o) => o.value)).toEqual(["checkout", "signup"]);
+    expect(select.value).toBe("checkout");
+    expect(select.hidden).toBe(false);
+  });
+
+  it("picking another flow re-scopes editing to it", () => {
+    const { handle, container } = setup();
+    const select = flowSelect(container);
+    select.value = "signup";
+    fire(select, "change");
+    // signup is now the editable flow
+    handle.handleNodeClick(findNode(handle, "signup:start"));
+    toolbarButtons(container).deleteSelected.click();
+    expect(handle.getGraph("en").nodes.map((n) => n.id)).not.toContain("signup:start");
+  });
+
+  it("switching flow with an unsaved draft runs the guard; cancelling keeps the current flow + its draft", async () => {
+    const container = document.createElement("div");
+    const formContainer = document.createElement("div");
+    document.body.append(container, formContainer);
+    const project = baseProject();
+    let guardCalls = 0;
+    const handle = wireEditMode(container, formContainer, {
+      currentProject: () => project,
+      currentDataset: () => "flows",
+      onChanged: () => {},
+      applySelection: () => {},
+      locale: () => "en",
+      confirmLeaveActiveFlow: () => {
+        guardCalls++;
+        return false; // user cancels
+      },
+    });
+    handle.setEnabled(true);
+    // Dirty the checkout draft.
+    handle.handleNodeClick(findNode(handle, "checkout:draft"));
+    toolbarButtons(container).deleteSelected.click();
+    expect(handle.isDirty()).toBe(true);
+
+    const select = flowSelect(container);
+    select.value = "signup";
+    fire(select, "change");
+    await new Promise((resolve) => setTimeout(resolve)); // let the async guard settle
+
+    expect(guardCalls).toBe(1);
+    expect(handle.isDirty()).toBe(true); // draft preserved
+    expect(select.value).toBe("checkout"); // picker reverted to the active flow
   });
 });
 

@@ -1,6 +1,8 @@
+import { resolveLocalized } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
 import type { ProjectFlowsScreens } from "../shared/messaging.js";
 import type { Graph, GraphEdge, GraphNode } from "./config-to-graph.js";
+import { ownerFlowId } from "./config-to-graph.js";
 import { wireFlowControls } from "./graph-edit-flow-controls.js";
 import { type EditFormHandle, mountEditForm } from "./graph-edit-form.js";
 import {
@@ -28,10 +30,10 @@ import type { Dataset } from "./graph-project-picker.js";
 // New/Rename/Delete flow) + click routing + the C2 side form. Split out of
 // main.ts (mirrors graph-ghost-review.ts); flow lifecycle lives in
 // graph-edit-flow-controls.ts, form-opening in graph-edit-node-form-wiring.ts,
-// delete/save in graph-edit-toolbar-actions.ts -- all kept out of this file to
-// hold it under the plan's 200-line budget. Flows editing is scoped to ONE
-// active flow at a time (`activeFlowId`, re-pointed at whichever flow a
-// create/rename/delete last touched) -- a full flow picker is C3's scope.
+// delete/save in graph-edit-toolbar-actions.ts. Flows editing is scoped to ONE
+// active flow at a time (`activeFlowId`); the flow picker (graph-edit-flow-
+// controls.ts) and clicking another flow's node/edge both re-point it via
+// switchActiveFlow, guarding an unsaved draft first.
 
 export interface EditWiringDeps {
   currentProject(): ProjectFlowsScreens | undefined;
@@ -48,6 +50,10 @@ export interface EditWiringDeps {
   /** C3: a screens Save would orphan a shot (or, `{}`, the inventory couldn't
    *  be verified) -- confirm before persisting. Omitted = always proceed. */
   confirmOrphanShots?(warning: OrphanWarning): boolean | Promise<boolean>;
+  /** Switching the active flow (via the picker or clicking another flow's
+   *  node/edge) while the current flow's draft has unsaved edits -- confirm
+   *  save/discard before re-scoping. Omitted = always proceed. */
+  confirmLeaveActiveFlow?(): boolean | Promise<boolean>;
 }
 
 export interface EditWiringHandle {
@@ -127,12 +133,15 @@ export function wireEditMode(
   const flowControls = wireFlowControls(toolbar, formContainer, {
     connectionId: () => connectionId,
     activeFlow: () => deps.currentProject()?.flows.flows.find((f) => f.id === activeFlowId) ?? null,
+    allFlows: () => deps.currentProject()?.flows.flows ?? [],
+    activeFlowId: () => activeFlowId,
     locale: deps.locale,
     onFlowsChanged: (refreshedProjects, flowId) => {
       rebindFlowsMode(refreshedProjects, flowId);
       flowControls.setVisible(kind === "flows");
       deps.onChanged(refreshedProjects);
     },
+    onSelectFlow: (flowId) => void switchActiveFlow(flowId),
   });
 
   function reset(): void {
@@ -160,6 +169,60 @@ export function wireEditMode(
         : (project.flows.flows[0]?.id ?? null);
     activeFlowId = resolvedId;
     mode = resolvedId ? createFlowsEditMode(project.flows, resolvedId) : null;
+  }
+
+  /** The flow that owns a display id, or null in screens mode / when no flow
+   *  prefix matches (the `${flowId}:` scheme lives in config-to-graph.ts). */
+  function ownerFlowIdFor(displayId: string): string | null {
+    if (kind !== "flows") return null;
+    return ownerFlowId(deps.currentProject()?.flows.flows.map((f) => f.id) ?? [], displayId);
+  }
+
+  /** Re-scope editing to `flowId` (another flow in this project): rebind
+   *  `mode`, clear the selection, refresh the picker + lifecycle buttons, and
+   *  re-render so that flow's nodes/edges become the editable ones. */
+  function applyFlowSwitch(flowId: string): void {
+    const project = deps.currentProject();
+    rebindFlowsMode(project ? [project] : null, flowId);
+    reset();
+    const flow = project?.flows.flows.find((f) => f.id === flowId);
+    setStatus(
+      t("graph.edit.switchedFlow", {
+        label: flow ? resolveLocalized(flow.object, deps.locale()) || flow.id : flowId,
+      }),
+    );
+    flowControls.setVisible(kind === "flows");
+    deps.onChanged(null);
+  }
+
+  /** Switch the active flow, guarding an unsaved draft first. Returns `true`
+   *  synchronously when nothing is dirty (keeps the click handlers snappy);
+   *  otherwise a promise that resolves `false` if the user cancels the
+   *  save/discard prompt. No-op `true` when already on `flowId` or not in
+   *  flows mode. */
+  function switchActiveFlow(flowId: string): boolean | Promise<boolean> {
+    if (kind !== "flows" || flowId === activeFlowId) return true;
+    if (!(mode?.isDirty() ?? false)) {
+      applyFlowSwitch(flowId);
+      return true;
+    }
+    return (async () => {
+      const allowed = (await deps.confirmLeaveActiveFlow?.()) ?? true;
+      if (!allowed) {
+        flowControls.setVisible(kind === "flows"); // revert the picker to activeFlowId
+        return false;
+      }
+      applyFlowSwitch(flowId);
+      return true;
+    })();
+  }
+
+  /** Apply `select` once a flow switch has succeeded. `result` is
+   *  switchActiveFlow's return: `true` (already switched, synchronous), `false`
+   *  (user cancelled), or a promise for the dirty-draft async guard. */
+  function switchThenSelect(result: boolean | Promise<boolean>, select: () => void): void {
+    if (result === true) select();
+    else if (result !== false) void result.then((ok) => ok && select());
   }
 
   function setEnabled(next: boolean): void {
@@ -255,11 +318,7 @@ export function wireEditMode(
     };
   }
 
-  function handleNodeClick(node: GraphNode): boolean {
-    if (!enabled || !mode) return false;
-    // A different flow's node rendered read-only alongside the active one --
-    // consume the click (edit mode is on) but don't select/mutate it.
-    if (toDraftId(kind, activeFlowId, node.id) === null) return true;
+  function selectNode(node: GraphNode): void {
     selectedEdgeId = null;
     selectedNodeIds = selectedNodeIds.includes(node.id)
       ? selectedNodeIds.filter((id) => id !== node.id)
@@ -273,12 +332,9 @@ export function wireEditMode(
     const raw = rawSelection();
     updateFormForSelection(nodeFormDeps(), raw.nodeIds, raw.edgeId);
     updateButtons();
-    return true;
   }
 
-  function handleEdgeClick(edge: GraphEdge): boolean {
-    if (!enabled || !mode) return false;
-    if (toDraftId(kind, activeFlowId, edge.id) === null) return true;
+  function selectEdge(edge: GraphEdge): void {
     selectedNodeIds = [];
     selectedEdgeId = edge.id;
     setStatus(t("graph.edit.selectedEdge", { label: edge.label }));
@@ -286,8 +342,30 @@ export function wireEditMode(
     const raw = rawSelection();
     updateFormForSelection(nodeFormDeps(), raw.nodeIds, raw.edgeId);
     updateButtons();
+  }
+
+  /** Shared node/edge click routing. A target in a different flow switches
+   *  editing to that flow first (guarding an unsaved draft) then selects, so
+   *  any flow is reachable, not just the active one; a same-flow target selects
+   *  directly. `id` is the display id, `select` applies the actual selection. */
+  function handleGraphClick(id: string, select: () => void): boolean {
+    if (!enabled || !mode) return false;
+    const owner = ownerFlowIdFor(id);
+    if (owner !== null && owner !== activeFlowId) {
+      switchThenSelect(switchActiveFlow(owner), select);
+      return true;
+    }
+    // Defensive: a flows id with no matching flow (never for a real rendered
+    // node) stays consumed-but-unselected rather than mutating the wrong draft.
+    if (kind === "flows" && owner === null) return true;
+    select();
     return true;
   }
+
+  const handleNodeClick = (node: GraphNode): boolean =>
+    handleGraphClick(node.id, () => selectNode(node));
+  const handleEdgeClick = (edge: GraphEdge): boolean =>
+    handleGraphClick(edge.id, () => selectEdge(edge));
 
   function addNode(): void {
     openCreateNode(nodeFormDeps());
