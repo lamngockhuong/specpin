@@ -31,6 +31,30 @@ function resolveDataset(datasetSelect: HTMLSelectElement, project: ProjectFlowsS
  *  allowed (no dirty draft to guard). */
 export type CanChangeProject = () => boolean | Promise<boolean>;
 
+// Persist the last (project, dataset) pick so a reload/F5 restores it instead of
+// snapping back to the first project. Keyed on the STABLE connectionId (not the
+// array index, which can point at a different project if the list reorders); the
+// dataset is only re-applied when that project actually offers it. localStorage
+// (the graph is an extension page) so it also survives reopening the graph tab.
+const SELECTION_KEY = "specpin:graph:selection";
+interface SavedSelection {
+  connectionId: string;
+  dataset: Dataset;
+}
+
+function loadSelection(): SavedSelection | null {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SELECTION_KEY) ?? "null");
+    if (!parsed || typeof parsed.connectionId !== "string") return null;
+    return {
+      connectionId: parsed.connectionId,
+      dataset: parsed.dataset === "screens" ? "screens" : "flows",
+    };
+  } catch {
+    return null; // storage blocked or malformed -- persistence is best-effort
+  }
+}
+
 export function wireProjectPicker(
   projectSelect: HTMLSelectElement,
   datasetSelect: HTMLSelectElement,
@@ -45,6 +69,22 @@ export function wireProjectPicker(
     return datasetSelect.value === "screens" ? "screens" : "flows";
   }
 
+  /** Persist the current pick by connectionId. Best-effort: a blocked
+   *  localStorage just means the reload falls back to the first project. */
+  function saveSelection(): void {
+    const project = projects[Number(projectSelect.value) || 0];
+    if (!project) return;
+    try {
+      const saved: SavedSelection = {
+        connectionId: project.connectionId,
+        dataset: currentDataset(),
+      };
+      localStorage.setItem(SELECTION_KEY, JSON.stringify(saved));
+    } catch {
+      // ignore -- see loadSelection
+    }
+  }
+
   /** Run the guard (if any); on refusal, snap the `<select>`s back to their
    *  last-committed values instead of applying the just-made change. */
   async function guarded(apply: () => void): Promise<void> {
@@ -57,6 +97,7 @@ export function wireProjectPicker(
     apply();
     lastProjectValue = projectSelect.value;
     lastDatasetValue = datasetSelect.value;
+    saveSelection();
   }
 
   projectSelect.addEventListener("change", () => {
@@ -85,11 +126,25 @@ export function wireProjectPicker(
         opt.textContent = p.project;
         projectSelect.appendChild(opt);
       }
-      projectSelect.value = "0";
-      const dataset = resolveDataset(datasetSelect, projects[0]);
-      lastProjectValue = "0";
+      // Restore the saved pick by connectionId; fall back to the first project
+      // when nothing is saved or that project is gone (e.g. disconnected).
+      const saved = loadSelection();
+      const savedIdx = saved
+        ? projects.findIndex((p) => p.connectionId === saved.connectionId)
+        : -1;
+      const projectIdx = savedIdx >= 0 ? savedIdx : 0;
+      projectSelect.value = String(projectIdx);
+      let dataset = resolveDataset(datasetSelect, projects[projectIdx]);
+      // Honor the saved dataset only when the saved project was actually found
+      // (savedIdx >= 0 -- a stale pair is dropped whole) AND that project offers
+      // both (the select is visible); else keep resolveDataset's non-empty default.
+      if (saved && savedIdx >= 0 && !datasetSelect.hidden) {
+        dataset = saved.dataset;
+        datasetSelect.value = dataset;
+      }
+      lastProjectValue = projectSelect.value;
       lastDatasetValue = datasetSelect.value;
-      return { projectIdx: 0, dataset };
+      return { projectIdx, dataset };
     },
   };
 }
