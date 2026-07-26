@@ -69,7 +69,7 @@ Each screen's `urlGlob` identifies it on the live UI, reusing the same glob synt
 
 ## Open the graph view
 
-Click **Open graph view** from the header's **⋯ More actions** menu in the popup or side panel. It opens in a new browser tab. If a connected project has both a status-flow and a screen-transition graph configured, a dataset picker appears above the canvas so you can switch between them; if a page serves more than one project, a project picker appears too.
+Click **Open graph view** from the header's **⋯ More actions** menu in the popup or side panel. It opens in a new browser tab. If a connected project has both a status-flow and a screen-transition graph configured, a dataset picker appears above the canvas so you can switch between them; if a page serves more than one project, a project picker appears too. Your project/dataset choice is remembered across reloads (and reopening the graph tab), so a refresh returns you to the same view instead of resetting to the first project.
 
 ## Browse the graph
 
@@ -115,7 +115,7 @@ Full privacy chain: opt-in, default **off** -> generalized URL shape only (query
 
 The graph view isn't only a diagram to look at - turn on **Edit mode** to add, edit, and delete nodes and transitions directly on the canvas, with no JSON hand-editing at all.
 
-**Turn it on.** Click **Edit mode** in the graph view's control bar. A dedicated edit bar opens below the controls with the toolbar (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), a how-to hint, and a live status line. Each button enables only when its precondition is met - **Add edge** waits for two selected nodes, **Delete selected** for exactly one node or edge, and **Undo**/**Save** for an unsaved change - so a greyed-out button tells you what the action still needs. Clicking a node or edge now selects it for editing instead of navigating or click-to-highlighting.
+**Turn it on.** Click **Edit mode** in the graph view's control bar. A dedicated edit bar opens below the controls with the toolbar (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), a how-to hint, and a live status line. Each button enables only when its precondition is met - **Add edge** waits for two selected nodes, **Delete selected** for exactly one node or edge, and **Undo**/**Save** for an unsaved change - so a greyed-out button tells you what the action still needs. Clicking a node or edge now selects it for editing instead of navigating or click-to-highlighting. Auto-captured **ghost** (pending) transitions stay on the Screens diagram in edit mode too - they don't vanish when you toggle Edit on - and clicking one still opens its **Approve / Discard** panel rather than the edit form, so a recording stays reviewable while you edit.
 
 **Add a node.** Click **Add node** and fill in the side form: a localized name/label (add a row per locale), a `urlGlob` (screens) or `kind` (flows' states: initial/normal/terminal), and an optional linked spec picked from the project's known specs. **Create** adds it to the draft. On the status-flow dataset, a new node belongs to whichever flow is currently active - use the flow controls to create one first if the project has none yet.
 
