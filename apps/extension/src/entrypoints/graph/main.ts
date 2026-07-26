@@ -179,10 +179,19 @@ function setView(next: "graph" | "table"): void {
 
 function deriveGraph(project: ProjectFlowsScreens | undefined): Graph {
   if (!project) return { nodes: [], edges: [] };
-  if (editWiring?.isEnabled()) return editWiring.getGraph(contentLocale);
-  if (dataset === "flows") return flowsToGraph(project.flows, contentLocale);
+  // The live edit draft when edit mode is on, else the committed config. Kept
+  // as a nullable so the screens branch can overlay ghosts onto whichever base.
+  const editGraph = editWiring?.isEnabled() ? editWiring.getGraph(contentLocale) : null;
+  // Flows carry no auto-capture ghosts (overlayGhostBuffer is screens-only).
+  if (dataset === "flows") return editGraph ?? flowsToGraph(project.flows, contentLocale);
+  // Screens: overlay the auto-captured draft buffer in BOTH view and edit mode,
+  // so recorded transitions stay on-screen while editing (they remain review-
+  // only pending edges -- a click routes to the ghost-review panel). Without
+  // this, toggling edit dropped the overlay and every recorded edge vanished,
+  // reverting to the committed (or empty) diagram.
+  const base = editGraph ?? screensToGraph(project.screens, contentLocale);
   const buffer = ghostController.forProject(project.connectionId);
-  return overlayGhostBuffer(screensToGraph(project.screens, contentLocale), buffer, contentLocale);
+  return overlayGhostBuffer(base, buffer, contentLocale);
 }
 
 function refreshAll(): void {
