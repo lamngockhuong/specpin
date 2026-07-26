@@ -28,6 +28,7 @@ function conn(partial: Partial<ConnectionStatus>): ConnectionStatus {
     domains: partial.domains ?? [],
     matchesAllSites: partial.matchesAllSites ?? false,
     enabled: partial.enabled ?? true,
+    recordEnabled: partial.recordEnabled ?? false,
   };
 }
 
@@ -41,6 +42,7 @@ function batch(partial: Partial<ManualBatchSummary>): ManualBatchSummary {
     specCount: partial.specCount ?? 1,
     importedAt: partial.importedAt ?? 0,
     enabled: partial.enabled ?? true,
+    recordEnabled: partial.recordEnabled ?? false,
   };
 }
 

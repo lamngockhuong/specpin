@@ -14,35 +14,39 @@ import { MAX_CAPTURE_ENTRIES_PER_PROJECT } from "../shared/messaging.js";
 
 export type CaptureBannerState =
   | { kind: "hidden" }
+  | { kind: "off" }
   | { kind: "empty" }
   | { kind: "active"; count: number }
   | { kind: "full"; cap: number };
 
-/** Recording is the hard gate: OFF hides the banner entirely, regardless of
- *  buffer contents -- this banner is about the LIVE recording state, not
- *  whether stale ghost entries exist (those still render via the graph's
- *  ghost overlay/review panel independent of this banner). Empty vs active vs
- *  full (the bounded per-project ring-buffer cap, B2) each get distinct copy. */
+/** Per-project record opt-in replaces the old device-global switch, so the banner
+ *  now always shows for a SELECTED project: `off` offers a Turn-on (opt-in is the
+ *  new default, so OFF must be actionable here, not just hidden), while `empty` /
+ *  `active` / `full` (the bounded per-project ring-buffer cap, B2) show the live
+ *  recording state. No project selected -> `hidden` (nothing to scope to). */
 export function captureBannerState(
   recording: boolean,
   count: number,
+  hasProject: boolean,
   cap: number = MAX_CAPTURE_ENTRIES_PER_PROJECT,
 ): CaptureBannerState {
-  if (!recording) return { kind: "hidden" };
+  if (!hasProject) return { kind: "hidden" };
+  if (!recording) return { kind: "off" };
   if (count >= cap) return { kind: "full", cap };
   if (count === 0) return { kind: "empty" };
   return { kind: "active", count };
 }
 
 export interface CaptureBannerCallbacks {
+  onTurnOn(): void | Promise<void>;
   onTurnOff(): void | Promise<void>;
   onClearAll(): void | Promise<void>;
 }
 
 export interface CaptureBannerHandle {
   /** Re-render for the current state. `count` is the currently-selected
-   *  project's draft buffer size; pass `0` when no project is selected. */
-  update(recording: boolean, count: number): void;
+   *  project's draft buffer size; `hasProject` is whether one is selected. */
+  update(recording: boolean, count: number, hasProject: boolean): void;
 }
 
 /** Build the banner ONCE into `container` (a fixed row in the page, like the
@@ -58,6 +62,12 @@ export function mountCaptureBanner(
   const message = document.createElement("span");
   message.className = "capture-banner-message";
 
+  const turnOn = document.createElement("button");
+  turnOn.type = "button";
+  turnOn.className = "capture-banner-action";
+  turnOn.textContent = t("graph.capture.turnOn");
+  turnOn.addEventListener("click", () => void callbacks.onTurnOn());
+
   const turnOff = document.createElement("button");
   turnOff.type = "button";
   turnOff.className = "capture-banner-action";
@@ -70,22 +80,29 @@ export function mountCaptureBanner(
   clearAll.textContent = t("graph.capture.clearAll");
   clearAll.addEventListener("click", () => void callbacks.onClearAll());
 
-  container.append(dot, message, turnOff, clearAll);
+  container.append(dot, message, turnOn, turnOff, clearAll);
   container.hidden = true;
 
   return {
-    update(recording, count) {
-      const state = captureBannerState(recording, count);
+    update(recording, count, hasProject) {
+      const state = captureBannerState(recording, count, hasProject);
       if (state.kind === "hidden") {
         container.hidden = true;
         return;
       }
       container.hidden = false;
+      const off = state.kind === "off";
+      // `off` state: only the Turn-on affordance; the pulsing dot + Turn-off +
+      // Clear-all belong to the live-recording states. Otherwise: Turn-off always,
+      // Clear-all except when there is nothing captured yet (empty).
+      container.classList.toggle("off", off);
       container.classList.toggle("full", state.kind === "full");
-      // Nothing to clear yet in the empty state.
-      clearAll.hidden = state.kind === "empty";
-      message.textContent =
-        state.kind === "empty"
+      turnOn.hidden = !off;
+      turnOff.hidden = off;
+      clearAll.hidden = off || state.kind === "empty";
+      message.textContent = off
+        ? t("graph.capture.off")
+        : state.kind === "empty"
           ? t("graph.capture.recordingEmpty")
           : state.kind === "full"
             ? t("graph.capture.recordingFull", { cap: state.cap })

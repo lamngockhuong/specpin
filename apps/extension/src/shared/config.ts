@@ -54,6 +54,10 @@ export interface ManualBatch {
    *  target) but stays listed in Options to be re-enabled. Undefined = enabled
    *  (backward compatible with batches stored before this field existed). */
   enabled?: boolean;
+  /** Per-batch auto-capture opt-in, the local-project parallel to
+   *  `Connection.recordEnabled`. Opt-in: undefined/false = OFF. Only a
+   *  record-enabled batch receives auto-captured navigation transitions. */
+  recordEnabled?: boolean;
   /** Map of `_file` -> original file `group`, so a later export reconstructs the
    *  per-file group (a file-level field, not a Spec field). Absent on pre-plan
    *  batches; export then falls back to a file-base-derived group. */
@@ -127,9 +131,6 @@ export const DEFAULT_BADGE_COLOR = "#2DD4BF";
 /** Whether coverage mode is on: ghost markers over undocumented interactive
  *  elements. Default OFF so a page is byte-identical to today unless invoked. */
 export const COVERAGE_ENABLED_KEY = "specpin:coverageEnabled";
-/** Whether Track B auto-capture (opt-in navigation recording) is on. Default
- *  OFF so a page is byte-identical to today unless invoked. */
-export const RECORD_MODE_KEY = "specpin:recordMode";
 /** The user's chosen UI-chrome language (`"en" | "vi"`), or null to follow the
  *  browser/system UI language. Independent from the spec-content LOCALE_KEY. */
 export const UI_LOCALE_KEY = "specpin:uiLocale";
@@ -313,40 +314,6 @@ export async function setCoverageEnabled(on: boolean): Promise<void> {
     return;
   }
   await browser.storage.local.set({ [COVERAGE_ENABLED_KEY]: true });
-}
-
-/** Track B auto-capture opt-in (default OFF): whether the content-script
- *  recorder observes navigation at all. This is the hard opt-in gate -- the
- *  recorder must not attach a single listener while this is false, and the
- *  background must ignore an append even if one somehow arrives (defense in
- *  depth, mirrors getCorpusEnabled's gate on RECORD_DRIFT). */
-export async function getRecordMode(): Promise<boolean> {
-  const stored = await browser.storage.local.get(RECORD_MODE_KEY);
-  return stored[RECORD_MODE_KEY] === true;
-}
-
-export async function setRecordMode(on: boolean): Promise<void> {
-  // false is the default: drop the key so a default profile carries nothing
-  // (mirrors setCoverageEnabled/setBadgeNumbering).
-  if (!on) {
-    await browser.storage.local.remove(RECORD_MODE_KEY);
-    return;
-  }
-  await browser.storage.local.set({ [RECORD_MODE_KEY]: true });
-}
-
-/** Re-invoke `onChange` with the live value whenever the record-mode flag
- *  changes in storage, so a content script already running on a page can
- *  attach/detach its recorder the moment the Options-page toggle flips --
- *  without a reload. Mirrors watchThemeChanges's storage.onChanged subscription
- *  (shared/theme.ts), but hands the raw boolean to a caller-supplied callback
- *  instead of applying a DOM attribute directly: the reaction here (start/stop
- *  the recorder) belongs to content.ts, not this module. */
-export function watchRecordMode(onChange: (on: boolean) => void): void {
-  browser.storage.onChanged.addListener((changes, area) => {
-    if (area !== "local" || !(RECORD_MODE_KEY in changes)) return;
-    onChange(changes[RECORD_MODE_KEY]?.newValue === true);
-  });
 }
 
 /** The user's chosen UI-chrome language, or null to follow the browser/system UI
@@ -781,6 +748,24 @@ export function setLocalBatchEnabled(
   if (idx === -1) return { ok: false, error: "unknown local project" };
   const batch = state.batches[idx] as ManualBatch;
   const nextBatch: ManualBatch = { ...batch, enabled };
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Toggle a local batch's auto-capture opt-in (the parallel to setLocalBatchEnabled,
+ *  and the local twin of a sidecar's UPDATE_CONNECTION.recordEnabled). Opt-in
+ *  default OFF: store `recordEnabled: true` when on, and DROP the field when off so
+ *  a default profile carries nothing (mirrors the drop-on-default style used across
+ *  this module). Unknown batch id -> ok:false. */
+export function setLocalBatchRecordEnabled(
+  state: LocalSpecsState,
+  batchId: string,
+  recordEnabled: boolean,
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const nextBatch: ManualBatch = { ...(state.batches[idx] as ManualBatch) };
+  if (recordEnabled) nextBatch.recordEnabled = true;
+  else delete nextBatch.recordEnabled;
   return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
 }
 

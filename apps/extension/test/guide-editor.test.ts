@@ -26,7 +26,9 @@ function spec(id: string, title = id): TaggedSpec {
   } as unknown as TaggedSpec;
 }
 
-const targets: WriteTarget[] = [{ id: "conn-1", project: "Project A", kind: "sidecar" }];
+const targets: WriteTarget[] = [
+  { id: "conn-1", project: "Project A", kind: "sidecar", recordEnabled: false },
+];
 
 function card(): HTMLElement {
   const el = document.querySelector<HTMLElement>(".ge-card");

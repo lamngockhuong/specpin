@@ -35,7 +35,6 @@ import {
   getDisplayMode,
   getLauncherPosition,
   getLocale,
-  getRecordMode,
   getTheme,
   getUiLocale,
   type LauncherPosition,
@@ -43,7 +42,6 @@ import {
   setDisplayMode,
   setLauncherPosition,
   setLocale,
-  watchRecordMode,
 } from "../shared/config.js";
 import type { TaggedSpec } from "../shared/connection-types.js";
 import { parseSpecLink } from "../shared/deep-link.js";
@@ -351,11 +349,7 @@ export default defineContentScript({
     // one predicate. `GET_WRITE_TARGETS` is the same origin gate capture uses; a
     // not-ready background reads as "no project" (a later refresh re-checks).
     async function originServesProject(): Promise<boolean> {
-      try {
-        return (await fetchWriteTargets()).length > 0;
-      } catch {
-        return false;
-      }
+      return (await safeWriteTargets()).length > 0;
     }
 
     // (Re)scan for gaps and paint the ghost-marker overlay. No-op when coverage is
@@ -429,18 +423,20 @@ export default defineContentScript({
 
     // Track B auto-capture: forward one derived navigation to the background's
     // per-project draft buffer. Fire-and-forget, like RECORD_DRIFT_PASSIVE; the
-    // background re-checks the recordMode flag (defense in depth) and resolves
-    // the owning project from this tab's own origin.
+    // background fans it out to every record-enabled project serving this tab's
+    // origin (resolved from the sender, never from the payload).
     const onCapturedTransition: OnCapturedTransition = (transition, from, to) => {
       void sendToBackground({ type: "RECORD_CAPTURED_TRANSITION", transition, from, to });
     };
 
-    // Attach/detach the nav-recorder to match the record-mode opt-in flag. The
-    // recorder itself is idempotent (nav-recorder.ts guards against a duplicate
-    // start/stop), so this can be called freely on both the initial read and
-    // every live flag change from the Options page.
-    function applyRecordMode(on: boolean): void {
-      if (on) startRecorder(onCapturedTransition);
+    // Per-project record opt-in replaces the old device-global switch: attach the
+    // nav-recorder on THIS origin only when some project serving it has record ON,
+    // else detach. The recorder is idempotent (nav-recorder.ts guards duplicate
+    // start/stop), so this runs freely on init and on every live change
+    // (RECORD_TARGETS_CHANGED, or SPECS_CHANGED when the served-project set moved).
+    async function reevaluateRecorder(): Promise<void> {
+      const targets = await safeWriteTargets();
+      if (targets.some((t) => t.recordEnabled)) startRecorder(onCapturedTransition);
       else stopRecorder();
     }
 
@@ -594,6 +590,18 @@ export default defineContentScript({
         type: "GET_WRITE_TARGETS",
         origin: window.location.origin,
       });
+    }
+
+    // fetchWriteTargets, but a not-ready background (SW cold start) reads as "no
+    // targets" instead of rejecting -- so the `void`-ed recorder callers never
+    // surface an unhandled rejection, and a later refresh re-checks. Shared by
+    // originServesProject (coverage) and reevaluateRecorder (auto-capture).
+    async function safeWriteTargets(): Promise<WriteTarget[]> {
+      try {
+        return await fetchWriteTargets();
+      } catch {
+        return [];
+      }
     }
 
     // Open the capture form on a specific element (fingerprint + form wiring).
@@ -1005,6 +1013,14 @@ export default defineContentScript({
           // restores the session before the page re-queries its specs.
           if (guideActive) guide?.stop();
           void refresh();
+          // The served-project set may have changed (a project enabled/disabled),
+          // which can change whether a record-enabled project serves this origin.
+          void reevaluateRecorder();
+          break;
+        case "RECORD_TARGETS_CHANGED":
+          // A per-project record opt-in flipped: attach/detach the recorder without
+          // a spec refetch (lighter than SPECS_CHANGED).
+          void reevaluateRecorder();
           break;
         case "START_CAPTURE":
           void startCapture();
@@ -1193,7 +1209,6 @@ export default defineContentScript({
       storedBadgeNumbering,
       storedBadgeColor,
       storedCoverageEnabled,
-      storedRecordMode,
     ] = await Promise.all([
       getDisplayMode(),
       getTheme(),
@@ -1202,7 +1217,6 @@ export default defineContentScript({
       getBadgeNumbering(),
       getBadgeColor(),
       getCoverageEnabled(),
-      getRecordMode(),
     ]);
     forcedMode = storedMode;
     theme = storedTheme;
@@ -1213,10 +1227,11 @@ export default defineContentScript({
     // ignore list first so dismissed gaps stay hidden on the first scan.
     coverageEnabled = storedCoverageEnabled;
     if (coverageEnabled) coverageIgnore = new Set(await getCoverageIgnore(location.origin));
-    // Restore Track B auto-capture (opt-in, default OFF) so a reload keeps
-    // recording on; a live Options-page toggle re-applies it without a reload.
-    applyRecordMode(storedRecordMode);
-    watchRecordMode(applyRecordMode);
+    // Track B auto-capture (opt-in, per-project): attach the recorder only if a
+    // record-enabled project serves this origin. Fire-and-forget (it guards its own
+    // errors); RECORD_TARGETS_CHANGED / SPECS_CHANGED re-evaluate it live later
+    // without a reload.
+    void reevaluateRecorder();
     initI18n(resolveUiLocale(storedUiLocale));
     await refresh();
     // Seed after the first render so a stray early mutation doesn't trigger a

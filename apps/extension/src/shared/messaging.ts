@@ -69,6 +69,9 @@ export type Message =
       applyToAllSites?: boolean;
       // Per-project on/off (lightweight edit, no endpoint re-validation).
       enabled?: boolean;
+      // Per-project auto-capture opt-in (lightweight edit). Present => set; the
+      // handler stores `true` and drops the field on false (opt-in default OFF).
+      recordEnabled?: boolean;
       baseUrl?: string;
       token?: string;
     }
@@ -129,6 +132,10 @@ export type Message =
   // Toggle a local project on/off (the parallel to UPDATE_CONNECTION's `enabled`).
   // A disabled batch serves no page but stays listed. Privileged: extension-page only.
   | { type: "SET_LOCAL_BATCH_ENABLED"; id: string; enabled: boolean }
+  // Toggle a local project's auto-capture opt-in (the local twin of
+  // UPDATE_CONNECTION's `recordEnabled`). `id` is the batch id (not the
+  // `manual:<id>` connection id -- mirrors SET_LOCAL_BATCH_ENABLED). Privileged.
+  | { type: "SET_LOCAL_BATCH_RECORD_ENABLED"; id: string; enabled: boolean }
   // The writable projects (sidecar + local) serving an origin, for the capture
   // "Save to" picker. Unprivileged: the content script needs it, and it exposes no
   // more than GET_SPECS_FOR_ORIGIN for the same origin. Includes EMPTY local
@@ -144,6 +151,12 @@ export type Message =
   // change; re-query GET_COVERAGE. Distinct from SPECS_CHANGED so it neither
   // trips the panel's self-visibility echo counter nor forces a spec re-fetch.
   | { type: "COVERAGE_CHANGED" }
+  // background -> tabs: the per-project record opt-in changed (a project's
+  // recordEnabled flipped) with no spec change. A content script re-queries its
+  // record-enabled write targets and attaches/detaches the nav-recorder without a
+  // reload. Distinct from SPECS_CHANGED so it forces no spec re-fetch/re-render
+  // (mirrors COVERAGE_CHANGED being a targeted signal, not a spec change).
+  | { type: "RECORD_TARGETS_CHANGED" }
   | { type: "START_CAPTURE" }
   // Right-click "Pin spec to this element": background -> active tab's content
   // script. The content script captures the element it recorded on the last
@@ -291,9 +304,10 @@ export type Message =
   // Track B auto-capture: the content-script recorder observed a navigation and
   // reduced it to a privacy-scrubbed candidate transition via B1's pure
   // deriveTransition/generalizeUrl. UNprivileged -- content-originated, like
-  // RECORD_DRIFT -- the background gates on the recordMode opt-in flag before
-  // resolving the owning project (the same origin -> connection resolution
-  // GET_WRITE_TARGETS uses) and appending to that project's draft buffer.
+  // RECORD_DRIFT -- the background resolves the serving projects from the tab's
+  // trusted origin (the same origin -> connection resolution GET_WRITE_TARGETS
+  // uses) and FANS OUT the append to every record-enabled project serving it (no
+  // single owner: origin is host-level, so there is no signal to pick just one).
   | {
       type: "RECORD_CAPTURED_TRANSITION";
       transition: CapturedTransition;
@@ -356,6 +370,7 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   "CREATE_LOCAL_PROJECT",
   "RENAME_LOCAL_PROJECT",
   "SET_LOCAL_BATCH_ENABLED",
+  "SET_LOCAL_BATCH_RECORD_ENABLED",
   // Returns full spec payloads for many batches; restrict to extension pages so a
   // content script cannot harvest every local project's specs.
   "GET_EXPORT_BUNDLES",
@@ -438,6 +453,10 @@ export interface WriteTarget {
   id: string;
   project: string;
   kind: "sidecar" | "local";
+  /** Whether this project has auto-capture opt-in ON (resolved, undefined ->
+   *  false). The content-script recorder attaches only when some serving target
+   *  is record-enabled; the background fans a capture out to exactly these. */
+  recordEnabled: boolean;
 }
 
 /** Result of a remove/clear: ok plus the new total spec count across batches. */
@@ -508,6 +527,9 @@ export interface KnownSpecId {
 export interface ProjectFlowsScreens {
   connectionId: string;
   project: string;
+  /** This project's auto-capture opt-in (resolved). Drives the graph panel's
+   *  per-project record banner (turn on/off from where captures are reviewed). */
+  recordEnabled: boolean;
   flows: FlowsConfig;
   screens: ScreensConfig;
   specs: KnownSpecId[];

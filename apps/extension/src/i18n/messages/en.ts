@@ -236,7 +236,6 @@ const en = {
   "options.navAppearance": "Appearance",
   "options.navToolbar": "Toolbar",
   "options.navCorpus": "Matching",
-  "options.navCapture": "Auto-capture",
   "options.navSupport": "Support",
   // Segmented control inside the Spec pane: live sidecar vs pasted bundle.
   "options.specTabLive": "Live",
@@ -288,6 +287,10 @@ const en = {
   "options.urlErrorRemoteHttps": "A remote sidecar must use https:// (plaintext http is blocked).",
   "options.disableProject": "Disable this project",
   "options.enableProject": "Enable this project",
+  // Per-project auto-capture (record) toggle on each project row.
+  "options.record": "Record",
+  "options.recordProject": "Record navigation for this project",
+  "options.stopRecordProject": "Stop recording navigation for this project",
   "options.enabled": "Enabled",
   "options.disabled": "Disabled",
   "options.reconnect": "Reconnect",
@@ -378,15 +381,14 @@ const en = {
   "options.confirmDeleteCorpusEntry": "Delete this corpus entry? This cannot be undone.",
   "options.corpusEntryDeleted": "Entry deleted.",
 
-  // Auto-capture card (Track B, local, opt-in): record-mode toggle + indicator.
-  "options.captureTitle": "Auto-capture (local, opt-in)",
+  // Support-pane FAQ: the auto-capture (Track B) disclosure, folded by default.
+  "options.faqTitle": "FAQ",
+  "options.faqCaptureQ": "What is auto-capture, and is my browsing recorded?",
   "options.captureLead":
-    "Record screen-to-screen navigation on this device to suggest new transitions for the graph panel's review. Off by default; only a privacy-scrubbed URL shape is kept -- query strings and hashes are dropped, and id-like path segments are generalized to `**` -- never the raw address.",
-  "options.captureOptIn": "Record navigation transitions on this device",
-  "options.captureRecording": "Recording navigation",
+    "Auto-capture records screen-to-screen navigation to suggest new transitions for the graph panel's review. It is enabled per project, not device-wide: turn it on for a specific project from its row on the Spec page, or from the graph panel while reviewing that project. A project only records on the pages it serves -- navigation on any other site is ignored and never stored.",
   // Full privacy contract (B4): what is/isn't captured + the Approve gate.
   "options.capturePrivacyDetail":
-    "Captured: a generalized screen path for each page (e.g. /orders/**) and the transition between them. Never captured: query strings, hash fragments, or page content. Path segments that look like ids are generalized to `**` before storage -- review each transition before you Approve it. Nothing reaches this project's .specs/ until you explicitly Approve it in the graph panel.",
+    "Captured: a generalized screen path for each page (e.g. /orders/**) and the transition between them. Never captured: query strings, hash fragments, or page content. Path segments that look like ids are generalized to `**` before storage -- review each transition before you Approve it. Nothing reaches a project's .specs/ until you explicitly Approve it in the graph panel.",
   "match.correct": "Correct",
 
   // Support & Feedback card.
@@ -581,14 +583,17 @@ const en = {
   "graph.ghost.approve": "Approve",
   "graph.ghost.discard": "Discard",
   "graph.ghost.approveError": "Could not save: {error}",
-  // Phase B4: recording banner (recording state, empty/full buffer edge
-  // states) shown in the graph panel whenever Track B auto-capture is on.
+  // Phase B4: recording banner (record on/off + empty/full buffer edge states)
+  // shown in the graph panel for the currently-selected project.
+  "graph.capture.off":
+    "Auto-capture is off for this project - turn it on to record screen transitions for review.",
   "graph.capture.recordingEmpty":
     "Recording is on - browse the site to capture new screen transitions for review.",
   "graph.capture.recording":
     "Recording is on - {count} transition(s) captured, awaiting review below.",
   "graph.capture.recordingFull":
     "Recording is on - capture buffer is full ({cap}). Approve or discard some before more can be recorded.",
+  "graph.capture.turnOn": "Turn on",
   "graph.capture.turnOff": "Turn off",
   "graph.capture.clearAll": "Clear all captured",
   "graph.capture.confirmClearAll":

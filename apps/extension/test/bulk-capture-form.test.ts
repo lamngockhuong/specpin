@@ -14,7 +14,7 @@ const rows = () => shadow().querySelectorAll(".row");
 const rowInput = (i: number) => rows()[i].querySelector("input") as HTMLInputElement;
 
 let form: BulkCaptureForm;
-const targets: WriteTarget[] = [{ id: "c1", project: "Proj", kind: "local" }];
+const targets: WriteTarget[] = [{ id: "c1", project: "Proj", kind: "local", recordEnabled: false }];
 
 beforeEach(() => {
   initI18n("en");

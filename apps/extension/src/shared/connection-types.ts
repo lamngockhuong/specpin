@@ -28,6 +28,11 @@ export interface Connection {
    *  status, but stays listed in Options to be re-enabled. Undefined = enabled
    *  (backward compatible with connections stored before this field existed). */
   enabled?: boolean;
+  /** Per-project auto-capture opt-in (Track B navigation recording). Replaces the
+   *  old device-global record switch: the content-script recorder attaches to a
+   *  page only when some project serving it has this ON, and a captured transition
+   *  is attributed only to record-enabled projects. Opt-in: undefined/false = OFF. */
+  recordEnabled?: boolean;
 }
 
 /** A spec tagged with the connection (project) it came from. Extends
@@ -81,6 +86,9 @@ export interface ManualBatchSummary {
    *  user disabled this batch: it serves no page but stays listed in Options to
    *  be re-enabled. */
   enabled: boolean;
+  /** Per-batch auto-capture opt-in (parallel to ConnectionStatus.recordEnabled),
+   *  resolved from ManualBatch.recordEnabled (undefined -> false). */
+  recordEnabled: boolean;
 }
 
 /** Per-connection state for the management UI. NEVER carries the bearer token
@@ -104,4 +112,7 @@ export interface ConnectionStatus {
    *  serves no page and is excluded from the surface "serving" set, but is still
    *  listed in Options so it can be re-enabled. */
   enabled: boolean;
+  /** Per-project auto-capture opt-in, resolved from Connection.recordEnabled
+   *  (undefined -> false). Drives the Options + graph-panel record toggle. */
+  recordEnabled: boolean;
 }

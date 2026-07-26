@@ -268,13 +268,16 @@ export class SidecarRegistry {
    *  set. The single source of truth shared by GET_WRITE_TARGETS (the capture
    *  picker) and the SAVE/UPDATE local-write origin guard, so a page can never
    *  write to a local project that does not serve it. `id` is `manual:<batchId>`. */
-  localTargetsForOrigin(origin: string): Array<{ id: string; project: string }> {
-    const out: Array<{ id: string; project: string }> = [];
+  localTargetsForOrigin(
+    origin: string,
+  ): Array<{ id: string; project: string; recordEnabled: boolean }> {
+    const out: Array<{ id: string; project: string; recordEnabled: boolean }> = [];
     for (const batch of this.manual) {
       if (!batchServesOrigin(batch, origin)) continue;
       out.push({
         id: localConnId(batch.id),
         project: batch.specs.manifest?.project || batch.label,
+        recordEnabled: batch.recordEnabled === true,
       });
     }
     return out;
@@ -356,6 +359,7 @@ export class SidecarRegistry {
       out.push({
         connectionId: conn.id,
         project: cache.manifest?.project || conn.label || conn.baseUrl,
+        recordEnabled: conn.recordEnabled,
         flows: conn.getFlows(),
         screens: conn.getScreens(),
         specs: cache.specs.map((s) => ({ id: s.id, pending: !s.fingerprint })),
@@ -367,6 +371,7 @@ export class SidecarRegistry {
       out.push({
         connectionId: localConnId(batch.id),
         project: batch.specs.manifest?.project || batch.label,
+        recordEnabled: batch.recordEnabled === true,
         flows: batch.flows ?? { version: "1.0", flows: [] },
         screens: batch.screens ?? { version: "1.0", screens: [], transitions: [] },
         specs: batch.specs.specs.map((s) => ({ id: s.id, pending: !s.fingerprint })),
@@ -653,6 +658,7 @@ export class SidecarRegistry {
       specCount: b.specs.specs.length,
       importedAt: b.importedAt,
       enabled: b.enabled !== false,
+      recordEnabled: b.recordEnabled === true,
     }));
   }
 

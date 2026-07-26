@@ -129,6 +129,13 @@ function applyRefreshedProjects(list: ProjectFlowsScreens[] | null): void {
   refreshAll();
 }
 
+// Re-fetch the projects list (its per-project recordEnabled just changed) and
+// re-render. Used by the capture banner's record on/off toggle.
+async function refreshProjects(): Promise<void> {
+  const result = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
+  applyRefreshedProjects(result.projects);
+}
+
 function toggleEditMode(enabled: boolean): void {
   editWiring?.setEnabled(enabled);
   refreshAll();
@@ -217,7 +224,9 @@ async function init(): Promise<void> {
   });
   captureRecording = wireCaptureRecording(captureBannerEl, ghostController, {
     currentProjectId: () => projects[projectIdx]?.connectionId,
+    currentRecordEnabled: () => projects[projectIdx]?.recordEnabled ?? false,
     onCleared: () => refreshAll(),
+    onRecordChanged: refreshProjects,
   });
   editWiring = wireEditMode(controlsEl, editFormEl, {
     currentProject: () => projects[projectIdx],

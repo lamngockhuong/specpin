@@ -58,6 +58,7 @@ function baseProject(): ProjectFlowsScreens {
   return {
     connectionId: "conn-1",
     project: "demo",
+    recordEnabled: false,
     flows: baseFlowsConfig(),
     screens: emptyScreensConfig(),
     specs: [],

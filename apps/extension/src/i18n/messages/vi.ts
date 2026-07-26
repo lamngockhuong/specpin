@@ -225,7 +225,6 @@ const vi: Record<keyof Messages, string> = {
   "options.navAppearance": "Giao diện",
   "options.navToolbar": "Thanh công cụ",
   "options.navCorpus": "Đối sánh",
-  "options.navCapture": "Tự động ghi",
   "options.navSupport": "Hỗ trợ",
   // Segmented control trong mục Spec: sidecar trực tiếp so với bundle dán tay.
   "options.specTabLive": "Trực tiếp",
@@ -277,6 +276,10 @@ const vi: Record<keyof Messages, string> = {
   "options.urlErrorRemoteHttps": "Sidecar từ xa phải dùng https:// (http không mã hóa bị chặn).",
   "options.disableProject": "Tắt dự án này",
   "options.enableProject": "Bật dự án này",
+  // Công tắc tự động ghi (record) theo từng dự án trên mỗi dòng dự án.
+  "options.record": "Ghi",
+  "options.recordProject": "Ghi lại điều hướng cho dự án này",
+  "options.stopRecordProject": "Dừng ghi điều hướng cho dự án này",
   "options.enabled": "Đang bật",
   "options.disabled": "Đang tắt",
   "options.reconnect": "Kết nối lại",
@@ -368,12 +371,11 @@ const vi: Record<keyof Messages, string> = {
   "options.confirmDeleteCorpusEntry": "Xóa mục này khỏi kho? Không thể hoàn tác.",
   "options.corpusEntryDeleted": "Đã xóa mục.",
 
-  // Thẻ tự động ghi (Track B, cục bộ, tự chọn): công tắc chế độ ghi + chỉ báo.
-  "options.captureTitle": "Tự động ghi (cục bộ, tự chọn)",
+  // FAQ ở pane Hỗ trợ: phần giải thích tự động ghi (Track B), mặc định gấp lại.
+  "options.faqTitle": "Câu hỏi thường gặp",
+  "options.faqCaptureQ": "Tự động ghi là gì, và việc duyệt web của tôi có bị ghi lại không?",
   "options.captureLead":
-    "Ghi lại việc điều hướng giữa các màn hình trên thiết bị này để đề xuất chuyển tiếp mới cho phần xem xét ở bảng đồ thị. Mặc định tắt; chỉ lưu dạng URL đã được ẩn danh -- query string và hash bị bỏ qua, còn các đoạn path trông giống id sẽ được tổng quát hóa thành `**` -- không bao giờ lưu địa chỉ gốc.",
-  "options.captureOptIn": "Ghi lại điều hướng trên thiết bị này",
-  "options.captureRecording": "Đang ghi điều hướng",
+    "Tự động ghi sẽ ghi lại việc điều hướng giữa các màn hình để đề xuất chuyển tiếp mới cho phần xem xét ở bảng đồ thị. Tính năng này bật theo từng dự án chứ không phải cho cả thiết bị: hãy bật cho một dự án cụ thể ngay tại dòng của nó ở trang Spec, hoặc từ bảng đồ thị khi đang xem xét dự án đó. Một dự án chỉ ghi trên những trang mà nó phục vụ -- điều hướng trên các trang khác sẽ bị bỏ qua và không bao giờ được lưu.",
   // Toàn bộ cam kết riêng tư (B4): những gì được/không được ghi lại + điều kiện Duyệt.
   "options.capturePrivacyDetail":
     "Được ghi lại: dạng đường dẫn màn hình đã tổng quát hóa cho mỗi trang (ví dụ /orders/**) và transition giữa chúng. Không bao giờ ghi lại: query string, hash, hay nội dung trang. Các đoạn path trông giống id sẽ được tổng quát hóa thành `**` trước khi lưu -- nhưng hãy xem lại từng transition trước khi Duyệt. Không có gì được ghi vào .specs/ của project cho đến khi bạn Duyệt (Approve) rõ ràng trong graph panel.",
@@ -570,13 +572,16 @@ const vi: Record<keyof Messages, string> = {
   "graph.ghost.approve": "Duyệt",
   "graph.ghost.discard": "Bỏ qua",
   "graph.ghost.approveError": "Không thể lưu: {error}",
-  // Phase B4: banner ghi hình hiển thị trên graph panel khi Track B đang bật.
+  // Phase B4: banner ghi hình trên graph panel cho dự án đang chọn (bật/tắt + trạng thái buffer).
+  "graph.capture.off":
+    "Tự động ghi đang tắt cho dự án này - hãy bật lên để ghi lại các screen transition cho phần xem xét.",
   "graph.capture.recordingEmpty":
     "Đang ghi - hãy duyệt trang để ghi lại các screen transition mới cho phần xem xét.",
   "graph.capture.recording":
     "Đang ghi - {count} transition đã được ghi lại, đang chờ xem xét bên dưới.",
   "graph.capture.recordingFull":
     "Đang ghi - bộ đệm ghi đã đầy ({cap}). Hãy duyệt hoặc bỏ qua bớt trước khi có thể ghi thêm.",
+  "graph.capture.turnOn": "Bật",
   "graph.capture.turnOff": "Tắt",
   "graph.capture.clearAll": "Xóa tất cả đã ghi",
   "graph.capture.confirmClearAll":
