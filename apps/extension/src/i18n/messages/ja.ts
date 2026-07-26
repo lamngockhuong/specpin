@@ -231,7 +231,6 @@ const ja: Record<keyof Messages, string> = {
   "options.navAppearance": "外観",
   "options.navToolbar": "ツールバー",
   "options.navCorpus": "マッチング",
-  "options.navCapture": "自動記録",
   "options.navSupport": "サポート",
   // Spec ペイン内のセグメントコントロール: ライブ sidecar と貼り付けバンドル。
   "options.specTabLive": "ライブ",
@@ -285,6 +284,10 @@ const ja: Record<keyof Messages, string> = {
     "リモートのsidecarはhttps://を使う必要があります (平文httpはブロックされます)。",
   "options.disableProject": "このプロジェクトを無効化",
   "options.enableProject": "このプロジェクトを有効化",
+  // プロジェクトごとの自動記録 (record) 切替 (各プロジェクト行)。
+  "options.record": "記録",
+  "options.recordProject": "このプロジェクトのナビゲーションを記録する",
+  "options.stopRecordProject": "このプロジェクトのナビゲーション記録を停止する",
   "options.enabled": "有効",
   "options.disabled": "無効",
   "options.reconnect": "再接続",
@@ -376,12 +379,11 @@ const ja: Record<keyof Messages, string> = {
   "options.confirmDeleteCorpusEntry": "このコーパス項目を削除しますか？元に戻せません。",
   "options.corpusEntryDeleted": "項目を削除しました。",
 
-  // 自動記録カード (Track B、ローカル、オプトイン): 記録モードの切替 + インジケーター。
-  "options.captureTitle": "自動記録 (ローカル、オプトイン)",
+  // サポートペインの FAQ: 自動記録 (Track B) の説明。既定で折りたたみ。
+  "options.faqTitle": "よくある質問",
+  "options.faqCaptureQ": "自動記録とは何ですか？私のブラウジングは記録されますか？",
   "options.captureLead":
-    "この端末で画面間のナビゲーションを記録し、グラフパネルのレビュー用に新しい遷移を提案します。デフォルトはオフ。保持するのはプライバシー保護済みの URL 形状のみ -- クエリ文字列とハッシュは破棄され、id らしいパスセグメントは `**` に一般化されます -- 実際のアドレスは保存しません。",
-  "options.captureOptIn": "この端末でナビゲーション遷移を記録する",
-  "options.captureRecording": "ナビゲーションを記録中",
+    "自動記録は画面間のナビゲーションを記録し、グラフパネルのレビュー用に新しい遷移を提案します。端末全体ではなくプロジェクトごとに有効化します: Spec ページの各プロジェクトの行、またはそのプロジェクトをレビュー中のグラフパネルからオンにしてください。プロジェクトは自分が対象とするページでのみ記録し、それ以外のサイトでのナビゲーションは無視され、保存されません。",
   // プライバシー契約の全文 (B4): 記録される/されないもの + 承認ゲート。
   "options.capturePrivacyDetail":
     "記録されるもの: 各ページの一般化された画面パス (例: /orders/**) とその間の遷移。記録されないもの: クエリ文字列、ハッシュ、ページの内容。id らしいパスセグメントは保存前に `**` に一般化されますが、承認する前に各遷移を確認してください。グラフパネルで明示的に承認するまで、このプロジェクトの .specs/ には何も書き込まれません。",
@@ -580,12 +582,15 @@ const ja: Record<keyof Messages, string> = {
   "graph.ghost.approve": "承認",
   "graph.ghost.discard": "破棄",
   "graph.ghost.approveError": "保存できませんでした: {error}",
-  // Phase B4: Track B の記録がオンの間、グラフパネルに表示する記録バナー。
+  // Phase B4: 選択中プロジェクトの記録バナー (記録オン/オフ + バッファ状態)。
+  "graph.capture.off":
+    "このプロジェクトの自動記録はオフです - オンにすると、レビュー用の画面遷移を記録します。",
   "graph.capture.recordingEmpty":
     "記録中 - サイトを閲覧すると、レビュー用の新しい画面遷移を記録します。",
   "graph.capture.recording": "記録中 - {count} 件の遷移を記録済み、下でレビュー待ちです。",
   "graph.capture.recordingFull":
     "記録中 - キャプチャバッファが満杯です ({cap})。さらに記録するには、いくつか承認または破棄してください。",
+  "graph.capture.turnOn": "オンにする",
   "graph.capture.turnOff": "オフにする",
   "graph.capture.clearAll": "記録をすべてクリア",
   "graph.capture.confirmClearAll":

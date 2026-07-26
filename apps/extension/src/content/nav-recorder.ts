@@ -3,7 +3,8 @@
 // candidate screen-transition via B1's pure deriveTransition/generalizeUrl. DOM
 // observation only here -- no storage, no messaging; the caller (content.ts)
 // wires `onTransition` to a RECORD_CAPTURED_TRANSITION send and owns start/stop
-// against the recordMode opt-in flag.
+// against the per-project record opt-in (attached only when a record-enabled
+// project serves this origin -- see reevaluateRecorder).
 //
 // Cross-world caveat: a content script runs in an isolated JS world, so
 // monkey-patching `history.pushState`/`replaceState` here is NOT guaranteed to

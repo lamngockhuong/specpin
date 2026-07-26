@@ -27,9 +27,21 @@ describe("localTargetsForOrigin (write/capture picker gate, RT-SA1/SA7 parity)",
     const r = new SidecarRegistry();
     r.setLocalBatches([batch("b1", resp("CRM", ["crm.test"]))]);
     expect(r.localTargetsForOrigin("https://crm.test")).toEqual([
-      { id: localConnId("b1"), project: "CRM" },
+      { id: localConnId("b1"), project: "CRM", recordEnabled: false },
     ]);
     expect(r.localTargetsForOrigin("https://other.test")).toEqual([]);
+  });
+
+  it("resolves each target's recordEnabled (undefined -> false, true when opted in)", () => {
+    const r = new SidecarRegistry();
+    const off = batch("off", resp("Off", ["crm.test"]));
+    const on = { ...batch("on", resp("On", ["crm.test"])), recordEnabled: true };
+    r.setLocalBatches([off, on]);
+    const byProject = Object.fromEntries(
+      r.localTargetsForOrigin("https://crm.test").map((t) => [t.project, t.recordEnabled]),
+    );
+    expect(byProject.Off).toBe(false);
+    expect(byProject.On).toBe(true);
   });
 
   it("includes an EMPTY local project as a target (specsForOrigin would omit it)", () => {

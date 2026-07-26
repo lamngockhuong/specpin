@@ -335,7 +335,7 @@ describe("CaptureForm capture targets (Phase 2)", () => {
 
   /** Open capture mode (no `initial`) with the given targets. */
   function openCapture(
-    targets: { id: string; project: string; kind: "sidecar" | "local" }[],
+    targets: { id: string; project: string; kind: "sidecar" | "local"; recordEnabled: boolean }[],
     onSubmit = submitMock(),
   ): { shadow: ShadowRoot; onSubmit: ReturnType<typeof submitMock> } {
     new CaptureForm(document).open(fingerprint, {
@@ -360,7 +360,9 @@ describe("CaptureForm capture targets (Phase 2)", () => {
   });
 
   it("a lone local target is submitted by id even with no picker shown", async () => {
-    const { shadow, onSubmit } = openCapture([{ id: "manual:b1", project: "CRM", kind: "local" }]);
+    const { shadow, onSubmit } = openCapture([
+      { id: "manual:b1", project: "CRM", kind: "local", recordEnabled: false },
+    ]);
     // No picker for a single target.
     expect(shadow.querySelector("#sp-target")).toBeNull();
     click(shadow, "#sp-save");
@@ -371,8 +373,8 @@ describe("CaptureForm capture targets (Phase 2)", () => {
 
   it("shows a picker labelled by kind when several targets serve the page", () => {
     const { shadow } = openCapture([
-      { id: "uuid-1", project: "My Sidecar", kind: "sidecar" },
-      { id: "manual:b1", project: "CRM", kind: "local" },
+      { id: "uuid-1", project: "My Sidecar", kind: "sidecar", recordEnabled: false },
+      { id: "manual:b1", project: "CRM", kind: "local", recordEnabled: false },
     ]);
     const sel = must(shadow.querySelector("#sp-target")) as HTMLSelectElement;
     const labels = Array.from(sel.options).map((o) => o.textContent);

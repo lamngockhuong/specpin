@@ -40,7 +40,6 @@ import {
   getLocalSpecs,
   getPersonalGuides,
   getPersonalVisibility,
-  getRecordMode,
   getUiLocale,
   getWelcomeSeen,
   LOCAL_SPECS_KEY,
@@ -57,6 +56,7 @@ import {
   setLastVersion,
   setLocalBatchEnabled,
   setLocalBatchFlows,
+  setLocalBatchRecordEnabled,
   setLocalBatchScreens,
   setLocalBatchViews,
   setLocalSpecs,
@@ -146,24 +146,30 @@ export default defineBackground(() => {
     void setPersonalVisibility(personalVisibility);
   }
 
-  // Best-effort "something changed, re-query" ping to every tab. It is NOT a
-  // confidentiality boundary (RT-SA7): the content script re-calls
-  // GET_SPECS_FOR_ORIGIN, and `specsForOrigin` is the real origin gate. Sending
-  // to all tabs is intentionally fail-open.
-  async function broadcastSpecsChanged(): Promise<void> {
+  // Best-effort "something changed, re-query" ping to every tab + extension page.
+  // NOT a confidentiality boundary (RT-SA7): the content script re-calls the
+  // relevant origin-gated query, and that gate (`specsForOrigin` etc.) is the real
+  // boundary. Sending to all tabs is intentionally fail-open. tabs.sendMessage
+  // reaches content scripts; runtime.sendMessage reaches runtime pages (e.g. the
+  // persistent side panel). Fire-and-forget: rejects when no page is listening.
+  async function broadcastMessage(message: Message): Promise<void> {
     const tabs = await browser.tabs.query({});
     for (const tab of tabs) {
       if (tab.id !== undefined) {
-        browser.tabs
-          .sendMessage(tab.id, { type: "SPECS_CHANGED" } satisfies Message)
-          .catch(() => {});
+        browser.tabs.sendMessage(tab.id, message).catch(() => {});
       }
     }
-    // Also notify extension pages (the persistent side panel re-fetches on this).
-    // tabs.sendMessage above only reaches content scripts; runtime.sendMessage
-    // reaches runtime pages. Fire-and-forget: rejects when no page is listening.
-    browser.runtime.sendMessage({ type: "SPECS_CHANGED" } satisfies Message).catch(() => {});
+    browser.runtime.sendMessage(message).catch(() => {});
   }
+
+  const broadcastSpecsChanged = (): Promise<void> => broadcastMessage({ type: "SPECS_CHANGED" });
+
+  // Lighter signal than SPECS_CHANGED: a project's per-project record opt-in
+  // changed, with no spec change. Content re-evaluates whether to attach the
+  // nav-recorder on its origin; the graph panel refreshes its capture banner --
+  // neither refetches specs.
+  const broadcastRecordTargetsChanged = (): Promise<void> =>
+    broadcastMessage({ type: "RECORD_TARGETS_CHANGED" });
 
   // Reconcile the in-memory manual batch list against storage truth: set the
   // stored batches, or drop a stale in-memory list storage no longer has. The
@@ -412,6 +418,8 @@ export default defineBackground(() => {
         return handleRenameLocalProject(message);
       case "SET_LOCAL_BATCH_ENABLED":
         return handleSetLocalBatchEnabled(message.id, message.enabled);
+      case "SET_LOCAL_BATCH_RECORD_ENABLED":
+        return handleSetLocalBatchRecordEnabled(message.id, message.enabled);
       case "GET_WRITE_TARGETS":
         return Promise.resolve(handleGetWriteTargets(message.origin));
       case "GET_EXPORT_BUNDLES":
@@ -791,6 +799,7 @@ export default defineBackground(() => {
     label?: string;
     applyToAllSites?: boolean;
     enabled?: boolean;
+    recordEnabled?: boolean;
     baseUrl?: string;
     token?: string;
   }): Promise<{ ok: boolean; project?: string | null; error?: string }> {
@@ -802,6 +811,7 @@ export default defineBackground(() => {
               label: message.label ?? c.label,
               applyToAllSites: message.applyToAllSites ?? c.applyToAllSites,
               enabled: message.enabled ?? c.enabled,
+              recordEnabled: message.recordEnabled ?? c.recordEnabled,
               baseUrl: message.baseUrl || c.baseUrl,
               // Omitted (or blank) token keeps the stored secret; a non-empty one
               // replaces it. `||` (not `??`) so an empty string never wipes it.
@@ -828,7 +838,17 @@ export default defineBackground(() => {
         await broadcastSpecsChanged();
         return connectReport(message.id);
       }
-      await broadcastSpecsChanged();
+      // Pick the minimal broadcast by what actually changed. A render-affecting
+      // field needs a spec refetch (SPECS_CHANGED, which also re-evaluates the
+      // recorder); a record-ONLY edit takes the lighter RECORD_TARGETS_CHANGED --
+      // symmetric with handleSetLocalBatchRecordEnabled, so a stable project's
+      // record toggle never forces every tab to refetch specs.
+      const renderAffecting =
+        message.label !== undefined ||
+        message.applyToAllSites !== undefined ||
+        message.enabled !== undefined;
+      if (renderAffecting) await broadcastSpecsChanged();
+      else if (message.recordEnabled !== undefined) await broadcastRecordTargetsChanged();
       return { ok: connections.some((c) => c.id === message.id) };
     });
   }
@@ -914,30 +934,34 @@ export default defineBackground(() => {
     await appendDriftPassiveMany(message.entries);
   }
 
-  // Append one Track B auto-captured transition to its owning project's draft
-  // buffer. Gated on the recordMode opt-in flag -- defense in depth: the
-  // recorder content-side also refuses to attach while OFF, but a stale
-  // in-flight message (flag flipped OFF mid-navigation) must still be dropped
-  // here. The owning project is resolved from the SENDER tab's origin (never
-  // trusted from the message payload), reusing the exact same origin ->
-  // connection resolution GET_WRITE_TARGETS uses, so a page can only ever
-  // attribute a capture to a project that actually serves it. No project
-  // serving the origin (or no tab origin at all) -> drop silently; there is
-  // nowhere to attribute the capture.
+  // Append one Track B auto-captured transition to the draft buffer of every
+  // record-enabled project serving the SENDER tab's origin. FAN-OUT (not a single
+  // owner): origin is host-level, so there is no signal to pick just one when two
+  // projects both cover the site -- each record-enabled project gets its own draft
+  // to review, deduped per-project by transition.id in appendCaptured, and nothing
+  // touches `.specs/` until per-project Approve. The origin is resolved from the
+  // sender tab (never trusted from the payload), reusing the exact origin ->
+  // connection resolution GET_WRITE_TARGETS uses, so a page can only ever attribute
+  // a capture to a project that actually serves it. The per-project recordEnabled
+  // flag is the sole gate now (the old device-global switch is gone): no origin, or
+  // no record-enabled project serving it -> drop silently, nowhere to attribute.
   async function handleRecordCapturedTransition(
     message: Extract<Message, { type: "RECORD_CAPTURED_TRANSITION" }>,
     sender: { tab?: { url?: string } } | undefined,
   ): Promise<void> {
-    if (!(await getRecordMode())) return;
     const origin = originOf(sender);
     if (!origin) return;
-    const target = handleGetWriteTargets(origin)[0];
-    if (!target) return;
-    await appendCaptured(target.id, {
-      transition: message.transition,
-      from: message.from,
-      to: message.to,
-    });
+    const targets = handleGetWriteTargets(origin).filter((t) => t.recordEnabled);
+    if (targets.length === 0) return;
+    await Promise.all(
+      targets.map((t) =>
+        appendCaptured(t.id, {
+          transition: message.transition,
+          from: message.from,
+          to: message.to,
+        }),
+      ),
+    );
   }
 
   // Read-only, unprivileged (mirrors GET_FLOWS_SCREENS): the graph panel (B3)
@@ -1165,10 +1189,18 @@ export default defineBackground(() => {
     const sidecar: WriteTarget[] = registry
       .statuses()
       .filter((s) => s.connected && connectionServesOrigin(s, origin))
-      .map((s) => ({ id: s.id, project: s.project ?? "", kind: "sidecar" }));
-    const local: WriteTarget[] = registry
-      .localTargetsForOrigin(origin)
-      .map((t) => ({ id: t.id, project: t.project, kind: "local" }));
+      .map((s) => ({
+        id: s.id,
+        project: s.project ?? "",
+        kind: "sidecar",
+        recordEnabled: s.recordEnabled,
+      }));
+    const local: WriteTarget[] = registry.localTargetsForOrigin(origin).map((t) => ({
+      id: t.id,
+      project: t.project,
+      kind: "local",
+      recordEnabled: t.recordEnabled,
+    }));
     return [...sidecar, ...local];
   }
 
@@ -1274,6 +1306,25 @@ export default defineBackground(() => {
       await setLocalSpecs(result.state);
       registry.setLocalBatches(result.state.batches);
       await broadcastSpecsChanged();
+      return { ok: true };
+    });
+  }
+
+  // Toggle a local project's auto-capture opt-in (privileged). Same RMW-under-
+  // mutate() shape as handleSetLocalBatchEnabled, but recordEnabled does NOT affect
+  // rendering, so it broadcasts only the lighter RECORD_TARGETS_CHANGED (no spec
+  // refetch): content re-evaluates the recorder, the graph panel refreshes its banner.
+  function handleSetLocalBatchRecordEnabled(
+    id: string,
+    enabled: boolean,
+  ): Promise<{ ok: boolean; error?: string }> {
+    return mutate(async () => {
+      const state = (await getLocalSpecs()) ?? { batches: [] };
+      const result = setLocalBatchRecordEnabled(state, id, enabled);
+      if (!result.ok || !result.state) return { ok: false, error: result.error };
+      await setLocalSpecs(result.state);
+      registry.setLocalBatches(result.state.batches);
+      await broadcastRecordTargetsChanged();
       return { ok: true };
     });
   }

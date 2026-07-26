@@ -14,6 +14,7 @@ import {
   removeLocalSpecById,
   renameLocalBatch,
   setLocalBatchEnabled,
+  setLocalBatchRecordEnabled,
   setLocalBatchScreens,
   setLocalBatchViews,
   setLocalSpecs,
@@ -180,6 +181,28 @@ describe("setLocalBatchEnabled", () => {
 
   it("rejects an unknown batch id", () => {
     expect(setLocalBatchEnabled(empty, "nope", false).ok).toBe(false);
+  });
+});
+
+describe("setLocalBatchRecordEnabled", () => {
+  it("sets recordEnabled: true when on, and DROPS the field when off (opt-in default)", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", ["p.test"])] };
+    const on = setLocalBatchRecordEnabled(base, "b1", true);
+    expect((on.state?.batches[0] as ManualBatch).recordEnabled).toBe(true);
+    // Off drops the field entirely so a default profile carries nothing.
+    const off = setLocalBatchRecordEnabled(on.state as LocalSpecsState, "b1", false);
+    expect((off.state?.batches[0] as ManualBatch).recordEnabled).toBeUndefined();
+    expect((off.state?.batches[0] as ManualBatch).label).toBe("P");
+  });
+
+  it("does not mutate the input state", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", [])] };
+    setLocalBatchRecordEnabled(base, "b1", true);
+    expect(base.batches[0]?.recordEnabled).toBeUndefined();
+  });
+
+  it("rejects an unknown batch id", () => {
+    expect(setLocalBatchRecordEnabled(empty, "nope", true).ok).toBe(false);
   });
 });
 

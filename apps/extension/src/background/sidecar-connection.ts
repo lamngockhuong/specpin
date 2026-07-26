@@ -37,6 +37,8 @@ export class SidecarConnection {
   /** Per-project on/off. A disabled connection serves no origin and never starts
    *  a watch. Undefined config = enabled (backward compatible). */
   enabled: boolean;
+  /** Per-project auto-capture opt-in. Undefined config = OFF (opt-in). */
+  recordEnabled: boolean;
 
   private client: SidecarClient;
   private source: SpecSource;
@@ -72,6 +74,7 @@ export class SidecarConnection {
     this.label = conn.label;
     this.applyToAllSites = conn.applyToAllSites ?? false;
     this.enabled = conn.enabled ?? true;
+    this.recordEnabled = conn.recordEnabled ?? false;
     this.token = conn.token;
     this.client = new SidecarClient({ baseUrl: conn.baseUrl, token: conn.token });
     this.injectedSource = deps.source !== undefined;
@@ -85,6 +88,7 @@ export class SidecarConnection {
     this.label = conn.label;
     this.applyToAllSites = conn.applyToAllSites ?? false;
     this.enabled = conn.enabled ?? true;
+    this.recordEnabled = conn.recordEnabled ?? false;
     if (!this.injectedSource && (conn.baseUrl !== this.baseUrl || conn.token !== this.token)) {
       this.baseUrl = conn.baseUrl;
       this.token = conn.token;
@@ -298,6 +302,7 @@ export class SidecarConnection {
       domains,
       matchesAllSites: domains.length === 0 && this.applyToAllSites,
       enabled: this.enabled,
+      recordEnabled: this.recordEnabled,
     };
   }
 }
