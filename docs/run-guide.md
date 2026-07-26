@@ -409,6 +409,7 @@ Two optional `.specs/` files render as diagrams in a dedicated full-page graph v
 - **Search**: a text box that highlights matching node labels live (it does not hide anything, unlike the category filter).
 - **Focus-on-click**: click a node to dim everything except it and its directly connected nodes/edges; click it again (or an empty area) to clear the focus.
 - **Pan/zoom**: drag the canvas to pan, scroll/wheel to zoom (or use the on-graph toolbar's zoom buttons).
+- **Collapse controls**: the caret button at the header's right edge folds away the whole top control stack - the controls row (view toggle, category tabs, search), the recording banner, and (in edit mode) the edit toolbar - to hand their height back to the diagram; click again to bring them back. While collapsed you won't see the recording alarm or reach its Turn off / Save actions until you expand again.
 
 **Click-to-highlight.** Clicking a node or edge that carries a `specId` sends a message back to the tab the graph view was opened from: if that spec is currently matched on that page, its element scrolls into view and flashes (reusing the same highlight as a deep-link or keyboard-cycle jump). If the spec isn't matched there (wrong page, or no live element), a hint appears instead naming the screen/page it belongs to, so you know where to go rather than seeing nothing happen.
 

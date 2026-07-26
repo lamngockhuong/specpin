@@ -79,6 +79,7 @@ Click **Open graph view** from the header's **⋯ More actions** menu in the pop
 - **Search**: type to highlight matching node labels live. Search highlights - it does not hide anything (combine it with the category filter to narrow down first).
 - **Focus**: click a node to dim everything except it and its directly connected nodes and edges. Click it again, or an empty area, to clear the focus.
 - **Pan and zoom**: drag the canvas to pan; scroll to zoom (or use the on-graph toolbar's zoom buttons).
+- **Collapse controls**: the caret button at the header's right edge folds the whole top control stack away - the controls row (view toggle, category tabs, search), the recording banner, and (in edit mode) the edit toolbar - to give the diagram their full height; click again to restore them. While collapsed the recording alarm and its Turn off / Save actions are hidden until you expand again.
 
 These combine freely, so you can filter to one category, search within it, and focus a specific node all at once - useful for a graph with hundreds of nodes.
 
