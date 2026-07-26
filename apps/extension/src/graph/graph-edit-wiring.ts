@@ -362,10 +362,15 @@ export function wireEditMode(
     return true;
   }
 
+  // A pending (auto-captured ghost) node/edge lives only in the ghost overlay,
+  // never in this edit draft, so selecting it would compute a draft id for a
+  // target the draft doesn't contain. Leave it unconsumed (return false) so the
+  // caller routes it to the ghost-review approve panel / focus instead -- this
+  // keeps recorded transitions reviewable while edit mode is on.
   const handleNodeClick = (node: GraphNode): boolean =>
-    handleGraphClick(node.id, () => selectNode(node));
+    node.pending ? false : handleGraphClick(node.id, () => selectNode(node));
   const handleEdgeClick = (edge: GraphEdge): boolean =>
-    handleGraphClick(edge.id, () => selectEdge(edge));
+    edge.pending ? false : handleGraphClick(edge.id, () => selectEdge(edge));
 
   function addNode(): void {
     openCreateNode(nodeFormDeps());

@@ -101,6 +101,21 @@ describe("overlayGhostBuffer", () => {
     expect(graph).toEqual(committed);
   });
 
+  it("overlays ghosts onto an EMPTY base graph (edit mode with only recordings, no committed screens)", () => {
+    // Regression: entering edit mode on a project that has only auto-captured
+    // transitions (no committed screens yet) yields an empty base graph. The
+    // overlay must still surface every recorded transition as pending ghosts --
+    // otherwise the editor shows "no diagram" and the recording looks lost.
+    const graph = overlayGhostBuffer({ nodes: [], edges: [] }, [bufferEntry()], "en");
+    expect(graph.nodes.find((n) => n.id === "home")).toMatchObject({ pending: true });
+    expect(graph.nodes.find((n) => n.id === "checkout")).toMatchObject({ pending: true });
+    expect(graph.edges.find((e) => e.id === "home__checkout")).toMatchObject({
+      from: "home",
+      to: "checkout",
+      pending: true,
+    });
+  });
+
   it("dedupes two buffer entries that share the same new candidate screen into one ghost node", () => {
     const graph = overlayGhostBuffer(
       committedGraph(),

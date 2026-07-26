@@ -69,7 +69,7 @@ Tạo `.specs/screens.json` để mô tả điều hướng của ứng dụng:
 
 ## Mở graph view
 
-Click **Open graph view** trong menu **⋯ More actions** ở header của popup hoặc side panel. Nó mở trong một tab trình duyệt mới. Nếu một project đã kết nối có cả đồ thị status-flow lẫn screen-transition, một bộ chọn dataset xuất hiện phía trên canvas để bạn chuyển qua lại; nếu một trang được nhiều project phục vụ, một bộ chọn project cũng xuất hiện.
+Click **Open graph view** trong menu **⋯ More actions** ở header của popup hoặc side panel. Nó mở trong một tab trình duyệt mới. Nếu một project đã kết nối có cả đồ thị status-flow lẫn screen-transition, một bộ chọn dataset xuất hiện phía trên canvas để bạn chuyển qua lại; nếu một trang được nhiều project phục vụ, một bộ chọn project cũng xuất hiện. Lựa chọn project/dataset của bạn được ghi nhớ qua mỗi lần tải lại (và khi mở lại tab graph), nên F5 sẽ đưa bạn về đúng khung nhìn cũ thay vì reset về project đầu tiên.
 
 ## Duyệt graph
 
@@ -115,7 +115,7 @@ Chuỗi riêng tư đầy đủ: tự chọn tham gia, mặc định **tắt** -
 
 Graph view không chỉ là một sơ đồ để xem - hãy bật **Edit mode** để thêm, sửa, xóa node và transition trực tiếp trên canvas, không cần chỉnh tay JSON chút nào.
 
-**Bật nó.** Click **Edit mode** trên thanh điều khiển của graph view. Một thanh edit riêng mở ra bên dưới hàng điều khiển, gồm toolbar (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), một dòng hướng dẫn và một dòng trạng thái cập nhật trực tiếp. Mỗi nút chỉ bật khi đủ điều kiện - **Add edge** đợi chọn hai node, **Delete selected** đợi chọn đúng một node hoặc edge, còn **Undo**/**Save** đợi khi có thay đổi chưa lưu - nên nút bị làm mờ cho biết hành động đó còn thiếu gì. Giờ click vào một node hoặc edge sẽ chọn nó để chỉnh sửa thay vì điều hướng hay click-to-highlight.
+**Bật nó.** Click **Edit mode** trên thanh điều khiển của graph view. Một thanh edit riêng mở ra bên dưới hàng điều khiển, gồm toolbar (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), một dòng hướng dẫn và một dòng trạng thái cập nhật trực tiếp. Mỗi nút chỉ bật khi đủ điều kiện - **Add edge** đợi chọn hai node, **Delete selected** đợi chọn đúng một node hoặc edge, còn **Undo**/**Save** đợi khi có thay đổi chưa lưu - nên nút bị làm mờ cho biết hành động đó còn thiếu gì. Giờ click vào một node hoặc edge sẽ chọn nó để chỉnh sửa thay vì điều hướng hay click-to-highlight. Các transition **ghost** (tự động ghi, đang chờ) vẫn hiển thị trên sơ đồ Screens ngay cả trong edit mode - chúng không biến mất khi bạn bật Edit - và click vào một ghost vẫn mở bảng **Duyệt / Bỏ qua** của nó chứ không phải form sửa, nên một bản ghi vẫn duyệt được trong lúc bạn đang sửa.
 
 **Thêm node.** Click **Add node** rồi điền vào form bên cạnh: tên/nhãn theo từng ngôn ngữ (thêm một dòng cho mỗi locale), `urlGlob` (screens) hoặc `kind` (state của flows: initial/normal/terminal), và một spec liên kết tùy chọn chọn từ danh sách spec đã biết của project. **Create** thêm nó vào bản nháp. Ở dataset status-flow, một node mới thuộc về flow đang active - dùng các nút điều khiển flow để tạo một flow trước nếu project chưa có flow nào.
 
