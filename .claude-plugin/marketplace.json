@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "lamngockhuong",
+  "description": "Plugins from the specpin project: pin living business specs onto a running web UI, and number UI screenshots for the specshot editor.",
+  "owner": {
+    "name": "lamngockhuong",
+    "url": "https://github.com/lamngockhuong"
+  },
+  "plugins": [
+    {
+      "name": "specpin",
+      "description": "Author and pin living business specs onto the elements of a running web UI, and number UI screenshots for the specshot editor. Bundles the specpin authoring skill and number-ui-image.",
+      "author": {
+        "name": "lamngockhuong",
+        "url": "https://github.com/lamngockhuong"
+      },
+      "category": "development",
+      "source": "./plugins/specpin",
+      "homepage": "https://specpin.ohnice.app"
+    }
+  ]
+}

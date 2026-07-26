@@ -26,9 +26,14 @@ jobs:
               - 'apps/extension/**'
               - 'apps/web/**'
               # The bundled-skill drift gate (check-skill) runs in the js job; its
-              # inputs are the canonical skill source and the npm package copy.
+              # inputs are the canonical skill source and BOTH checked-in copies.
+              # plugins/** must stay listed or a PR touching only the plugin copy
+              # skips the js job and the drift gate never runs on it.
               - 'apps/cli/skill/**'
               - 'apps/cli/npm/**'
+              - 'plugins/**'
+              # Hand-maintained plugin/marketplace manifests, linted by biome ci.
+              - '.claude-plugin/**'
               - 'examples/**'
               - 'tests/fixtures/**'
               - 'package.json'

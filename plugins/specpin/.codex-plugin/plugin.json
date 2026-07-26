@@ -1,0 +1,29 @@
+{
+  "name": "specpin",
+  "version": "0.1.0",
+  "description": "Author and pin living business specs onto the elements of a running web UI, and number UI screenshots for the specshot editor.",
+  "author": {
+    "name": "lamngockhuong",
+    "url": "https://github.com/lamngockhuong"
+  },
+  "homepage": "https://specpin.ohnice.app",
+  "repository": "https://github.com/lamngockhuong/specpin",
+  "license": "Apache-2.0",
+  "keywords": ["specpin", "specs", "documentation", "ui", "annotation"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Specpin",
+    "shortDescription": "Pin business specs to a live web UI, and number UI screenshots",
+    "longDescription": "Specpin is a Git-native knowledge layer that attaches living business specifications to the elements of a web UI you already have. This plugin bundles two skills: 'specpin' authors and validates schema-valid .specs/*.spec.json files and drives the specpin sidecar CLI; 'number-ui-image' numbers the components of a UI screenshot and exports an annotated copy plus a bbox JSON that round-trips into the specshot editor. No application code is generated.",
+    "developerName": "lamngockhuong",
+    "category": "Coding",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://specpin.ohnice.app",
+    "defaultPrompt": [
+      "Write specpin specs for the elements on my login page.",
+      "Run specpin validate and fix any schema errors in .specs/.",
+      "Number the components in this UI screenshot and export an annotated copy."
+    ],
+    "brandColor": "#2DD4BF"
+  }
+}

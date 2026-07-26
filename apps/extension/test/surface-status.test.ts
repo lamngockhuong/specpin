@@ -149,17 +149,17 @@ describe("renderProjects origin scoping", () => {
       domains: ["localhost:3000"],
       specCount: 4,
     });
-    const wsm = conn({
-      id: "wsm",
-      project: "WSM",
-      label: "WSM",
+    const anywhere = conn({
+      id: "anywhere",
+      project: "Anywhere",
+      label: "Anywhere",
       domains: [],
       matchesAllSites: true,
       specCount: 1,
     });
-    // Active tab is wsm.sun-asterisk.vn: Acme (localhost domains) does not serve it.
-    renderProjects(status([acme, wsm]), "https://wsm.sun-asterisk.vn");
-    expect(pnames()).toEqual(["WSM"]);
+    // Active tab is portal.example.com: Acme (localhost domains) does not serve it.
+    renderProjects(status([acme, anywhere]), "https://portal.example.com");
+    expect(pnames()).toEqual(["Anywhere"]);
   });
 
   it("stays empty when no project serves the origin", () => {

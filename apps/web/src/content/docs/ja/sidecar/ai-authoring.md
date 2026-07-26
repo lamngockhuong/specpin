@@ -24,8 +24,30 @@ Specpin自体はLLMを一切同梱しません。`specpin generate`はスタブ�
 
 ## エージェントにスキルを指し示す
 
-- **Claude Code（およびその他のkit形式のスキル）：** スキルをインストールするか、`SKILL.md`を取得してエージェントに渡します。UI要素のbusiness specを作成する、または`specpin` CLIを実行するという要求で起動します。
-- **その他の任意のエージェント：** unpkgの`SKILL.md`のURL（またはその内容）をエージェントのコンテキストに貼り付け、画面のspecを作成するよう依頼します。
+- **Claude Code：** plugin をインストールします（下記参照）。コマンド1つで済み、コピー&ペーストは不要です。
+- **インストール不要・任意のエージェント：** unpkgの`SKILL.md`のURL（またはその内容）をエージェントのコンテキストに貼り付け、画面のspecを作成するよう依頼します。
+
+### plugin としてインストールする
+
+specpinのリポジトリは plugin marketplace も兼ねています。Claude Code で:
+
+```
+/plugin marketplace add lamngockhuong/specpin
+/plugin install specpin@lamngockhuong
+```
+
+これで**2つ**のスキルが入ります:
+
+| スキル | 役割 |
+|---|---|
+| `specpin:specpin` | `.specs/*.spec.json` の作成とvalidate、`specpin` CLIの操作 |
+| `specpin:number-ui-image` | UIスクリーンショットの各コンポーネントに番号を振り、注釈付き画像とspecshotエディタ用のbbox JSONを出力 |
+
+plugin に入る specpin スキルは、npm版を検証しているのと同じCIのdrift gateによって正規ソースから生成されます。そのため両者が食い違うことはありません。
+
+Claude用のmanifestと並んでCodex用のmanifestも同梱しています。こちらはスキルのみで（specpinはMCPサーバーもappも持ちません）、実際のCodexインストールでの検証はまだ済んでいません。現時点で動作を保証しているのは上記のClaude Codeの手順です。
+
+npm/unpkg 経由の方法はこれまでどおり使えます。plugin は配布経路を1つ増やすもので、既存の経路を置き換えるものではありません。
 
 ここでAPIキー、認証、モデルの設定は不要です。sidecarはlocalhost専用で、`serve`実行時に自身のbearer tokenを出力します。
 

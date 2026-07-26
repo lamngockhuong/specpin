@@ -24,8 +24,30 @@ The [canonical source lives on GitHub](https://github.com/lamngockhuong/specpin/
 
 ## Point your agent at it
 
-- **Claude Code (and other kit-style skills):** install the skill, or fetch `SKILL.md` and hand it to the agent. It triggers on requests to author business specs for UI elements or run the `specpin` CLI.
-- **Any other agent:** paste the unpkg `SKILL.md` URL (or its contents) into the agent's context and ask it to author specs for your screen.
+- **Claude Code:** install the plugin (below) — one command, no copy-pasting.
+- **Any agent, no install:** paste the unpkg `SKILL.md` URL (or its contents) into the agent's context and ask it to author specs for your screen.
+
+### Install as a plugin
+
+The specpin repo doubles as a plugin marketplace. In Claude Code:
+
+```
+/plugin marketplace add lamngockhuong/specpin
+/plugin install specpin@lamngockhuong
+```
+
+That ships **two** skills:
+
+| Skill | What it does |
+|---|---|
+| `specpin:specpin` | authors and validates `.specs/*.spec.json`, drives the `specpin` CLI |
+| `specpin:number-ui-image` | numbers the components of a UI screenshot and exports an annotated copy plus a bbox JSON for the specshot editor |
+
+The plugin's copy of the specpin skill is generated from the canonical source by the same CI drift gate that keeps the npm copy honest, so the two can never disagree.
+
+A Codex manifest ships alongside the Claude one. It is skills-only — specpin has no MCP server and no app — and has not yet been verified against a Codex install; the Claude Code path above is the supported one today.
+
+The npm/unpkg route still works exactly as before — the plugin adds a channel, it does not replace one.
 
 There is no API key, auth, or model setup to do here: the sidecar is localhost-only and prints its own bearer token when you run `serve`.
 

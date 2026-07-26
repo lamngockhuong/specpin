@@ -295,6 +295,28 @@ go test ./...
 - `packages/spec-schema/src/*.gen.*` (TS generated)
 - `apps/cli/internal/schema/v1.json` (Go embedded copy)
 
+## AI-Authoring Skill Sync
+
+Same invariant as schema management above, applied to the bundled AI-authoring skill: **one
+canonical source, multiple checked-in copies, a drift gate.**
+
+1. **Canonical source**: `apps/cli/skill/` (`SKILL.md` + `references/`, hand-edited). See
+   `docs/ai-authoring.md`.
+2. **Destinations** (real checked-in directories, not symlinks - npm tarballs and a git-fetched
+   plugin do not reliably follow symlinks): `apps/cli/npm/skill/` (bundled into the npm tarball)
+   and `plugins/specpin/skills/specpin/` (bundled into the Claude Code / Codex plugin).
+
+**Workflow:**
+```bash
+cd apps/cli/npm
+node scripts/sync-skill.mjs          # copy source -> all destinations
+node scripts/sync-skill.mjs --check  # CI gate: exit non-zero if ANY destination differs
+```
+
+**Never hand-edit:**
+- `apps/cli/npm/skill/` (npm tarball copy)
+- `plugins/specpin/skills/specpin/` (Claude Code / Codex plugin copy)
+
 ## Git Commit Standards
 
 **Format**: Conventional Commits (enforced by review, not git hooks).

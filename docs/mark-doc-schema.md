@@ -4,8 +4,10 @@ The single contract shared between the **`number-ui-image`** skill (producer)
 and the **specshot** editor (consumer/editor). Both sides enforce these rules
 independently and must stay byte-compatible:
 
-- Enforcing twin in the skill: `scripts/annotate-image-bboxes.py` (in the
-  `number-ui-image` skill directory)
+Both twins now live in this repo, so they can be diffed against each other:
+
+- Enforcing twin in the skill:
+  `plugins/specpin/skills/number-ui-image/scripts/annotate-image-bboxes.py`
 - Enforcing twin in specpin: `packages/specshot-core/src/model/mark-doc.ts`
 
 ## Shape

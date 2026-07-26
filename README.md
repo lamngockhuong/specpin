@@ -126,7 +126,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, ships seede
 
 ### Author with AI
 
-Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachable at `https://unpkg.com/@specpin/cli@latest/skill/SKILL.md`) teaches Claude Code, Cursor, and similar agents to author schema-valid `.specs/` and run `specpin validate`. See **[`docs/ai-authoring.md`](./docs/ai-authoring.md)**.
+Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachable at `https://unpkg.com/@specpin/cli@latest/skill/SKILL.md`) teaches Claude Code, Cursor, and similar agents to author schema-valid `.specs/` and run `specpin validate`. Claude Code users can also install it as a plugin: `/plugin marketplace add lamngockhuong/specpin` then `/plugin install specpin@lamngockhuong`. See **[`docs/ai-authoring.md`](./docs/ai-authoring.md)**.
 
 ## Features
 

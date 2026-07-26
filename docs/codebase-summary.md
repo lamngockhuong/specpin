@@ -169,7 +169,9 @@ cmd/
 skill/          - canonical @specpin/cli skill source (SKILL.md + references/)
                   that teaches a host coding agent to author specs; see docs/ai-authoring.md
 npm/
-  skill/        - synced copy bundled into the npm tarball (drift-gated by sync-skill.mjs --check)
+  skill/        - synced copy bundled into the npm tarball; sync-skill.mjs also feeds a second
+                  destination, the repo-root plugins/specpin/skills/specpin/ Claude Code plugin
+                  (see docs/ai-authoring.md); both copies drift-gated by sync-skill.mjs --check
 internal/
   schema/
     schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views/Guides/Required` (50+ lines)

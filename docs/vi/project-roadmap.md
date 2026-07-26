@@ -84,6 +84,12 @@ Phát hiện từ review độc lập:
 
 Mục tiêu: độ bền (robustness), tính linh hoạt, đánh bóng. Chưa cam kết timeline.
 
+**Đã ship plugin marketplace (2026-07-26)** trên nhánh `main`:
+- Repo giờ kiêm luôn vai trò một plugin marketplace của Claude Code (`.claude-plugin/marketplace.json`), phát hành một plugin duy nhất tên `specpin` gồm hai skill: `specpin:specpin` (skill soạn spec chuẩn, sinh ra từ `apps/cli/skill/`) và `specpin:number-ui-image` (đánh số các thành phần trên ảnh chụp UI và xuất file bbox JSON dạng `{itemNo, position}` mà editor specshot đọc được). Cài bằng `/plugin marketplace add lamngockhuong/specpin` rồi `/plugin install specpin@lamngockhuong` - thay cho hướng dẫn cũ là "lấy SKILL.md rồi đưa cho agent". Kênh npm/unpkg giữ nguyên; đây là thêm một kênh chứ không thay thế kênh nào.
+- `sync-skill.mjs` từ chỗ chỉ có một đích đã chuyển thành một danh sách đích có nhãn, nên một nguồn skill chuẩn duy nhất giờ nuôi cả bản copy trong tarball npm lẫn bản copy trong plugin, và drift-gate sẵn có trên CI (`--check`, lệnh và cwd đều không đổi) sẽ fail kèm tên đích nào bị lệch. Điều này bịt lại rủi ro "bản copy thứ ba rồi sẽ mục", vốn đã được gate schema nhúng xử lý sẵn ở phía Go.
+- Đi kèm manifest cho Claude còn có một manifest cho Codex (`.codex-plugin/plugin.json`). Manifest này chỉ gồm skill (specpin không có MCP server cũng không có app) và chưa được kiểm chứng với một lần cài Codex thật.
+- Xem `docs/ai-authoring.md` phần "Install as a plugin".
+
 **Đã ship trình biên tập graph ngay trong trình duyệt (Track C) (2026-07-25)** trên nhánh `main`:
 - Sơ đồ của graph view không còn chỉ-đọc nữa: một chuyển đổi **Edit mode** tùy chọn thêm một thanh công cụ (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**) và một form bên cạnh biết theo kiểu dữ liệu (các dòng tên/nhãn theo locale, `urlGlob`/`kind`, một bộ chọn spec liên kết) để tạo, sửa, xóa screen/state và transition của chúng ngay trên canvas - không cần chỉnh tay JSON, và trước đây extension chưa hề có editor cho flow/screen nào. Tạo-từ-đầu bao phủ cả một flow hoàn toàn mới (các nút New/Rename/Delete flow), không chỉ sửa một flow đã có.
 - Mọi lượt ghi đều dùng lại ĐÚNG helper gộp bảo toàn provenance mà Duyệt ghost edge của Track B đã dùng (`graph/graph-write-back(-flows).ts`): Save của trình biên tập chỉ thay thế đúng phần nó sở hữu (`"source": "manual"`), giữ nguyên và không bao giờ làm mồ côi một entry imported/auto-captured - không schema mới, không bề mặt ghi mới. Một transition imported/auto-captured hiện chỉ-đọc trong form bên cạnh.

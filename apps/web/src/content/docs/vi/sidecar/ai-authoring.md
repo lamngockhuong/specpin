@@ -24,8 +24,30 @@ Skill nằm sẵn trong package npm đã publish, nên agent của bạn có th�
 
 ## Trỏ agent tới skill
 
-- **Claude Code (và các skill kiểu kit khác):** cài skill, hoặc lấy `SKILL.md` rồi đưa cho agent. Nó kích hoạt khi bạn yêu cầu soạn business spec cho các element UI hoặc chạy CLI `specpin`.
-- **Agent bất kỳ khác:** dán URL `SKILL.md` trên unpkg (hoặc nội dung của nó) vào ngữ cảnh của agent và yêu cầu nó soạn spec cho màn hình của bạn.
+- **Claude Code:** cài plugin (xem bên dưới) — chỉ một lệnh, khỏi copy-paste.
+- **Agent bất kỳ, không cần cài:** dán URL `SKILL.md` trên unpkg (hoặc nội dung của nó) vào ngữ cảnh của agent và yêu cầu nó soạn spec cho màn hình của bạn.
+
+### Cài dưới dạng plugin
+
+Repo specpin đồng thời là một plugin marketplace. Trong Claude Code:
+
+```
+/plugin marketplace add lamngockhuong/specpin
+/plugin install specpin@lamngockhuong
+```
+
+Lệnh trên cài **hai** skill:
+
+| Skill | Công dụng |
+|---|---|
+| `specpin:specpin` | soạn và kiểm tra `.specs/*.spec.json`, điều khiển CLI `specpin` |
+| `specpin:number-ui-image` | đánh số các thành phần trên ảnh chụp UI, xuất ra ảnh đã chú thích kèm file bbox JSON dùng cho editor specshot |
+
+Bản specpin skill trong plugin được sinh ra từ nguồn chuẩn bởi chính drift-gate trên CI vốn đang giữ bản npm luôn khớp, nên hai bản không thể lệch nhau.
+
+Đi kèm manifest cho Claude còn có một manifest cho Codex. Manifest này chỉ gồm skill — specpin không có MCP server cũng không có app — và chưa được kiểm chứng với một lần cài Codex thật; hiện tại đường Claude Code ở trên mới là đường được hỗ trợ.
+
+Cách cài qua npm/unpkg vẫn chạy y như trước — plugin là thêm một kênh phân phối, không thay thế kênh cũ.
 
 Không có API key, xác thực hay cấu hình model nào phải làm ở đây: sidecar chỉ chạy trên localhost và tự in ra bearer token khi bạn chạy `serve`.
 

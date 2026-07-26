@@ -297,6 +297,28 @@ go test ./...
 - `packages/spec-schema/src/*.gen.*` (TS generated)
 - `apps/cli/internal/schema/v1.json` (bản embedded copy của Go)
 
+## Đồng bộ Skill soạn spec bằng AI
+
+Cùng một nguyên tắc với schema management ở trên, áp dụng cho skill soạn spec bằng AI được đóng
+gói sẵn: **một nguồn canonical, nhiều bản copy được checked-in, một drift gate.**
+
+1. **Nguồn canonical**: `apps/cli/skill/` (`SKILL.md` + `references/`, sửa tay). Xem
+   `docs/vi/ai-authoring.md`.
+2. **Các đích** (thư mục checked-in thật, không phải symlink - tarball npm và một plugin fetch
+   qua git đều không follow symlink một cách đáng tin cậy): `apps/cli/npm/skill/` (đóng gói vào
+   tarball npm) và `plugins/specpin/skills/specpin/` (đóng gói vào plugin Claude Code / Codex).
+
+**Quy trình:**
+```bash
+cd apps/cli/npm
+node scripts/sync-skill.mjs          # copy nguồn -> tất cả các đích
+node scripts/sync-skill.mjs --check  # CI gate: exit non-zero nếu BẤT KỲ đích nào lệch
+```
+
+**Tuyệt đối không sửa tay:**
+- `apps/cli/npm/skill/` (bản copy cho tarball npm)
+- `plugins/specpin/skills/specpin/` (bản copy cho plugin Claude Code / Codex)
+
 ## Git Commit Standards
 
 **Format**: Conventional Commits (được kiểm soát qua review, không phải bằng git hook).

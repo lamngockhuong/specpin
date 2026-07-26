@@ -25,16 +25,42 @@ and ships in the published npm package, so it is reachable without installing:
 `cli-commands.md` (every command and its exit codes).
 
 A drift gate (`node apps/cli/npm/scripts/sync-skill.mjs --check`, run in CI)
-keeps the bundled copy identical to the canonical source, mirroring how the Go
-sidecar's embedded schema is kept in sync.
+keeps every checked-in copy identical to the canonical source — the npm bundle
+and the plugin copy below — mirroring how the Go sidecar's embedded schema is
+kept in sync.
 
 ## Pointing your agent at it
 
-- **Claude Code / kit-style skills**: install the skill or fetch `SKILL.md` and
-  hand it to the agent. It triggers on requests to author business specs for UI
-  elements or run the `specpin` CLI.
-- **Any other agent**: paste the unpkg `SKILL.md` URL (or its contents) into the
-  agent's context and ask it to author specs for your screen.
+- **Claude Code**: install the plugin (below) — one command, no copy-pasting.
+- **Any agent, no install**: paste the unpkg `SKILL.md` URL (or its contents)
+  into the agent's context and ask it to author specs for your screen.
+
+### Install as a plugin
+
+This repo doubles as a plugin marketplace. In Claude Code:
+
+```
+/plugin marketplace add lamngockhuong/specpin
+/plugin install specpin@lamngockhuong
+```
+
+That ships **two** skills:
+
+| Skill | What it does |
+|---|---|
+| `specpin:specpin` | authors and validates `.specs/*.spec.json`, drives the `specpin` CLI |
+| `specpin:number-ui-image` | numbers the components of a UI screenshot and exports an annotated copy plus a bbox JSON for the specshot editor |
+
+The plugin's copy of the specpin skill is generated from `apps/cli/skill/` by the
+same drift gate, so it can never disagree with the npm copy.
+
+A Codex manifest (`plugins/specpin/.codex-plugin/plugin.json`) ships alongside the
+Claude one. It is skills-only — specpin has no MCP server and no app — and has not
+yet been verified against a Codex install; the Claude Code path above is the
+supported one today.
+
+The npm/unpkg route is unchanged and still works — the plugin adds a channel, it
+does not replace one.
 
 No auth, key, or model setup: the sidecar is localhost-only and prints its own
 bearer token on `serve`.

@@ -16,7 +16,8 @@
     "schema-validate": "turbo run schema-validate",
     "format": "biome format --write .",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm schema-validate",
-    "check:all": "pnpm check && cd apps/cli && make check-schema && go vet ./... && go test ./...",
+    "check-skill": "node apps/cli/npm/scripts/sync-skill.mjs --check",
+    "check:all": "pnpm check && pnpm check-skill && cd apps/cli && make check-schema && go vet ./... && go test ./...",
     "prepare": "lefthook install || true"
   },
   "devDependencies": {
