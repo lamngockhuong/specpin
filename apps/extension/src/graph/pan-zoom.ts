@@ -24,6 +24,9 @@ export interface PanZoomController {
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 3;
 const ZOOM_STEP = 0.0015;
+// Pointer travel (px) that turns a press into a pan. Under this it stays a
+// click, so node/edge click handlers still fire (see onPointerDown).
+const DRAG_THRESHOLD = 3;
 
 function clampScale(scale: number): number {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
@@ -37,7 +40,10 @@ export function attachPanZoom(
   initial: PanZoomState = { x: 0, y: 0, scale: 1 },
 ): PanZoomController {
   let state: PanZoomState = { ...initial };
-  let dragging = false;
+  let activePointerId: number | null = null;
+  let panning = false;
+  let startX = 0;
+  let startY = 0;
   let lastX = 0;
   let lastY = 0;
 
@@ -50,28 +56,52 @@ export function attachPanZoom(
   }
 
   function onPointerDown(e: PointerEvent): void {
-    // Only the primary button/touch starts a pan; a click that neither moved
-    // nor dragged still reaches the node/edge click handlers underneath.
+    // Only the primary button/touch arms a pan. Crucially, DON'T capture the
+    // pointer here: capturing on press makes the browser retarget the ensuing
+    // `click` to this <svg> surface, so node/edge <g> click handlers never fire
+    // (only onBackgroundClick would) -- which silently breaks selection in the
+    // graph. Instead just record the press; panning + capture begin in
+    // onPointerMove once travel passes DRAG_THRESHOLD. Under that it stays a
+    // click and reaches the node/edge handlers underneath.
     if (e.button !== 0) return;
-    dragging = true;
+    activePointerId = e.pointerId;
+    panning = false;
+    startX = e.clientX;
+    startY = e.clientY;
     lastX = e.clientX;
     lastY = e.clientY;
-    surface.setPointerCapture(e.pointerId);
   }
 
   function onPointerMove(e: PointerEvent): void {
-    if (!dragging) return;
-    state = { ...state, x: state.x + (e.clientX - lastX), y: state.y + (e.clientY - lastY) };
+    if (activePointerId === null) return;
+    if (!panning) {
+      // Below the threshold this is still a potential click -- don't pan or
+      // capture yet, so the click can reach the node/edge underneath.
+      if (
+        Math.abs(e.clientX - startX) < DRAG_THRESHOLD &&
+        Math.abs(e.clientY - startY) < DRAG_THRESHOLD
+      ) {
+        return;
+      }
+      // Real drag: now capture so moves keep flowing even off the surface.
+      panning = true;
+      surface.setPointerCapture(activePointerId);
+    } else {
+      state = { ...state, x: state.x + (e.clientX - lastX), y: state.y + (e.clientY - lastY) };
+      apply();
+    }
     lastX = e.clientX;
     lastY = e.clientY;
-    apply();
   }
 
-  function onPointerUp(e: PointerEvent): void {
-    dragging = false;
+  function onPointerUp(): void {
     // A pointercancel (e.g. browser gesture interruption) can already release
     // capture before this handler runs; guard so a second release never throws.
-    if (surface.hasPointerCapture(e.pointerId)) surface.releasePointerCapture(e.pointerId);
+    if (activePointerId !== null && surface.hasPointerCapture(activePointerId)) {
+      surface.releasePointerCapture(activePointerId);
+    }
+    activePointerId = null;
+    panning = false;
   }
 
   // Rescale to `nextScale` while keeping the graph point currently under
