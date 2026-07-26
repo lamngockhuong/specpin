@@ -1,0 +1,23 @@
+{
+  "name": "specpin",
+  "version": "0.1.0",
+  "description": "Author and pin living business specs onto the elements of a running web UI, and number UI screenshots for the specshot editor. Bundles the specpin authoring skill (write and validate .specs/*.spec.json, drive the specpin sidecar CLI) and number-ui-image (annotate a screenshot with numbered component boxes).",
+  "author": {
+    "name": "lamngockhuong",
+    "url": "https://github.com/lamngockhuong"
+  },
+  "homepage": "https://specpin.ohnice.app",
+  "repository": "https://github.com/lamngockhuong/specpin",
+  "license": "Apache-2.0",
+  "skills": "./skills/",
+  "keywords": [
+    "specpin",
+    "specs",
+    "documentation",
+    "ui",
+    "annotation",
+    "screenshot",
+    "spec-json",
+    "sidecar"
+  ]
+}

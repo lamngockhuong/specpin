@@ -15,12 +15,34 @@ Nguồn chuẩn nằm trong repo tại [`apps/cli/skill/`](../../apps/cli/skill/
 
 `SKILL.md` tự đủ. Ba file reference đào sâu thêm: `schema-authoring.md` (cấu trúc v1 kèm một ví dụ hợp lệ đầy đủ), `fingerprint-strategy.md` (cây quyết định ưu tiên test-id) và `cli-commands.md` (mọi lệnh kèm mã thoát).
 
-Một drift-gate (`node apps/cli/npm/scripts/sync-skill.mjs --check`, chạy trong CI) giữ bản copy đóng gói giống hệt nguồn chuẩn, giống cách schema nhúng của sidecar Go được đồng bộ.
+Một drift-gate (`node apps/cli/npm/scripts/sync-skill.mjs --check`, chạy trong CI) giữ mọi bản copy được commit — bản đóng gói trong npm và bản plugin nói ở dưới — giống hệt nguồn chuẩn, giống cách schema nhúng của sidecar Go được đồng bộ.
 
 ## Trỏ agent của bạn tới skill
 
-- **Claude Code / skill dạng kit**: cài skill hoặc lấy `SKILL.md` rồi đưa cho agent. Nó kích hoạt khi có yêu cầu soạn business spec cho element UI hoặc chạy CLI `specpin`.
-- **Agent khác**: dán URL `SKILL.md` trên unpkg (hoặc nội dung của nó) vào ngữ cảnh của agent và yêu cầu nó soạn spec cho màn hình của bạn.
+- **Claude Code**: cài plugin (xem bên dưới) — chỉ một lệnh, khỏi copy-paste.
+- **Agent bất kỳ, không cần cài**: dán URL `SKILL.md` trên unpkg (hoặc nội dung của nó) vào ngữ cảnh của agent rồi yêu cầu nó soạn spec cho màn hình của bạn.
+
+### Cài dưới dạng plugin
+
+Repo này đồng thời là một plugin marketplace. Trong Claude Code:
+
+```
+/plugin marketplace add lamngockhuong/specpin
+/plugin install specpin@lamngockhuong
+```
+
+Lệnh trên cài **hai** skill:
+
+| Skill | Công dụng |
+|---|---|
+| `specpin:specpin` | soạn và kiểm tra `.specs/*.spec.json`, điều khiển CLI `specpin` |
+| `specpin:number-ui-image` | đánh số các thành phần trên ảnh chụp UI, xuất ra ảnh đã chú thích kèm file bbox JSON dùng cho editor specshot |
+
+Bản specpin skill nằm trong plugin được sinh ra từ `apps/cli/skill/` bởi chính drift-gate đó, nên không thể lệch so với bản trên npm.
+
+Đi kèm manifest cho Claude còn có một manifest cho Codex (`plugins/specpin/.codex-plugin/plugin.json`). Manifest này chỉ gồm skill — specpin không có MCP server cũng không có app — và chưa được kiểm chứng với một lần cài Codex thật; hiện tại đường Claude Code ở trên mới là đường được hỗ trợ.
+
+Cách cài qua npm/unpkg vẫn giữ nguyên: plugin là thêm một kênh phân phối, không thay thế kênh cũ.
 
 Không cần auth, key hay cấu hình model: sidecar chỉ chạy localhost và tự in bearer token khi `serve`.
 

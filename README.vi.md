@@ -126,7 +126,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 
 ### Soạn spec bằng AI
 
-Để một coding agent soạn spec giúp bạn. Một skill đóng gói trong `@specpin/cli` (truy cập tại `https://unpkg.com/@specpin/cli@latest/skill/SKILL.md`) dạy Claude Code, Cursor và các agent tương tự soạn `.specs/` hợp lệ schema và chạy `specpin validate`. Xem **[`docs/vi/ai-authoring.md`](./docs/vi/ai-authoring.md)**.
+Để một coding agent soạn spec giúp bạn. Một skill đóng gói trong `@specpin/cli` (truy cập tại `https://unpkg.com/@specpin/cli@latest/skill/SKILL.md`) dạy Claude Code, Cursor và các agent tương tự soạn `.specs/` hợp lệ schema và chạy `specpin validate`. Người dùng Claude Code cũng có thể cài đặt dưới dạng plugin: `/plugin marketplace add lamngockhuong/specpin` rồi `/plugin install specpin@lamngockhuong`. Xem **[`docs/vi/ai-authoring.md`](./docs/vi/ai-authoring.md)**.
 
 ## Tính năng
 

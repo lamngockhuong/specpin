@@ -1,22 +1,42 @@
-// Sync the canonical skill (apps/cli/skill/) into the npm package
-// (apps/cli/npm/skill/) so it ships in the published tarball and is reachable
-// via unpkg/jsdelivr. This mirrors how `make sync-schema` copies the SSOT
-// schema into the Go embed location: one source of truth, a checked-in copy,
-// and a drift gate.
+// Sync the canonical skill (apps/cli/skill/) into every checked-in copy of it.
+// This mirrors how `make sync-schema` copies the SSOT schema into the Go embed
+// location: one source of truth, checked-in copies, and a drift gate.
 //
-//   node scripts/sync-skill.mjs          copy source -> bundled (default)
-//   node scripts/sync-skill.mjs --check  exit non-zero if they differ (CI gate)
+// Two destinations today:
+//   apps/cli/npm/skill/                  ships in the published npm tarball,
+//                                        reachable via unpkg/jsdelivr
+//   plugins/specpin/skills/specpin/      ships in the Claude Code / Codex plugin,
+//                                        fetched by git from this repo
 //
-// npm tarballs do not reliably follow symlinks across environments, so the
-// bundled copy is a real checked-in directory kept honest by --check.
+//   node scripts/sync-skill.mjs          copy source -> all destinations (default)
+//   node scripts/sync-skill.mjs --check  exit non-zero if ANY destination differs (CI gate)
+//
+// Both copies are real checked-in directories rather than symlinks: npm tarballs
+// do not reliably follow symlinks across environments, and a git-fetched plugin
+// has the same problem. --check is what keeps them honest.
 
 import { readdir, readFile, cp, rm } from "node:fs/promises";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const here = dirname(fileURLToPath(import.meta.url));
+const here = dirname(fileURLToPath(import.meta.url)); // apps/cli/npm/scripts
 const SRC = join(here, "..", "..", "skill"); // apps/cli/skill
-const DST = join(here, "..", "skill"); // apps/cli/npm/skill
+const ROOT = join(here, "..", "..", "..", ".."); // repo root
+
+const DESTS = [
+  { label: "npm", path: join(here, "..", "skill") },
+  { label: "plugin", path: join(ROOT, "plugins", "specpin", "skills", "specpin") },
+];
+
+// The destinations are derived from import.meta.url, never from argv, so they
+// cannot be steered outside the repo. Assert it anyway: a miscounted "../" in
+// the line above would otherwise clobber a directory next to the checkout.
+for (const { label, path } of DESTS) {
+  if (path !== ROOT && !path.startsWith(ROOT + sep)) {
+    console.error(`sync-skill: destination "${label}" resolves outside the repo: ${path}`);
+    process.exit(1);
+  }
+}
 
 // Recursively list files (relative paths) under a directory. Returns [] if the
 // directory is absent rather than throwing, so --check can report a clean miss.
@@ -46,34 +66,56 @@ async function copy() {
     console.error(`sync-skill: no files under ${SRC}; nothing to sync`);
     process.exit(1);
   }
-  // Clear the destination so deletions in source propagate, then copy fresh.
-  await rm(DST, { recursive: true, force: true });
-  await cp(SRC, DST, { recursive: true });
-  console.log(`sync-skill: copied ${files.length} file(s) -> ${relative(process.cwd(), DST)}`);
+  for (const { label, path } of DESTS) {
+    // Clear the destination so deletions in source propagate, then copy fresh.
+    await rm(path, { recursive: true, force: true });
+    await cp(SRC, path, { recursive: true });
+    console.log(
+      `sync-skill: copied ${files.length} file(s) -> ${relative(process.cwd(), path)} (${label})`,
+    );
+  }
 }
 
-async function check() {
-  const [srcFiles, dstFiles] = await Promise.all([listFiles(SRC), listFiles(DST)]);
+// Compare one destination against the source. Returns a list of human-readable
+// drift descriptions, empty when the destination is in sync.
+async function diffDest(srcFiles, destPath) {
+  const dstFiles = await listFiles(destPath);
   const offending = [];
 
   const srcSet = new Set(srcFiles);
   const dstSet = new Set(dstFiles);
-  for (const rel of srcFiles) if (!dstSet.has(rel)) offending.push(`missing in bundle: ${rel}`);
-  for (const rel of dstFiles) if (!srcSet.has(rel)) offending.push(`stale in bundle: ${rel}`);
+  for (const rel of srcFiles) if (!dstSet.has(rel)) offending.push(`missing in copy: ${rel}`);
+  for (const rel of dstFiles) if (!srcSet.has(rel)) offending.push(`stale in copy: ${rel}`);
 
   for (const rel of srcFiles) {
     if (!dstSet.has(rel)) continue;
-    const [a, b] = await Promise.all([readFile(join(SRC, rel)), readFile(join(DST, rel))]);
+    const [a, b] = await Promise.all([readFile(join(SRC, rel)), readFile(join(destPath, rel))]);
     if (!a.equals(b)) offending.push(`content differs: ${rel}`);
   }
 
-  if (offending.length > 0) {
-    console.error("sync-skill: bundled skill drifted from apps/cli/skill/:");
-    for (const o of offending) console.error(`  ${o}`);
+  return offending;
+}
+
+async function check() {
+  const srcFiles = await listFiles(SRC);
+  // Check every destination before exiting: reporting only the first drifting
+  // target would cost a second CI run to discover the second one.
+  const drifted = [];
+  for (const { label, path } of DESTS) {
+    const offending = await diffDest(srcFiles, path);
+    if (offending.length > 0) drifted.push({ label, path, offending });
+  }
+
+  if (drifted.length > 0) {
+    console.error("sync-skill: checked-in copies drifted from apps/cli/skill/:");
+    for (const { label, path, offending } of drifted) {
+      console.error(`  [${label}] ${relative(process.cwd(), path)}`);
+      for (const o of offending) console.error(`    ${o}`);
+    }
     console.error("Run `npm run sync-skill` in apps/cli/npm to re-sync.");
     process.exit(1);
   }
-  console.log("sync-skill: bundled skill in sync");
+  console.log(`sync-skill: ${DESTS.length} checked-in copies in sync`);
 }
 
 if (process.argv.includes("--check")) await check();

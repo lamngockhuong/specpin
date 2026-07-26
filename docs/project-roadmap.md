@@ -82,6 +82,12 @@ Independent review findings:
 
 Goal: robustness, flexibility, polish. No timeline committed.
 
+**Plugin marketplace shipped (2026-07-26)** on branch `main`:
+- The repo now doubles as a Claude Code plugin marketplace (`.claude-plugin/marketplace.json`) shipping one plugin, `specpin`, with two skills: `specpin:specpin` (the canonical authoring skill, generated from `apps/cli/skill/`) and `specpin:number-ui-image` (numbers the components of a UI screenshot and emits the `{itemNo, position}` bbox JSON the specshot editor consumes). Install is `/plugin marketplace add lamngockhuong/specpin` then `/plugin install specpin@lamngockhuong` - replacing the previous "fetch SKILL.md and hand it to the agent" instruction. The npm/unpkg channel is unchanged; this adds a channel rather than replacing one.
+- `sync-skill.mjs` grew from one destination to a labelled list, so the one canonical skill source now feeds both the npm tarball copy and the plugin copy, and the existing CI drift gate (`--check`, unchanged command and cwd) fails naming whichever target drifted. This closes the third-copy-rots risk that the embedded-schema gate already covers on the Go side.
+- A Codex manifest (`.codex-plugin/plugin.json`) ships alongside the Claude one. Skills-only (specpin has no MCP server and no app) and not yet verified against a real Codex install.
+- See `docs/ai-authoring.md` "Install as a plugin".
+
 **In-browser graph editor (Track C) shipped (2026-07-25)** on branch `main`:
 - The graph view's diagram is no longer read-only: an opt-in **Edit mode** toggle adds a toolbar (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**) and a type-aware side form (localized name/label rows, `urlGlob`/`kind`, a linked-spec picker) for creating, editing, and deleting screens/states and their transitions directly on the canvas - no JSON hand-editing, and no in-extension flow/screen editor before this. Create-from-scratch covers a brand-new flow too (flow controls: New/Rename/Delete), not just editing an existing one.
 - Every write reuses the SAME provenance-preserving merge Track B's ghost-edge Approve already relies on (`graph/graph-write-back(-flows).ts`): the editor's Save replaces only the slice it owns (`"source": "manual"`), preserving and never orphaning an imported/auto-captured entry - no new schema, no new write path. An imported/auto-captured transition renders read-only in the side form.

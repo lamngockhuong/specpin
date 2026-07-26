@@ -171,7 +171,9 @@ cmd/
 skill/          - nguồn chuẩn của skill @specpin/cli (SKILL.md + references/) dạy
                   một coding agent soạn spec; xem docs/ai-authoring.md
 npm/
-  skill/        - bản copy đồng bộ, đóng gói vào tarball npm (drift-gate bằng sync-skill.mjs --check)
+  skill/        - bản copy đồng bộ, đóng gói vào tarball npm; sync-skill.mjs còn đồng bộ sang
+                  đích thứ hai, plugin Claude Code ở repo-root plugins/specpin/skills/specpin/
+                  (xem docs/ai-authoring.md); cả hai bản copy đều drift-gate bằng sync-skill.mjs --check
 internal/
   schema/
     schema.go   - embeds v1.json, exposes `ValidateSpec/Manifest/SpecFile/Views/Guides/Required` (50+ lines)

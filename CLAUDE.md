@@ -64,6 +64,7 @@ Package roles (see `docs/system-architecture.md`):
 | `apps/cli` | Go sidecar: `init` + `serve` (CRUD, SSE, health), hardened localhost |
 | `apps/extension` | WXT MV3 extension (background SW + content script + popup/options) |
 | `examples/demo-react-app` | demo UI with seeded `.specs/` |
+| `plugins/specpin` | Claude Code / Codex plugin (not a pnpm workspace member); `skills/specpin/` is **generated** from `apps/cli/skill/` |
 
 ### Critical invariant: one schema, two validators
 

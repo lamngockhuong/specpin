@@ -123,7 +123,7 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000、.specs/ �
 
 ### AIで spec を作成
 
-コーディングエージェントにspecを書かせましょう。`@specpin/cli`に同梱されているskill（`https://unpkg.com/@specpin/cli@latest/skill/SKILL.md`で参照可能）が、Claude Code、Cursorなどのエージェントにスキーマ有効な`.specs/`の作成方法と`specpin validate`の実行方法を教えます。**[`docs/ai-authoring.md`](./docs/ai-authoring.md)**を参照してください。
+コーディングエージェントにspecを書かせましょう。`@specpin/cli`に同梱されているskill（`https://unpkg.com/@specpin/cli@latest/skill/SKILL.md`で参照可能）が、Claude Code、Cursorなどのエージェントにスキーマ有効な`.specs/`の作成方法と`specpin validate`の実行方法を教えます。Claude Codeユーザーはプラグインとしてインストールすることもできます: `/plugin marketplace add lamngockhuong/specpin` の後 `/plugin install specpin@lamngockhuong`。**[`docs/ai-authoring.md`](./docs/ai-authoring.md)**を参照してください。
 
 ## 機能
 
