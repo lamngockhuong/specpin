@@ -27,6 +27,7 @@ import { mountGraphViewToolbar } from "../../graph/graph-view-toolbar.js";
 import { attachPanZoom, type PanZoomController } from "../../graph/pan-zoom.js";
 import { hydrateI18n, initI18n, resolveUiLocale, t } from "../../i18n/index.js";
 import { getLocale, getUiLocale } from "../../shared/config.js";
+import { createIconButton } from "../../shared/icons.js";
 import type { FlowsScreensResult, ProjectFlowsScreens } from "../../shared/messaging.js";
 import { sendToBackground } from "../../shared/messaging.js";
 import { applyStoredTheme } from "../../shared/theme.js";
@@ -229,10 +230,39 @@ window.addEventListener("beforeunload", (e) => {
   e.returnValue = "";
 });
 
+// Header collapse toggle: folds away the whole top control stack (the #controls
+// row, the capture-recording banner, and the edit toolbar) so the diagram gets
+// their full height. Drives a body-level `controls-collapsed` class rather than
+// each row's `hidden` -- the banner and edit-bar own their own hidden state
+// (graph-capture-recording / graph-edit-wiring), so a CSS override keeps this
+// gesture from fighting that state, and each row reappears per its own state
+// when expanded. Session-only -- a "maximize this view now" gesture, not a
+// persisted preference.
+function mountControlsCollapse(): void {
+  const header = document.querySelector("header");
+  if (!header) return;
+  const btn = createIconButton(
+    document,
+    "icon-btn",
+    "chevronUp",
+    t("graph.collapseControls"),
+    () => {
+      const collapsed = document.body.classList.toggle("controls-collapsed");
+      btn.classList.toggle("collapsed", collapsed);
+      const label = t(collapsed ? "graph.expandControls" : "graph.collapseControls");
+      btn.title = label;
+      btn.setAttribute("aria-label", label);
+    },
+  );
+  btn.id = "controls-collapse";
+  header.appendChild(btn);
+}
+
 async function init(): Promise<void> {
   await applyStoredTheme();
   initI18n(resolveUiLocale(await getUiLocale()));
   hydrateI18n(document);
+  mountControlsCollapse();
   contentLocale = (await getLocale()) ?? "en";
   ghostReview = wireGhostReview(mountGhostPanel(ghostPanelEl), ghostController, {
     currentProject: () => projects[projectIdx],

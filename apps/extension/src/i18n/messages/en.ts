@@ -571,6 +571,8 @@ const en = {
   // Graph controls (view toggle, category tabs, search) + the table view.
   "graph.toggleGraph": "Graph",
   "graph.toggleTable": "Table",
+  "graph.collapseControls": "Hide controls",
+  "graph.expandControls": "Show controls",
   "graph.searchPlaceholder": "Search nodes…",
   "graph.categoryAll": "All",
   "graph.directionLR": "Horizontal",

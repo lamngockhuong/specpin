@@ -79,6 +79,7 @@ Click **Open graph view** trong menu **⋯ More actions** ở header của popup
 - **Search**: gõ để làm nổi bật các nhãn node khớp theo thời gian thực. Search chỉ làm nổi bật - không ẩn gì cả (kết hợp với category filter để thu hẹp trước).
 - **Focus**: click một node để làm mờ mọi thứ trừ nó và các node/edge kết nối trực tiếp. Click lại, hoặc click vùng trống, để bỏ focus.
 - **Pan và zoom**: kéo canvas để pan; cuộn để zoom (hoặc dùng các nút zoom trên thanh công cụ của đồ thị).
+- **Thu gọn thanh công cụ**: nút mũi tên ở mép phải header gấp toàn bộ khối control phía trên - hàng control (view toggle, category tabs, search), banner recording, và (khi ở edit mode) thanh edit - để nhường hết chiều cao cho sơ đồ; bấm lần nữa để khôi phục. Khi đang thu, cảnh báo recording và các nút Turn off / Save của nó bị ẩn cho tới khi mở lại.
 
 Các control này kết hợp tự do, nên bạn có thể lọc về một category, search trong đó, và focus một node cụ thể cùng lúc - hữu ích với một graph có hàng trăm node.
 

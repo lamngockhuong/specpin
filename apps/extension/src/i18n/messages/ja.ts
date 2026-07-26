@@ -570,6 +570,8 @@ const ja: Record<keyof Messages, string> = {
   // グラフコントロール (表示切り替え、カテゴリタブ、検索) + テーブル表示。
   "graph.toggleGraph": "グラフ",
   "graph.toggleTable": "テーブル",
+  "graph.collapseControls": "コントロールを隠す",
+  "graph.expandControls": "コントロールを表示",
   "graph.searchPlaceholder": "ノードを検索…",
   "graph.categoryAll": "すべて",
   "graph.directionLR": "横",

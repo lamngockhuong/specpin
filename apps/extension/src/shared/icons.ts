@@ -56,6 +56,8 @@ const ICON_PATHS = {
     "M4.5 1.5H7.5V3.5H4.5ZM1.5 8.5H4.5V10.5H1.5ZM7.5 8.5H10.5V10.5H7.5ZM6 3.5V6M3 6H9M3 6V8.5M9 6V8.5",
   // Grid = the table view: an outer frame with two row rules and one column rule.
   table: "M2 2.5H10V9.5H2ZM2 5.2H10M2 7.4H10M5.3 2.5V9.5",
+  // Caret up = collapse a row; rotate 180deg (CSS) for the expand/down state.
+  chevronUp: "M3 7.5 6 4.5 9 7.5",
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

@@ -33,6 +33,13 @@
       }
       header img { width: 22px; height: 22px; }
       header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+      /* Collapse toggle: pinned to the header's right edge, folds away the top
+         control stack (see body.controls-collapsed) to hand its height back to
+         the diagram viewport. The caret points up while the rows show
+         ("collapse"); rotate it down once they are hidden ("expand"). */
+      #controls-collapse { margin-left: auto; }
+      #controls-collapse svg { transition: transform 0.15s ease; }
+      #controls-collapse.collapsed svg { transform: rotate(180deg); }
       header select {
         font: inherit;
         padding: 5px 8px;
@@ -315,6 +322,15 @@
         cursor: pointer;
       }
       .edit-form-submit:disabled { opacity: 0.6; cursor: default; }
+      /* Collapsed: fold the whole top control stack (view controls, the capture
+         alarm, and the edit toolbar) to hand every row's height back to the
+         diagram. A body-level class so it overrides each row's own state-driven
+         `hidden` (managed by graph-capture-recording / graph-edit-wiring)
+         without fighting the code that owns that state. Placed last so it reads
+         as an ascending-specificity override of the base #id rules above. */
+      body.controls-collapsed #controls,
+      body.controls-collapsed #capture-banner,
+      body.controls-collapsed #edit-bar { display: none; }
     </style>
   </head>
   <body>

@@ -560,6 +560,8 @@ const vi: Record<keyof Messages, string> = {
   // Bộ điều khiển đồ thị (chuyển chế độ xem, tab danh mục, tìm kiếm) + chế độ bảng.
   "graph.toggleGraph": "Đồ thị",
   "graph.toggleTable": "Bảng",
+  "graph.collapseControls": "Ẩn thanh công cụ",
+  "graph.expandControls": "Hiện thanh công cụ",
   "graph.searchPlaceholder": "Tìm node…",
   "graph.categoryAll": "Tất cả",
   "graph.directionLR": "Ngang",

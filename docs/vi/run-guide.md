@@ -346,6 +346,7 @@ Hai file `.specs/` tùy chọn được render thành sơ đồ trong một **gr
 - **Search**: một ô nhập text làm nổi bật các nhãn node khớp theo thời gian thực (không ẩn gì cả, khác với category filter).
 - **Focus-on-click**: click một node để làm mờ mọi thứ trừ nó và các node/edge kết nối trực tiếp; click lại (hoặc click vùng trống) để bỏ focus.
 - **Pan/zoom**: kéo canvas để pan, cuộn/lăn chuột để zoom (hoặc dùng các nút zoom trên thanh công cụ của đồ thị).
+- **Thu gọn thanh công cụ**: nút mũi tên ở mép phải header gấp toàn bộ khối control phía trên - hàng control (view toggle, category tabs, search), banner recording, và (khi ở edit mode) thanh edit - để nhường hết chiều cao cho sơ đồ; bấm lần nữa để hiện lại. Khi đang thu, bạn sẽ không thấy cảnh báo recording và không bấm được các nút Turn off / Save cho tới khi mở lại.
 
 **Click-to-highlight.** Click một node hoặc edge mang `specId` sẽ gửi một message ngược về tab mà graph view đã mở từ đó: nếu spec đó đang khớp trên trang đó, phần tử của nó sẽ cuộn vào tầm nhìn và nháy sáng (dùng lại đúng cơ chế highlight như deep-link hay nhảy bằng phím tắt cycle). Nếu spec không khớp ở đó (sai trang, hoặc không có phần tử đang chạy), một gợi ý sẽ xuất hiện thay vào đó, nêu tên screen/trang mà nó thuộc về, để bạn biết cần đi đâu thay vì thấy không có gì xảy ra.
 
