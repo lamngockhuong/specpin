@@ -11,6 +11,11 @@ import { t } from "../i18n/index.js";
 export interface GhostPanelCallbacks {
   onApprove(): void | Promise<void>;
   onDiscard(): void;
+  /** Add this edge's destination screen to the project's auto-capture ignore-list
+   *  (so the recorder stops re-capturing it) and discard the buffered edge. Only
+   *  set when the ghost edge carries a destination urlGlob; the button is hidden
+   *  otherwise. */
+  onIgnore?(): void | Promise<void>;
 }
 
 export interface GhostPanelHandle {
@@ -47,7 +52,13 @@ export function mountGhostPanel(container: HTMLElement): GhostPanelHandle {
   discardBtn.type = "button";
   discardBtn.textContent = t("graph.ghost.discard");
   discardBtn.addEventListener("click", () => current?.onDiscard());
-  actions.append(approveBtn, discardBtn);
+  const ignoreBtn = document.createElement("button");
+  ignoreBtn.type = "button";
+  ignoreBtn.className = "ghost-panel-ignore";
+  ignoreBtn.textContent = t("graph.ghost.ignoreRoute");
+  ignoreBtn.title = t("graph.ghost.ignoreRouteHint");
+  ignoreBtn.addEventListener("click", () => void current?.onIgnore?.());
+  actions.append(approveBtn, discardBtn, ignoreBtn);
 
   container.append(label, note, errorEl, actions);
   container.hidden = true;
@@ -59,6 +70,10 @@ export function mountGhostPanel(container: HTMLElement): GhostPanelHandle {
       errorEl.hidden = true;
       approveBtn.disabled = false;
       discardBtn.disabled = false;
+      // The ignore quick-add only applies to a ghost edge with a known
+      // destination route; hide it when the caller wired no handler.
+      ignoreBtn.hidden = !callbacks.onIgnore;
+      ignoreBtn.disabled = false;
       container.hidden = false;
     },
     hide() {
@@ -68,6 +83,7 @@ export function mountGhostPanel(container: HTMLElement): GhostPanelHandle {
     setBusy(busy) {
       approveBtn.disabled = busy;
       discardBtn.disabled = busy;
+      ignoreBtn.disabled = busy;
     },
     setError(message) {
       errorEl.hidden = !message;

@@ -27,7 +27,7 @@ function spec(id: string, title = id): TaggedSpec {
 }
 
 const targets: WriteTarget[] = [
-  { id: "conn-1", project: "Project A", kind: "sidecar", recordEnabled: false },
+  { id: "conn-1", project: "Project A", kind: "sidecar", recordEnabled: false, recordExclude: [] },
 ];
 
 function card(): HTMLElement {

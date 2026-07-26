@@ -280,6 +280,12 @@ const vi: Record<keyof Messages, string> = {
   "options.record": "Ghi",
   "options.recordProject": "Ghi lại điều hướng cho dự án này",
   "options.stopRecordProject": "Dừng ghi điều hướng cho dự án này",
+  "options.ignoredRoutes": "Route bỏ qua",
+  "options.ignoredRoutesHint": "điều hướng đến các URL glob này sẽ không bao giờ được ghi",
+  "options.ignoredRoutesEmpty": "Chưa có - mọi điều hướng đều được ghi.",
+  "options.ignoredRoutesRemove": "Xóa route bỏ qua này",
+  "options.ignoredRoutesPlaceholder": "vd: /settings/**",
+  "options.ignoredRoutesAdd": "Thêm",
   "options.enabled": "Đang bật",
   "options.disabled": "Đang tắt",
   "options.reconnect": "Kết nối lại",
@@ -579,6 +585,10 @@ const vi: Record<keyof Messages, string> = {
   "graph.ghost.approve": "Duyệt",
   "graph.ghost.discard": "Bỏ qua",
   "graph.ghost.approveError": "Không thể lưu: {error}",
+  "graph.ghost.ignoreRoute": "Bỏ qua route",
+  "graph.ghost.ignoreRouteHint":
+    "Ngừng tự động ghi route đích này (thêm vào danh sách bỏ qua của project)",
+  "graph.ghost.ignoreError": "Không thể bỏ qua route: {error}",
   // Phase B4: banner ghi hình trên graph panel cho dự án đang chọn (bật/tắt + trạng thái buffer).
   "graph.capture.off":
     "Tự động ghi đang tắt cho dự án này - hãy bật lên để ghi lại các screen transition cho phần xem xét.",

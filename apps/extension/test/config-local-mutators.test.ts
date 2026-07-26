@@ -15,6 +15,7 @@ import {
   renameLocalBatch,
   setLocalBatchEnabled,
   setLocalBatchRecordEnabled,
+  setLocalBatchRecordExclude,
   setLocalBatchScreens,
   setLocalBatchViews,
   setLocalSpecs,
@@ -203,6 +204,31 @@ describe("setLocalBatchRecordEnabled", () => {
 
   it("rejects an unknown batch id", () => {
     expect(setLocalBatchRecordEnabled(empty, "nope", true).ok).toBe(false);
+  });
+});
+
+describe("setLocalBatchRecordExclude", () => {
+  it("stores a trimmed, de-duped glob list and drops the field when emptied", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", ["p.test"])] };
+    const set = setLocalBatchRecordExclude(base, "b1", [
+      "  /settings/**  ",
+      "/help",
+      "/settings/**",
+    ]);
+    expect((set.state?.batches[0] as ManualBatch).recordExclude).toEqual(["/settings/**", "/help"]);
+    // An empty (or all-blank) list drops the field so a default profile carries nothing.
+    const cleared = setLocalBatchRecordExclude(set.state as LocalSpecsState, "b1", ["", "   "]);
+    expect((cleared.state?.batches[0] as ManualBatch).recordExclude).toBeUndefined();
+  });
+
+  it("does not mutate the input state", () => {
+    const base: LocalSpecsState = { batches: [makeBatch("b1", "P", [])] };
+    setLocalBatchRecordExclude(base, "b1", ["/x"]);
+    expect(base.batches[0]?.recordExclude).toBeUndefined();
+  });
+
+  it("rejects an unknown batch id", () => {
+    expect(setLocalBatchRecordExclude(empty, "nope", ["/x"]).ok).toBe(false);
   });
 });
 

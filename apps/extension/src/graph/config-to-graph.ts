@@ -41,6 +41,12 @@ export interface GraphEdge {
   specId: string | null;
   /** True for a Track B ghost edge (graph-ghost.ts); see GraphNode.pending. */
   pending?: boolean;
+  /** Ghost edges only: the generalized urlGlobs of the from/to screen
+   *  candidates, so the ghost panel's "Ignore route" quick-add can add the
+   *  destination glob to the project's auto-capture ignore-list without a
+   *  round trip. Absent on committed edges. */
+  fromUrlGlob?: string;
+  toUrlGlob?: string;
 }
 
 export interface Graph {

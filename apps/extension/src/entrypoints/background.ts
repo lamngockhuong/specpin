@@ -15,7 +15,12 @@ import {
   approveCapturedTransition,
   discardCapturedTransition,
 } from "../background/approve-captured.js";
-import { appendCaptured, clearBuffer, getBuffer } from "../background/capture-buffer.js";
+import {
+  appendCaptured,
+  clearBuffer,
+  getBuffer,
+  pruneBufferByGlob,
+} from "../background/capture-buffer.js";
 import {
   retitleContextMenu,
   setupContextMenu,
@@ -57,6 +62,7 @@ import {
   setLocalBatchEnabled,
   setLocalBatchFlows,
   setLocalBatchRecordEnabled,
+  setLocalBatchRecordExclude,
   setLocalBatchScreens,
   setLocalBatchViews,
   setLocalSpecs,
@@ -99,7 +105,9 @@ import {
   type WriteTarget,
 } from "../shared/messaging.js";
 import { connectionServesOrigin, trustedReadOrigin } from "../shared/origin-match.js";
+import { normalizeGlobs, transitionExcluded } from "../shared/record-exclude.js";
 import { slugify } from "../shared/slug.js";
+import { transitionAlreadyCommitted } from "../shared/transition-committed.js";
 import { buildVisibilityState, type PersonalVisibility } from "../shared/visibility.js";
 import { CHANGELOG_URL, shouldOpenChangelog } from "../shared/whats-new.js";
 
@@ -420,6 +428,8 @@ export default defineBackground(() => {
         return handleSetLocalBatchEnabled(message.id, message.enabled);
       case "SET_LOCAL_BATCH_RECORD_ENABLED":
         return handleSetLocalBatchRecordEnabled(message.id, message.enabled);
+      case "SET_RECORD_EXCLUDE":
+        return handleSetRecordExclude(message.connectionId, message.globs);
       case "GET_WRITE_TARGETS":
         return Promise.resolve(handleGetWriteTargets(message.origin));
       case "GET_EXPORT_BUNDLES":
@@ -951,7 +961,21 @@ export default defineBackground(() => {
   ): Promise<void> {
     const origin = originOf(sender);
     if (!origin) return;
-    const targets = handleGetWriteTargets(origin).filter((t) => t.recordEnabled);
+    // Cheap gates first (record-enabled, and this navigation not on the project's
+    // ignore-list -- a menu/sidebar route the user ignored never enters the flow).
+    // Neither needs the committed screens, so they run before any screens lookup.
+    const enabled = handleGetWriteTargets(origin).filter(
+      (t) =>
+        t.recordEnabled &&
+        !transitionExcluded(t.recordExclude, message.from.urlGlob, message.to.urlGlob),
+    );
+    // Then, only for the survivors, skip a project whose screens.json already
+    // connects these two screens (no point re-proposing an edge the user has
+    // already created). `getScreens` is a per-project lookup, so this never builds
+    // every project's config on the per-navigation path.
+    const targets = enabled.filter(
+      (t) => !transitionAlreadyCommitted(registry.getScreens(t.id), message.from, message.to),
+    );
     if (targets.length === 0) return;
     await Promise.all(
       targets.map((t) =>
@@ -1203,12 +1227,14 @@ export default defineBackground(() => {
         project: s.project ?? "",
         kind: "sidecar",
         recordEnabled: s.recordEnabled,
+        recordExclude: s.recordExclude,
       }));
     const local: WriteTarget[] = registry.localTargetsForOrigin(origin).map((t) => ({
       id: t.id,
       project: t.project,
       kind: "local",
       recordEnabled: t.recordEnabled,
+      recordExclude: t.recordExclude,
     }));
     return [...sidecar, ...local];
   }
@@ -1333,6 +1359,44 @@ export default defineBackground(() => {
       if (!result.ok || !result.state) return { ok: false, error: result.error };
       await setLocalSpecs(result.state);
       registry.setLocalBatches(result.state.batches);
+      await broadcastRecordTargetsChanged();
+      return { ok: true };
+    });
+  }
+
+  // Replace a project's auto-capture ignore-list (privileged, unified sidecar +
+  // local). Globs are trimmed/de-duped centrally so both storage paths and the
+  // buffer prune agree on the stored list. After persisting, prune the project's
+  // already-buffered draft entries that now match (so the ignored ghost edges
+  // clear immediately), then broadcast the lighter RECORD_TARGETS_CHANGED --
+  // recordExclude, like recordEnabled, does not affect rendering.
+  function handleSetRecordExclude(
+    connectionId: string,
+    globs: string[],
+  ): Promise<{ ok: boolean; error?: string }> {
+    return mutate(async () => {
+      const cleaned = normalizeGlobs(globs);
+      if (isLocalConnectionId(connectionId)) {
+        const batchId = localBatchId(connectionId);
+        if (!batchId) return { ok: false, error: "unknown local project" };
+        const state = (await getLocalSpecs()) ?? { batches: [] };
+        const result = setLocalBatchRecordExclude(state, batchId, cleaned);
+        if (!result.ok || !result.state) return { ok: false, error: result.error };
+        await setLocalSpecs(result.state);
+        registry.setLocalBatches(result.state.batches);
+      } else {
+        const connections = (await getConnections()).map((c) =>
+          c.id === connectionId ? { ...c, recordExclude: cleaned.length ? cleaned : undefined } : c,
+        );
+        if (!connections.some((c) => c.id === connectionId)) {
+          return { ok: false, error: "unknown connection" };
+        }
+        await setConnections(connections);
+        registry.setConnections(connections);
+      }
+      // Clear draft entries that the just-added globs now cover; new navigations
+      // are already filtered at fan-out by handleRecordCapturedTransition.
+      await pruneBufferByGlob(connectionId, cleaned);
       await broadcastRecordTargetsChanged();
       return { ok: true };
     });

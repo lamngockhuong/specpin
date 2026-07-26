@@ -14,6 +14,7 @@ import type { UiLocale } from "../i18n/locales.js";
 import type { Connection } from "./connection-types.js";
 import { isValidBadgeColor } from "./contrast.js";
 import { connectionServesOrigin } from "./origin-match.js";
+import { normalizeGlobs } from "./record-exclude.js";
 import type { SeenSnapshot } from "./surface-data.js";
 import type { Theme } from "./theme.js";
 import type { PersonalVisibility } from "./visibility.js";
@@ -58,6 +59,11 @@ export interface ManualBatch {
    *  `Connection.recordEnabled`. Opt-in: undefined/false = OFF. Only a
    *  record-enabled batch receives auto-captured navigation transitions. */
   recordEnabled?: boolean;
+  /** Per-batch auto-capture ignore-list, the local-project parallel to
+   *  `Connection.recordExclude`: URL globs whose screens the recorder must not
+   *  capture into this batch. Absent/empty = capture everything (drop the field
+   *  when emptied, mirroring the drop-on-default style used across this module). */
+  recordExclude?: string[];
   /** Map of `_file` -> original file `group`, so a later export reconstructs the
    *  per-file group (a file-level field, not a Spec field). Absent on pre-plan
    *  batches; export then falls back to a file-base-derived group. */
@@ -766,6 +772,24 @@ export function setLocalBatchRecordEnabled(
   const nextBatch: ManualBatch = { ...(state.batches[idx] as ManualBatch) };
   if (recordEnabled) nextBatch.recordEnabled = true;
   else delete nextBatch.recordEnabled;
+  return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
+}
+
+/** Set a local batch's auto-capture ignore-list (the local twin of a sidecar's
+ *  UPDATE_CONNECTION.recordExclude). Globs are trimmed + de-duped, and an empty
+ *  result DROPS the field so a default profile carries nothing (mirrors
+ *  setLocalBatchRecordEnabled's drop-on-off). Unknown batch id -> ok:false. */
+export function setLocalBatchRecordExclude(
+  state: LocalSpecsState,
+  batchId: string,
+  globs: string[],
+): LocalMutationResult {
+  const idx = state.batches.findIndex((b) => b.id === batchId);
+  if (idx === -1) return { ok: false, error: "unknown local project" };
+  const cleaned = normalizeGlobs(globs);
+  const nextBatch: ManualBatch = { ...(state.batches[idx] as ManualBatch) };
+  if (cleaned.length) nextBatch.recordExclude = cleaned;
+  else delete nextBatch.recordExclude;
   return { ok: true, state: { batches: state.batches.map((b, i) => (i === idx ? nextBatch : b)) } };
 }
 

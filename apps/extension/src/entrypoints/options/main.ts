@@ -50,6 +50,7 @@ import { applyTheme, watchThemeChanges } from "../../shared/theme.js";
 import { type NamedFile, parseLocalBundle, parseLocalFiles } from "../../sources/local-bundle.js";
 import { readPickedFiles } from "../../sources/read-picked-files.js";
 import { initOptionsNav } from "./nav.js";
+import { recordExcludeEditor } from "./record-exclude-editor.js";
 import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
 import "../../shared/switch.css";
@@ -224,6 +225,12 @@ function connectionRow(c: ConnectionStatus): HTMLElement {
   });
 
   row.append(head, meta, editForm);
+
+  // Auto-capture ignore-list: only shown while this project is recording, since
+  // the globs only take effect for a record-enabled project.
+  if (c.recordEnabled) {
+    row.append(recordExcludeEditor(c.id, c.recordExclude, refresh));
+  }
 
   // Team-default visibility editor + guides list (sidecar-backed connections only).
   // Writes .specs/views.json to Git, shared with everyone on the project.
@@ -632,6 +639,10 @@ function batchRow(b: ManualBatchSummary): HTMLElement {
   });
 
   row.append(head, meta, sites, renameForm, viewsSection, guidesSection);
+  // Auto-capture ignore-list (parallel to the sidecar row): shown while recording.
+  if (b.recordEnabled) {
+    row.append(recordExcludeEditor(connId, b.recordExclude, refresh));
+  }
   return row;
 }
 

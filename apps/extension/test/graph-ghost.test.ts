@@ -37,6 +37,9 @@ describe("overlayGhostBuffer", () => {
     expect(ghostNode).toMatchObject({ label: "Checkout", urlGlob: "/checkout", pending: true });
     const ghostEdge = graph.edges.find((e) => e.id === "home__checkout");
     expect(ghostEdge).toMatchObject({ from: "home", to: "checkout", pending: true });
+    // The ghost edge carries both endpoints' globs so the panel's "Ignore route"
+    // can add the destination glob to the ignore-list without a round trip.
+    expect(ghostEdge).toMatchObject({ fromUrlGlob: "/", toUrlGlob: "/checkout" });
     // Committed node untouched (no `pending` field at all).
     const committed = graph.nodes.find((n) => n.id === "home");
     expect(committed?.pending).toBeUndefined();
@@ -93,6 +96,28 @@ describe("overlayGhostBuffer", () => {
     // The ghost edge resolves to the EXISTING node id, not the candidate's.
     const ghostEdge = graph.edges.find((e) => e.id === "home__checkout");
     expect(ghostEdge).toMatchObject({ from: "home", to: "checkout-page", pending: true });
+  });
+
+  it("skips a buffer entry whose from->to pair is ALREADY a committed edge under a DIFFERENT id", () => {
+    const config: ScreensConfig = {
+      version: "1.0",
+      screens: [
+        { id: "home", name: { en: "Home" }, urlGlob: "/" },
+        // Committed screen for /checkout under a different id than the candidate's.
+        { id: "checkout-page", name: { en: "Checkout" }, urlGlob: "/checkout" },
+      ],
+      // A hand-authored edge (custom id) already connects the two screens.
+      transitions: [
+        { id: "hand-authored", from: "home", to: "checkout-page", trigger: { en: "Go" } },
+      ],
+    };
+    // bufferEntry's transition id is "home__checkout" (differs from "hand-authored"),
+    // so the id-based skip would NOT catch it -- the pair-based skip must.
+    const graph = overlayGhostBuffer(screensToGraph(config, "en"), [bufferEntry()], "en");
+    expect(graph.edges).toHaveLength(1);
+    expect(graph.edges[0]?.pending).toBeUndefined();
+    // No dangling ghost "checkout" node left behind by the skipped edge.
+    expect(graph.nodes.find((n) => n.id === "checkout")).toBeUndefined();
   });
 
   it("returns the committed graph unchanged when the buffer is empty", () => {

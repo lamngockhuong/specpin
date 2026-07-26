@@ -270,14 +270,20 @@ export class SidecarRegistry {
    *  write to a local project that does not serve it. `id` is `manual:<batchId>`. */
   localTargetsForOrigin(
     origin: string,
-  ): Array<{ id: string; project: string; recordEnabled: boolean }> {
-    const out: Array<{ id: string; project: string; recordEnabled: boolean }> = [];
+  ): Array<{ id: string; project: string; recordEnabled: boolean; recordExclude: string[] }> {
+    const out: Array<{
+      id: string;
+      project: string;
+      recordEnabled: boolean;
+      recordExclude: string[];
+    }> = [];
     for (const batch of this.manual) {
       if (!batchServesOrigin(batch, origin)) continue;
       out.push({
         id: localConnId(batch.id),
         project: batch.specs.manifest?.project || batch.label,
         recordEnabled: batch.recordEnabled === true,
+        recordExclude: batch.recordExclude ?? [],
       });
     }
     return out;
@@ -360,6 +366,7 @@ export class SidecarRegistry {
         connectionId: conn.id,
         project: cache.manifest?.project || conn.label || conn.baseUrl,
         recordEnabled: conn.recordEnabled,
+        recordExclude: conn.recordExclude,
         flows: conn.getFlows(),
         screens: conn.getScreens(),
         specs: cache.specs.map((s) => ({ id: s.id, pending: !s.fingerprint })),
@@ -372,6 +379,7 @@ export class SidecarRegistry {
         connectionId: localConnId(batch.id),
         project: batch.specs.manifest?.project || batch.label,
         recordEnabled: batch.recordEnabled === true,
+        recordExclude: batch.recordExclude ?? [],
         flows: batch.flows ?? { version: "1.0", flows: [] },
         screens: batch.screens ?? { version: "1.0", screens: [], transitions: [] },
         specs: batch.specs.specs.map((s) => ({ id: s.id, pending: !s.fingerprint })),
@@ -659,6 +667,7 @@ export class SidecarRegistry {
       importedAt: b.importedAt,
       enabled: b.enabled !== false,
       recordEnabled: b.recordEnabled === true,
+      recordExclude: b.recordExclude ?? [],
     }));
   }
 

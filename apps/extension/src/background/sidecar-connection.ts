@@ -39,6 +39,8 @@ export class SidecarConnection {
   enabled: boolean;
   /** Per-project auto-capture opt-in. Undefined config = OFF (opt-in). */
   recordEnabled: boolean;
+  /** Per-project auto-capture ignore-list (URL globs). Undefined config = []. */
+  recordExclude: string[];
 
   private client: SidecarClient;
   private source: SpecSource;
@@ -75,6 +77,7 @@ export class SidecarConnection {
     this.applyToAllSites = conn.applyToAllSites ?? false;
     this.enabled = conn.enabled ?? true;
     this.recordEnabled = conn.recordEnabled ?? false;
+    this.recordExclude = conn.recordExclude ?? [];
     this.token = conn.token;
     this.client = new SidecarClient({ baseUrl: conn.baseUrl, token: conn.token });
     this.injectedSource = deps.source !== undefined;
@@ -89,6 +92,7 @@ export class SidecarConnection {
     this.applyToAllSites = conn.applyToAllSites ?? false;
     this.enabled = conn.enabled ?? true;
     this.recordEnabled = conn.recordEnabled ?? false;
+    this.recordExclude = conn.recordExclude ?? [];
     if (!this.injectedSource && (conn.baseUrl !== this.baseUrl || conn.token !== this.token)) {
       this.baseUrl = conn.baseUrl;
       this.token = conn.token;
@@ -303,6 +307,7 @@ export class SidecarConnection {
       matchesAllSites: domains.length === 0 && this.applyToAllSites,
       enabled: this.enabled,
       recordEnabled: this.recordEnabled,
+      recordExclude: this.recordExclude,
     };
   }
 }

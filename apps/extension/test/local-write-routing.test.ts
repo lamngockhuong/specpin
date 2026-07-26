@@ -27,7 +27,7 @@ describe("localTargetsForOrigin (write/capture picker gate, RT-SA1/SA7 parity)",
     const r = new SidecarRegistry();
     r.setLocalBatches([batch("b1", resp("CRM", ["crm.test"]))]);
     expect(r.localTargetsForOrigin("https://crm.test")).toEqual([
-      { id: localConnId("b1"), project: "CRM", recordEnabled: false },
+      { id: localConnId("b1"), project: "CRM", recordEnabled: false, recordExclude: [] },
     ]);
     expect(r.localTargetsForOrigin("https://other.test")).toEqual([]);
   });

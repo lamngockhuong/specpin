@@ -291,6 +291,12 @@ const en = {
   "options.record": "Record",
   "options.recordProject": "Record navigation for this project",
   "options.stopRecordProject": "Stop recording navigation for this project",
+  "options.ignoredRoutes": "Ignored routes",
+  "options.ignoredRoutesHint": "navigation to these URL globs is never recorded",
+  "options.ignoredRoutesEmpty": "None - every navigation is recorded.",
+  "options.ignoredRoutesRemove": "Remove this ignored route",
+  "options.ignoredRoutesPlaceholder": "e.g. /settings/**",
+  "options.ignoredRoutesAdd": "Add",
   "options.enabled": "Enabled",
   "options.disabled": "Disabled",
   "options.reconnect": "Reconnect",
@@ -590,6 +596,10 @@ const en = {
   "graph.ghost.approve": "Approve",
   "graph.ghost.discard": "Discard",
   "graph.ghost.approveError": "Could not save: {error}",
+  "graph.ghost.ignoreRoute": "Ignore route",
+  "graph.ghost.ignoreRouteHint":
+    "Stop auto-recording this destination route (adds it to this project's ignore list)",
+  "graph.ghost.ignoreError": "Could not ignore route: {error}",
   // Phase B4: recording banner (record on/off + empty/full buffer edge states)
   // shown in the graph panel for the currently-selected project.
   "graph.capture.off":

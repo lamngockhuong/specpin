@@ -12,6 +12,7 @@ function project(connectionId: string): ProjectFlowsScreens {
     connectionId,
     project: connectionId,
     recordEnabled: false,
+    recordExclude: [],
     // Both datasets non-empty so the dataset <select> is shown and toggleable.
     flows: {
       version: "1.0",

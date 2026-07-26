@@ -107,6 +107,8 @@ Off by default. Read what's captured before turning it on.
 
 **Review and approve.** With recording on, browse the site, then open the graph view's **Screens** dataset: newly-observed screens/transitions render as dashed, translucent "ghost" nodes/edges among the committed ones. Click a ghost edge to **Approve** (merges it into `screens.json` with `"source": "auto-captured"`, never overwriting an existing manual/imported entry with the same id) or **Discard** (drops it, no write either way). The banner also tells you when recording is on but nothing's captured yet, and when a project's draft buffer is full.
 
+**Ignore noisy routes.** Menu, sidebar, and utility navigation (e.g. `/settings`, `/help`) can flood the review with ghost edges you never want in the flow. A ghost edge's review panel has an **Ignore route** action: it adds the destination screen's URL glob to that project's ignore-list and drops every draft edge already on that route, so the recorder stops re-capturing it. Manage the list from the project's row on the Options page - an **Ignored routes** editor appears under a recording project, where you add a glob (same `/settings/**` syntax as page-scope globs) or remove one to record that route again. A transition is dropped when **either** endpoint matches a glob, so an ignored screen leaves the flow entirely.
+
 :::note
 Full privacy chain: opt-in, default **off** -> generalized URL shape only (query/hash dropped, id-like path segments generalized to `**`) -> local per-device draft buffer, never auto-written -> requires your explicit Approve before anything reaches `.specs/`. Nothing captured ever leaves your machine.
 :::

@@ -252,6 +252,26 @@
       /* On/off switch is shared via src/shared/switch.css (.switch). */
       /* Dim a disabled project but keep its controls usable. */
       .conn-disabled { opacity: 0.6; }
+
+      /* Per-project auto-capture ignore-list editor (record-exclude-editor.ts). */
+      .record-exclude { margin-top: 10px; }
+      .record-exclude-title { font-size: 13px; font-weight: 600; color: var(--sp-text-2); }
+      .record-exclude-hint { font-weight: 400; color: var(--sp-text-3); margin-left: 6px; }
+      .record-exclude-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+      .record-exclude-empty { color: var(--sp-text-3); font-style: italic; font-size: 13px; }
+      .record-exclude-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 2px 4px 2px 8px; border: 1px solid var(--sp-border);
+        border-radius: var(--sp-radius-control); background: var(--sp-control);
+        font: 13px/1.4 var(--sp-font-mono);
+      }
+      .record-exclude-remove {
+        border: none; background: transparent; cursor: pointer;
+        color: var(--sp-text-3); font-size: 15px; line-height: 1; padding: 0 4px;
+      }
+      .record-exclude-remove:hover { color: var(--sp-text); }
+      .record-exclude-add { display: flex; gap: 6px; }
+      .record-exclude-add input { flex: 1; min-width: 0; }
       .warn {
         margin-top: 10px; padding: 9px 11px;
         color: var(--sp-warning); background: var(--sp-warning-bg);

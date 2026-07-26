@@ -107,6 +107,8 @@ Mặc định tắt. Hãy đọc những gì được ghi lại trước khi b�
 
 **Xem xét và duyệt.** Khi đang ghi, hãy duyệt trang web rồi mở dataset **Screens** của graph view: các screen/transition mới quan sát được render dưới dạng node/edge "ghost" nét đứt, trong suốt, xen giữa các node/edge đã lưu. Click vào một ghost edge để **Duyệt** (gộp nó vào `screens.json` với `"source": "auto-captured"`, không bao giờ ghi đè lên một entry manual/imported đã có cùng id) hoặc **Bỏ qua** (xóa nó, không ghi gì vào `.specs/` ở cả hai trường hợp). Banner cũng báo cho bạn biết khi đang ghi nhưng chưa ghi được gì, và khi bộ đệm nháp của một project đã đầy.
 
+**Bỏ qua các route gây nhiễu.** Điều hướng qua menu, sidebar và các trang tiện ích (ví dụ `/settings`, `/help`) có thể làm phần xem xét ngập ghost edge mà bạn không hề muốn đưa vào flow. Panel xem xét của mỗi ghost edge có hành động **Bỏ qua route**: nó thêm URL glob của màn hình đích vào danh sách bỏ qua của project đó và xóa mọi edge nháp đang nằm trên route ấy, để recorder ngừng ghi lại nó. Quản lý danh sách này ngay tại dòng của project trên trang Options - một trình sửa **Route bỏ qua** hiện ra dưới một project đang ghi, nơi bạn thêm một glob (cùng cú pháp `/settings/**` như glob phạm vi trang) hoặc xóa một glob để ghi lại route đó. Một transition bị loại khi **một trong hai** đầu khớp một glob, nên một màn hình bị bỏ qua sẽ rời khỏi flow hoàn toàn.
+
 :::note
 Chuỗi riêng tư đầy đủ: tự chọn tham gia, mặc định **tắt** -> chỉ suy ra dạng URL đã tổng quát hóa (bỏ query/hash, các đoạn path trông giống id được tổng quát hóa thành `**`) -> bộ đệm nháp cục bộ theo từng thiết bị, không bao giờ tự động ghi -> cần bạn Duyệt rõ ràng trước khi bất cứ thứ gì chạm tới `.specs/`. Không có gì ghi lại được rời khỏi máy của bạn.
 :::

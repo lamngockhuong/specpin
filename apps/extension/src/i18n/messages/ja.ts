@@ -288,6 +288,12 @@ const ja: Record<keyof Messages, string> = {
   "options.record": "記録",
   "options.recordProject": "このプロジェクトのナビゲーションを記録する",
   "options.stopRecordProject": "このプロジェクトのナビゲーション記録を停止する",
+  "options.ignoredRoutes": "無視するルート",
+  "options.ignoredRoutesHint": "これらの URL glob への遷移は記録されません",
+  "options.ignoredRoutesEmpty": "なし - すべてのナビゲーションが記録されます。",
+  "options.ignoredRoutesRemove": "この無視ルートを削除",
+  "options.ignoredRoutesPlaceholder": "例: /settings/**",
+  "options.ignoredRoutesAdd": "追加",
   "options.enabled": "有効",
   "options.disabled": "無効",
   "options.reconnect": "再接続",
@@ -589,6 +595,10 @@ const ja: Record<keyof Messages, string> = {
   "graph.ghost.approve": "承認",
   "graph.ghost.discard": "破棄",
   "graph.ghost.approveError": "保存できませんでした: {error}",
+  "graph.ghost.ignoreRoute": "ルートを無視",
+  "graph.ghost.ignoreRouteHint":
+    "この遷移先ルートの自動記録を停止します（プロジェクトの無視リストに追加）",
+  "graph.ghost.ignoreError": "ルートを無視できませんでした: {error}",
   // Phase B4: 選択中プロジェクトの記録バナー (記録オン/オフ + バッファ状態)。
   "graph.capture.off":
     "このプロジェクトの自動記録はオフです - オンにすると、レビュー用の画面遷移を記録します。",
