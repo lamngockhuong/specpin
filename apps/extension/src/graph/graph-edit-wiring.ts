@@ -95,13 +95,28 @@ export function wireEditMode(
   let selectedEdgeId: string | null = null;
   let rerenderTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const { toolbar, setStatus } = mountEditToolbar(container, {
+  const { toolbar, setStatus, setButtonStates, setVisible } = mountEditToolbar(container, {
     addNode,
     addEdge,
     deleteSelected,
     undoLast,
     save: () => void save(),
   });
+
+  /** Recompute which toolbar buttons are actionable for the current selection
+   *  and draft state, so a disabled button visibly signals what each action
+   *  needs (Add edge -> two nodes, Delete -> one node/edge, Undo/Save -> an
+   *  unsaved edit). Called after every selection change and mutation. */
+  function updateButtons(): void {
+    const dirty = mode?.isDirty() ?? false;
+    setButtonStates({
+      addNode: mode !== null,
+      addEdge: mode !== null && selectedNodeIds.length === 2,
+      deleteSelected: mode !== null && (selectedEdgeId !== null || selectedNodeIds.length === 1),
+      undo: mode !== null && dirty,
+      save: mode !== null && dirty,
+    });
+  }
 
   formContainer.hidden = true;
   const form: EditFormHandle = mountEditForm(formContainer, {
@@ -125,6 +140,7 @@ export function wireEditMode(
     selectedEdgeId = null;
     setStatus("");
     form.hide();
+    updateButtons();
   }
 
   /** Re-point `mode`/`activeFlowId` at a flow in `projects` (this
@@ -148,7 +164,7 @@ export function wireEditMode(
 
   function setEnabled(next: boolean): void {
     enabled = next;
-    toolbar.hidden = !next;
+    setVisible(next);
     reset();
     if (!next) {
       mode = null;
@@ -156,6 +172,7 @@ export function wireEditMode(
       connectionId = null;
       activeFlowId = null;
       flowControls.setVisible(false);
+      updateButtons();
       return;
     }
     const project = deps.currentProject();
@@ -168,18 +185,21 @@ export function wireEditMode(
     flowControls.setVisible(kind === "flows");
     if (kind === "screens") {
       mode = createScreensEditMode(project.screens, { hasShotReference: deps.hasShotReference });
+      updateButtons();
       return;
     }
     rebindFlowsMode([project], project.flows.flows[0]?.id ?? null);
     if (!mode) setStatus(t("graph.edit.noFlow"));
+    updateButtons();
   }
 
   function disable(message: string): void {
     enabled = false;
-    toolbar.hidden = true;
+    setVisible(false);
     mode = null;
     flowControls.setVisible(false);
     setStatus(message);
+    updateButtons();
   }
 
   function getGraph(locale: string, defaultLocale?: string): Graph {
@@ -221,7 +241,13 @@ export function wireEditMode(
       getMode: () => mode,
       getKind: () => kind,
       form,
-      onLiveApplied: scheduleRerender,
+      // A live field edit mutates the draft synchronously, so refresh the
+      // button states now (dirty just flipped -> Undo/Save must go live even if
+      // the user keeps typing); only the visual re-render is debounced.
+      onLiveApplied: () => {
+        updateButtons();
+        scheduleRerender();
+      },
       onCreated: () => {
         reset();
         deps.onChanged(null);
@@ -246,6 +272,7 @@ export function wireEditMode(
     applySelection();
     const raw = rawSelection();
     updateFormForSelection(nodeFormDeps(), raw.nodeIds, raw.edgeId);
+    updateButtons();
     return true;
   }
 
@@ -258,6 +285,7 @@ export function wireEditMode(
     applySelection();
     const raw = rawSelection();
     updateFormForSelection(nodeFormDeps(), raw.nodeIds, raw.edgeId);
+    updateButtons();
     return true;
   }
 
@@ -294,7 +322,11 @@ export function wireEditMode(
   }
 
   function save(): Promise<boolean> {
-    return runSave(toolbarActionDeps());
+    return runSave(toolbarActionDeps()).then((ok) => {
+      // A successful Save clears the draft's dirty flag -> Undo/Save go inert.
+      updateButtons();
+      return ok;
+    });
   }
 
   function undoLast(): void {

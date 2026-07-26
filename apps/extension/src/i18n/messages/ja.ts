@@ -572,6 +572,11 @@ const ja: Record<keyof Messages, string> = {
   "graph.toggleTable": "テーブル",
   "graph.searchPlaceholder": "ノードを検索…",
   "graph.categoryAll": "すべて",
+  "graph.directionLR": "横",
+  "graph.directionTB": "縦",
+  "graph.zoomIn": "拡大",
+  "graph.zoomOut": "縮小",
+  "graph.zoomFit": "全体表示",
   "graph.colNode": "ノード",
   "graph.colCategory": "カテゴリ",
   "graph.colKind": "種類",
@@ -596,6 +601,8 @@ const ja: Record<keyof Messages, string> = {
   "graph.capture.confirmClearAll":
     "このプロジェクトの記録済み (未承認) の遷移をすべて破棄しますか？元に戻せません。",
   "graph.editMode": "編集",
+  "graph.edit.hint":
+    "編集または削除するノード/エッジを選択します。2つのノードを選択してから「エッジを追加」で接続します。",
   "graph.edit.addNode": "ノードを追加",
   "graph.edit.addEdge": "エッジを追加",
   "graph.edit.deleteSelected": "選択項目を削除",

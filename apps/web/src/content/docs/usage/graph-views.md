@@ -74,10 +74,11 @@ Click **Open graph view** from the header's **⋯ More actions** menu in the pop
 ## Browse the graph
 
 - **Graph / Table toggle**: switch between the visual diagram and a plain sortable table of the same nodes and edges.
+- **On-graph toolbar** (floating at the canvas's top-left): the controls that act on the diagram itself - a **Horizontal** / **Vertical** layout-direction toggle (left-to-right or top-to-bottom, whichever reads better) and zoom buttons (**in** / **out** / **fit to view**).
 - **Category filter**: tabs group nodes and show a count for each (a status-flow graph groups by object type; a screen graph groups by the first path segment of each screen's `urlGlob`). Selecting a tab hides everything outside that category.
 - **Search**: type to highlight matching node labels live. Search highlights - it does not hide anything (combine it with the category filter to narrow down first).
 - **Focus**: click a node to dim everything except it and its directly connected nodes and edges. Click it again, or an empty area, to clear the focus.
-- **Pan and zoom**: drag the canvas to pan; scroll to zoom.
+- **Pan and zoom**: drag the canvas to pan; scroll to zoom (or use the on-graph toolbar's zoom buttons).
 
 These combine freely, so you can filter to one category, search within it, and focus a specific node all at once - useful for a graph with hundreds of nodes.
 
@@ -113,7 +114,7 @@ Full privacy chain: opt-in, default **off** -> generalized URL shape only (query
 
 The graph view isn't only a diagram to look at - turn on **Edit mode** to add, edit, and delete nodes and transitions directly on the canvas, with no JSON hand-editing at all.
 
-**Turn it on.** Click **Edit mode** in the graph view's control bar. A toolbar appears (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), and clicking a node or edge now selects it for editing instead of navigating or click-to-highlighting.
+**Turn it on.** Click **Edit mode** in the graph view's control bar. A dedicated edit bar opens below the controls with the toolbar (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), a how-to hint, and a live status line. Each button enables only when its precondition is met - **Add edge** waits for two selected nodes, **Delete selected** for exactly one node or edge, and **Undo**/**Save** for an unsaved change - so a greyed-out button tells you what the action still needs. Clicking a node or edge now selects it for editing instead of navigating or click-to-highlighting.
 
 **Add a node.** Click **Add node** and fill in the side form: a localized name/label (add a row per locale), a `urlGlob` (screens) or `kind` (flows' states: initial/normal/terminal), and an optional linked spec picked from the project's known specs. **Create** adds it to the draft. On the status-flow dataset, a new node belongs to whichever flow is currently active - use the flow controls to create one first if the project has none yet.
 

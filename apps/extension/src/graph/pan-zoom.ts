@@ -10,6 +10,13 @@ export interface PanZoomState {
 }
 
 export interface PanZoomController {
+  /** Multiply the current zoom by `factor`, centered on the canvas middle.
+   *  Backs the graph toolbar's zoom-in / zoom-out buttons (the wheel zooms
+   *  toward the cursor instead). */
+  zoomBy(factor: number): void;
+  /** Reset pan/zoom to the identity transform -- at scale 1 the SVG viewBox
+   *  already frames the whole graph, so this is the toolbar's "fit" action. */
+  reset(): void;
   /** Remove the pointer/wheel listeners this attached. */
   destroy(): void;
 }
@@ -67,17 +74,35 @@ export function attachPanZoom(
     if (surface.hasPointerCapture(e.pointerId)) surface.releasePointerCapture(e.pointerId);
   }
 
-  function onWheel(e: WheelEvent): void {
-    e.preventDefault();
-    const rect = surface.getBoundingClientRect();
-    // Zoom toward the cursor: keep the graph point under the pointer fixed by
-    // solving for the new translate given the new scale.
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
-    const nextScale = clampScale(state.scale * (1 - e.deltaY * ZOOM_STEP));
+  // Rescale to `nextScale` while keeping the graph point currently under
+  // (px, py) fixed -- solve for the new translate given the new scale. Shared by
+  // the wheel (anchors on the cursor) and the toolbar zoom buttons (anchor on
+  // the canvas centre).
+  function zoomToward(px: number, py: number, nextScale: number): void {
     const gx = (px - state.x) / state.scale;
     const gy = (py - state.y) / state.scale;
     state = { x: px - gx * nextScale, y: py - gy * nextScale, scale: nextScale };
+    apply();
+  }
+
+  function onWheel(e: WheelEvent): void {
+    e.preventDefault();
+    const rect = surface.getBoundingClientRect();
+    zoomToward(
+      e.clientX - rect.left,
+      e.clientY - rect.top,
+      clampScale(state.scale * (1 - e.deltaY * ZOOM_STEP)),
+    );
+  }
+
+  // Button zoom: same anchored rescale as the wheel, centred on the canvas.
+  function zoomBy(factor: number): void {
+    const rect = surface.getBoundingClientRect();
+    zoomToward(rect.width / 2, rect.height / 2, clampScale(state.scale * factor));
+  }
+
+  function reset(): void {
+    state = { x: 0, y: 0, scale: 1 };
     apply();
   }
 
@@ -89,6 +114,8 @@ export function attachPanZoom(
   apply();
 
   return {
+    zoomBy,
+    reset,
     destroy: () => {
       surface.removeEventListener("pointerdown", onPointerDown);
       surface.removeEventListener("pointermove", onPointerMove);

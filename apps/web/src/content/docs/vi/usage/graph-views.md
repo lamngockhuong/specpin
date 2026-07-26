@@ -74,10 +74,11 @@ Click **Open graph view** trong menu **⋯ More actions** ở header của popup
 ## Duyệt graph
 
 - **Graph / Table toggle**: chuyển giữa sơ đồ trực quan và một bảng có thể sắp xếp của cùng các node và edge đó.
+- **Thanh công cụ trên đồ thị** (nổi ở góc trên-trái canvas): các nút thao tác trực tiếp lên sơ đồ - nút chọn hướng layout **Horizontal** / **Vertical** (trái-phải hoặc trên-dưới, tùy hướng nào dễ đọc) và các nút zoom (**phóng to** / **thu nhỏ** / **vừa khung nhìn**).
 - **Category filter**: các tab nhóm node và hiện số lượng cho mỗi nhóm (đồ thị status-flow nhóm theo kiểu đối tượng; đồ thị screen nhóm theo segment đường dẫn đầu tiên của `urlGlob` mỗi screen). Chọn một tab sẽ ẩn mọi thứ ngoài category đó.
 - **Search**: gõ để làm nổi bật các nhãn node khớp theo thời gian thực. Search chỉ làm nổi bật - không ẩn gì cả (kết hợp với category filter để thu hẹp trước).
 - **Focus**: click một node để làm mờ mọi thứ trừ nó và các node/edge kết nối trực tiếp. Click lại, hoặc click vùng trống, để bỏ focus.
-- **Pan và zoom**: kéo canvas để pan; cuộn để zoom.
+- **Pan và zoom**: kéo canvas để pan; cuộn để zoom (hoặc dùng các nút zoom trên thanh công cụ của đồ thị).
 
 Các control này kết hợp tự do, nên bạn có thể lọc về một category, search trong đó, và focus một node cụ thể cùng lúc - hữu ích với một graph có hàng trăm node.
 
@@ -113,7 +114,7 @@ Chuỗi riêng tư đầy đủ: tự chọn tham gia, mặc định **tắt** -
 
 Graph view không chỉ là một sơ đồ để xem - hãy bật **Edit mode** để thêm, sửa, xóa node và transition trực tiếp trên canvas, không cần chỉnh tay JSON chút nào.
 
-**Bật nó.** Click **Edit mode** trên thanh điều khiển của graph view. Một thanh công cụ hiện ra (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), và giờ click vào một node hoặc edge sẽ chọn nó để chỉnh sửa thay vì điều hướng hay click-to-highlight.
+**Bật nó.** Click **Edit mode** trên thanh điều khiển của graph view. Một thanh edit riêng mở ra bên dưới hàng điều khiển, gồm toolbar (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), một dòng hướng dẫn và một dòng trạng thái cập nhật trực tiếp. Mỗi nút chỉ bật khi đủ điều kiện - **Add edge** đợi chọn hai node, **Delete selected** đợi chọn đúng một node hoặc edge, còn **Undo**/**Save** đợi khi có thay đổi chưa lưu - nên nút bị làm mờ cho biết hành động đó còn thiếu gì. Giờ click vào một node hoặc edge sẽ chọn nó để chỉnh sửa thay vì điều hướng hay click-to-highlight.
 
 **Thêm node.** Click **Add node** rồi điền vào form bên cạnh: tên/nhãn theo từng ngôn ngữ (thêm một dòng cho mỗi locale), `urlGlob` (screens) hoặc `kind` (state của flows: initial/normal/terminal), và một spec liên kết tùy chọn chọn từ danh sách spec đã biết của project. **Create** thêm nó vào bản nháp. Ở dataset status-flow, một node mới thuộc về flow đang active - dùng các nút điều khiển flow để tạo một flow trước nếu project chưa có flow nào.
 

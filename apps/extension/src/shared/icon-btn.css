@@ -49,3 +49,27 @@
   height: 16px;
   display: block;
 }
+/* Active toggle state (e.g. the graph view's Graph/Table + layout-direction
+   toggles): accent fill. The base :hover repaints `color` to accent, which would
+   vanish against this accent fill -- so hold the accent-on glyph colour on hover
+   (border is already accent, background never changes on hover, so colour is the
+   only property that needs re-asserting). */
+.icon-btn.active {
+  background: var(--sp-accent);
+  border-color: var(--sp-accent);
+  color: var(--sp-accent-on);
+}
+.icon-btn.active:hover {
+  color: var(--sp-accent-on);
+}
+/* Disabled: dimmed + non-interactive, and neutralise the accent :hover so a
+   greyed-out button never lights up. 0.6 matches the extension's other disabled
+   controls. */
+.icon-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.icon-btn:disabled:hover {
+  color: var(--sp-text-2);
+  border-color: var(--sp-border);
+}

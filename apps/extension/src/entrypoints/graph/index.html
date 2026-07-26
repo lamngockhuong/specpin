@@ -9,6 +9,11 @@
          reference --sp-* vars for light/dark parity, like the other full pages. */
       * { box-sizing: border-box; }
       html, body { height: 100%; }
+      /* These bars set an author `display`, which overrides the `hidden`
+         attribute's UA `display:none` -- so re-assert hidden at id specificity
+         (matches the popup/side-panel convention of scoped `[hidden]` rules).
+         Without this, toggling `.hidden` in JS would not actually hide them. */
+      #capture-banner[hidden], #edit-bar[hidden], #graph-toolbar[hidden] { display: none; }
       body {
         margin: 0;
         display: flex;
@@ -93,8 +98,30 @@
       }
       #capture-banner.off .capture-banner-dot { background: var(--sp-text-3); animation: none; }
       #capture-banner.off .capture-banner-action { border-color: var(--sp-border); }
-      .graph-view-toggle, .graph-category-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-      .graph-view-toggle button, .graph-category-tabs button {
+      /* Track C: the edit-mode bar -- its own row below the controls (not
+         crammed into #controls), accent-edged so "editing" reads at a glance.
+         An action-button row plus an info line (static how-to hint + live
+         status), so the tools explain themselves. */
+      #edit-bar {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--sp-border);
+        border-left: 3px solid var(--sp-accent);
+        background: var(--sp-elevated);
+      }
+      .graph-edit-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .graph-edit-info { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+      .graph-edit-hint { color: var(--sp-text-2); font-size: 12px; }
+      .graph-edit-status { color: var(--sp-accent); font-size: 12px; font-weight: 600; }
+      .graph-category-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+      /* Text pill buttons: the category-filter tabs, the Edit-mode toggle, and
+         the edit toolbar's text-labelled flow-lifecycle buttons (New/Rename/
+         Delete flow). The action buttons in that toolbar are icon-only, hence
+         :not(.icon-btn). (The Graph/Table view toggle is icons too -- see the
+         shared .icon-btn.) */
+      .graph-category-tabs button, .graph-edit-toggle, .graph-edit-toolbar button:not(.icon-btn) {
         font: inherit;
         padding: 5px 10px;
         border-radius: var(--sp-radius-control);
@@ -103,7 +130,8 @@
         color: var(--sp-text-2);
         cursor: pointer;
       }
-      .graph-view-toggle button.active, .graph-category-tabs button.active {
+      .graph-edit-toolbar button:not(.icon-btn):hover { background: var(--sp-surface); }
+      .graph-category-tabs button.active, .graph-edit-toggle.active {
         background: var(--sp-accent);
         border-color: var(--sp-accent);
         color: var(--sp-accent-on);
@@ -119,9 +147,34 @@
       }
       main { position: relative; flex: 1; overflow: hidden; }
       #canvas, #table { position: absolute; inset: 0; overflow: auto; }
+      /* Floating graph toolbar: the controls that act on the diagram itself
+         (layout direction + zoom), pinned to the canvas's free top-left corner
+         (#hint is bottom-left, #ghost-panel bottom-right, #edit-form right). */
+      #graph-toolbar {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px;
+        border-radius: var(--sp-radius-control);
+        background: var(--sp-elevated);
+        border: 1px solid var(--sp-border);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      }
+      /* .icon-btn base look + its .active / :disabled states live in the shared
+         shared/icon-btn.css (the component's home); only the graph-specific
+         grouping/positioning is page-local. */
+      .graph-toolbar-group { display: flex; gap: 4px; }
       #canvas svg { display: block; touch-action: none; cursor: grab; }
       #canvas svg:active { cursor: grabbing; }
       .graph-node text, .graph-edge text { pointer-events: none; user-select: none; }
+      /* Chip behind an edge label so it stays legible where dagre routes it
+         over a line or node. Light like the node boxes (the SVG uses a fixed
+         light palette), faintly translucent so the edge shows through. */
+      .graph-edge-label-bg { fill: #ffffff; opacity: 0.78; pointer-events: none; }
       .graph-node { cursor: pointer; }
       .graph-node.dimmed, .graph-edge.dimmed { opacity: 0.25; }
       .graph-node.hidden, .graph-edge.hidden { display: none; }
@@ -276,8 +329,10 @@
     </header>
     <div id="controls"></div>
     <div id="capture-banner" hidden></div>
+    <div id="edit-bar" hidden></div>
     <main>
       <div id="canvas"></div>
+      <div id="graph-toolbar" hidden></div>
       <div id="table" hidden></div>
       <div id="hint"></div>
       <div id="ghost-panel" hidden></div>

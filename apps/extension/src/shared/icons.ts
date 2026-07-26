@@ -13,12 +13,27 @@ const VIEW_BOX = "0 0 12 12";
 // Fixed screen-px stroke weight. `vector-effect: non-scaling-stroke` keeps it
 // constant regardless of the rendered `size`, so a 9px icon and a 13px icon share
 // the same line weight (without it, the stroke would scale with the box).
-const STROKE_WIDTH = "1.6";
+const STROKE_WIDTH = "1.4";
 
 /** Stroke paths on a 12x12 viewBox, each geometrically centered on (6,6). */
 const ICON_PATHS = {
   close: "M3.5 3.5 8.5 8.5M8.5 3.5 3.5 8.5",
   plus: "M6 2.5V9.5M2.5 6H9.5",
+  minus: "M2.5 6H9.5",
+  // Four corner brackets = "fit to view" (zoom-to-frame the whole graph).
+  fit: "M4.5 2.5H2.5V4.5M7.5 2.5H9.5V4.5M9.5 7.5V9.5H7.5M2.5 7.5V9.5H4.5",
+  // Layout-direction arrows: right = left-to-right (LR), down = top-to-bottom (TB).
+  arrowRight: "M2.5 6H9.5M6.8 3.3 9.5 6 6.8 8.7",
+  arrowDown: "M6 2.5V9.5M3.3 6.8 6 9.5 8.7 6.8",
+  // Diagonal up-right connector = "add edge" (connect two nodes). Deliberately
+  // NOT a plus, so it never reads as "add node".
+  edge: "M3 9 9 3M9 3H6.4M9 3V5.6",
+  // Return arrow (↩) = "undo": a left-pointing head, then a top segment that
+  // hooks down in a clean semicircle on the right.
+  undo: "M3 5.3H7a2.2 2.2 0 0 1 0 4.4M3 5.3 4.8 3.5M3 5.3 4.8 7.1",
+  // Floppy disk = "save": body with a clipped top-right corner, header slot, and
+  // a label panel at the bottom.
+  save: "M2.7 2.5H8L9.5 4V9.3A.2.2 0 0 1 9.3 9.5H2.7A.2.2 0 0 1 2.5 9.3V2.7A.2.2 0 0 1 2.7 2.5ZM4.3 2.5V4.6H7.4V2.5M4 9.5V6.8H8V9.5",
   check: "M2.5 6.3 5 8.8 9.5 3.5",
   play: "M4.5 3.2V8.8L9 6Z",
   pencil: "M8.1 2.7 9.3 3.9 4.5 8.7 3 9 3.3 7.5Z",
@@ -34,6 +49,13 @@ const ICON_PATHS = {
   link: "M5 7 7 5M4.6 6.2 3.4 7.4a1.6 1.6 0 0 0 2.2 2.2L6.8 8.4M7.4 5.8 8.6 4.6a1.6 1.6 0 0 0-2.2-2.2L5.2 3.6",
   // Side panel = rounded rect with a divided right column (open-in-side-panel).
   panel: "M2 3.5a1 1 0 0 1 1-1H9a1 1 0 0 1 1 1V8.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1ZM7.5 2.5V9.5",
+  // Flow-chart = one node branching down to two (the graph view). Boxes are
+  // stroked rects; the connector drops from the top box, forks, and meets each
+  // child box.
+  graph:
+    "M4.5 1.5H7.5V3.5H4.5ZM1.5 8.5H4.5V10.5H1.5ZM7.5 8.5H10.5V10.5H7.5ZM6 3.5V6M3 6H9M3 6V8.5M9 6V8.5",
+  // Grid = the table view: an outer frame with two row rules and one column rule.
+  table: "M2 2.5H10V9.5H2ZM2 5.2H10M2 7.4H10M5.3 2.5V9.5",
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

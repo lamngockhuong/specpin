@@ -404,10 +404,11 @@ Two optional `.specs/` files render as diagrams in a dedicated full-page graph v
 **Controls**, all combinable:
 
 - **Graph <-> Table toggle**: switch between the diagram and a plain sortable table of the same nodes/edges.
+- **On-graph toolbar** (floating at the canvas's top-left): the controls that act on the diagram itself - a **Horizontal** / **Vertical** layout-direction toggle (lay it out left-to-right or top-to-bottom, whichever reads better) and zoom buttons (**in** / **out** / **fit to view**).
 - **Category filter tabs**: one tab per category, each showing its node count (`All N`, `<category> N`, ...) - flows group by the parent Flow's `object` label, screens group by the `urlGlob`'s top path segment (e.g. `/checkout/*` -> `checkout`). Picking a tab hides non-matching nodes and their edges.
 - **Search**: a text box that highlights matching node labels live (it does not hide anything, unlike the category filter).
 - **Focus-on-click**: click a node to dim everything except it and its directly connected nodes/edges; click it again (or an empty area) to clear the focus.
-- **Pan/zoom**: drag the canvas to pan, scroll/wheel to zoom.
+- **Pan/zoom**: drag the canvas to pan, scroll/wheel to zoom (or use the on-graph toolbar's zoom buttons).
 
 **Click-to-highlight.** Clicking a node or edge that carries a `specId` sends a message back to the tab the graph view was opened from: if that spec is currently matched on that page, its element scrolls into view and flashes (reusing the same highlight as a deep-link or keyboard-cycle jump). If the spec isn't matched there (wrong page, or no live element), a hint appears instead naming the screen/page it belongs to, so you know where to go rather than seeing nothing happen.
 
@@ -574,7 +575,7 @@ Wire `--check` into CI so a PR that changes the source without re-running the im
 
 `flows.json`/`screens.json` (see [Graph views](#19-graph-views)) don't only grow by hand-authoring, code-import, or auto-capture: the graph view has its own in-browser editor for adding, editing, and deleting nodes and transitions directly on the diagram, no JSON hand-editing required.
 
-**Turn it on.** Click **Edit mode** in the graph view's control bar. A toolbar appears (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), and clicking a node or edge now selects it for editing instead of navigating or click-to-highlighting.
+**Turn it on.** Click **Edit mode** in the graph view's control bar. A dedicated edit bar opens below the controls with the toolbar (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**) plus a how-to hint and a live status line. Each button enables only when its precondition is met - **Add edge** waits until two nodes are selected, **Delete selected** until exactly one node or edge is, and **Undo**/**Save** until the draft has an unsaved change - so a greyed-out button tells you what the action still needs. Clicking a node or edge now selects it for editing instead of navigating or click-to-highlighting.
 
 **Add a node.** Click **Add node** and fill in the side form: a localized name/label (add a row per locale), a `urlGlob` (screens) or `kind` (flows' states: initial/normal/terminal), and an optional linked `specId` picked from the project's known specs. **Create** adds it to the draft. On the flows dataset, a node belongs to whichever flow is currently active - use the flow controls (**New flow** / rename / delete) to create one first if the project has none yet.
 

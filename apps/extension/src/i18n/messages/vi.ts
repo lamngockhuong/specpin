@@ -562,6 +562,11 @@ const vi: Record<keyof Messages, string> = {
   "graph.toggleTable": "Bảng",
   "graph.searchPlaceholder": "Tìm node…",
   "graph.categoryAll": "Tất cả",
+  "graph.directionLR": "Ngang",
+  "graph.directionTB": "Dọc",
+  "graph.zoomIn": "Phóng to",
+  "graph.zoomOut": "Thu nhỏ",
+  "graph.zoomFit": "Vừa khung nhìn",
   "graph.colNode": "Node",
   "graph.colCategory": "Danh mục",
   "graph.colKind": "Loại",
@@ -587,6 +592,8 @@ const vi: Record<keyof Messages, string> = {
   "graph.capture.confirmClearAll":
     "Bỏ toàn bộ transition đã ghi (chưa được duyệt) cho project này? Không thể hoàn tác.",
   "graph.editMode": "Chỉnh sửa",
+  "graph.edit.hint":
+    "Chọn một node hoặc edge để sửa hoặc xóa. Chọn hai node rồi bấm Thêm edge để nối chúng.",
   "graph.edit.addNode": "Thêm node",
   "graph.edit.addEdge": "Thêm edge",
   "graph.edit.deleteSelected": "Xóa mục đã chọn",

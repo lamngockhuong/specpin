@@ -27,6 +27,10 @@ export interface LayoutResult {
   height: number;
 }
 
+/** Layout flow direction, chosen by the reader via the graph-view toggle:
+ *  "LR" ranks left-to-right (horizontal), "TB" top-to-bottom (vertical). */
+export type GraphDirection = "LR" | "TB";
+
 const NODE_HEIGHT = 40;
 const MIN_NODE_WIDTH = 72;
 const CHAR_WIDTH = 7;
@@ -40,16 +44,18 @@ function estimateNodeWidth(label: string): number {
   return Math.max(MIN_NODE_WIDTH, label.length * CHAR_WIDTH + LABEL_PADDING);
 }
 
-/** Lay out a {nodes, edges} graph left-to-right with dagre. Edges use their
- *  stable `id` as the multigraph edge name, so two edges sharing the same
- *  from/to (e.g. two triggers between the same pair of states) route and
- *  retrieve independently instead of one clobbering the other. */
-export function layoutGraph(graph: Graph): LayoutResult {
+/** Lay out a {nodes, edges} graph with dagre in the given `direction` (default
+ *  left-to-right). Edges use their stable `id` as the multigraph edge name, so
+ *  two edges sharing the same from/to (e.g. two triggers between the same pair
+ *  of states) route and retrieve independently instead of one clobbering the
+ *  other. `nodesep`/`ranksep` are kept generous so labels have room and edges
+ *  cross less on the denser real-world graphs. */
+export function layoutGraph(graph: Graph, direction: GraphDirection = "LR"): LayoutResult {
   const g = new graphlib.Graph({ directed: true, multigraph: true });
   g.setGraph({
-    rankdir: "LR",
-    nodesep: 32,
-    ranksep: 72,
+    rankdir: direction,
+    nodesep: 48,
+    ranksep: 96,
     marginx: CANVAS_MARGIN,
     marginy: CANVAS_MARGIN,
   });

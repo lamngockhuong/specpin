@@ -201,3 +201,40 @@ describe("wireEditMode -- flows id-prefix leak regression (click -> mutate chain
     expect(graph.edges.map((e) => e.id)).toContain("checkout:pay");
   });
 });
+
+describe("wireEditMode -- toolbar button states track selection + dirty draft", () => {
+  it("enables only Add node with no selection, then unlocks each action as its precondition is met", () => {
+    const { handle, container } = setup();
+    const btns = toolbarButtons(container);
+    // Fresh edit session: Add node is always available; the rest need a target.
+    expect(btns.addNode.disabled).toBe(false);
+    expect(btns.addEdge.disabled).toBe(true);
+    expect(btns.deleteSelected.disabled).toBe(true);
+    expect(btns.undo.disabled).toBe(true);
+    expect(btns.save.disabled).toBe(true);
+
+    // One node selected -> Delete becomes actionable, Add edge still needs two.
+    handle.handleNodeClick(findNode(handle, "checkout:draft"));
+    expect(btns.deleteSelected.disabled).toBe(false);
+    expect(btns.addEdge.disabled).toBe(true);
+
+    // Two nodes selected -> Add edge unlocks, single-target Delete locks again.
+    handle.handleNodeClick(findNode(handle, "checkout:paid"));
+    expect(btns.addEdge.disabled).toBe(false);
+    expect(btns.deleteSelected.disabled).toBe(true);
+  });
+
+  it("enables Undo + Save once the draft has an unsaved mutation", () => {
+    const { handle, container } = setup();
+    const btns = toolbarButtons(container);
+    expect(btns.save.disabled).toBe(true);
+    expect(btns.undo.disabled).toBe(true);
+
+    // Delete a node -> the draft is now dirty -> Undo + Save go live.
+    handle.handleNodeClick(findNode(handle, "checkout:draft"));
+    btns.deleteSelected.click();
+    expect(handle.isDirty()).toBe(true);
+    expect(btns.save.disabled).toBe(false);
+    expect(btns.undo.disabled).toBe(false);
+  });
+});
