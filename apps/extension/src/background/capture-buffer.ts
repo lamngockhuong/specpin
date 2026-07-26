@@ -9,6 +9,7 @@
 import { browser } from "#imports";
 import type { CaptureBufferEntry } from "../shared/messaging.js";
 import { MAX_CAPTURE_ENTRIES_PER_PROJECT } from "../shared/messaging.js";
+import { transitionExcluded } from "../shared/record-exclude.js";
 
 export const CAPTURE_BUFFER_KEY = "specpin:captureBuffer";
 
@@ -87,6 +88,23 @@ export function clearBuffer(project: string): Promise<void> {
   return serialize(async () => {
     const all = await readAll();
     await writeAll(all.filter((e) => e.project !== project));
+  });
+}
+
+/** Drop every draft entry for `project` whose transition now matches the
+ *  project's auto-capture ignore-list (`exclude` globs) -- called right after a
+ *  SET_RECORD_EXCLUDE add so the ghost edges the user just chose to ignore clear
+ *  from the graph immediately, not only on the NEXT navigation. Other projects'
+ *  entries are untouched. A no-op (empty `exclude`, or nothing matches) leaves
+ *  the buffer as-is. */
+export function pruneBufferByGlob(project: string, exclude: readonly string[]): Promise<void> {
+  return serialize(async () => {
+    if (exclude.length === 0) return;
+    const all = await readAll();
+    const kept = all.filter(
+      (e) => !(e.project === project && transitionExcluded(exclude, e.from.urlGlob, e.to.urlGlob)),
+    );
+    if (kept.length !== all.length) await writeAll(kept);
   });
 }
 

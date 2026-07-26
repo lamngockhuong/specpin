@@ -47,6 +47,13 @@ export function overlayGhostBuffer(
       .filter((n): n is GraphNode & { urlGlob: string } => Boolean(n.urlGlob))
       .map((n) => [n.urlGlob, n.id]),
   );
+  // Committed from->to pairs, so a buffered entry duplicating an edge the user
+  // already authored (possibly under a DIFFERENT transition id) is dropped, not
+  // shown as a redundant ghost. Endpoints resolve by committed id OR urlGlob,
+  // matching the candidate-resolution rule used below.
+  const committedEdgePairs = new Set(committed.edges.map((e) => `${e.from} ${e.to}`));
+  const resolveToCommitted = (cand: { id: string; urlGlob: string }): string =>
+    committedNodeIds.has(cand.id) ? cand.id : (committedUrlGlobToId.get(cand.urlGlob) ?? cand.id);
 
   const ghostNodes = new Map<string, GraphNode>();
   const ghostEdges = new Map<string, GraphEdge>();
@@ -57,28 +64,33 @@ export function overlayGhostBuffer(
 
   for (const entry of buffer) {
     if (committedEdgeIds.has(entry.transition.id)) continue;
+    // Same edge already committed under any id (resolved by id/urlGlob): the user
+    // already has it, so don't overlay a duplicate ghost. Checked before any ghost
+    // node is added so a skipped edge leaves no dangling ghost node behind.
+    if (
+      committedEdgePairs.has(`${resolveToCommitted(entry.from)} ${resolveToCommitted(entry.to)}`)
+    ) {
+      continue;
+    }
 
     for (const candidate of [entry.from, entry.to]) {
       if (resolvedId.has(candidate.id)) continue;
-      if (committedNodeIds.has(candidate.id)) {
-        resolvedId.set(candidate.id, candidate.id);
-        continue;
-      }
-      const existingByUrlGlob = committedUrlGlobToId.get(candidate.urlGlob);
-      if (existingByUrlGlob) {
-        resolvedId.set(candidate.id, existingByUrlGlob);
-        continue;
-      }
-      resolvedId.set(candidate.id, candidate.id);
-      if (!ghostNodes.has(candidate.id)) {
-        ghostNodes.set(candidate.id, {
-          id: candidate.id,
-          label: candidate.name,
-          category: urlGlobCategory(candidate.urlGlob),
-          specId: null,
-          urlGlob: candidate.urlGlob,
-          pending: true,
-        });
+      const resolved = resolveToCommitted(candidate);
+      resolvedId.set(candidate.id, resolved);
+      // A candidate that resolves to itself and names no committed node is a
+      // brand-new screen -> overlay it as a ghost node. (Resolving to a committed
+      // id, whether by id or by urlGlob, means the screen already exists.)
+      if (resolved === candidate.id && !committedNodeIds.has(candidate.id)) {
+        if (!ghostNodes.has(candidate.id)) {
+          ghostNodes.set(candidate.id, {
+            id: candidate.id,
+            label: candidate.name,
+            category: urlGlobCategory(candidate.urlGlob),
+            specId: null,
+            urlGlob: candidate.urlGlob,
+            pending: true,
+          });
+        }
       }
     }
 
@@ -93,6 +105,10 @@ export function overlayGhostBuffer(
       role: entry.transition.role ?? null,
       specId: entry.transition.specId ?? null,
       pending: true,
+      // Carry the candidates' generalized globs so the ghost panel's
+      // "Ignore route" can add the destination glob to the ignore-list.
+      fromUrlGlob: entry.from.urlGlob,
+      toUrlGlob: entry.to.urlGlob,
     });
   }
 

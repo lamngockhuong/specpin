@@ -1,6 +1,7 @@
 import { t } from "../i18n/index.js";
 import type { FlowsScreensResult, ProjectFlowsScreens } from "../shared/messaging.js";
 import { sendToBackground } from "../shared/messaging.js";
+import { normalizeGlobs } from "../shared/record-exclude.js";
 import type { GraphEdge } from "./config-to-graph.js";
 import type { GhostController } from "./graph-ghost-controller.js";
 import type { GhostPanelHandle } from "./graph-ghost-panel.js";
@@ -55,14 +56,45 @@ export function wireGhostReview(
     deps.onChanged(null);
   }
 
+  // "Ignore route": add the edge's destination glob to the project's auto-capture
+  // ignore-list. The background stores it, prunes the project's already-buffered
+  // entries that now match (this edge + any siblings on the same route), and
+  // broadcasts RECORD_TARGETS_CHANGED; we refresh + re-render here so the cleared
+  // ghosts drop immediately.
+  async function ignoreRoute(
+    connectionId: string,
+    glob: string,
+    current: readonly string[],
+  ): Promise<void> {
+    panel.setBusy(true);
+    const globs = normalizeGlobs([...current, glob]);
+    const result = await sendToBackground<{ ok: boolean; error?: string }>({
+      type: "SET_RECORD_EXCLUDE",
+      connectionId,
+      globs,
+    });
+    if (!result.ok) {
+      panel.setError(t("graph.ghost.ignoreError", { error: result.error ?? "" }));
+      panel.setBusy(false);
+      return;
+    }
+    panel.hide();
+    await controller.refresh();
+    deps.onChanged(null);
+  }
+
   return {
     show(edge) {
       const project = deps.currentProject();
       if (!project) return;
       const connectionId = project.connectionId;
+      const toGlob = edge.toUrlGlob;
       panel.show(edge.label, {
         onApprove: () => void approve(connectionId, edge.id),
         onDiscard: () => void discard(connectionId, edge.id),
+        onIgnore: toGlob
+          ? () => void ignoreRoute(connectionId, toGlob, project.recordExclude)
+          : undefined,
       });
     },
     hide: () => panel.hide(),

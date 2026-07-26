@@ -5,6 +5,7 @@ import {
   clearBuffer,
   getBuffer,
   MAX_CAPTURE_ENTRIES_PER_PROJECT,
+  pruneBufferByGlob,
 } from "../src/background/capture-buffer.js";
 import type { CaptureBufferEntry } from "../src/shared/messaging.js";
 
@@ -95,5 +96,29 @@ describe("clearBuffer", () => {
     await clearBuffer("proj-a");
     expect(await getBuffer("proj-a")).toEqual([]);
     expect(await getBuffer("proj-b")).toHaveLength(1);
+  });
+});
+
+describe("pruneBufferByGlob", () => {
+  it("drops entries whose to OR from urlGlob matches, keeping the rest", async () => {
+    await appendCaptured("proj-a", entry("t1")); // to: /t1-to
+    await appendCaptured("proj-a", entry("keep")); // to: /keep-to
+    await pruneBufferByGlob("proj-a", ["/t1-to"]);
+    expect((await getBuffer("proj-a")).map((e) => e.transition.id)).toEqual(["keep"]);
+  });
+
+  it("honors glob wildcards and only prunes the named project", async () => {
+    await appendCaptured("proj-a", entry("settings")); // globs /settings-from, /settings-to
+    await appendCaptured("proj-b", entry("settings"));
+    await pruneBufferByGlob("proj-a", ["/settings*"]);
+    expect(await getBuffer("proj-a")).toEqual([]);
+    expect(await getBuffer("proj-b")).toHaveLength(1);
+  });
+
+  it("is a no-op for an empty exclude list or when nothing matches", async () => {
+    await appendCaptured("proj-a", entry("t1"));
+    await pruneBufferByGlob("proj-a", []);
+    await pruneBufferByGlob("proj-a", ["/nowhere"]);
+    expect(await getBuffer("proj-a")).toHaveLength(1);
   });
 });

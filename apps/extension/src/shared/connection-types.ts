@@ -33,6 +33,12 @@ export interface Connection {
    *  page only when some project serving it has this ON, and a captured transition
    *  is attributed only to record-enabled projects. Opt-in: undefined/false = OFF. */
   recordEnabled?: boolean;
+  /** Per-project auto-capture ignore-list: URL globs (same syntax as `matchPathGlob`,
+   *  e.g. `/settings/**`) whose screens the recorder must NOT capture. A captured
+   *  transition is dropped for this project when EITHER endpoint's generalized
+   *  urlGlob matches one of these, so a menu/sidebar route never clutters the flow.
+   *  Absent/empty = capture everything (drop the field when emptied). */
+  recordExclude?: string[];
 }
 
 /** A spec tagged with the connection (project) it came from. Extends
@@ -89,6 +95,9 @@ export interface ManualBatchSummary {
   /** Per-batch auto-capture opt-in (parallel to ConnectionStatus.recordEnabled),
    *  resolved from ManualBatch.recordEnabled (undefined -> false). */
   recordEnabled: boolean;
+  /** Per-batch auto-capture ignore-list (parallel to ConnectionStatus.recordExclude),
+   *  resolved from ManualBatch.recordExclude (undefined -> []). */
+  recordExclude: string[];
 }
 
 /** Per-connection state for the management UI. NEVER carries the bearer token
@@ -115,4 +124,7 @@ export interface ConnectionStatus {
   /** Per-project auto-capture opt-in, resolved from Connection.recordEnabled
    *  (undefined -> false). Drives the Options + graph-panel record toggle. */
   recordEnabled: boolean;
+  /** Per-project auto-capture ignore-list, resolved from Connection.recordExclude
+   *  (undefined -> []). Drives the Options ignored-routes list. */
+  recordExclude: string[];
 }

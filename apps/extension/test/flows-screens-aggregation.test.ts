@@ -119,6 +119,7 @@ describe("SidecarConnection flows/screens cache", () => {
         connectionId: "a",
         project: "A",
         recordEnabled: false,
+        recordExclude: [],
         flows: { version: "1.0", flows: [] },
         screens,
         specs: [],

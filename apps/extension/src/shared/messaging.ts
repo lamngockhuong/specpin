@@ -136,6 +136,13 @@ export type Message =
   // UPDATE_CONNECTION's `recordEnabled`). `id` is the batch id (not the
   // `manual:<id>` connection id -- mirrors SET_LOCAL_BATCH_ENABLED). Privileged.
   | { type: "SET_LOCAL_BATCH_RECORD_ENABLED"; id: string; enabled: boolean }
+  // Replace a project's auto-capture ignore-list (URL globs). Unified across
+  // sidecar + local: `connectionId` is a sidecar uuid OR the `manual:<batchId>`
+  // local form, so the graph quick-add and the Options list share one API. The
+  // handler stores the trimmed/de-duped list (drops it when empty), prunes the
+  // project's already-buffered draft entries that now match, and broadcasts
+  // RECORD_TARGETS_CHANGED. Privileged: only an extension page may retune capture.
+  | { type: "SET_RECORD_EXCLUDE"; connectionId: string; globs: string[] }
   // The writable projects (sidecar + local) serving an origin, for the capture
   // "Save to" picker. Unprivileged: the content script needs it, and it exposes no
   // more than GET_SPECS_FOR_ORIGIN for the same origin. Includes EMPTY local
@@ -371,6 +378,9 @@ export const PRIVILEGED_MESSAGE_TYPES = new Set<Message["type"]>([
   "RENAME_LOCAL_PROJECT",
   "SET_LOCAL_BATCH_ENABLED",
   "SET_LOCAL_BATCH_RECORD_ENABLED",
+  // Retunes a project's auto-capture ignore-list (sidecar or local); a web
+  // content script must never be able to change what another surface records.
+  "SET_RECORD_EXCLUDE",
   // Returns full spec payloads for many batches; restrict to extension pages so a
   // content script cannot harvest every local project's specs.
   "GET_EXPORT_BUNDLES",
@@ -457,6 +467,10 @@ export interface WriteTarget {
    *  false). The content-script recorder attaches only when some serving target
    *  is record-enabled; the background fans a capture out to exactly these. */
   recordEnabled: boolean;
+  /** This project's auto-capture ignore-list (URL globs, resolved -> []). The
+   *  background drops a fanned-out capture for this target when either endpoint's
+   *  urlGlob matches one of these (see shared/record-exclude.ts). */
+  recordExclude: string[];
 }
 
 /** Result of a remove/clear: ok plus the new total spec count across batches. */
@@ -530,6 +544,10 @@ export interface ProjectFlowsScreens {
   /** This project's auto-capture opt-in (resolved). Drives the graph panel's
    *  per-project record banner (turn on/off from where captures are reviewed). */
   recordEnabled: boolean;
+  /** This project's auto-capture ignore-list (URL globs, resolved -> []). Read by
+   *  the graph ghost panel's "Ignore route" quick-add so it can append to the
+   *  current list without a separate round trip. */
+  recordExclude: string[];
   flows: FlowsConfig;
   screens: ScreensConfig;
   specs: KnownSpecId[];

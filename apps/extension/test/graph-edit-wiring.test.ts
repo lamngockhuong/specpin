@@ -59,6 +59,7 @@ function baseProject(): ProjectFlowsScreens {
     connectionId: "conn-1",
     project: "demo",
     recordEnabled: false,
+    recordExclude: [],
     flows: baseFlowsConfig(),
     screens: emptyScreensConfig(),
     specs: [],
