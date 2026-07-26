@@ -3,7 +3,7 @@
 
 Input JSON: an array of { "itemNo": "1"|"1.1"|..., "position": {startX,startY,endX,endY} }
 in original-image pixel space. This script only DRAWS -- it performs no detection.
-Shared JSON shape with tkm:generate-ui-specs so outputs round-trip into the editor web app.
+The JSON shape matches what the specshot editor consumes, so outputs round-trip into it.
 """
 
 from __future__ import annotations

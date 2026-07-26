@@ -29,11 +29,18 @@ const DESTS = [
 ];
 
 // The destinations are derived from import.meta.url, never from argv, so they
-// cannot be steered outside the repo. Assert it anyway: a miscounted "../" in
-// the line above would otherwise clobber a directory next to the checkout.
+// cannot be steered outside the repo. Assert it anyway: each destination is
+// rm -rf'd before it is copied into, so a miscounted "../" in the lines above
+// would otherwise delete the wrong tree. Note ROOT itself must be REJECTED,
+// not allowed: a destination that resolves to the repo root would wipe the
+// whole checkout. Same for the canonical source, which is never a destination.
 for (const { label, path } of DESTS) {
-  if (path !== ROOT && !path.startsWith(ROOT + sep)) {
-    console.error(`sync-skill: destination "${label}" resolves outside the repo: ${path}`);
+  if (!path.startsWith(ROOT + sep)) {
+    console.error(`sync-skill: destination "${label}" is not safely inside the repo: ${path}`);
+    process.exit(1);
+  }
+  if (path === SRC) {
+    console.error(`sync-skill: destination "${label}" is the canonical source itself: ${path}`);
     process.exit(1);
   }
 }
@@ -68,8 +75,16 @@ async function copy() {
   }
   for (const { label, path } of DESTS) {
     // Clear the destination so deletions in source propagate, then copy fresh.
-    await rm(path, { recursive: true, force: true });
-    await cp(SRC, path, { recursive: true });
+    // Name the failing target: a bare stack trace does not say which of the
+    // destinations died, and a mid-loop failure leaves one synced and one not.
+    try {
+      await rm(path, { recursive: true, force: true });
+      await cp(SRC, path, { recursive: true });
+    } catch (err) {
+      console.error(`sync-skill: failed to sync "${label}" (${path}): ${err.message}`);
+      console.error("Other destinations may be left un-synced; re-run after fixing.");
+      process.exit(1);
+    }
     console.log(
       `sync-skill: copied ${files.length} file(s) -> ${relative(process.cwd(), path)} (${label})`,
     );
