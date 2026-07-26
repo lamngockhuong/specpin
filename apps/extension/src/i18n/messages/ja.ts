@@ -652,6 +652,8 @@ const ja: Record<keyof Messages, string> = {
   "graph.edit.newFlow": "新しいフロー",
   "graph.edit.renameFlowAction": "フロー名を変更",
   "graph.edit.deleteFlowAction": "フローを削除",
+  "graph.edit.flowPicker": "編集するフロー",
+  "graph.edit.switchedFlow": "フロー {label} を編集中。",
   "graph.edit.confirmDeleteFlow": "このフローを削除しますか？元に戻せません。",
   "graph.edit.rename": "名前を変更",
 

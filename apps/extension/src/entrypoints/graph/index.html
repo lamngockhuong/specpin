@@ -138,6 +138,17 @@
         cursor: pointer;
       }
       .graph-edit-toolbar button:not(.icon-btn):hover { background: var(--sp-surface); }
+      /* Flow picker (flows dataset, 2+ flows): choose which flow to edit. */
+      .graph-edit-flow-select {
+        font: inherit;
+        padding: 5px 8px;
+        border-radius: var(--sp-radius-control);
+        border: 1px solid var(--sp-border);
+        background: var(--sp-control);
+        color: var(--sp-text);
+        cursor: pointer;
+      }
+      .graph-edit-flow-select[hidden] { display: none; }
       .graph-category-tabs button.active, .graph-edit-toggle.active {
         background: var(--sp-accent);
         border-color: var(--sp-accent);
@@ -181,8 +192,11 @@
       /* Chip behind an edge label so it stays legible where dagre routes it
          over a line or node. Light like the node boxes (the SVG uses a fixed
          light palette), faintly translucent so the edge shows through. */
-      .graph-edge-label-bg { fill: #ffffff; opacity: 0.78; pointer-events: none; }
-      .graph-node { cursor: pointer; }
+      .graph-edge-label-bg { fill: #ffffff; opacity: 0.78; cursor: pointer; }
+      /* Wide transparent click band that makes the thin edge easy to select;
+         `stroke` so only the band (not its empty bbox) is the hit target. */
+      .graph-edge-hit { pointer-events: stroke; cursor: pointer; }
+      .graph-node, .graph-edge { cursor: pointer; }
       .graph-node.dimmed, .graph-edge.dimmed { opacity: 0.25; }
       .graph-node.hidden, .graph-edge.hidden { display: none; }
       .graph-node.highlighted rect { stroke-width: 3; }

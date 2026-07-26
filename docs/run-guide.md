@@ -582,6 +582,8 @@ Wire `--check` into CI so a PR that changes the source without re-running the im
 
 **Edit a node or edge.** Click an existing one to open the same side form, pre-filled. Every valid field change applies to the in-memory draft immediately (the graph re-renders shortly after); **Save** is still what persists the draft to `.specs/`. An imported or auto-captured transition (`"source": "imported"` / `"auto-captured"`) renders read-only here - reassign that in Track A/B's own flow (code-import or the ghost-edge Approve/Discard), not this form.
 
+**Editing across multiple flows (status-flow only).** A `flows.json` can hold several independent flows, all drawn on one canvas, but only one is *active* for editing at a time - the rest render read-only. When two or more flows are present, a **flow picker** appears in the edit bar: pick which flow to edit from it, or just click any node or edge of another flow and editing switches to it automatically. If the current flow has unsaved changes, switching asks you to save or discard first.
+
 **Add an edge.** Click two nodes in order (from, then to) to arm them, then **Add edge** to open a form for the trigger label plus optional guard, role, and `specId`.
 
 **Delete.** Select exactly one node or edge, then **Delete selected**. A node still referenced by an imported/auto-captured edge refuses to delete outright (resolve that edge first - manual edges cascade-delete along with the node). Deleting a screen a specshot spec sheet (`.specs/shots/<screenId>.shot.json`) still references is allowed here; the check for that happens at Save (next).
@@ -590,6 +592,6 @@ Wire `--check` into CI so a PR that changes the source without re-running the im
 
 **Save, and the orphaned-shot check.** **Save** persists the whole draft: validated and merged provenance-preserving, exactly like the auto-capture Approve flow above - your edits (`"source": "manual"`) never clobber an imported or auto-captured entry, and vice versa. If this session removed a screen that a shot sheet still references, Save asks you to confirm first, naming how many shots would be orphaned (or a general caution when the shot inventory can't be checked, e.g. an older sidecar) - Cancel to reconsider, or continue to save anyway.
 
-**Leaving with unsaved edits.** Turning Edit mode off, switching project, or switching the flows/screens dataset while a draft has unsaved changes asks you to save or discard first; a clean draft (nothing changed, or already saved) never prompts. Closing or reloading the tab with unsaved edits triggers the browser's own leave-page warning too.
+**Leaving with unsaved edits.** Turning Edit mode off, switching project, switching the active flow, or switching the flows/screens dataset while a draft has unsaved changes asks you to save or discard first; a clean draft (nothing changed, or already saved) never prompts. Closing or reloading the tab with unsaved edits triggers the browser's own leave-page warning too.
 
 > **Provenance, unchanged:** every write here goes through the same read-merge-validate-write path as auto-capture's Approve and code-import's writer - manual edits are stamped `"source": "manual"` and never overwrite an entry owned by another source. The editor adds no new schema and no new write surface; it is a UI on top of the same `.specs/` files.

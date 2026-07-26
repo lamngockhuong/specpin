@@ -121,6 +121,8 @@ Graph view không chỉ là một sơ đồ để xem - hãy bật **Edit mode**
 
 **Sửa một node hoặc edge.** Click vào một cái đã có để mở đúng form đó, đã điền sẵn dữ liệu. Mọi thay đổi hợp lệ áp dụng vào bản nháp trong bộ nhớ ngay lập tức; **Save** vẫn là bước lưu bản nháp xuống `.specs/`. Một transition đến từ code-import hay auto-capture hiện ở đây dạng chỉ đọc - hãy đổi nó qua đúng luồng riêng của nó (chạy lại import, hoặc Duyệt/Bỏ qua ghost edge).
 
+**Sửa nhiều flow cùng lúc (chỉ status-flow).** Một `flows.json` có thể chứa nhiều flow độc lập, cùng vẽ trên một canvas, nhưng tại một thời điểm chỉ có một flow đang *active* để sửa - các flow còn lại hiện ở dạng chỉ đọc. Khi có từ hai flow trở lên, một **bộ chọn flow** xuất hiện trong thanh edit: chọn flow cần sửa từ đó, hoặc chỉ cần click vào node hay edge của một flow khác thì việc sửa tự chuyển sang flow đó. Nếu flow hiện tại còn thay đổi chưa lưu, việc chuyển sẽ hỏi bạn lưu hay bỏ trước.
+
 **Thêm edge.** Click hai node theo đúng thứ tự (from rồi to) để chọn chúng, sau đó **Add edge** để mở form nhập nhãn trigger cùng guard/role/spec liên kết tùy chọn.
 
 **Xóa.** Chọn đúng một node hoặc edge, rồi **Delete selected**. Một node còn bị một edge imported/auto-captured tham chiếu sẽ từ chối xóa - hãy xử lý edge đó trước (một edge thêm tay sẽ tự động xóa theo cùng node). Xóa một screen mà một spec sheet của specshot vẫn tham chiếu vẫn được cho phép ở đây; việc kiểm tra điều đó diễn ra lúc Save (bên dưới).
@@ -129,7 +131,7 @@ Graph view không chỉ là một sơ đồ để xem - hãy bật **Edit mode**
 
 **Save, và kiểm tra shot mồ côi.** **Save** lưu toàn bộ bản nháp: đã xác thực và gộp bảo toàn provenance hệt như luồng Duyệt của auto-capture ở trên - chỉnh sửa của bạn không bao giờ ghi đè lên một entry từ nguồn khác, và ngược lại. Nếu phiên chỉnh sửa này đã xóa một screen mà một spec sheet vẫn tham chiếu, Save sẽ hỏi xác nhận trước, nêu rõ có bao nhiêu sẽ trở thành mồ côi (hoặc một cảnh báo chung khi không thể kiểm tra được) - Cancel để xem lại, hoặc tiếp tục lưu.
 
-**Rời đi khi còn thay đổi chưa lưu.** Tắt Edit mode, chuyển project, hoặc chuyển dataset flows/screens khi bản nháp còn thay đổi chưa lưu sẽ hỏi bạn lưu hay bỏ trước; một bản nháp sạch không bao giờ hỏi. Đóng hay tải lại tab khi còn chỉnh sửa chưa lưu cũng kích hoạt cảnh báo rời trang mặc định của trình duyệt.
+**Rời đi khi còn thay đổi chưa lưu.** Tắt Edit mode, chuyển project, đổi flow đang sửa, hoặc chuyển dataset flows/screens khi bản nháp còn thay đổi chưa lưu sẽ hỏi bạn lưu hay bỏ trước; một bản nháp sạch không bao giờ hỏi. Đóng hay tải lại tab khi còn chỉnh sửa chưa lưu cũng kích hoạt cảnh báo rời trang mặc định của trình duyệt.
 
 :::note
 Trình biên tập chỉ ghi vào `.specs/flows.json` và `.specs/screens.json`, qua đúng luồng đọc-gộp-xác thực-ghi mà mọi bộ ghi khác ở đây dùng - không schema mới, không bề mặt ghi mới.

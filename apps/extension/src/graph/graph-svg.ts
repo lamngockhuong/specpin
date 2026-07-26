@@ -97,8 +97,22 @@ function buildEdge(edge: PositionedEdge, handlers: GraphSvgHandlers): SVGGElemen
   g.dataset.edgeId = edge.id;
   g.setAttribute("class", edgeClasses(edge));
 
+  const d = pointsToPath(edge.points);
+
+  // Invisible wide stroke over the same polyline so the edge is easy to hit:
+  // the visible line is only 1.5px, far too thin to click reliably. Painted
+  // transparent (no visual change) but `pointer-events: stroke` makes this
+  // fat band the real click target; the click bubbles to the <g> handler.
+  const hit = svgEl("path");
+  hit.setAttribute("class", "graph-edge-hit");
+  hit.setAttribute("d", d);
+  hit.setAttribute("fill", "none");
+  hit.setAttribute("stroke", "transparent");
+  hit.setAttribute("stroke-width", "14");
+  g.appendChild(hit);
+
   const path = svgEl("path");
-  path.setAttribute("d", pointsToPath(edge.points));
+  path.setAttribute("d", d);
   path.setAttribute("fill", "none");
   path.setAttribute("stroke", "#94a3b8");
   path.setAttribute("stroke-width", "1.5");

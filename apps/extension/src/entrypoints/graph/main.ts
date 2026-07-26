@@ -295,6 +295,10 @@ async function init(): Promise<void> {
     onChanged: applyRefreshedProjects,
     locale: () => contentLocale,
     confirmOrphanShots,
+    // Switching the active flow mid-edit reuses the same save/discard guard as
+    // leaving edit mode -- an unsaved draft is per-flow, so re-scoping to
+    // another flow would drop it otherwise.
+    confirmLeaveActiveFlow: confirmLeaveIfDirty,
   });
 
   const result = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
