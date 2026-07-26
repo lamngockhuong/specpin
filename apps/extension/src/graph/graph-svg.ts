@@ -105,8 +105,22 @@ function buildEdge(edge: PositionedEdge, handlers: GraphSvgHandlers): SVGGElemen
   path.setAttribute("marker-end", "url(#graph-arrow)");
   g.appendChild(path);
 
-  if (edge.points.length > 0) {
+  if (edge.points.length > 0 && edge.label) {
     const mid = edge.points[Math.floor(edge.points.length / 2)];
+    // A rounded chip behind the label so it stays legible where it crosses an
+    // edge or a node (dagre routes labels onto the polyline, so on a dense
+    // graph they otherwise sit on top of lines/boxes). Width is estimated from
+    // the label length -- no DOM text metrics in this pure-build renderer.
+    const chipWidth = edge.label.length * 5.5 + 8;
+    const bg = svgEl("rect");
+    bg.setAttribute("class", "graph-edge-label-bg");
+    bg.setAttribute("x", String(mid.x - chipWidth / 2));
+    bg.setAttribute("y", String(mid.y - 4 - 10));
+    bg.setAttribute("width", String(chipWidth));
+    bg.setAttribute("height", "13");
+    bg.setAttribute("rx", "3");
+    g.appendChild(bg);
+
     const text = svgEl("text");
     text.setAttribute("x", String(mid.x));
     text.setAttribute("y", String(mid.y - 4));

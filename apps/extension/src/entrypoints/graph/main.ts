@@ -14,6 +14,7 @@ import { createGhostController } from "../../graph/graph-ghost-controller.js";
 import { mountGhostPanel } from "../../graph/graph-ghost-panel.js";
 import { type GhostReviewHandle, wireGhostReview } from "../../graph/graph-ghost-review.js";
 import { createHighlightController, parseOriginTabId } from "../../graph/graph-highlight.js";
+import type { GraphDirection } from "../../graph/graph-layout.js";
 import { layoutGraph } from "../../graph/graph-layout.js";
 import {
   confirmOrphanShots,
@@ -22,6 +23,7 @@ import {
 import { type Dataset, wireProjectPicker } from "../../graph/graph-project-picker.js";
 import { renderGraphSvg } from "../../graph/graph-svg.js";
 import { renderGraphTable } from "../../graph/graph-table.js";
+import { mountGraphViewToolbar } from "../../graph/graph-view-toolbar.js";
 import { attachPanZoom, type PanZoomController } from "../../graph/pan-zoom.js";
 import { hydrateI18n, initI18n, resolveUiLocale, t } from "../../i18n/index.js";
 import { getLocale, getUiLocale } from "../../shared/config.js";
@@ -30,6 +32,7 @@ import { sendToBackground } from "../../shared/messaging.js";
 import { applyStoredTheme } from "../../shared/theme.js";
 import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
+import "../../shared/icon-btn.css";
 
 // The graph panel: fetches every connected project's flows/screens, lets the
 // reader pick a project + dataset, and renders it as an SVG graph (dagre) or a
@@ -44,6 +47,8 @@ const datasetSelect = document.getElementById("dataset-select") as HTMLSelectEle
 const ghostPanelEl = document.getElementById("ghost-panel") as HTMLElement;
 const captureBannerEl = document.getElementById("capture-banner") as HTMLElement;
 const editFormEl = document.getElementById("edit-form") as HTMLElement;
+const editBarEl = document.getElementById("edit-bar") as HTMLElement;
+const graphToolbarEl = document.getElementById("graph-toolbar") as HTMLElement;
 
 const originTabId = parseOriginTabId(new URLSearchParams(location.search).get("originTab"));
 const highlight = createHighlightController(hintEl, originTabId);
@@ -54,6 +59,7 @@ let dataset: Dataset = "flows";
 let contentLocale = "en";
 let graph: Graph = { nodes: [], edges: [] };
 let view: "graph" | "table" = "graph";
+let direction: GraphDirection = "LR";
 let filterState: GraphFilterState = { category: "all", query: "", focusNodeId: null };
 let panZoom: PanZoomController | null = null;
 let svgView: ReturnType<typeof renderGraphSvg> | null = null;
@@ -95,6 +101,13 @@ async function handleEdgeClick(edge: GraphEdge): Promise<void> {
     await highlight.attempt(projects[projectIdx]?.connectionId, edge.specId, undefined);
 }
 
+// Show the floating graph toolbar (layout direction + zoom) only when a real
+// diagram is on screen -- hidden in the table view and for an empty graph,
+// where there is nothing to orient or zoom.
+function updateGraphToolbarVisibility(): void {
+  graphToolbarEl.hidden = !(view === "graph" && svgView !== null);
+}
+
 function renderCanvas(): void {
   panZoom?.destroy();
   canvasEl.replaceChildren();
@@ -106,9 +119,10 @@ function renderCanvas(): void {
     svgView = null;
     panZoom = null;
     applyFilter();
+    updateGraphToolbarVisibility();
     return;
   }
-  svgView = renderGraphSvg(layoutGraph(graph), {
+  svgView = renderGraphSvg(layoutGraph(graph, direction), {
     onNodeClick: (n) => void handleNodeClick(n),
     onEdgeClick: (e) => void handleEdgeClick(e),
     onBackgroundClick: () => {
@@ -121,6 +135,7 @@ function renderCanvas(): void {
   canvasEl.appendChild(svgView.svg);
   panZoom = attachPanZoom(svgView.svg, svgView.root);
   applyFilter();
+  updateGraphToolbarVisibility();
 }
 
 // Shared onChanged for ghostReview + editWiring (both re-fetch on write).
@@ -157,6 +172,7 @@ function setView(next: "graph" | "table"): void {
   view = next;
   canvasEl.hidden = next !== "graph";
   tableEl.hidden = next !== "table";
+  updateGraphToolbarVisibility();
   applyFilter();
 }
 
@@ -228,7 +244,21 @@ async function init(): Promise<void> {
     onCleared: () => refreshAll(),
     onRecordChanged: refreshProjects,
   });
-  editWiring = wireEditMode(controlsEl, editFormEl, {
+  // The on-canvas toolbar (layout direction + zoom): mounted once, kept across
+  // re-renders. Zoom routes to whatever panZoom the latest render created; a
+  // direction change re-lays-out the graph.
+  mountGraphViewToolbar(graphToolbarEl, {
+    onDirectionChange: (d) => {
+      direction = d;
+      renderCanvas();
+    },
+    initialDirection: direction,
+    onZoomIn: () => panZoom?.zoomBy(1.2),
+    onZoomOut: () => panZoom?.zoomBy(1 / 1.2),
+    onZoomFit: () => panZoom?.reset(),
+  });
+
+  editWiring = wireEditMode(editBarEl, editFormEl, {
     currentProject: () => projects[projectIdx],
     currentDataset: () => dataset,
     applySelection: (nodeIds, edgeIds) => svgView?.setSelected(nodeIds, edgeIds),

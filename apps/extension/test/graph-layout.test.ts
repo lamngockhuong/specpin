@@ -52,6 +52,19 @@ describe("layoutGraph", () => {
     expect(b.x).toBeLessThan(c.x);
   });
 
+  it("ranks top-to-bottom (y advances) when the direction is TB", () => {
+    const result = layoutGraph(graph, "TB");
+    const byId = new Map(result.nodes.map((n) => [n.id, n]));
+    const [a, b, c] = ["a", "b", "c"].map((id) => {
+      const node = byId.get(id);
+      expect(node).toBeDefined();
+      return node as (typeof result.nodes)[number];
+    });
+    // Vertical flow: the linear chain advances rank along y, not x.
+    expect(a.y).toBeLessThan(b.y);
+    expect(b.y).toBeLessThan(c.y);
+  });
+
   it("routes every edge to a non-empty polyline and preserves its original fields", () => {
     const result = layoutGraph(graph);
     expect(result.edges).toHaveLength(2);

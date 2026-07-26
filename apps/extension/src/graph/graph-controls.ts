@@ -1,4 +1,5 @@
 import { t } from "../i18n/index.js";
+import { createIconButton } from "../shared/icons.js";
 import type { Graph } from "./config-to-graph.js";
 
 // Graph controls: category filter tabs ("All 203 / AL 20 / ..."), text search
@@ -124,15 +125,19 @@ export function mountGraphControls(
   let state: GraphFilterState = { category: "all", query: "", focusNodeId: null };
   let currentGraph = graph;
 
+  // Icon segmented toggle (flow-chart icon = graph, grid icon = table), matching
+  // the on-canvas direction toggle's icon-button look; the localized label is
+  // the tooltip + accessible name. `setView` is a hoisted declaration, so the
+  // click closures below can reference it before its textual position.
   const toggleRow = document.createElement("div");
-  toggleRow.className = "graph-view-toggle";
-  const graphBtn = document.createElement("button");
-  graphBtn.type = "button";
-  graphBtn.textContent = t("graph.toggleGraph");
-  graphBtn.className = "active";
-  const tableBtn = document.createElement("button");
-  tableBtn.type = "button";
-  tableBtn.textContent = t("graph.toggleTable");
+  toggleRow.className = "graph-toolbar-group";
+  const graphBtn = createIconButton(document, "icon-btn", "graph", t("graph.toggleGraph"), () =>
+    setView("graph"),
+  );
+  graphBtn.classList.add("active");
+  const tableBtn = createIconButton(document, "icon-btn", "table", t("graph.toggleTable"), () =>
+    setView("table"),
+  );
   toggleRow.append(graphBtn, tableBtn);
 
   function setView(view: GraphView): void {
@@ -140,13 +145,14 @@ export function mountGraphControls(
     tableBtn.classList.toggle("active", view === "table");
     callbacks.onViewChange(view);
   }
-  graphBtn.addEventListener("click", () => setView("graph"));
-  tableBtn.addEventListener("click", () => setView("table"));
 
   // Track C (C1) opt-in edit mode, default OFF. C3: turning OFF is gated by
   // canLeaveEditMode (a dirty-draft confirm) -- never flips optimistically.
   const editBtn = document.createElement("button");
   editBtn.type = "button";
+  // Shares the view-toggle/category-tab button styling so its `.active` state
+  // (accent fill) clearly signals "edit mode is ON" -- see index.html.
+  editBtn.className = "graph-edit-toggle";
   editBtn.textContent = t("graph.editMode");
   editBtn.addEventListener("click", () => {
     const next = !editBtn.classList.contains("active");

@@ -573,6 +573,11 @@ const en = {
   "graph.toggleTable": "Table",
   "graph.searchPlaceholder": "Search nodes…",
   "graph.categoryAll": "All",
+  "graph.directionLR": "Horizontal",
+  "graph.directionTB": "Vertical",
+  "graph.zoomIn": "Zoom in",
+  "graph.zoomOut": "Zoom out",
+  "graph.zoomFit": "Fit to view",
   "graph.colNode": "Node",
   "graph.colCategory": "Category",
   "graph.colKind": "Kind",
@@ -600,6 +605,8 @@ const en = {
     "Discard every captured (not yet approved) transition for this project? This cannot be undone.",
   // Track C (C1): opt-in edit-mode toolbar (add/delete node/edge, Save).
   "graph.editMode": "Edit",
+  "graph.edit.hint":
+    "Pick a node or edge to edit or delete. Select two nodes, then Add edge to connect them.",
   "graph.edit.addNode": "Add node",
   "graph.edit.addEdge": "Add edge",
   "graph.edit.deleteSelected": "Delete selected",

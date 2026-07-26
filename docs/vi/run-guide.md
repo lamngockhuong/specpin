@@ -341,10 +341,11 @@ Hai file `.specs/` tùy chọn được render thành sơ đồ trong một **gr
 **Các control**, có thể kết hợp:
 
 - **Graph <-> Table toggle**: chuyển giữa sơ đồ và một bảng có thể sắp xếp của cùng các node/edge đó.
+- **Thanh công cụ trên đồ thị** (nổi ở góc trên-trái canvas): các nút thao tác trực tiếp lên sơ đồ - nút chọn hướng layout **Horizontal** / **Vertical** (trải trái-phải hoặc trên-dưới, tùy hướng nào dễ đọc) và các nút zoom (**phóng to** / **thu nhỏ** / **vừa khung nhìn**).
 - **Category filter tabs**: một tab cho mỗi category, mỗi tab hiện số lượng node (`All N`, `<category> N`, ...) - flows nhóm theo nhãn `object` của Flow cha, screens nhóm theo segment đường dẫn đầu tiên của `urlGlob` (ví dụ `/checkout/*` -> `checkout`). Chọn một tab sẽ ẩn các node không khớp cùng các edge của chúng.
 - **Search**: một ô nhập text làm nổi bật các nhãn node khớp theo thời gian thực (không ẩn gì cả, khác với category filter).
 - **Focus-on-click**: click một node để làm mờ mọi thứ trừ nó và các node/edge kết nối trực tiếp; click lại (hoặc click vùng trống) để bỏ focus.
-- **Pan/zoom**: kéo canvas để pan, cuộn/lăn chuột để zoom.
+- **Pan/zoom**: kéo canvas để pan, cuộn/lăn chuột để zoom (hoặc dùng các nút zoom trên thanh công cụ của đồ thị).
 
 **Click-to-highlight.** Click một node hoặc edge mang `specId` sẽ gửi một message ngược về tab mà graph view đã mở từ đó: nếu spec đó đang khớp trên trang đó, phần tử của nó sẽ cuộn vào tầm nhìn và nháy sáng (dùng lại đúng cơ chế highlight như deep-link hay nhảy bằng phím tắt cycle). Nếu spec không khớp ở đó (sai trang, hoặc không có phần tử đang chạy), một gợi ý sẽ xuất hiện thay vào đó, nêu tên screen/trang mà nó thuộc về, để bạn biết cần đi đâu thay vì thấy không có gì xảy ra.
 
@@ -511,7 +512,7 @@ Gắn `--check` vào CI để một PR đổi source mà quên chạy lại impo
 
 `flows.json`/`screens.json` (xem [Graph views](#19-graph-views)) không chỉ lớn lên nhờ soạn tay, code-import, hay auto-capture: graph view còn có sẵn một trình biên tập ngay trong trình duyệt để thêm, sửa, xóa node và transition trực tiếp trên sơ đồ, không cần chỉnh tay file JSON.
 
-**Bật nó.** Click **Edit mode** trên thanh điều khiển của graph view. Một thanh công cụ hiện ra (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**), và giờ click vào một node hoặc edge sẽ chọn nó để chỉnh sửa thay vì điều hướng hay click-to-highlight.
+**Bật nó.** Click **Edit mode** trên thanh điều khiển của graph view. Một thanh edit riêng mở ra bên dưới hàng điều khiển, gồm toolbar (**Add node**, **Add edge**, **Delete selected**, **Undo**, **Save**) kèm một dòng hướng dẫn và một dòng trạng thái cập nhật trực tiếp. Mỗi nút chỉ bật khi đủ điều kiện - **Add edge** đợi tới khi chọn hai node, **Delete selected** đợi khi chọn đúng một node hoặc edge, còn **Undo**/**Save** đợi khi bản nháp có thay đổi chưa lưu - nên nút bị làm mờ cho biết hành động đó còn thiếu gì. Giờ click vào một node hoặc edge sẽ chọn nó để chỉnh sửa thay vì điều hướng hay click-to-highlight.
 
 **Thêm node.** Click **Add node** rồi điền vào form bên cạnh: tên/nhãn theo từng ngôn ngữ (thêm một dòng cho mỗi locale), `urlGlob` (screens) hoặc `kind` (state của flows: initial/normal/terminal), và một `specId` liên kết tùy chọn chọn từ danh sách spec đã biết của project. **Create** thêm nó vào bản nháp. Ở dataset flows, một node thuộc về flow đang active - dùng các nút điều khiển flow (**New flow** / đổi tên / xóa) để tạo một flow trước nếu project chưa có flow nào.
 
