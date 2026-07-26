@@ -1018,10 +1018,19 @@ export default defineBackground(() => {
   // Approve one buffered transition (Phase B3). Runs under mutate() so it
   // serializes with every other storage/registry writer (single SW thread, no
   // seq guard, same discipline as writeLocalSpec/handleSaveTeamGuide).
-  function handleApproveCapturedTransition(
+  async function handleApproveCapturedTransition(
     project: string,
     transitionId: string,
   ): Promise<ApproveCapturedResult> {
+    // Cold MV3 worker: an Approve click can wake the SW and arrive before
+    // initWorker's fire-and-forget reestablish() has hydrated the registry from
+    // storage, leaving a sidecar project absent from registry.statuses() so
+    // buildApproveTarget wrongly reports "unknown project". Hydrate first, but
+    // ONLY when the registry is still empty (the cold-worker signal): reestablish
+    // reloads every sidecar and restarts its SSE watch, far too heavy to run on
+    // every approve (they come in bursts). A warm registry already has the
+    // connection, so the guard skips the churn on all subsequent approves.
+    if (registry.statuses().length === 0) await reestablish();
     return mutate(async () => {
       const target = buildApproveTarget(project);
       if (!target) return { ok: false, errors: ["unknown project"] };
