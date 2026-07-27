@@ -298,3 +298,166 @@ describe("wireEditMode -- toolbar button states track selection + dirty draft", 
     expect(btns.undo.disabled).toBe(false);
   });
 });
+
+describe("wireEditMode -- Delete key routing to deleteSelected", () => {
+  it("Delete key with one node selected -> runs deleteSelected via toolbar", async () => {
+    const { handle } = setup();
+    const draft = findNode(handle, "checkout:draft");
+    handle.handleNodeClick(draft);
+    expect(handle.getGraph("en").nodes.map((n) => n.id)).toContain("checkout:draft");
+
+    // Simulate Delete key press
+    const deleteKeyEvent = new KeyboardEvent("keydown", { key: "Delete" });
+    document.dispatchEvent(deleteKeyEvent);
+
+    // The node should be deleted (selection was a single node, key was Delete)
+    expect(handle.getGraph("en").nodes.map((n) => n.id)).not.toContain("checkout:draft");
+  });
+
+  it("Delete key with one edge selected -> runs deleteSelected", async () => {
+    const { handle } = setup();
+    const pay = findEdge(handle, "checkout:pay");
+    handle.handleEdgeClick(pay);
+    expect(handle.getGraph("en").edges.map((e) => e.id)).toContain("checkout:pay");
+
+    // Simulate Delete key press
+    const deleteKeyEvent = new KeyboardEvent("keydown", { key: "Delete" });
+    document.dispatchEvent(deleteKeyEvent);
+
+    // The edge should be deleted
+    expect(handle.getGraph("en").edges.map((e) => e.id)).not.toContain("checkout:pay");
+  });
+
+  it("Delete key when edit mode never enabled -> does not trigger deletion", () => {
+    // Create a setup that is NOT enabled (unlike the standard setup() which calls setEnabled(true))
+    const container = document.createElement("div");
+    const formContainer = document.createElement("div");
+    document.body.append(container, formContainer);
+    const project = baseProject();
+
+    const handle = wireEditMode(container, formContainer, {
+      currentProject: () => project,
+      currentDataset: () => "flows",
+      onChanged: () => {},
+      applySelection: () => {},
+      locale: () => "en",
+    });
+
+    // Verify edit mode is disabled
+    expect(handle.isEnabled()).toBe(false);
+
+    // Get the initial state (should be empty since mode is null)
+    const beforeGraph = handle.getGraph("en");
+
+    // Try to press Delete key
+    const deleteKeyEvent = new KeyboardEvent("keydown", { key: "Delete" });
+    document.dispatchEvent(deleteKeyEvent);
+
+    // Nothing should change (handler returns early when !enabled)
+    const afterGraph = handle.getGraph("en");
+    expect(afterGraph.nodes.length).toBe(beforeGraph.nodes.length);
+    expect(afterGraph.edges.length).toBe(beforeGraph.edges.length);
+  });
+
+  it("Delete key with no selection -> does not trigger deleteSelected", () => {
+    const { handle } = setup();
+    // No selection
+    expect(handle.getGraph("en").nodes.map((n) => n.id)).toContain("checkout:draft");
+
+    // Simulate Delete key press
+    const deleteKeyEvent = new KeyboardEvent("keydown", { key: "Delete" });
+    document.dispatchEvent(deleteKeyEvent);
+
+    // All nodes should still exist
+    expect(handle.getGraph("en").nodes.map((n) => n.id)).toContain("checkout:draft");
+  });
+
+  it("Delete key with 2+ nodes selected -> does not trigger deleteSelected", () => {
+    const { handle } = setup();
+    const draft = findNode(handle, "checkout:draft");
+    const paid = findNode(handle, "checkout:paid");
+
+    // Select two nodes
+    handle.handleNodeClick(draft);
+    handle.handleNodeClick(paid);
+
+    const graphBefore = handle.getGraph("en");
+    expect(graphBefore.nodes.map((n) => n.id)).toContain("checkout:draft");
+    expect(graphBefore.nodes.map((n) => n.id)).toContain("checkout:paid");
+
+    // Simulate Delete key press
+    const deleteKeyEvent = new KeyboardEvent("keydown", { key: "Delete" });
+    document.dispatchEvent(deleteKeyEvent);
+
+    // Both nodes should still exist (can't delete multiple)
+    const graphAfter = handle.getGraph("en");
+    expect(graphAfter.nodes.map((n) => n.id)).toContain("checkout:draft");
+    expect(graphAfter.nodes.map((n) => n.id)).toContain("checkout:paid");
+  });
+
+  it("Delete key when a text input is focused -> does not trigger deleteSelected", () => {
+    const { handle } = setup();
+    const draft = findNode(handle, "checkout:draft");
+    handle.handleNodeClick(draft);
+
+    // Create and focus a text input
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+
+    const graphBefore = handle.getGraph("en");
+    expect(graphBefore.nodes.map((n) => n.id)).toContain("checkout:draft");
+
+    // Simulate Delete key press on the focused input
+    const deleteKeyEvent = new KeyboardEvent("keydown", { key: "Delete", bubbles: true });
+    input.dispatchEvent(deleteKeyEvent);
+
+    // Node should still exist (Delete key was on a text input)
+    const graphAfter = handle.getGraph("en");
+    expect(graphAfter.nodes.map((n) => n.id)).toContain("checkout:draft");
+
+    document.body.removeChild(input);
+  });
+
+  it("Delete key with wrong key name -> does not trigger deleteSelected", () => {
+    const { handle } = setup();
+    const draft = findNode(handle, "checkout:draft");
+    handle.handleNodeClick(draft);
+
+    const graphBefore = handle.getGraph("en");
+    expect(graphBefore.nodes.map((n) => n.id)).toContain("checkout:draft");
+
+    // Simulate a different key press (e.g., Backspace)
+    const backspaceKeyEvent = new KeyboardEvent("keydown", { key: "Backspace" });
+    document.dispatchEvent(backspaceKeyEvent);
+
+    // Node should still exist (wrong key)
+    const graphAfter = handle.getGraph("en");
+    expect(graphAfter.nodes.map((n) => n.id)).toContain("checkout:draft");
+  });
+});
+
+// Regression: enabling edit mode on the flows dataset (with a flow present)
+// must reveal Rename/Delete flow straight away. setVisible reads
+// deps.activeFlow(), which was still null when it ran before the flow rebind,
+// so both stayed hidden until the next flow switch re-ran setVisible.
+// Buttons in `container` follow a fixed order: [addNode, addEdge,
+// deleteSelected, undo, save, newFlow, renameFlow, deleteFlow].
+describe("wireEditMode -- flow lifecycle buttons on enable", () => {
+  function flowButtons(container: HTMLElement) {
+    const buttons = [...container.querySelectorAll("button")] as HTMLButtonElement[];
+    return {
+      newFlow: must(buttons[5]),
+      renameFlow: must(buttons[6]),
+      deleteFlow: must(buttons[7]),
+    };
+  }
+
+  it("shows New/Rename/Delete flow immediately on enable when a flow is active", () => {
+    const { container } = setup(); // setEnabled(true) already ran, flows dataset
+    const { newFlow, renameFlow, deleteFlow } = flowButtons(container);
+    expect(newFlow.hidden).toBe(false);
+    expect(renameFlow.hidden).toBe(false);
+    expect(deleteFlow.hidden).toBe(false);
+  });
+});

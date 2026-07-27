@@ -1,5 +1,6 @@
 import { resolveLocalized } from "@specpin/spec-schema";
 import { t } from "../i18n/index.js";
+import { anyDialogOpen } from "../shared/dialog.js";
 import type { ProjectFlowsScreens } from "../shared/messaging.js";
 import type { Graph, GraphEdge, GraphNode } from "./config-to-graph.js";
 import { ownerFlowId } from "./config-to-graph.js";
@@ -54,6 +55,9 @@ export interface EditWiringDeps {
    *  node/edge) while the current flow's draft has unsaved edits -- confirm
    *  save/discard before re-scoping. Omitted = always proceed. */
   confirmLeaveActiveFlow?(): boolean | Promise<boolean>;
+  /** Ask before deleting the selected node/edge (both the Delete-selected
+   *  button and the Delete key route through here). Omitted = no confirm. */
+  confirmDelete?(target: "node" | "edge"): boolean | Promise<boolean>;
 }
 
 export interface EditWiringHandle {
@@ -109,6 +113,13 @@ export function wireEditMode(
     save: () => void save(),
   });
 
+  /** Exactly one node, or one edge, is selected -- the deletable shape shared
+   *  by the Delete-selected button (updateButtons) and the Delete key, so the
+   *  two can never disagree about what's removable. */
+  function canDeleteSelection(): boolean {
+    return selectedEdgeId !== null || selectedNodeIds.length === 1;
+  }
+
   /** Recompute which toolbar buttons are actionable for the current selection
    *  and draft state, so a disabled button visibly signals what each action
    *  needs (Add edge -> two nodes, Delete -> one node/edge, Undo/Save -> an
@@ -118,7 +129,7 @@ export function wireEditMode(
     setButtonStates({
       addNode: mode !== null,
       addEdge: mode !== null && selectedNodeIds.length === 2,
-      deleteSelected: mode !== null && (selectedEdgeId !== null || selectedNodeIds.length === 1),
+      deleteSelected: mode !== null && canDeleteSelection(),
       undo: mode !== null && dirty,
       save: mode !== null && dirty,
     });
@@ -255,13 +266,19 @@ export function wireEditMode(
     }
     connectionId = project.connectionId;
     kind = deps.currentDataset();
-    flowControls.setVisible(kind === "flows");
     if (kind === "screens") {
+      flowControls.setVisible(false);
       mode = createScreensEditMode(project.screens, { hasShotReference: deps.hasShotReference });
       updateButtons();
       return;
     }
+    // Bind the active flow BEFORE showing the flow controls: setVisible reads
+    // deps.activeFlow() to decide whether Rename/Delete flow show, so calling it
+    // first (activeFlowId still null) left both hidden until the next flow
+    // switch re-ran setVisible post-rebind. Every other caller already orders
+    // it rebind-then-setVisible.
     rebindFlowsMode([project], project.flows.flows[0]?.id ?? null);
+    flowControls.setVisible(true);
     if (!mode) setStatus(t("graph.edit.noFlow"));
     updateButtons();
   }
@@ -407,11 +424,12 @@ export function wireEditMode(
       t,
       currentProject: deps.currentProject,
       confirmOrphanShots: deps.confirmOrphanShots,
+      confirmDelete: deps.confirmDelete,
     };
   }
 
   function deleteSelected(): void {
-    runDeleteSelected(toolbarActionDeps());
+    void runDeleteSelected(toolbarActionDeps());
   }
 
   function save(): Promise<boolean> {
@@ -433,6 +451,30 @@ export function wireEditMode(
     setStatus(t("graph.edit.undone"));
     deps.onChanged(null);
   }
+
+  /** True when the keydown target is a text-entry surface, so Delete keeps its
+   *  normal meaning while the reader is typing in the side form (or a dialog),
+   *  instead of removing the selected node/edge behind them. */
+  function isTextEntry(el: EventTarget | null): boolean {
+    if (!(el instanceof HTMLElement)) return false;
+    return (
+      el.isContentEditable ||
+      el.tagName === "INPUT" ||
+      el.tagName === "TEXTAREA" ||
+      el.tagName === "SELECT"
+    );
+  }
+
+  // Delete key == the Delete-selected button (confirm, then delete). Scoped to
+  // edit mode with a deletable selection; skipped while a dialog is up
+  // (anyDialogOpen -- its own capture-phase keys own the event) or while typing
+  // in a field, so it never hijacks text editing.
+  document.addEventListener("keydown", (e) => {
+    if (!enabled || e.key !== "Delete" || anyDialogOpen() || isTextEntry(e.target)) return;
+    if (!canDeleteSelection()) return;
+    e.preventDefault();
+    deleteSelected();
+  });
 
   return {
     isEnabled: () => enabled,

@@ -27,6 +27,7 @@ import { mountGraphViewToolbar } from "../../graph/graph-view-toolbar.js";
 import { attachPanZoom, type PanZoomController } from "../../graph/pan-zoom.js";
 import { hydrateI18n, initI18n, resolveUiLocale, t } from "../../i18n/index.js";
 import { getLocale, getUiLocale } from "../../shared/config.js";
+import { confirmDialog } from "../../shared/dialog.js";
 import { createIconButton } from "../../shared/icons.js";
 import type { FlowsScreensResult, ProjectFlowsScreens } from "../../shared/messaging.js";
 import { sendToBackground } from "../../shared/messaging.js";
@@ -90,6 +91,25 @@ function applyFilter(): void {
       selectedNodeIds,
     );
   }
+  applyActiveArrows();
+}
+
+// Animate the arrows touching the "active" node(s) so it reads at a glance
+// which node is picked and where it connects. One source of truth: the edit
+// selection while editing, else the view-mode focus node. Re-derived from
+// scratch on every filter/selection change so the animation never goes stale.
+function applyActiveArrows(): void {
+  if (view !== "graph" || !svgView) return;
+  const nodes = editWiring?.isEnabled()
+    ? selectedNodeIds
+    : filterState.focusNodeId
+      ? new Set([filterState.focusNodeId])
+      : new Set<string>();
+  const edgeIds = new Set<string>();
+  if (nodes.size > 0) {
+    for (const e of graph.edges) if (nodes.has(e.from) || nodes.has(e.to)) edgeIds.add(e.id);
+  }
+  svgView.setActiveArrows(edgeIds);
 }
 
 async function handleNodeClick(node: GraphNode): Promise<void> {
@@ -320,6 +340,7 @@ async function init(): Promise<void> {
       selectedNodeIds = nodeIds;
       svgView?.setSelected(nodeIds, edgeIds);
       tableView?.setSelected(nodeIds);
+      applyActiveArrows();
     },
     onChanged: applyRefreshedProjects,
     locale: () => contentLocale,
@@ -328,6 +349,16 @@ async function init(): Promise<void> {
     // leaving edit mode -- an unsaved draft is per-flow, so re-scoping to
     // another flow would drop it otherwise.
     confirmLeaveActiveFlow: confirmLeaveIfDirty,
+    // Delete-selected (button + Delete key) confirms first; deleting a node
+    // cascades to its connected edges, so its message says so.
+    confirmDelete: (target) =>
+      confirmDialog({
+        message: t(
+          target === "edge" ? "graph.edit.confirmDeleteEdge" : "graph.edit.confirmDeleteNode",
+        ),
+        okLabel: t("graph.edit.deleteConfirmOk"),
+        danger: true,
+      }),
   });
 
   const result = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });

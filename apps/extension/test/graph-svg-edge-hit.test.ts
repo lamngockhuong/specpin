@@ -62,3 +62,27 @@ describe("renderGraphSvg -- edge hit area", () => {
     expect(handlers.onBackgroundClick).not.toHaveBeenCalled();
   });
 });
+
+describe("renderGraphSvg -- active arrows animation", () => {
+  it("setActiveArrows adds arrow-active class to edges in the set", () => {
+    const { view } = render();
+    const edgeGElement = view.svg.querySelector('[data-edge-id="e1"]') as SVGGElement;
+    expect(edgeGElement).not.toBeNull();
+
+    view.setActiveArrows(new Set(["e1"]));
+    expect(edgeGElement.classList.contains("arrow-active")).toBe(true);
+  });
+
+  it("setActiveArrows removes arrow-active class from edges not in the set", () => {
+    const { view } = render();
+    const edgeGElement = view.svg.querySelector('[data-edge-id="e1"]') as SVGGElement;
+
+    // First activate it
+    view.setActiveArrows(new Set(["e1"]));
+    expect(edgeGElement.classList.contains("arrow-active")).toBe(true);
+
+    // Then pass an empty set to deactivate
+    view.setActiveArrows(new Set());
+    expect(edgeGElement.classList.contains("arrow-active")).toBe(false);
+  });
+});

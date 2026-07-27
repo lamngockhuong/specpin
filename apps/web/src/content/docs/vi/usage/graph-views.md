@@ -127,7 +127,7 @@ Graph view không chỉ là một sơ đồ để xem - hãy bật **Edit mode**
 
 **Thêm edge.** Click hai node theo đúng thứ tự (from rồi to) để chọn chúng, sau đó **Add edge** để mở form nhập nhãn trigger cùng guard/role/spec liên kết tùy chọn.
 
-**Xóa.** Chọn đúng một node hoặc edge, rồi **Delete selected**. Ở dataset status-flow, một node còn bị một edge imported tham chiếu sẽ từ chối xóa - hãy xử lý điều đó qua code-import trước (một edge thêm tay sẽ tự động xóa theo cùng node). Ở dataset Screens, xóa một edge auto-captured, hoặc một screen mà nó trỏ tới, đều được cho phép trực tiếp - edge sẽ chuyển sang manual khi Save thay vì bị chặn xóa. Xóa một screen mà một spec sheet của specshot vẫn tham chiếu vẫn được cho phép ở đây bất kể; việc kiểm tra điều đó diễn ra lúc Save (bên dưới).
+**Xóa.** Chọn đúng một node hoặc edge, rồi **Delete selected** - hoặc bấm phím **Delete**, tác dụng y hệt (phím này bị bỏ qua khi bạn đang gõ trong một trường của form hoặc khi có dialog đang mở). Cả hai cách đều mở một dialog xác nhận trước; xác nhận xóa một node sẽ xóa luôn mọi edge nối với nó, và dialog có ghi rõ điều này. Ở dataset status-flow, một node còn bị một edge imported tham chiếu sẽ từ chối xóa - hãy xử lý điều đó qua code-import trước (một edge thêm tay sẽ tự động xóa theo cùng node). Ở dataset Screens, xóa một edge auto-captured, hoặc một screen mà nó trỏ tới, đều được cho phép trực tiếp - edge sẽ chuyển sang manual khi Save thay vì bị chặn xóa. Xóa một screen mà một spec sheet của specshot vẫn tham chiếu vẫn được cho phép ở đây bất kể; việc kiểm tra điều đó diễn ra lúc Save (bên dưới).
 
 **Undo.** **Undo** hoàn tác đúng một thay đổi gần nhất - một bước, không phải cả lịch sử. Dùng nó ngay sau một sai sót, trước khi thực hiện chỉnh sửa khác.
 

@@ -655,6 +655,9 @@ const vi: Record<keyof Messages, string> = {
   "graph.edit.flowPicker": "Flow cần sửa",
   "graph.edit.switchedFlow": "Đang sửa flow {label}.",
   "graph.edit.confirmDeleteFlow": "Xóa flow này? Không thể hoàn tác.",
+  "graph.edit.confirmDeleteNode": "Xóa node đang chọn? Các mũi tên nối với node cũng sẽ bị xóa.",
+  "graph.edit.confirmDeleteEdge": "Xóa mũi tên đang chọn?",
+  "graph.edit.deleteConfirmOk": "Xóa",
   "graph.edit.rename": "Đổi tên",
 
   // C3: cảnh báo dữ liệu chưa lưu, undo, và xác nhận khi Save có thể làm mồ côi shot.

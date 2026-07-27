@@ -25,6 +25,9 @@ export interface GraphSvgView {
   setHidden(nodeIds: ReadonlySet<string>, edgeIds: ReadonlySet<string>): void;
   /** Track C (C1) edit-mode selection; only ever applied while editing. */
   setSelected(nodeIds: ReadonlySet<string>, edgeIds: ReadonlySet<string>): void;
+  /** Marching-ants emphasis on the arrows touching the active/selected node(s),
+   *  so it reads at a glance which node is picked and where it connects. */
+  setActiveArrows(edgeIds: ReadonlySet<string>): void;
 }
 
 /** Deterministic hue from a category label: the same category always paints
@@ -224,5 +227,9 @@ export function renderGraphSvg(
     setHighlighted: (nodeIds) => toggleClass("highlighted", nodeIds),
     setHidden: (nodeIds, edgeIds) => toggleClass("hidden", nodeIds, edgeIds),
     setSelected: (nodeIds, edgeIds) => toggleClass("selected", nodeIds, edgeIds),
+    setActiveArrows: (edgeIds) =>
+      eachLayerChild(edgeLayer, "edgeId", (el, id) =>
+        el.classList.toggle("arrow-active", edgeIds.has(id)),
+      ),
   };
 }
