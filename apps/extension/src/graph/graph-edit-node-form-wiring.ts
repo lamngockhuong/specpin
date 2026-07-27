@@ -50,7 +50,10 @@ export function updateFormForSelection(
       deps.form.hide();
       return;
     }
-    const editable = (raw.source ?? "manual") === "manual";
+    // On the screens dataset an auto-captured edge is editable: editing it
+    // auto-adopts it to manual (graph-edit-mode.ts's updateEdge). Only flows
+    // imported transitions stay read-only (no take-ownership path there).
+    const editable = (raw.source ?? "manual") === "manual" || deps.getKind() === "screens";
     deps.form.showEditTransition(
       {
         trigger: raw.trigger,

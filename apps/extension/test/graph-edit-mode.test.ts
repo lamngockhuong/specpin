@@ -68,18 +68,22 @@ describe("createScreensEditMode", () => {
     expect(mode.snapshot().transitions.find((t) => t.id === "man-1")).toBeUndefined();
   });
 
-  it("refuses to delete a non-manual edge", () => {
+  it("deletes an auto-captured edge, adopting it so Save drops the stale copy", () => {
     const mode = createScreensEditMode(baseScreensConfig());
     const result = mode.deleteEdge("cap-1");
-    expect(result.ok).toBe(false);
-    expect(mode.snapshot().transitions).toHaveLength(1);
+    expect(result.ok).toBe(true);
+    expect(mode.snapshot().transitions.find((t) => t.id === "cap-1")).toBeUndefined();
+    expect(mode.snapshot().adopted).toContain("cap-1");
   });
 
-  it("refuses to delete a node still referenced by a non-manual edge", () => {
+  it("deletes a node blocked only by an auto-captured edge, adopting that edge", () => {
     const mode = createScreensEditMode(baseScreensConfig());
     const result = mode.deleteNode("checkout");
-    expect(result.ok).toBe(false);
-    expect(mode.snapshot().screens.map((s) => s.id)).toContain("checkout");
+    expect(result.ok).toBe(true);
+    expect(mode.snapshot().screens.map((s) => s.id)).not.toContain("checkout");
+    // cap-1 (home -> checkout) cascaded away, adopted so Save won't resurrect it.
+    expect(mode.snapshot().transitions.find((t) => t.id === "cap-1")).toBeUndefined();
+    expect(mode.snapshot().adopted).toContain("cap-1");
   });
 
   it("deletes a node with no non-manual edges, cascading its manual edges", () => {
@@ -136,13 +140,25 @@ describe("createScreensEditMode", () => {
     expect(edge?.guard).toBe("amount > 0");
   });
 
-  it("updateEdge refuses a non-manual (imported/auto-captured) transition", () => {
+  it("updateEdge adopts an auto-captured transition to manual, then applies the edit", () => {
     const mode = createScreensEditMode(baseScreensConfig());
     const result = mode.updateEdge("cap-1", { trigger: { en: "Renamed" } });
-    expect(result.ok).toBe(false);
-    expect(mode.snapshot().transitions.find((t) => t.id === "cap-1")?.trigger).toEqual({
-      en: "nav",
-    });
+    expect(result.ok).toBe(true);
+    const edge = mode.snapshot().transitions.find((t) => t.id === "cap-1");
+    expect(edge?.trigger).toEqual({ en: "Renamed" });
+    expect(edge?.source).toBe("manual");
+    expect(mode.snapshot().adopted).toContain("cap-1");
+  });
+
+  it("undo reverts an adoption, restoring the auto-captured source and the adopted set", () => {
+    const mode = createScreensEditMode(baseScreensConfig());
+    mode.updateEdge("cap-1", { trigger: { en: "Renamed" } });
+    expect(mode.snapshot().adopted).toContain("cap-1");
+    expect(mode.undoLast().ok).toBe(true);
+    const edge = mode.snapshot().transitions.find((t) => t.id === "cap-1");
+    expect(edge?.source).toBe("auto-captured");
+    expect(edge?.trigger).toEqual({ en: "nav" });
+    expect(mode.snapshot().adopted).not.toContain("cap-1");
   });
 });
 

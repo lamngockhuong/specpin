@@ -82,3 +82,43 @@ describe("wireProjectPicker persistence", () => {
     expect(picker.populate(projects)).toEqual({ projectIdx: 0, dataset: "flows" });
   });
 });
+
+// Regression: emptying screens.json (while flows.json still had entries) used to
+// hide the dataset <select> and force-pick Flows, permanently locking the user
+// out of the Screens dataset -- and thus out of ghost-edge approve, which is
+// screens-only. The toggle must stay reachable whenever a project is selected.
+describe("wireProjectPicker -- empty-dataset lockout", () => {
+  function withScreens(
+    connectionId: string,
+    screens: ProjectFlowsScreens["screens"]["screens"],
+  ): ProjectFlowsScreens {
+    return { ...project(connectionId), screens: { version: "1.0", screens, transitions: [] } };
+  }
+
+  it("keeps the dataset toggle visible when screens is empty but flows has entries", () => {
+    const { datasetSelect, picker } = mountPicker();
+    const choice = picker.populate([withScreens("conn-a", [])]);
+    // Defaults to the non-empty dataset (flows) for convenience...
+    expect(choice).toEqual({ projectIdx: 0, dataset: "flows" });
+    // ...but the toggle must NOT be hidden -- else Screens is unreachable.
+    expect(datasetSelect.hidden).toBe(false);
+  });
+
+  it("lets the user switch back to the emptied Screens dataset", async () => {
+    const changes: Dataset[] = [];
+    const projectSelect = document.createElement("select");
+    const datasetSelect = document.createElement("select");
+    for (const v of ["flows", "screens"] as Dataset[]) {
+      const opt = document.createElement("option");
+      opt.value = v;
+      datasetSelect.appendChild(opt);
+    }
+    document.body.append(projectSelect, datasetSelect);
+    const picker = wireProjectPicker(projectSelect, datasetSelect, (c) => changes.push(c.dataset));
+    picker.populate([withScreens("conn-a", [])]);
+    datasetSelect.value = "screens";
+    datasetSelect.dispatchEvent(new Event("change"));
+    await flush();
+    expect(changes).toContain("screens");
+  });
+});

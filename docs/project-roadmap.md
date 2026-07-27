@@ -82,6 +82,11 @@ Independent review findings:
 
 Goal: robustness, flexibility, polish. No timeline committed.
 
+**Graph editor UX fixes shipped (2026-07-27)** on branch `main`:
+- The graph panel's Flows/Screens dataset toggle no longer requires both datasets to have content - it now shows whenever a project is selected, defaulting to whichever dataset is non-empty. This unblocks two previously-locked paths: reaching the (empty) Flows dataset to create a project's first status flow via **New flow** (a project with screens but no flows couldn't reach the Flows dataset before), and reaching the Screens dataset - and its auto-capture ghost-edge Approve flow - after emptying all screens.
+- Auto-captured navigations become directly editable: the Screens-dataset editor no longer renders an auto-captured edge read-only. Editing its fields, deleting it, or deleting a screen it points at now auto-reclassifies it to `"source": "manual"` on Save (no separate action or confirmation step), so re-running auto-capture no longer overwrites or re-adds it - the change is reviewable through the normal `.specs/` git diff like any other manual edit. Imported transitions (flows dataset only) stay read-only, unchanged.
+- See `docs/run-guide.md` "Graph views" and "Editing flows/screens in the browser".
+
 **Plugin marketplace shipped (2026-07-26)** on branch `main`:
 - The repo now doubles as a Claude Code plugin marketplace (`.claude-plugin/marketplace.json`) shipping one plugin, `specpin`, with two skills: `specpin:specpin` (the canonical authoring skill, generated from `apps/cli/skill/`) and `specpin:number-ui-image` (numbers the components of a UI screenshot and emits the `{itemNo, position}` bbox JSON the specshot editor consumes). Install is `/plugin marketplace add lamngockhuong/specpin` then `/plugin install specpin@lamngockhuong` - replacing the previous "fetch SKILL.md and hand it to the agent" instruction. The npm/unpkg channel is unchanged; this adds a channel rather than replacing one.
 - `sync-skill.mjs` grew from one destination to a labelled list, so the one canonical skill source now feeds both the npm tarball copy and the plugin copy, and the existing CI drift gate (`--check`, unchanged command and cwd) fails naming whichever target drifted. This closes the third-copy-rots risk that the embedded-schema gate already covers on the Go side.

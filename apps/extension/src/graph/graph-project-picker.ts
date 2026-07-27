@@ -11,14 +11,15 @@ export interface DatasetChoice {
   dataset: Dataset;
 }
 
-/** Show the dataset select only when a project actually has BOTH flows and
- *  screens configured (nothing to toggle otherwise); default to whichever one
- *  is non-empty. Returns the resolved default so the caller can build the
- *  initial graph without a redundant round trip through the change handler. */
+/** Keep the dataset select reachable whenever a project is selected, defaulting
+ *  to a non-empty dataset (both-empty falls back to Screens). Always showing the
+ *  toggle is deliberate: hiding it once one dataset went empty used to strand the
+ *  user on the other -- e.g. an emptied screens.json locked them out of Screens
+ *  and thus screens-only ghost-edge approve. Returns the resolved default so the
+ *  caller can build the initial graph without a round trip through onChange. */
 function resolveDataset(datasetSelect: HTMLSelectElement, project: ProjectFlowsScreens): Dataset {
   const hasFlows = project.flows.flows.length > 0;
-  const hasScreens = project.screens.screens.length > 0;
-  datasetSelect.hidden = !(hasFlows && hasScreens);
+  datasetSelect.hidden = false;
   const dataset: Dataset = hasFlows ? "flows" : "screens";
   datasetSelect.value = dataset;
   return dataset;

@@ -69,7 +69,7 @@ Tạo `.specs/screens.json` để mô tả điều hướng của ứng dụng:
 
 ## Mở graph view
 
-Click **Open graph view** trong menu **⋯ More actions** ở header của popup hoặc side panel. Nó mở trong một tab trình duyệt mới. Nếu một project đã kết nối có cả đồ thị status-flow lẫn screen-transition, một bộ chọn dataset xuất hiện phía trên canvas để bạn chuyển qua lại; nếu một trang được nhiều project phục vụ, một bộ chọn project cũng xuất hiện. Lựa chọn project/dataset của bạn được ghi nhớ qua mỗi lần tải lại (và khi mở lại tab graph), nên F5 sẽ đưa bạn về đúng khung nhìn cũ thay vì reset về project đầu tiên.
+Click **Open graph view** trong menu **⋯ More actions** ở header của popup hoặc side panel. Nó mở trong một tab trình duyệt mới. Nếu một trang được nhiều project phục vụ, một bộ chọn project xuất hiện phía trên canvas; bộ chọn dataset status-flow / Screens luôn hiển thị ngay khi đã chọn project, bất kể cả hai dataset đã có dữ liệu hay chưa - nên một dataset trống vẫn tới được (ví dụ dataset Screens để duyệt auto-capture, hoặc dataset status-flow để soạn flow đầu tiên của bạn). Nó mặc định chọn dataset nào không rỗng cho tiện. Lựa chọn project/dataset của bạn được ghi nhớ qua mỗi lần tải lại (và khi mở lại tab graph), nên F5 sẽ đưa bạn về đúng khung nhìn cũ thay vì reset về project đầu tiên.
 
 ## Duyệt graph
 
@@ -121,13 +121,13 @@ Graph view không chỉ là một sơ đồ để xem - hãy bật **Edit mode**
 
 **Thêm node.** Click **Add node** rồi điền vào form bên cạnh: tên/nhãn theo từng ngôn ngữ (thêm một dòng cho mỗi locale), `urlGlob` (screens) hoặc `kind` (state của flows: initial/normal/terminal), và một spec liên kết tùy chọn chọn từ danh sách spec đã biết của project. **Create** thêm nó vào bản nháp. Ở dataset status-flow, một node mới thuộc về flow đang active - dùng các nút điều khiển flow để tạo một flow trước nếu project chưa có flow nào.
 
-**Sửa một node hoặc edge.** Click vào một cái đã có để mở đúng form đó, đã điền sẵn dữ liệu. Mọi thay đổi hợp lệ áp dụng vào bản nháp trong bộ nhớ ngay lập tức; **Save** vẫn là bước lưu bản nháp xuống `.specs/`. Một transition đến từ code-import hay auto-capture hiện ở đây dạng chỉ đọc - hãy đổi nó qua đúng luồng riêng của nó (chạy lại import, hoặc Duyệt/Bỏ qua ghost edge).
+**Sửa một node hoặc edge.** Click vào một cái đã có để mở đúng form đó, đã điền sẵn dữ liệu. Mọi thay đổi hợp lệ áp dụng vào bản nháp trong bộ nhớ ngay lập tức; **Save** vẫn là bước lưu bản nháp xuống `.specs/`. Một transition đến từ code-import (chỉ ở dataset status-flow) hiện ở đây dạng chỉ đọc - hãy đổi nó bằng cách chạy lại import thay vào đó. Một edge điều hướng auto-captured (dataset Screens) thì sửa được trực tiếp: sửa bất kỳ trường nào của nó sẽ chuyển nó sang manual khi Save, nên sau đó auto-capture không còn quản lý nó nữa.
 
 **Sửa nhiều flow cùng lúc (chỉ status-flow).** Một `flows.json` có thể chứa nhiều flow độc lập, cùng vẽ trên một canvas, nhưng tại một thời điểm chỉ có một flow đang *active* để sửa - các flow còn lại hiện ở dạng chỉ đọc. Khi có từ hai flow trở lên, một **bộ chọn flow** xuất hiện trong thanh edit: chọn flow cần sửa từ đó, hoặc chỉ cần click vào node hay edge của một flow khác thì việc sửa tự chuyển sang flow đó. Nếu flow hiện tại còn thay đổi chưa lưu, việc chuyển sẽ hỏi bạn lưu hay bỏ trước.
 
 **Thêm edge.** Click hai node theo đúng thứ tự (from rồi to) để chọn chúng, sau đó **Add edge** để mở form nhập nhãn trigger cùng guard/role/spec liên kết tùy chọn.
 
-**Xóa.** Chọn đúng một node hoặc edge, rồi **Delete selected**. Một node còn bị một edge imported/auto-captured tham chiếu sẽ từ chối xóa - hãy xử lý edge đó trước (một edge thêm tay sẽ tự động xóa theo cùng node). Xóa một screen mà một spec sheet của specshot vẫn tham chiếu vẫn được cho phép ở đây; việc kiểm tra điều đó diễn ra lúc Save (bên dưới).
+**Xóa.** Chọn đúng một node hoặc edge, rồi **Delete selected**. Ở dataset status-flow, một node còn bị một edge imported tham chiếu sẽ từ chối xóa - hãy xử lý điều đó qua code-import trước (một edge thêm tay sẽ tự động xóa theo cùng node). Ở dataset Screens, xóa một edge auto-captured, hoặc một screen mà nó trỏ tới, đều được cho phép trực tiếp - edge sẽ chuyển sang manual khi Save thay vì bị chặn xóa. Xóa một screen mà một spec sheet của specshot vẫn tham chiếu vẫn được cho phép ở đây bất kể; việc kiểm tra điều đó diễn ra lúc Save (bên dưới).
 
 **Undo.** **Undo** hoàn tác đúng một thay đổi gần nhất - một bước, không phải cả lịch sử. Dùng nó ngay sau một sai sót, trước khi thực hiện chỉnh sửa khác.
 

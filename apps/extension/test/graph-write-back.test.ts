@@ -221,6 +221,69 @@ describe("mergeScreensDraft (Track C's editor Save, delete-aware)", () => {
     expect(result.config?.screens.map((s) => s.id).sort()).toEqual(["checkout", "home"]);
     expect(result.config?.transitions.find((t) => t.id === "cap-1")).toBeDefined();
   });
+
+  it("adopts an edited auto-captured edge to manual (take-over, no duplicate)", () => {
+    const config: ScreensConfig = {
+      version: "1.0",
+      screens: [
+        { id: "home", name: { en: "Home" }, urlGlob: "/" },
+        { id: "checkout", name: { en: "Checkout" }, urlGlob: "/checkout" },
+      ],
+      transitions: [
+        {
+          id: "cap-1",
+          from: "home",
+          to: "checkout",
+          trigger: { en: "nav" },
+          source: "auto-captured",
+        },
+      ],
+    };
+    // Editor took over cap-1: draft carries it as manual (renamed), adopted lists it.
+    const result = mergeScreensDraft({
+      config,
+      screens: config.screens,
+      transitions: [
+        { id: "cap-1", from: "home", to: "checkout", trigger: { en: "Renamed" }, source: "manual" },
+      ],
+      adopted: ["cap-1"],
+      source: "manual",
+    });
+    expect(result.ok).toBe(true);
+    const cap = result.config?.transitions.filter((t) => t.id === "cap-1");
+    expect(cap).toHaveLength(1); // taken over, not duplicated
+    expect(cap?.[0]?.source).toBe("manual");
+    expect(cap?.[0]?.trigger).toEqual({ en: "Renamed" });
+  });
+
+  it("adopts a deleted auto-captured edge so it is not resurrected from the live config", () => {
+    const config: ScreensConfig = {
+      version: "1.0",
+      screens: [
+        { id: "home", name: { en: "Home" }, urlGlob: "/" },
+        { id: "checkout", name: { en: "Checkout" }, urlGlob: "/checkout" },
+      ],
+      transitions: [
+        {
+          id: "cap-1",
+          from: "home",
+          to: "checkout",
+          trigger: { en: "nav" },
+          source: "auto-captured",
+        },
+      ],
+    };
+    // Draft deleted cap-1 (absent) and adopted it -> the stale copy must not survive.
+    const result = mergeScreensDraft({
+      config,
+      screens: config.screens,
+      transitions: [],
+      adopted: ["cap-1"],
+      source: "manual",
+    });
+    expect(result.ok).toBe(true);
+    expect(result.config?.transitions.find((t) => t.id === "cap-1")).toBeUndefined();
+  });
 });
 
 function baseFlowsConfig(): FlowsConfig {
