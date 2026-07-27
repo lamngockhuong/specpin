@@ -18,7 +18,7 @@
 > only maintained home for this code (`packages/specshot-core`, `packages/specshot-react`,
 > `packages/specshot-app`). Its unique records were salvaged here; the folder itself is pending
 > deletion. The shared MarkDoc contract lives at `docs/mark-doc-schema.md`.
-> Tiếng Việt: mirror to `vi/specshot-integration.md` when convenient (English is source of truth).
+> Tiếng Việt: mirrored at `vi/specshot-integration.md` (English is source of truth).
 
 ## Goal
 
