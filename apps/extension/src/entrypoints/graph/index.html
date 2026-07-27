@@ -219,6 +219,12 @@
       }
       .graph-table tbody tr { cursor: pointer; }
       .graph-table tbody tr:hover { background: var(--sp-control); }
+      /* Track C (C1): edit-mode row selection -- the table twin of
+         .graph-node.selected, so armed rows read as selected, not just hovered.
+         Overrides :hover so a selected row stays lit while the pointer moves. */
+      .graph-table tbody tr.selected,
+      .graph-table tbody tr.selected:hover { background: var(--sp-accent); }
+      .graph-table tbody tr.selected td { color: var(--sp-accent-on); }
       .graph-table-spec { color: var(--sp-text-2); font-family: var(--sp-font-mono); font-size: 11px; }
       .graph-table-empty, .graph-empty { padding: 24px; color: var(--sp-text-2); }
       #hint {

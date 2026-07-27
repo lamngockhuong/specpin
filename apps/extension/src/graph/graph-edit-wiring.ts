@@ -137,9 +137,15 @@ export function wireEditMode(
     activeFlowId: () => activeFlowId,
     locale: deps.locale,
     onFlowsChanged: (refreshedProjects, flowId) => {
+      // Order matters. rebind FIRST so deps.onChanged's re-render (main.ts's
+      // refreshAll -> getGraph) draws the newly-active flow; then onChanged,
+      // which is what pushes `refreshedProjects` into main.ts's shared list;
+      // then setVisible LAST, so the flow picker rebuilds from that fresh list.
+      // Rendering the picker before onChanged read a stale project (the new
+      // flow persisted but never appeared -- re-adding it hit "already exists").
       rebindFlowsMode(refreshedProjects, flowId);
-      flowControls.setVisible(kind === "flows");
       deps.onChanged(refreshedProjects);
+      flowControls.setVisible(kind === "flows");
     },
     onSelectFlow: (flowId) => void switchActiveFlow(flowId),
   });
@@ -149,6 +155,10 @@ export function wireEditMode(
     selectedEdgeId = null;
     setStatus("");
     form.hide();
+    // Clear the selection styling in whichever view is showing (SVG + table),
+    // so a background click / flow switch / disable actually de-highlights the
+    // previously-armed nodes rather than leaving them stuck selected.
+    applySelection();
     updateButtons();
   }
 

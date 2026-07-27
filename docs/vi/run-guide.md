@@ -523,7 +523,7 @@ Gắn `--check` vào CI để một PR đổi source mà quên chạy lại impo
 
 **Sửa nhiều flow cùng lúc (chỉ status-flow).** Một `flows.json` có thể chứa nhiều flow độc lập, cùng vẽ trên một canvas, nhưng tại một thời điểm chỉ có một flow đang *active* để sửa - các flow còn lại hiện ở dạng chỉ đọc. Khi có từ hai flow trở lên, một **bộ chọn flow** xuất hiện trong thanh edit: chọn flow cần sửa từ đó, hoặc chỉ cần click vào node hay edge của một flow khác thì việc sửa tự chuyển sang flow đó. Nếu flow hiện tại còn thay đổi chưa lưu, việc chuyển sẽ hỏi bạn lưu hay bỏ trước.
 
-**Thêm edge.** Click hai node theo đúng thứ tự (from rồi to) để chọn chúng, sau đó **Add edge** để mở form nhập nhãn trigger cùng guard/role/`specId` tùy chọn.
+**Thêm edge.** Click hai node theo đúng thứ tự (from rồi to) để chọn chúng, sau đó **Add edge** để mở form nhập nhãn trigger cùng guard/role/`specId` tùy chọn. Các node đang chọn được làm nổi bật ở cả sơ đồ lẫn dạng bảng, nên bạn luôn thấy rõ hai node nào đang được chọn.
 
 **Xóa.** Chọn đúng một node hoặc edge, rồi **Delete selected**. Ở dataset flows, một node còn bị một edge imported tham chiếu sẽ từ chối xóa - hãy xử lý điều đó qua code-import trước (edge manual sẽ tự động xóa theo cùng node). Ở dataset Screens, xóa một edge auto-captured, hoặc xóa một screen mà edge đó trỏ tới, đều được cho phép trực tiếp - edge sẽ chuyển sang `"source": "manual"` khi Save thay vì bị chặn xóa. Xóa một screen mà một spec sheet của specshot (`.specs/shots/<screenId>.shot.json`) vẫn tham chiếu vẫn được cho phép ở đây bất kể; việc kiểm tra điều đó diễn ra lúc Save (bên dưới).
 

@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Graph } from "../src/graph/config-to-graph.js";
-import { computeGraphVisibility, deriveCategories } from "../src/graph/graph-controls.js";
+import {
+  computeGraphVisibility,
+  deriveCategories,
+  mountGraphControls,
+} from "../src/graph/graph-controls.js";
+import { must } from "./test-utils.js";
 
 const graph: Graph = {
   nodes: [
@@ -75,5 +80,41 @@ describe("computeGraphVisibility", () => {
     const vis = computeGraphVisibility(graph, { category: "all", query: "", focusNodeId: null });
     expect(vis.dimmedNodeIds.size).toBe(0);
     expect(vis.dimmedEdgeIds.size).toBe(0);
+  });
+});
+
+describe("mountGraphControls edit toggle", () => {
+  function mount() {
+    const container = document.createElement("div");
+    const onEditModeChange = vi.fn();
+    const handle = mountGraphControls(container, graph, {
+      onFilterChange: () => {},
+      onViewChange: () => {},
+      onEditModeChange,
+    });
+    const editBtn = must(container.querySelector<HTMLButtonElement>(".graph-edit-toggle"));
+    return { handle, editBtn, onEditModeChange };
+  }
+
+  it("setEditMode(false) clears the toggle's active state without re-firing the callback", () => {
+    const { handle, editBtn, onEditModeChange } = mount();
+    // Enter edit mode via the button (as a user would): it lights up + fires.
+    editBtn.click();
+    expect(editBtn.classList.contains("active")).toBe(true);
+    expect(onEditModeChange).toHaveBeenCalledTimes(1);
+
+    // Programmatic exit (the project/dataset-switch path in main.ts) must clear
+    // the lit state so the toggle never contradicts the hidden edit-bar...
+    handle.setEditMode(false);
+    expect(editBtn.classList.contains("active")).toBe(false);
+    // ...and must NOT re-fire onEditModeChange (main.ts already toggled the wiring).
+    expect(onEditModeChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("setEditMode(true) lights the toggle without firing the callback", () => {
+    const { handle, editBtn, onEditModeChange } = mount();
+    handle.setEditMode(true);
+    expect(editBtn.classList.contains("active")).toBe(true);
+    expect(onEditModeChange).not.toHaveBeenCalled();
   });
 });
