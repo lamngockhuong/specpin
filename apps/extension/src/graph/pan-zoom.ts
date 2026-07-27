@@ -55,6 +55,31 @@ export function attachPanZoom(
     target.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
   }
 
+  // Map a client (viewport) point to the graph's user-space coordinates -- the
+  // space state.x/state.y/scale live in. The <svg> renders with a viewBox and
+  // width/height=100%, so screen pixels are NOT user units: the viewBox scale
+  // plus the default preserveAspectRatio ("xMidYMid meet") letterbox offset
+  // differ per axis. Anchoring the wheel zoom on `clientX - rect.left` ignored
+  // both, which drifted the zoom along a diagonal. getScreenCTM captures the
+  // full user->screen mapping; invert it to go screen->user. Falls back to a
+  // rect-relative mapping where no CTM is available (e.g. jsdom in tests).
+  function clientToUser(clientX: number, clientY: number): { x: number; y: number } {
+    const ctm = typeof surface.getScreenCTM === "function" ? surface.getScreenCTM() : null;
+    // Feature-check the full SVG geometry API (real browsers have it; test DOMs
+    // stub getScreenCTM but not createSVGPoint().matrixTransform) before using it.
+    if (ctm && typeof ctm.inverse === "function" && typeof surface.createSVGPoint === "function") {
+      const pt = surface.createSVGPoint();
+      if (typeof pt.matrixTransform === "function") {
+        pt.x = clientX;
+        pt.y = clientY;
+        const u = pt.matrixTransform(ctm.inverse());
+        return { x: u.x, y: u.y };
+      }
+    }
+    const rect = surface.getBoundingClientRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
   function onPointerDown(e: PointerEvent): void {
     // Only the primary button/touch arms a pan. Crucially, DON'T capture the
     // pointer here: capturing on press makes the browser retarget the ensuing
@@ -87,7 +112,12 @@ export function attachPanZoom(
       panning = true;
       surface.setPointerCapture(activePointerId);
     } else {
-      state = { ...state, x: state.x + (e.clientX - lastX), y: state.y + (e.clientY - lastY) };
+      // Pan in user space too, so a drag tracks the cursor 1:1 on screen
+      // regardless of the viewBox scale (converting each endpoint, not the raw
+      // screen delta).
+      const prev = clientToUser(lastX, lastY);
+      const curr = clientToUser(e.clientX, e.clientY);
+      state = { ...state, x: state.x + (curr.x - prev.x), y: state.y + (curr.y - prev.y) };
       apply();
     }
     lastX = e.clientX;
@@ -117,18 +147,16 @@ export function attachPanZoom(
 
   function onWheel(e: WheelEvent): void {
     e.preventDefault();
-    const rect = surface.getBoundingClientRect();
-    zoomToward(
-      e.clientX - rect.left,
-      e.clientY - rect.top,
-      clampScale(state.scale * (1 - e.deltaY * ZOOM_STEP)),
-    );
+    const { x, y } = clientToUser(e.clientX, e.clientY);
+    zoomToward(x, y, clampScale(state.scale * (1 - e.deltaY * ZOOM_STEP)));
   }
 
-  // Button zoom: same anchored rescale as the wheel, centred on the canvas.
+  // Button zoom: same anchored rescale as the wheel, anchored on the canvas
+  // centre (mapped through clientToUser so it lands on the true visual middle).
   function zoomBy(factor: number): void {
     const rect = surface.getBoundingClientRect();
-    zoomToward(rect.width / 2, rect.height / 2, clampScale(state.scale * factor));
+    const { x, y } = clientToUser(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    zoomToward(x, y, clampScale(state.scale * factor));
   }
 
   function reset(): void {

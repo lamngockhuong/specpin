@@ -97,3 +97,61 @@ describe("attachPanZoom -- click vs drag", () => {
     expect(target.style.transform).toBe("translate(20px, 10px) scale(1)");
   });
 });
+
+// Regression: cursor-anchored wheel zoom drifted diagonally because it treated
+// `clientX - rect.left` as user-space coordinates. The <svg> has a viewBox with
+// width/height=100%, so screen px differ from user units by the viewBox scale
+// AND a per-axis preserveAspectRatio letterbox offset -- which is why the drift
+// looked diagonal. The fix maps the cursor through getScreenCTM to user space.
+describe("attachPanZoom -- cursor-anchored wheel zoom (viewBox mapping)", () => {
+  const SVG_NS_ = SVG_NS;
+
+  // user->screen: screen = 0.5*user + (offset). Non-zero, asymmetric offset
+  // (100 in x, 20 in y) models the letterbox; inverse takes screen -> user.
+  function ctmSetup(kx = 0.5, ky = 0.5, ox = 100, oy = 20) {
+    const svg = document.createElementNS(SVG_NS_, "svg") as SVGSVGElement;
+    const target = document.createElementNS(SVG_NS_, "g") as SVGGElement;
+    svg.appendChild(target);
+    const inverse = {
+      // screen -> user
+      apply: (p: { x: number; y: number }) => ({ x: (p.x - ox) / kx, y: (p.y - oy) / ky }),
+    };
+    svg.getScreenCTM = (() => ({ inverse: () => inverse })) as unknown as typeof svg.getScreenCTM;
+    svg.createSVGPoint = (() => {
+      const pt = { x: 0, y: 0, matrixTransform: (m: typeof inverse) => m.apply(pt) };
+      return pt;
+    }) as unknown as typeof svg.createSVGPoint;
+    attachPanZoom(svg, target);
+    return { svg, target, kx, ky, ox, oy };
+  }
+
+  function parseTransform(t: string) {
+    const m = t.match(/translate\(([-\d.]+)px, ([-\d.]+)px\) scale\(([-\d.]+)\)/);
+    if (!m) throw new Error(`unparseable transform: ${t}`);
+    return { tx: Number(m[1]), ty: Number(m[2]), scale: Number(m[3]) };
+  }
+
+  it("keeps the graph point under the cursor fixed (anchors in user space, not screen px)", () => {
+    const { svg, target, kx, ky, ox, oy } = ctmSetup();
+    const clientX = 300;
+    const clientY = 200;
+    // The user-space point the cursor sits over, per the CTM inverse.
+    const anchorX = (clientX - ox) / kx; // (300-100)/0.5 = 400
+    const anchorY = (clientY - oy) / ky; // (200-20)/0.5 = 360
+
+    // happy-dom's WheelEvent init drops clientX/clientY, so pin them explicitly.
+    const wheel = new WheelEvent("wheel", { deltaY: -100, cancelable: true });
+    Object.defineProperty(wheel, "clientX", { value: clientX, configurable: true });
+    Object.defineProperty(wheel, "clientY", { value: clientY, configurable: true });
+    svg.dispatchEvent(wheel);
+
+    const { tx, ty, scale } = parseTransform(target.style.transform);
+    expect(scale).toBeGreaterThan(1); // zoomed in
+    // Invariant: the anchored user point maps to the same local coord after zoom.
+    expect(scale * anchorX + tx).toBeCloseTo(anchorX, 6);
+    expect(scale * anchorY + ty).toBeCloseTo(anchorY, 6);
+    // And it is genuinely the CTM-mapped anchor, not the raw screen point: the
+    // invariant must NOT hold at the un-mapped (clientX, clientY).
+    expect(scale * clientX + tx).not.toBeCloseTo(clientX, 6);
+  });
+});
