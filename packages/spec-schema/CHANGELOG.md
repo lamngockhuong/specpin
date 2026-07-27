@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.6](https://github.com/lamngockhuong/specpin/compare/spec-schema-v0.0.5...spec-schema-v0.0.6) (2026-07-27)
+
+
+### Features
+
+* graph views — status-flow FSM + screen-transition (v1 foundation) ([#183](https://github.com/lamngockhuong/specpin/issues/183)) ([f49b2c1](https://github.com/lamngockhuong/specpin/commit/f49b2c1289cf09875b91ff6c4033051bae7aede6))
+* specshot manual authoring + in-extension authoring page ([#187](https://github.com/lamngockhuong/specpin/issues/187)) ([de30352](https://github.com/lamngockhuong/specpin/commit/de303529476194fc03e2837bf935b0701a680e29))
+
 ## [0.0.5](https://github.com/lamngockhuong/specpin/compare/spec-schema-v0.0.4...spec-schema-v0.0.5) (2026-07-03)
 
 

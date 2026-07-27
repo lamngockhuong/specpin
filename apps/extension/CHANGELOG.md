@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.0.17](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.16...extension-v0.0.17) (2026-07-27)
+
+
+### Features
+
+* **extension:** collapse header actions into a More actions menu ([#191](https://github.com/lamngockhuong/specpin/issues/191)) ([5bce3ad](https://github.com/lamngockhuong/specpin/commit/5bce3ad86b9eb8a7b87a3eeda96e5a59b31fa87f))
+* **extension:** collapsible graph view toolbar ([#199](https://github.com/lamngockhuong/specpin/issues/199)) ([63f30e5](https://github.com/lamngockhuong/specpin/commit/63f30e52605bfc4df392633f8f883c5994deb109))
+* **extension:** per-project auto-capture record toggle ([#196](https://github.com/lamngockhuong/specpin/issues/196)) ([fdfbf87](https://github.com/lamngockhuong/specpin/commit/fdfbf8798452de3feaee3022d6ebea7950c7df53))
+* **extension:** per-project auto-record ignore-list + skip existing edges ([#202](https://github.com/lamngockhuong/specpin/issues/202)) ([e882b2d](https://github.com/lamngockhuong/specpin/commit/e882b2d008f4843535ca0f6afc167dd7017f5f7b))
+* **extension:** revamp graph view controls with on-canvas toolbar and icon buttons ([#197](https://github.com/lamngockhuong/specpin/issues/197)) ([7db58de](https://github.com/lamngockhuong/specpin/commit/7db58deb7c37ec5b82010983776c9b82423731c0))
+* **graph editor:** delete-key deletion with confirm + connected-arrow animation ([#206](https://github.com/lamngockhuong/specpin/issues/206)) ([e42a81a](https://github.com/lamngockhuong/specpin/commit/e42a81a6300375fa4614729b7c0e1671db05a4b9))
+* graph views — code-import CLI, runtime auto-capture, in-browser editor ([#188](https://github.com/lamngockhuong/specpin/issues/188)) ([aa85c72](https://github.com/lamngockhuong/specpin/commit/aa85c72da10d9a0aefe14cdaa8166bf91902c732))
+* graph views — status-flow FSM + screen-transition (v1 foundation) ([#183](https://github.com/lamngockhuong/specpin/issues/183)) ([f49b2c1](https://github.com/lamngockhuong/specpin/commit/f49b2c1289cf09875b91ff6c4033051bae7aede6))
+* **plugin:** ship specpin as a Claude Code plugin marketplace ([#198](https://github.com/lamngockhuong/specpin/issues/198)) ([781cd1d](https://github.com/lamngockhuong/specpin/commit/781cd1d45636411e87f19467e0b66e1da05ba7ed))
+* specshot manual authoring + in-extension authoring page ([#187](https://github.com/lamngockhuong/specpin/issues/187)) ([de30352](https://github.com/lamngockhuong/specpin/commit/de303529476194fc03e2837bf935b0701a680e29))
+
+
+### Bug Fixes
+
+* **extension:** clarify graph 'not on page' hint wording ([#207](https://github.com/lamngockhuong/specpin/issues/207)) ([5a92959](https://github.com/lamngockhuong/specpin/commit/5a929597a1c6b8e958b7a7455d2f2c78379deaec))
+* **extension:** graph panel — ghost review in edit mode, cold-SW approve, persisted selection ([#201](https://github.com/lamngockhuong/specpin/issues/201)) ([f5f2c30](https://github.com/lamngockhuong/specpin/commit/f5f2c308bbea46d185e15234c9513b4bb68f32e5))
+* **extension:** reliable graph-editor selection + multi-flow editing ([#200](https://github.com/lamngockhuong/specpin/issues/200)) ([1b2b51a](https://github.com/lamngockhuong/specpin/commit/1b2b51aa962b7fcf9a876f11d260ff7472ed64ec))
+* **Graph editor:** cursor-anchored zoom, dataset-toggle reachability, auto-adopt captured navigations ([#204](https://github.com/lamngockhuong/specpin/issues/204)) ([f7c4731](https://github.com/lamngockhuong/specpin/commit/f7c473137d366aeb0f609a9e3da1bce393548582))
+* **graph editor:** edit-mode UX — toggle sync, new-flow refresh, table row selection ([5df3a39](https://github.com/lamngockhuong/specpin/commit/5df3a3985cf733324a0a3cf09cf49153bd5a0f2c))
+* **graph editor:** edit-mode UX fixes (toggle sync, new-flow refresh, table row selection) ([#205](https://github.com/lamngockhuong/specpin/issues/205)) ([5df3a39](https://github.com/lamngockhuong/specpin/commit/5df3a3985cf733324a0a3cf09cf49153bd5a0f2c))
+
 ## [0.0.16](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.15...extension-v0.0.16) (2026-07-23)
 
 

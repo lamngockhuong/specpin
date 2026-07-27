@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.9](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.8...cli-v0.0.9) (2026-07-27)
+
+
+### Features
+
+* graph views — status-flow FSM + screen-transition (v1 foundation) ([#183](https://github.com/lamngockhuong/specpin/issues/183)) ([f49b2c1](https://github.com/lamngockhuong/specpin/commit/f49b2c1289cf09875b91ff6c4033051bae7aede6))
+* **plugin:** ship specpin as a Claude Code plugin marketplace ([#198](https://github.com/lamngockhuong/specpin/issues/198)) ([781cd1d](https://github.com/lamngockhuong/specpin/commit/781cd1d45636411e87f19467e0b66e1da05ba7ed))
+* specshot manual authoring + in-extension authoring page ([#187](https://github.com/lamngockhuong/specpin/issues/187)) ([de30352](https://github.com/lamngockhuong/specpin/commit/de303529476194fc03e2837bf935b0701a680e29))
+
 ## [0.0.8](https://github.com/lamngockhuong/specpin/compare/cli-v0.0.7...cli-v0.0.8) (2026-07-06)
 
 
