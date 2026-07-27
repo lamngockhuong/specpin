@@ -69,7 +69,7 @@ Each screen's `urlGlob` identifies it on the live UI, reusing the same glob synt
 
 ## Open the graph view
 
-Click **Open graph view** from the header's **⋯ More actions** menu in the popup or side panel. It opens in a new browser tab. If a connected project has both a status-flow and a screen-transition graph configured, a dataset picker appears above the canvas so you can switch between them; if a page serves more than one project, a project picker appears too. Your project/dataset choice is remembered across reloads (and reopening the graph tab), so a refresh returns you to the same view instead of resetting to the first project.
+Click **Open graph view** from the header's **⋯ More actions** menu in the popup or side panel. It opens in a new browser tab. If a page serves more than one project, a project picker appears above the canvas; a status-flow / Screens dataset picker is always shown once a project is selected, regardless of whether both datasets have content yet - so an empty dataset stays reachable (e.g. the Screens dataset for auto-capture review, or the status-flow dataset to author your first flow). It defaults to whichever dataset is non-empty for convenience. Your project/dataset choice is remembered across reloads (and reopening the graph tab), so a refresh returns you to the same view instead of resetting to the first project.
 
 ## Browse the graph
 
@@ -121,13 +121,13 @@ The graph view isn't only a diagram to look at - turn on **Edit mode** to add, e
 
 **Add a node.** Click **Add node** and fill in the side form: a localized name/label (add a row per locale), a `urlGlob` (screens) or `kind` (flows' states: initial/normal/terminal), and an optional linked spec picked from the project's known specs. **Create** adds it to the draft. On the status-flow dataset, a new node belongs to whichever flow is currently active - use the flow controls to create one first if the project has none yet.
 
-**Edit a node or edge.** Click an existing one to open the same side form, pre-filled. Every valid field change applies to the in-memory draft right away; **Save** is still what persists the draft to `.specs/`. A transition that came from code-import or auto-capture renders read-only here - change it through its own flow instead (re-run the import, or Approve/Discard the ghost edge).
+**Edit a node or edge.** Click an existing one to open the same side form, pre-filled. Every valid field change applies to the in-memory draft right away; **Save** is still what persists the draft to `.specs/`. A transition that came from code-import (flows dataset only) renders read-only here - change it by re-running the import instead. An auto-captured navigation edge (Screens dataset) is directly editable: editing any of its fields reclassifies it to manual on Save, so auto-capture stops managing it afterwards.
 
 **Editing across multiple flows (status-flow only).** A `flows.json` can hold several independent flows, all drawn on one canvas, but only one is *active* for editing at a time - the rest render read-only. When two or more flows are present, a **flow picker** appears in the edit bar: pick which flow to edit from it, or just click any node or edge of another flow and editing switches to it automatically. If the current flow has unsaved changes, switching asks you to save or discard first.
 
 **Add an edge.** Click two nodes in order (from, then to) to arm them, then **Add edge** to open a form for the trigger label plus optional guard, role, and linked spec.
 
-**Delete.** Select exactly one node or edge, then **Delete selected**. A node still referenced by an imported/auto-captured edge refuses to delete outright - resolve that edge first (a manually-added edge cascades away with the node). Deleting a screen that a specshot spec sheet still references is allowed here; that gets checked at Save instead (next).
+**Delete.** Select exactly one node or edge, then **Delete selected**. On the status-flow dataset, a node still referenced by an imported edge refuses to delete outright - resolve that through code-import first (a manually-added edge cascades away with the node). On the Screens dataset, deleting an auto-captured edge, or a screen it points at, is allowed directly - the edge reclassifies to manual on Save rather than blocking the delete. Deleting a screen that a specshot spec sheet still references is allowed here regardless; that gets checked at Save instead (next).
 
 **Undo.** **Undo** reverts the single most recent change - one step, not a full history. Use it right after a slip, before making another edit.
 
