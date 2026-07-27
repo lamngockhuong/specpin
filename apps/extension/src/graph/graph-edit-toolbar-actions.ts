@@ -27,21 +27,24 @@ export interface ToolbarActionDeps {
    *  `{}` form, one whose shot inventory could not be verified). Omitted =
    *  always proceed (no confirm). */
   confirmOrphanShots?(warning: OrphanWarning): boolean | Promise<boolean>;
+  /** Ask before deleting the selected node/edge (both the toolbar button and
+   *  the Delete key route through here, so one confirm covers both). Omitted =
+   *  delete without asking (keeps the pure-logic tests confirm-free). */
+  confirmDelete?(target: "node" | "edge"): boolean | Promise<boolean>;
 }
 
-export function deleteSelected(deps: ToolbarActionDeps): void {
+export async function deleteSelected(deps: ToolbarActionDeps): Promise<void> {
   const mode = deps.getMode();
   if (!mode) return;
   const { nodeIds, edgeId } = deps.getSelection();
-  const result = edgeId
-    ? mode.deleteEdge(edgeId)
-    : nodeIds.length === 1
-      ? mode.deleteNode(nodeIds[0])
-      : { ok: false, error: undefined };
+  // Only a single node, or one edge, is deletable -- validate BEFORE the
+  // confirm so an unactionable selection just nudges the user (no dialog).
   if (!edgeId && nodeIds.length !== 1) {
     deps.setStatus(deps.t("graph.edit.selectOneToDelete"));
     return;
   }
+  if (deps.confirmDelete && !(await deps.confirmDelete(edgeId ? "edge" : "node"))) return;
+  const result = edgeId ? mode.deleteEdge(edgeId) : mode.deleteNode(nodeIds[0]);
   deps.setStatus(result.ok ? "" : (result.error ?? ""));
   if (result.ok) {
     deps.reset();

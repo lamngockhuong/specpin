@@ -211,6 +211,23 @@
       /* Track C (C1): edit-mode selection, applied only while editing. */
       .graph-node.selected rect { stroke: var(--sp-accent); stroke-width: 3; }
       .graph-edge.selected path { stroke: var(--sp-accent); stroke-width: 2.5; }
+      /* Marching-ants emphasis on the arrows touching the active/selected node
+         (view-mode focus or edit selection). Dashes flow along the line toward
+         the target (negative dashoffset over one dash cycle = seamless loop);
+         :not(.graph-edge-hit) keeps it on the visible path, not the click band.
+         The accent applies to the line only; the shared arrowhead marker keeps
+         its fixed grey fill. */
+      .graph-edge.arrow-active path:not(.graph-edge-hit) {
+        stroke: var(--sp-accent);
+        stroke-width: 2;
+        stroke-dasharray: 6 4;
+        animation: graph-arrow-flow 0.6s linear infinite;
+      }
+      @keyframes graph-arrow-flow { to { stroke-dashoffset: -10; } }
+      /* Respect reduced-motion: keep the accent tint, drop the travel. */
+      @media (prefers-reduced-motion: reduce) {
+        .graph-edge.arrow-active path:not(.graph-edge-hit) { animation: none; }
+      }
       .graph-table { width: 100%; border-collapse: collapse; }
       .graph-table th, .graph-table td {
         text-align: left;

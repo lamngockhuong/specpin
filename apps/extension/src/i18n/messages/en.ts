@@ -669,6 +669,10 @@ const en = {
   "graph.edit.flowPicker": "Flow to edit",
   "graph.edit.switchedFlow": "Now editing flow {label}.",
   "graph.edit.confirmDeleteFlow": "Delete this flow? This cannot be undone.",
+  "graph.edit.confirmDeleteNode":
+    "Delete the selected node? Its connected edges will be removed too.",
+  "graph.edit.confirmDeleteEdge": "Delete the selected edge?",
+  "graph.edit.deleteConfirmOk": "Delete",
   "graph.edit.rename": "Rename",
 
   // C3: dirty-state guard, undo, and the orphaned-shot Save confirm.

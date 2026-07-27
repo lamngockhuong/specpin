@@ -665,6 +665,10 @@ const ja: Record<keyof Messages, string> = {
   "graph.edit.flowPicker": "編集するフロー",
   "graph.edit.switchedFlow": "フロー {label} を編集中。",
   "graph.edit.confirmDeleteFlow": "このフローを削除しますか？元に戻せません。",
+  "graph.edit.confirmDeleteNode":
+    "選択中のノードを削除しますか？つながっている矢印もあわせて削除されます。",
+  "graph.edit.confirmDeleteEdge": "選択中の矢印を削除しますか？",
+  "graph.edit.deleteConfirmOk": "削除",
   "graph.edit.rename": "名前を変更",
 
   // C3: 未保存の変更ガード、取り消し、shot孤立化の保存確認。
