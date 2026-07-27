@@ -586,7 +586,7 @@ Wire `--check` into CI so a PR that changes the source without re-running the im
 
 **Editing across multiple flows (status-flow only).** A `flows.json` can hold several independent flows, all drawn on one canvas, but only one is *active* for editing at a time - the rest render read-only. When two or more flows are present, a **flow picker** appears in the edit bar: pick which flow to edit from it, or just click any node or edge of another flow and editing switches to it automatically. If the current flow has unsaved changes, switching asks you to save or discard first.
 
-**Add an edge.** Click two nodes in order (from, then to) to arm them, then **Add edge** to open a form for the trigger label plus optional guard, role, and `specId`.
+**Add an edge.** Click two nodes in order (from, then to) to arm them, then **Add edge** to open a form for the trigger label plus optional guard, role, and `specId`. Armed nodes are highlighted in both the diagram and the table view, so you can always see which two are selected.
 
 **Delete.** Select exactly one node or edge, then **Delete selected**. On the flows dataset, a node still referenced by an imported edge refuses to delete outright - resolve that through code-import first (a manual edge cascade-deletes along with the node). On the Screens dataset, deleting an auto-captured edge, or deleting a screen it points at, is allowed directly - the edge reclassifies to `"source": "manual"` on Save rather than blocking the delete. Deleting a screen a specshot spec sheet (`.specs/shots/<screenId>.shot.json`) still references is allowed here regardless; the check for that happens at Save (next).
 

@@ -111,6 +111,11 @@ export interface GraphControlsHandle {
   /** Re-derive + repaint the category tabs (e.g. after switching flows<->screens).
    *  Resets the filter state but does not re-render; main.ts's refreshAll does. */
   setGraph(graph: Graph): void;
+  /** Reflect edit mode onto the toggle button WITHOUT firing onEditModeChange.
+   *  Needed because switching project/dataset exits edit mode programmatically
+   *  (main.ts's toggleEditMode(false)) -- without this the toggle stays lit as
+   *  "ON" while the edit-bar is already hidden, a misleading state. */
+  setEditMode(enabled: boolean): void;
 }
 
 /** Build the control bar (view toggle, category tabs, search box) into
@@ -206,6 +211,9 @@ export function mountGraphControls(
       state = { category: "all", query: "", focusNodeId: null };
       searchInput.value = "";
       renderTabs();
+    },
+    setEditMode: (enabled) => {
+      editBtn.classList.toggle("active", enabled);
     },
   };
 }

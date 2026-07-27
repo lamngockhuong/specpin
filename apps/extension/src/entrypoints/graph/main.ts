@@ -64,6 +64,11 @@ let direction: GraphDirection = "LR";
 let filterState: GraphFilterState = { category: "all", query: "", focusNodeId: null };
 let panZoom: PanZoomController | null = null;
 let svgView: ReturnType<typeof renderGraphSvg> | null = null;
+let tableView: ReturnType<typeof renderGraphTable> | null = null;
+// The current edit selection, cached so a table re-render (filter/search)
+// re-applies the highlight. editWiring owns the authoritative selection; this
+// is only the last set pushed through applySelection.
+let selectedNodeIds: ReadonlySet<string> = new Set();
 let controls: ReturnType<typeof mountGraphControls> | null = null;
 let ghostReview: GhostReviewHandle | null = null;
 let captureRecording: CaptureRecordingHandle | null = null;
@@ -77,9 +82,13 @@ function applyFilter(): void {
     svgView.setDimmed(vis.dimmedNodeIds, vis.dimmedEdgeIds);
     svgView.setHighlighted(vis.highlightedNodeIds);
   } else if (view === "table") {
-    renderGraphTable(tableEl, graph, vis.hiddenNodeIds, {
-      onNodeClick: (n) => void handleNodeClick(n),
-    });
+    tableView = renderGraphTable(
+      tableEl,
+      graph,
+      vis.hiddenNodeIds,
+      { onNodeClick: (n) => void handleNodeClick(n) },
+      selectedNodeIds,
+    );
   }
 }
 
@@ -154,6 +163,10 @@ async function refreshProjects(): Promise<void> {
 
 function toggleEditMode(enabled: boolean): void {
   editWiring?.setEnabled(enabled);
+  // Keep the controls' edit toggle in sync -- switching project/dataset exits
+  // edit mode here without going through the button's own click handler, so
+  // without this the toggle would stay lit while the edit-bar is hidden.
+  controls?.setEditMode(enabled);
   refreshAll();
 }
 
@@ -300,7 +313,14 @@ async function init(): Promise<void> {
   editWiring = wireEditMode(editBarEl, editFormEl, {
     currentProject: () => projects[projectIdx],
     currentDataset: () => dataset,
-    applySelection: (nodeIds, edgeIds) => svgView?.setSelected(nodeIds, edgeIds),
+    // Push the edit selection to whichever view is showing. Cache the node ids
+    // so a table re-render (applyFilter) can re-highlight the armed rows; the
+    // table has no edge rows, so edges style the SVG only.
+    applySelection: (nodeIds, edgeIds) => {
+      selectedNodeIds = nodeIds;
+      svgView?.setSelected(nodeIds, edgeIds);
+      tableView?.setSelected(nodeIds);
+    },
     onChanged: applyRefreshedProjects,
     locale: () => contentLocale,
     confirmOrphanShots,

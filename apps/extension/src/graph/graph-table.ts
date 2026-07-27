@@ -11,15 +11,26 @@ export interface GraphTableHandlers {
   onNodeClick(node: GraphNode): void;
 }
 
+export interface GraphTableView {
+  /** Track C (C1) edit-mode selection, mirroring GraphSvgView.setSelected: mark
+   *  the selected rows so the reader can see which nodes are armed for Add edge
+   *  / Delete (the SVG-only styling was invisible in table view). Edges are not
+   *  rows, so this takes node ids only. */
+  setSelected(nodeIds: ReadonlySet<string>): void;
+}
+
 /** Build the table body into `container`, replacing any prior content. `hidden`
  *  is the current category-filter result (graph-controls.ts): matching the SVG
- *  view, a category filter actually removes rows rather than dimming them. */
+ *  view, a category filter actually removes rows rather than dimming them.
+ *  `selectedNodeIds` re-applies the current edit selection so a filter/search
+ *  re-render keeps the armed rows highlighted (the SVG persists this too). */
 export function renderGraphTable(
   container: HTMLElement,
   graph: Graph,
   hiddenNodeIds: ReadonlySet<string>,
   handlers: GraphTableHandlers,
-): void {
+  selectedNodeIds: ReadonlySet<string> = new Set(),
+): GraphTableView {
   container.replaceChildren();
   const table = document.createElement("table");
   table.className = "graph-table";
@@ -40,11 +51,16 @@ export function renderGraphTable(
   thead.appendChild(headRow);
   table.appendChild(thead);
 
+  // Node id -> its row, so setSelected can toggle styling without a re-render
+  // (the same incremental-update contract as GraphSvgView.setSelected).
+  const rowsById = new Map<string, HTMLTableRowElement>();
   const tbody = document.createElement("tbody");
   const visible = graph.nodes.filter((n) => !hiddenNodeIds.has(n.id));
   for (const node of visible) {
     const tr = document.createElement("tr");
     tr.tabIndex = 0;
+    tr.dataset.nodeId = node.id;
+    tr.setAttribute("aria-selected", "false");
     tr.addEventListener("click", () => handlers.onNodeClick(node));
 
     const labelCell = document.createElement("td");
@@ -59,15 +75,29 @@ export function renderGraphTable(
 
     tr.append(labelCell, categoryCell, kindCell, specCell);
     tbody.appendChild(tr);
+    rowsById.set(node.id, tr);
   }
   table.appendChild(tbody);
+
+  function setSelected(nodeIds: ReadonlySet<string>): void {
+    for (const [id, tr] of rowsById) {
+      const on = nodeIds.has(id);
+      tr.classList.toggle("selected", on);
+      tr.setAttribute("aria-selected", String(on));
+    }
+  }
+  // Fresh rows default to unselected (aria-selected="false", no class), so only
+  // walk them when there is actually a selection to re-apply -- skips the loop
+  // on the common empty-selection render (every filter/search keystroke).
+  if (selectedNodeIds.size > 0) setSelected(selectedNodeIds);
 
   if (visible.length === 0) {
     const empty = document.createElement("div");
     empty.className = "graph-table-empty";
     empty.textContent = t("graph.noMatch");
     container.appendChild(empty);
-    return;
+  } else {
+    container.appendChild(table);
   }
-  container.appendChild(table);
+  return { setSelected };
 }
