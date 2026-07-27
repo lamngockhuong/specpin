@@ -144,6 +144,8 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 - **Bật/tắt theo từng dự án** - đóng/mở từng kết nối độc lập với công tắc bật/tắt toàn cục
 - **Bề mặt side panel** - mở Specpin trong side panel của Chrome / sidebar của Firefox, kèm chi tiết đặc tả inline
 - **Guide mode** - tour onboarding theo spec ở hai phạm vi team + cá nhân, với spotlight overlay, popover được neo, và phím tắt
+- **Sơ đồ luồng (Graph views)** - trực quan hóa ứng dụng dưới dạng sơ đồ chuyển màn hình và luồng trạng thái, tự động bắt khi bạn duyệt trang (tùy chọn, theo từng dự án), chỉnh sửa trong trình soạn sơ đồ ngay trên trình duyệt và commit vào repo
+- **Soạn spec-first** - soạn một spec từ screenshot hoặc design trước khi UI tồn tại (pending spec), rồi bind vào phần tử thực khi frontend hoàn thiện; soạn ngay trong trang spec sheet của extension, hoàn toàn offline
 - **Điều hướng người đọc** - deep-link chia sẻ spec, phím tắt duyệt vòng qua các spec trên trang, và digest "N thay đổi kể từ lần xem trước"
 - **Tìm kiếm đặc tả** - lọc phía client theo thời gian thực dựa trên tiêu đề, file, tag và mô tả
 - **Lọc spec** - ẩn/hiện spec theo tag, file, hoặc trang qua checklist facet; mặc định team (`views.json` commit vào repo) cùng override cá nhân
@@ -166,13 +168,19 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000, có sẵn .
 specpin/
 ├── apps/
 │   ├── extension/            # Extension WXT MV3 đa trình duyệt (Chrome + Firefox)
-│   └── cli/                  # Binary sidecar Go: init + serve
+│   ├── cli/                  # Binary sidecar Go: init + serve
+│   └── web/                  # Site marketing + tài liệu Astro Starlight (specpin.ohnice.app)
 ├── packages/
 │   ├── spec-schema/          # JSON Schema v1 (SSOT) + TS types sinh ra + validators
 │   ├── fingerprint-core/     # capture + match không phụ thuộc framework (chỉ DOM)
-│   └── api-client/           # TS client có kiểu cho hợp đồng HTTP của sidecar
+│   ├── api-client/           # TS client có kiểu cho hợp đồng HTTP của sidecar
+│   ├── specshot-core/        # authoring spec-first headless (model MarkDoc, numbering, export)
+│   ├── specshot-react/       # các component editor spec-sheet (presentational)
+│   └── specshot-app/         # composition spec-sheet dùng chung (host trong extension)
 ├── examples/
 │   └── demo-react-app/       # app mẫu + .specs/ có sẵn để dùng thử Specpin
+├── plugins/
+│   └── specpin/              # Plugin Claude Code / Codex (nguồn cho marketplace)
 └── docs/                     # kiến trúc, hướng dẫn chạy, tham chiếu schema
 ```
 

@@ -141,6 +141,8 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000、.specs/ �
 - **プロジェクト単位の有効/無効** - グローバルのオン/オフとは独立して個別の接続を切り替え可能
 - **サイドパネルサーフェス** - ChromeのサイドパネルやFirefoxのsidebarでSpecpinを開き、インラインでspecを表示
 - **Guide mode** - team + personalスコープのspec駆動オンボーディングツアー。spotlightオーバーレイ、アンカーされたpopover、キーボードショートカット付き
+- **グラフビュー** - アプリを画面遷移図とステータスフロー図として可視化。閲覧中に自動キャプチャ（オプトイン・プロジェクト単位）、ブラウザ内のグラフエディターで編集し、リポジトリにコミット
+- **spec-firstオーサリング** - UIが存在する前にスクリーンショットやデザインからspecを作成（pending spec）、フロントエンド完成後に実要素へバインド。拡張機能のspec sheetページ上で完全オフラインで作成
 - **リーダーナビゲーション** - 共有可能なspecディープリンク、ページ内specをキーボードで巡回、「前回訪問からのN件の変更」ダイジェスト
 - **spec検索** - タイトル、ファイル、タグ、説明によるクライアントサイドのリアルタイムフィルター
 - **specフィルタリング** - タグ、ファイル、ページごとにfacetチェックリストでspecを表示/非表示。チームのデフォルト（コミットされた`views.json`）と個人のオーバーライド
@@ -163,13 +165,19 @@ pnpm --filter @specpin/demo-react-app dev   # http://localhost:3000、.specs/ �
 specpin/
 ├── apps/
 │   ├── extension/            # WXT MV3クロスブラウザ拡張機能 (Chrome + Firefox)
-│   └── cli/                  # GoのSidecarバイナリ: init + serve
+│   ├── cli/                  # GoのSidecarバイナリ: init + serve
+│   └── web/                  # Astro Starlight のマーケティング + ドキュメントサイト (specpin.ohnice.app)
 ├── packages/
 │   ├── spec-schema/          # JSON Schema v1 (SSOT) + 生成済みTS型 + バリデーター
 │   ├── fingerprint-core/     # フレームワーク非依存のcapture + match（DOMのみ）
-│   └── api-client/           # sidecar HTTPコントラクト用の型付きTSクライアント
+│   ├── api-client/           # sidecar HTTPコントラクト用の型付きTSクライアント
+│   ├── specshot-core/        # ヘッドレスな spec-first オーサリング（MarkDocモデル、numbering、export）
+│   ├── specshot-react/       # spec-sheet エディターのプレゼンテーショナルコンポーネント
+│   └── specshot-app/         # 拡張機能に組み込む spec-sheet の共有コンポジション
 ├── examples/
 │   └── demo-react-app/       # サンプルアプリ + Specpinを試すためのシード済み.specs/
+├── plugins/
+│   └── specpin/              # Claude Code / Codex プラグイン (marketplace ソース)
 └── docs/                     # アーキテクチャ、実行ガイド、スキーマリファレンス
 ```
 
