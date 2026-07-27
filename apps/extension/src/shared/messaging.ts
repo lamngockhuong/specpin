@@ -255,7 +255,13 @@ export type Message =
   // Read-only, unprivileged (mirrors GET_TEAM_GUIDES/GET_TEAM_VIEWS: team config,
   // not private data). `specId` resolution against the live DOM is a panel/
   // overlay concern, not this layer's.
-  | { type: "GET_FLOWS_SCREENS" }
+  // `refresh` picks the phase. Omitted (the default) answers from storage plus
+  // whatever the registry already holds, with ZERO network -- so the panel paints
+  // immediately even when a configured sidecar is unreachable (each request there
+  // costs seconds before it gives up). `refresh: true` awaits the sidecar
+  // round-trip and returns the projects that just came online; the panel asks for
+  // it only when the first answer reported `pending > 0`.
+  | { type: "GET_FLOWS_SCREENS"; refresh?: boolean }
   // Graph panel (Phase 5) -> the ORIGINAL tab's content script (the page the
   // graph was opened from, not the graph tab itself; the graph page sends this
   // directly via tabs.sendMessage(originTabId, ...), never through the
@@ -564,6 +570,10 @@ export interface ProjectFlowsScreens {
  *  namespaced by project (never silently merged across connections). */
 export interface FlowsScreensResult {
   projects: ProjectFlowsScreens[];
+  /** Enabled sidecar connections this worker has not loaded yet, i.e. projects
+   *  missing from `projects` only because nobody has been to the network. `0`
+   *  means the list is complete and no follow-up `refresh: true` fetch is owed. */
+  pending: number;
 }
 
 /** Per-project cap on the Track B draft capture buffer (background/

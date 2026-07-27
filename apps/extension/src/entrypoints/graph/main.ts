@@ -20,6 +20,7 @@ import {
   confirmOrphanShots,
   confirmLeaveIfDirty as guardConfirmLeaveIfDirty,
 } from "../../graph/graph-leave-guard.js";
+import { fetchProjects, loadSidecarProjects } from "../../graph/graph-project-load.js";
 import { type Dataset, wireProjectPicker } from "../../graph/graph-project-picker.js";
 import { renderGraphSvg } from "../../graph/graph-svg.js";
 import { renderGraphTable } from "../../graph/graph-table.js";
@@ -29,8 +30,7 @@ import { hydrateI18n, initI18n, resolveUiLocale, t } from "../../i18n/index.js";
 import { getLocale, getUiLocale } from "../../shared/config.js";
 import { confirmDialog } from "../../shared/dialog.js";
 import { createIconButton } from "../../shared/icons.js";
-import type { FlowsScreensResult, ProjectFlowsScreens } from "../../shared/messaging.js";
-import { sendToBackground } from "../../shared/messaging.js";
+import type { ProjectFlowsScreens } from "../../shared/messaging.js";
 import { applyStoredTheme } from "../../shared/theme.js";
 import "../../shared/inter-font.css";
 import "../../shared/tokens.gen.css";
@@ -71,10 +71,22 @@ let tableView: ReturnType<typeof renderGraphTable> | null = null;
 // is only the last set pushed through applySelection.
 let selectedNodeIds: ReadonlySet<string> = new Set();
 let controls: ReturnType<typeof mountGraphControls> | null = null;
+// True while the second (network) load phase is in flight -- see
+// loadSidecarProjects. Only flips the empty-canvas copy from "nothing
+// configured" to "connecting", so a sidecar that is merely slow never reads as
+// a missing config.
+let connecting = false;
 let ghostReview: GhostReviewHandle | null = null;
 let captureRecording: CaptureRecordingHandle | null = null;
 let editWiring: EditWiringHandle | null = null;
 const ghostController = createGhostController();
+
+/** What an empty canvas should say right now. Both empty-state paths (the
+ *  styled placeholder in renderCanvas, the no-project bail in applyProjects)
+ *  read it from here so their wording cannot drift apart. */
+function emptyCopy(): string {
+  return t(connecting ? "graph.connecting" : "graph.noData");
+}
 
 function applyFilter(): void {
   const vis = computeGraphVisibility(graph, filterState);
@@ -144,7 +156,7 @@ function renderCanvas(): void {
   if (graph.nodes.length === 0) {
     const empty = document.createElement("div");
     empty.className = "graph-empty";
-    empty.textContent = t("graph.noData");
+    empty.textContent = emptyCopy();
     canvasEl.appendChild(empty);
     svgView = null;
     panZoom = null;
@@ -175,10 +187,28 @@ function applyRefreshedProjects(list: ProjectFlowsScreens[] | null): void {
 }
 
 // Re-fetch the projects list (its per-project recordEnabled just changed) and
-// re-render. Used by the capture banner's record on/off toggle.
+// re-render. Used by the capture banner's record on/off toggle. A cached read is
+// enough: the write path already refreshed the connection it touched.
 async function refreshProjects(): Promise<void> {
-  const result = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
-  applyRefreshedProjects(result.projects);
+  applyRefreshedProjects((await fetchProjects()).projects);
+}
+
+// Paint a freshly fetched projects list: re-populate the picker, then render.
+// The picker restores the saved pick by connectionId, so a project arriving in
+// the second load phase cannot steal the current selection. Shared by both
+// phases -- unlike applyRefreshedProjects, which keeps the picker untouched
+// because a write-back never changes which projects exist.
+function applyProjects(list: ProjectFlowsScreens[]): void {
+  projects = list;
+  const initial = picker.populate(projects);
+  if (!initial) {
+    canvasEl.textContent = emptyCopy();
+    captureRecording?.refresh();
+    return;
+  }
+  projectIdx = initial.projectIdx;
+  dataset = initial.dataset;
+  refreshAll();
 }
 
 function toggleEditMode(enabled: boolean): void {
@@ -301,11 +331,14 @@ function mountControlsCollapse(): void {
 }
 
 async function init(): Promise<void> {
-  await applyStoredTheme();
-  initI18n(resolveUiLocale(await getUiLocale()));
+  // Three independent storage reads plus the two independent background reads
+  // below, all issued together rather than chained -- this page's whole point is
+  // that it paints without waiting on anything it does not have to.
+  const [, uiLocale, locale] = await Promise.all([applyStoredTheme(), getUiLocale(), getLocale()]);
+  initI18n(resolveUiLocale(uiLocale));
   hydrateI18n(document);
   mountControlsCollapse();
-  contentLocale = (await getLocale()) ?? "en";
+  contentLocale = locale ?? "en";
   ghostReview = wireGhostReview(mountGhostPanel(ghostPanelEl), ghostController, {
     currentProject: () => projects[projectIdx],
     onChanged: applyRefreshedProjects,
@@ -361,18 +394,21 @@ async function init(): Promise<void> {
       }),
   });
 
-  const result = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
-  projects = result.projects;
-  await ghostController.refresh();
-  const initial = picker.populate(projects);
-  if (!initial) {
-    canvasEl.textContent = t("graph.noData");
-    captureRecording.refresh();
-    return;
-  }
-  projectIdx = initial.projectIdx;
-  dataset = initial.dataset;
-  refreshAll();
+  // Two-phase load (see graph-project-load.ts): paint what needs no network
+  // first, so a configured-but-down sidecar can no longer hold the whole panel
+  // blank for the length of its request timeouts. Phase two runs only when the
+  // background says sidecars are still unloaded -- a Manual-import-only setup
+  // never goes near the network.
+  const [result] = await Promise.all([fetchProjects(), ghostController.refresh()]);
+  connecting = result.pending > 0;
+  applyProjects(result.projects);
+  if (!connecting) return;
+  void loadSidecarProjects(projects, () => editWiring?.isDirty() ?? false).then((list) => {
+    // Clear the placeholder BEFORE painting, so an empty canvas falls back to
+    // "nothing configured" rather than staying stuck on "connecting".
+    connecting = false;
+    if (list) applyProjects(list);
+  });
 }
 
 void init();

@@ -278,6 +278,85 @@ describe("SidecarRegistry.flowsScreensByProject (namespaced by project)", () => 
     ]);
     expect(r.flowsScreensByProject()).toEqual([]);
   });
+
+  it("skips a disabled sidecar project, exactly as it skips a disabled manual batch", async () => {
+    const r = registryWith({
+      on: flowsSource(resp("On", ["a.test"]), flowsWith("f1"), screensWith("s1")),
+      off: flowsSource(resp("Off", ["b.test"]), flowsWith("f2"), screensWith("s2")),
+    });
+    await r.reestablish([conn("on"), { ...conn("off"), enabled: false }], false);
+    expect(r.flowsScreensByProject().map((p) => p.project)).toEqual(["On"]);
+  });
+});
+
+describe("SidecarRegistry disabled-project network cost", () => {
+  /** A source that counts loadSpecs calls, so a test can assert the network was
+   *  never touched (the whole point of skipping disabled projects). */
+  function countingSource(specs: SpecsResponse, calls: { n: number }): SpecSource {
+    return {
+      id: "sidecar",
+      isAvailable: async () => true,
+      loadSpecs: async () => {
+        calls.n++;
+        return specs;
+      },
+      saveSpec: async () => {},
+      updateSpec: async () => {},
+      deleteSpec: async () => {},
+    };
+  }
+
+  it("the bulk reload never contacts a disabled project", async () => {
+    const on = { n: 0 };
+    const off = { n: 0 };
+    const r = registryWith({
+      on: countingSource(resp("On", ["a.test"]), on),
+      off: countingSource(resp("Off", ["b.test"]), off),
+    });
+    await r.reestablish([conn("on"), { ...conn("off"), enabled: false }], false);
+    expect(on.n).toBe(1);
+    expect(off.n).toBe(0);
+
+    // Every later bulk pass (SW wake, keepalive tick, graph open) stays off it too.
+    await r.reload();
+    await r.reconnect(undefined, false);
+    expect(off.n).toBe(0);
+    expect(on.n).toBe(3);
+  });
+
+  it("an explicit id still reaches a disabled project (Options 'Reconnect' on a disabled row)", async () => {
+    const off = { n: 0 };
+    const r = registryWith({ off: countingSource(resp("Off", ["b.test"]), off) });
+    await r.reestablish([{ ...conn("off"), enabled: false }], false);
+    expect(off.n).toBe(0);
+
+    await r.reload("off");
+    expect(off.n).toBe(1);
+  });
+
+  it("unloadedCount reports only enabled connections with no cache", async () => {
+    const r = registryWith({
+      up: flowsSource(resp("Up", ["a.test"]), flowsWith("f1"), screensWith("s1")),
+      down: {
+        id: "sidecar",
+        isAvailable: async () => true,
+        loadSpecs: async () => {
+          throw new Error("sidecar down");
+        },
+        saveSpec: async () => {},
+        updateSpec: async () => {},
+        deleteSpec: async () => {},
+      },
+      off: flowsSource(resp("Off", ["c.test"]), flowsWith("f3"), screensWith("s3")),
+    });
+    // Before any load: every enabled connection is unloaded, the disabled one is not.
+    r.setConnections([conn("up"), conn("down"), { ...conn("off"), enabled: false }]);
+    expect(r.unloadedCount()).toBe(2);
+
+    // After the round-trip only the unreachable one is still missing a cache.
+    await r.reload();
+    expect(r.unloadedCount()).toBe(1);
+  });
 });
 
 describe("GET_FLOWS_SCREENS message gating", () => {

@@ -223,14 +223,25 @@ export default defineBackground(() => {
     // Defensive: a storage rejection here would otherwise surface as an unhandled
     // rejection from the fire-and-forget callers below.
     try {
-      await ensureVisibilityLoaded();
-      await reconcileLocalSpecs(false);
-      const connections = await getConnections();
-      const enabled = await getEnabled();
-      await registry.reestablish(connections, enabled);
+      const connections = await hydrateFromStorage();
+      await registry.reestablish(connections, await getEnabled());
     } catch {
       // Next wake (message/alarm) retries; nothing actionable here.
     }
+  }
+
+  // The storage half of reestablish(), split out so a caller that must answer
+  // FAST can await this alone: it rebuilds the in-memory registry from storage
+  // (personal visibility, Manual-import batches, connection configs) and touches
+  // no network. Reaching each sidecar is the half that costs seconds when one is
+  // down, and nothing here depends on it. Returns the configs it applied so the
+  // network half can reuse them instead of reading storage twice.
+  async function hydrateFromStorage(): Promise<Connection[]> {
+    await ensureVisibilityLoaded();
+    await reconcileLocalSpecs(false);
+    const connections = await getConnections();
+    registry.setConnections(connections);
+    return connections;
   }
 
   // Apply the toolbar-click surface preference. Chrome only: a click opens the
@@ -445,7 +456,7 @@ export default defineBackground(() => {
       case "GET_GUIDES_FOR_ORIGIN":
         return handleGetGuidesForOrigin(message.origin, sender);
       case "GET_FLOWS_SCREENS":
-        return handleGetFlowsScreens();
+        return handleGetFlowsScreens(message.refresh);
       case "SAVE_TEAM_GUIDE":
         return handleSaveTeamGuide(message);
       case "SAVE_PERSONAL_GUIDE":
@@ -472,15 +483,37 @@ export default defineBackground(() => {
   }
 
   // The graph page is a standalone tab whose ONLY registry-touching call is this
-  // one. On a cold MV3 service worker it can therefore arrive before initWorker's
+  // one. On a cold MV3 service worker it can arrive before initWorker's
   // fire-and-forget reestablish() has hydrated the registry from storage (manual
   // batches + connection caches), which surfaced as an empty "No flows or screens
-  // configured yet" graph even after a successful import. Await a reestablish so
-  // the in-memory registry is populated before we read it (idempotent; also
-  // reconnects sidecars so their /flows,/screens caches are live).
-  async function handleGetFlowsScreens(): Promise<FlowsScreensResult> {
-    await reestablish();
-    return { projects: registry.flowsScreensByProject() };
+  // configured yet" graph even after a successful import -- so hydrating first is
+  // mandatory. But hydration is storage-only and instant; it was the sidecar
+  // round-trip bundled into the same await that held the whole panel blank for
+  // seconds whenever a configured sidecar was down (six requests, each waiting out
+  // its own timeout) -- and Manual-import projects, which need no server at all,
+  // were stuck behind it. So the wait is now opt-in per phase: the default read
+  // hydrates and returns, reporting how many sidecars are still unloaded, and only
+  // a `refresh` read pays for the network.
+  async function handleGetFlowsScreens(refresh?: boolean): Promise<FlowsScreensResult> {
+    try {
+      // A `refresh` read pays for the network ALONE -- whoever asks for one has
+      // just taken the default read, which hydrated from storage moments earlier,
+      // so repeating that would only re-read and re-diff the whole manual-batch
+      // list for nothing. Note the default read deliberately does not restart SSE
+      // watches either (reestablish's other job): a worker that lost its watches
+      // is healed by initWorker and the keepalive alarm, not by opening a panel.
+      if (refresh) {
+        await registry.reload();
+        if (await getEnabled()) registry.startWatchAll();
+      } else {
+        await hydrateFromStorage();
+      }
+    } catch {
+      // Answer with whatever the registry already holds rather than rejecting: the
+      // panel must still paint. This keeps reestablish()'s own swallow-and-carry-on
+      // contract, which the phase split would otherwise have dropped.
+    }
+    return { projects: registry.flowsScreensByProject(), pending: registry.unloadedCount() };
   }
 
   async function handleGetSpecs(origin: string): Promise<SpecsForOrigin> {

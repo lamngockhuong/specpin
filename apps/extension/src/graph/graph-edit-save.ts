@@ -1,7 +1,7 @@
 import type { FlowsConfig, ScreensConfig } from "@specpin/spec-schema";
-import type { FlowsScreensResult, ProjectFlowsScreens } from "../shared/messaging.js";
-import { sendToBackground } from "../shared/messaging.js";
+import type { ProjectFlowsScreens } from "../shared/messaging.js";
 import type { FlowsEditHandle, ScreensEditHandle } from "./graph-edit-mode.js";
+import { fetchProjects } from "./graph-project-load.js";
 import type { Dataset } from "./graph-project-picker.js";
 import { mergeScreensDraft } from "./graph-write-back.js";
 import { mergeFlowsConfig } from "./graph-write-back-flows.js";
@@ -25,7 +25,9 @@ export async function saveEditDraft(
   connectionId: string,
   mode: ScreensEditHandle | FlowsEditHandle,
 ): Promise<SaveEditDraftResult> {
-  const fresh = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
+  // `refresh: true` is load-bearing here: RT-H3 needs the LIVE config off disk,
+  // not the background's cache, or a teammate's concurrent edit gets clobbered.
+  const fresh = await fetchProjects(true);
   const project = fresh.projects.find((p) => p.connectionId === connectionId);
   if (!project) return { ok: false, error: "project no longer available" };
 
@@ -49,6 +51,7 @@ export async function saveEditDraft(
       : await dispatchWriteFlows(connectionId, merged.config as FlowsConfig);
   if (!dispatch.ok) return { ok: false, error: dispatch.errors?.join("; ") ?? "" };
 
-  const refreshed = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
+  // Cached read: the write path just reloaded the connection it wrote to.
+  const refreshed = await fetchProjects();
   return { ok: true, refreshedProjects: refreshed.projects };
 }

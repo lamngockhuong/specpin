@@ -573,6 +573,10 @@ const en = {
   "graph.datasetScreens": "Screens",
   "graph.noData":
     "No flows or screens configured yet. Add .specs/flows.json or .specs/screens.json to a connected project.",
+  // Shown instead of graph.noData while the panel is still reaching the
+  // connected sidecars, so a slow or unreachable one does not read as a
+  // missing config.
+  "graph.connecting": "Reaching the connected projects...",
   "graph.notOnPage": "This spec isn't on the current page (belongs to {page})",
   // Graph controls (view toggle, category tabs, search) + the table view.
   "graph.toggleGraph": "Graph",
