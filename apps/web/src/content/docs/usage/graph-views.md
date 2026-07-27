@@ -71,6 +71,8 @@ Each screen's `urlGlob` identifies it on the live UI, reusing the same glob synt
 
 Click **Open graph view** from the header's **⋯ More actions** menu in the popup or side panel. It opens in a new browser tab. If a page serves more than one project, a project picker appears above the canvas; a status-flow / Screens dataset picker is always shown once a project is selected, regardless of whether both datasets have content yet - so an empty dataset stays reachable (e.g. the Screens dataset for auto-capture review, or the status-flow dataset to author your first flow). It defaults to whichever dataset is non-empty for convenience. Your project/dataset choice is remembered across reloads (and reopening the graph tab), so a refresh returns you to the same view instead of resetting to the first project.
 
+The view opens without waiting on a server: it paints from what needs no network first - Manual-import projects and any sidecar already loaded - so a configured-but-not-running sidecar cannot hold the panel blank while its requests time out. Sidecars still being reached show **Reaching the connected projects...** on an otherwise-empty canvas, and their projects join the picker as they answer. A project you switched **off** on the Options page is skipped entirely: it is not contacted and does not appear in the picker.
+
 ## Browse the graph
 
 - **Graph / Table toggle**: switch between the visual diagram and a plain sortable table of the same nodes and edges.
