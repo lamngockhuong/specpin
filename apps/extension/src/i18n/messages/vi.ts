@@ -562,7 +562,7 @@ const vi: Record<keyof Messages, string> = {
   "graph.datasetScreens": "Màn hình",
   "graph.noData":
     "Chưa cấu hình flows hay screens nào. Thêm .specs/flows.json hoặc .specs/screens.json vào một dự án đã kết nối.",
-  "graph.notOnPage": "Không có trên trang hiện tại - {page}",
+  "graph.notOnPage": "Spec này không có trên trang hiện tại (thuộc trang {page})",
   // Bộ điều khiển đồ thị (chuyển chế độ xem, tab danh mục, tìm kiếm) + chế độ bảng.
   "graph.toggleGraph": "Đồ thị",
   "graph.toggleTable": "Bảng",

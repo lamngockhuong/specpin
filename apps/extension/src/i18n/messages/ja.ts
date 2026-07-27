@@ -572,7 +572,7 @@ const ja: Record<keyof Messages, string> = {
   "graph.datasetScreens": "画面",
   "graph.noData":
     "flows も screens もまだ設定されていません。接続済みプロジェクトに .specs/flows.json または .specs/screens.json を追加してください。",
-  "graph.notOnPage": "現在のページにはありません - {page}",
+  "graph.notOnPage": "この spec は現在のページにはありません（対象ページ: {page}）",
   // グラフコントロール (表示切り替え、カテゴリタブ、検索) + テーブル表示。
   "graph.toggleGraph": "グラフ",
   "graph.toggleTable": "テーブル",
