@@ -338,6 +338,8 @@ Hai file `.specs/` tùy chọn được render thành sơ đồ trong một **gr
 
 **Mở nó.** Click **Open graph view** trong menu **⋯ More actions** ở header của popup hoặc side panel; nó mở graph trong một tab mới. Một bộ chọn project xuất hiện phía trên canvas khi một trang được nhiều project phục vụ; bộ chọn dataset **Flows / Screens** luôn hiển thị ngay khi đã chọn project, bất kể cả hai dataset có dữ liệu hay không - nên dataset trống vẫn tới được (ví dụ dataset Screens để duyệt auto-capture dù chưa có screen nào, hoặc dataset Flows để tạo flow đầu tiên qua **New flow**, ở edit mode). Nó vẫn mặc định chọn dataset nào không rỗng cho tiện. Lựa chọn project/dataset của bạn được ghi nhớ qua mỗi lần tải lại (và khi mở lại tab graph), nên F5 sẽ đưa bạn về đúng khung nhìn cũ thay vì reset về project đầu tiên; nếu project đó không còn (ví dụ đã ngắt kết nối) thì tự quay về project đầu tiên.
 
+**Mở lên là thấy ngay, không phải chờ server.** Graph vẽ trước những gì không cần mạng - project nhập thủ công và các sidecar đã nạp sẵn - nên một sidecar đã cấu hình nhưng chưa chạy không còn khiến cả trang trắng xóa trong lúc các request chờ hết giờ. Với những sidecar còn đang kết nối, canvas trống sẽ hiện **Đang kết nối tới các dự án...**, và project của chúng lần lượt xuất hiện trong bộ chọn khi có phản hồi. Project bạn đã **tắt** ở trang Options thì bị bỏ qua hoàn toàn: không gọi tới nó và cũng không hiện trong bộ chọn - đúng như cách một batch thủ công đã tắt vẫn hoạt động lâu nay.
+
 **Các control**, có thể kết hợp:
 
 - **Graph <-> Table toggle**: chuyển giữa sơ đồ và một bảng có thể sắp xếp của cùng các node/edge đó.

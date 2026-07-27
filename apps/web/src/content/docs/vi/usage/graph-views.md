@@ -71,6 +71,8 @@ Tạo `.specs/screens.json` để mô tả điều hướng của ứng dụng:
 
 Click **Open graph view** trong menu **⋯ More actions** ở header của popup hoặc side panel. Nó mở trong một tab trình duyệt mới. Nếu một trang được nhiều project phục vụ, một bộ chọn project xuất hiện phía trên canvas; bộ chọn dataset status-flow / Screens luôn hiển thị ngay khi đã chọn project, bất kể cả hai dataset đã có dữ liệu hay chưa - nên một dataset trống vẫn tới được (ví dụ dataset Screens để duyệt auto-capture, hoặc dataset status-flow để soạn flow đầu tiên của bạn). Nó mặc định chọn dataset nào không rỗng cho tiện. Lựa chọn project/dataset của bạn được ghi nhớ qua mỗi lần tải lại (và khi mở lại tab graph), nên F5 sẽ đưa bạn về đúng khung nhìn cũ thay vì reset về project đầu tiên.
 
+Graph mở lên là thấy ngay, không phải chờ server: nó vẽ trước những gì không cần mạng - project nhập thủ công và các sidecar đã nạp sẵn - nên một sidecar đã cấu hình nhưng chưa chạy không thể khiến cả trang trắng xóa trong lúc các request chờ hết giờ. Với những sidecar còn đang kết nối, canvas trống sẽ hiện **Đang kết nối tới các dự án...**, và project của chúng lần lượt xuất hiện trong bộ chọn khi có phản hồi. Project bạn đã **tắt** ở trang Options thì bị bỏ qua hoàn toàn: không gọi tới nó và cũng không hiện trong bộ chọn.
+
 ## Duyệt graph
 
 - **Graph / Table toggle**: chuyển giữa sơ đồ trực quan và một bảng có thể sắp xếp của cùng các node và edge đó.

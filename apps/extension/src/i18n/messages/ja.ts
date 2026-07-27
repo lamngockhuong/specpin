@@ -572,6 +572,9 @@ const ja: Record<keyof Messages, string> = {
   "graph.datasetScreens": "画面",
   "graph.noData":
     "flows も screens もまだ設定されていません。接続済みプロジェクトに .specs/flows.json または .specs/screens.json を追加してください。",
+  // 接続済み sidecar への接続中は graph.noData の代わりにこちらを表示し、
+  // 遅い/到達できない sidecar が設定漏れに見えないようにする。
+  "graph.connecting": "接続済みプロジェクトに接続しています...",
   "graph.notOnPage": "この spec は現在のページにはありません（対象ページ: {page}）",
   // グラフコントロール (表示切り替え、カテゴリタブ、検索) + テーブル表示。
   "graph.toggleGraph": "グラフ",

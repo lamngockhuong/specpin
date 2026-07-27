@@ -1,10 +1,11 @@
 import { t } from "../i18n/index.js";
-import type { FlowsScreensResult, ProjectFlowsScreens } from "../shared/messaging.js";
+import type { ProjectFlowsScreens } from "../shared/messaging.js";
 import { sendToBackground } from "../shared/messaging.js";
 import { normalizeGlobs } from "../shared/record-exclude.js";
 import type { GraphEdge } from "./config-to-graph.js";
 import type { GhostController } from "./graph-ghost-controller.js";
 import type { GhostPanelHandle } from "./graph-ghost-panel.js";
+import { fetchProjects } from "./graph-project-load.js";
 
 // Wires a clicked ghost edge to the Approve/Discard panel and the two
 // round-trips (Phase B3). Split out of main.ts to keep the entrypoint within
@@ -44,7 +45,8 @@ export function wireGhostReview(
       return;
     }
     panel.hide();
-    const refreshed = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
+    // Cached read: approving just wrote screens.json and reloaded that connection.
+    const refreshed = await fetchProjects();
     await controller.refresh();
     deps.onChanged(refreshed.projects);
   }

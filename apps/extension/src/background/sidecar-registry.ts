@@ -111,11 +111,27 @@ export class SidecarRegistry {
     if (watch) conn.startWatch();
   }
 
-  /** One connection (by id) or all of them; an unknown id yields none. */
+  /** One connection (by id) or every ENABLED one; an unknown id yields none.
+   *  The bulk path deliberately skips disabled projects: one the user switched
+   *  off serves no page and never watches (see `startWatch`), so contacting it
+   *  on every service-worker wake, keepalive tick, and graph-panel open only
+   *  buys a multi-second stall when its sidecar is down. An explicit id is
+   *  always honored, so the Options "Reconnect" on a disabled row still works. */
   private targetsFor(id?: string): SidecarConnection[] {
-    if (!id) return [...this.connections.values()];
+    if (!id) return [...this.connections.values()].filter((c) => c.enabled);
     const conn = this.connections.get(id);
     return conn ? [conn] : [];
+  }
+
+  /** Enabled connections with no cache yet: a sidecar this worker has not
+   *  reached in its lifetime. Read by the graph panel's two-phase load to tell
+   *  whether the instant (storage-only) answer is already complete or whether a
+   *  network round-trip is still owed -- so the common no-sidecar case costs no
+   *  second fetch at all. */
+  unloadedCount(): number {
+    let n = 0;
+    for (const conn of this.targetsFor()) if (!conn.getCache()) n++;
+    return n;
   }
 
   /** Reload one connection (by id) or all of them. Per-connection failures are
@@ -359,7 +375,10 @@ export class SidecarRegistry {
    *  same ids regardless of which page the graph tab was opened from. */
   flowsScreensByProject(): ProjectFlowsScreens[] {
     const out: ProjectFlowsScreens[] = [];
-    for (const conn of this.connections.values()) {
+    // `targetsFor()` drops disabled projects exactly as the manual-batch loop
+    // below does: switched off means switched off everywhere, and the bulk reload
+    // no longer refreshes them either, so an aged cache must not linger here.
+    for (const conn of this.targetsFor()) {
       const cache = conn.getCache();
       if (!cache) continue;
       out.push({

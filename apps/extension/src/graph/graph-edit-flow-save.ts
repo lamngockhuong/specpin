@@ -1,11 +1,11 @@
 import type { Flow, LocalizedString } from "@specpin/spec-schema";
-import type { FlowsScreensResult, ProjectFlowsScreens } from "../shared/messaging.js";
-import { sendToBackground } from "../shared/messaging.js";
+import type { ProjectFlowsScreens } from "../shared/messaging.js";
 import {
   createFlowInConfig,
   deleteFlowInConfig,
   renameFlowInConfig,
 } from "./graph-edit-flow-crud.js";
+import { fetchProjects } from "./graph-project-load.js";
 import { dispatchWriteFlows } from "./graph-write-dispatch.js";
 
 // Whole-Flow lifecycle save round-trip (Track C, C2): the create/rename/delete
@@ -31,7 +31,9 @@ async function withFreshFlows(
     errors?: string[];
   },
 ): Promise<FlowActionResult> {
-  const fresh = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
+  // `refresh: true` is load-bearing: RT-H3 needs the LIVE FlowsConfig off disk,
+  // not the background's cache (see graph-edit-save.ts, same contract).
+  const fresh = await fetchProjects(true);
   const project = fresh.projects.find((p) => p.connectionId === connectionId);
   if (!project) return { ok: false, error: "project no longer available" };
 
@@ -44,7 +46,8 @@ async function withFreshFlows(
   );
   if (!dispatch.ok) return { ok: false, error: dispatch.errors?.join("; ") ?? "" };
 
-  const refreshed = await sendToBackground<FlowsScreensResult>({ type: "GET_FLOWS_SCREENS" });
+  // Cached read: the write path just reloaded the connection it wrote to.
+  const refreshed = await fetchProjects();
   return { ok: true, refreshedProjects: refreshed.projects };
 }
 

@@ -401,6 +401,8 @@ Two optional `.specs/` files render as diagrams in a dedicated full-page graph v
 
 **Open it.** Click **Open graph view** from the header's **⋯ More actions** menu in the popup or side panel; it opens the graph in a new tab. A project picker appears above the canvas when a page serves more than one project; the **Flows / Screens** dataset select is always shown once a project is selected, regardless of whether both datasets have content - so an empty dataset stays reachable (e.g. the Screens dataset for auto-capture review even before any screen exists, or the Flows dataset to create your first flow via **New flow**, in edit mode). It still defaults to whichever dataset is non-empty for convenience. Your project/dataset choice is remembered across reloads (and reopening the graph tab), so a refresh returns you to the same view instead of resetting to the first project; if that project is gone (e.g. disconnected) it falls back to the first one.
 
+**It opens without waiting on a server.** The view paints from what needs no network first - Manual-import projects and any sidecar already loaded - so a configured-but-not-running sidecar no longer holds the whole panel blank while its requests time out. Sidecars still being reached show **Reaching the connected projects...** on an otherwise-empty canvas, and their projects join the picker as they answer. A project you switched **off** on the Options page is skipped entirely: it is not contacted and does not appear in the picker, matching how a disabled Manual batch already behaved.
+
 **Controls**, all combinable:
 
 - **Graph <-> Table toggle**: switch between the diagram and a plain sortable table of the same nodes/edges.
