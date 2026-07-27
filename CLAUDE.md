@@ -61,6 +61,9 @@ Package roles (see `docs/system-architecture.md`):
 | `packages/spec-schema` | JSON Schema v1 (**single source of truth**) + generated TS types + ajv validators |
 | `packages/fingerprint-core` | framework-agnostic `captureFingerprint` + `matchElement` (pure DOM, no extension deps) |
 | `packages/api-client` | typed `SidecarClient` over the sidecar HTTP contract + SSE helper |
+| `packages/specshot-core` | headless spec-first authoring: MarkDoc/coordinate model, numbering, canvas geometry, export builders (`buildShot`/`buildPendingSpec`); depends on `spec-schema` |
+| `packages/specshot-react` | presentational spec-sheet editor components + hooks (`react`/`react-dom` peerDeps) |
+| `packages/specshot-app` | shared spec-sheet composition mounted by the extension's `specshot.html` authoring page |
 | `apps/cli` | Go sidecar: `init` + `serve` (CRUD, SSE, health), hardened localhost |
 | `apps/extension` | WXT MV3 extension (background SW + content script + popup/options) |
 | `examples/demo-react-app` | demo UI with seeded `.specs/` |
@@ -77,9 +80,11 @@ When you change the schema: edit only `packages/spec-schema/schema/v1.json`, reg
 
 ### Extension internals (`apps/extension/src`)
 
-- `entrypoints/` - WXT entry points (background, content, popup, options).
+- `entrypoints/` - WXT entry points (background, content, popup, options, sidepanel, `specshot` spec-first authoring page, `graph` view, welcome).
 - `background/sidecar-controller.ts` - holds `SidecarClient`, spec cache, relays SSE to content scripts.
 - `content/` - `orchestrator.ts` drives match+render; `capture-*.ts` is the manual capture flow; `keyboard.ts` handles the shortcuts.
+- `graph/` - screen-transition + status-flow graph model, runtime auto-capture of navigations (opt-in per project), and the in-browser graph editor (rendered in the `graph` entrypoint); flows persist to `.specs/`. See `docs/run-guide.md`.
+- `entrypoints/specshot` - the spec-first authoring page, mounting `@specpin/specshot-app`. Pixel geometry lives in shot artifacts, never in `Spec`. See `docs/specshot-integration.md` + `docs/spec-sheet-authoring.md`.
 - `renderers/` - pluggable display modes via `registry.ts` (tooltip, sidebar, modal shipped; overlay + inline-badge dropped as redundant - enum values stay reserved and fall back to tooltip).
 - `sources/` - pluggable spec sources via `registry.ts` (sidecar shipped; FileSystem/Manual deferred).
 - `shared/shadow.ts` + `html.ts` - Shadow DOM isolation and CSP-safe HTML; rendering stays out of the host page's styles/CSP.
@@ -87,7 +92,7 @@ When you change the schema: edit only `packages/spec-schema/schema/v1.json`, reg
 
 ### Fingerprint matching (`packages/fingerprint-core`)
 
-Captures multiple signals per element (test-id anchors, aria, non-generated id, optimized cssSelector, xpath, domPath, text, whitelisted attrs, nearby labels, position, framework hint). Match order (current): exact anchors (confidence 1.0) -> unique cssSelector (0.7) -> else `needsReview`. A `data-spec-id` attribute makes matching trivially exact. The `matchElement` signature and `MatchResult` shape are stable so the planned hybrid weighted scorer can slot in without breaking callers.
+Captures multiple signals per element (test-id anchors, aria, non-generated id, optimized cssSelector, xpath, domPath, text, whitelisted attrs, nearby labels, position, framework hint). `fingerprint` is optional: a **pending/unpinned** spec (authored from a screenshot before the UI exists) has none, so matching is skipped and returns no-match rather than throwing. Match order: exact anchors testId→aria→id (confidence 1.0, `strategy: "exact"`) -> unique `cssSelector` (0.7, `"css"`) -> the hybrid weighted scorer for the ambiguous/orphan cases (`"scored"`) — an ambiguous selector picks its best hit only if it clears the δ ambiguity margin, and a true orphan (with a content signal) scores a bounded candidate pool and matches only above the `MID` threshold; below that it biases to no-match. A match below `HIGH` is flagged `needsReview`. A `data-spec-id` attribute makes matching trivially exact. The scorer's `WEIGHTS` + thresholds live in `score.ts` and are tunable from an exported drift corpus (see `docs/scorer-tuning.md`). The `matchElement` signature and `MatchResult` shape stay stable for callers.
 
 ### Sidecar security model (`apps/cli/internal/server`)
 

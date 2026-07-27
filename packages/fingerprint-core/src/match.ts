@@ -67,13 +67,16 @@ function matchExact(
 }
 
 /**
- * Match a fingerprint against a live DOM. MVP order (no weighted scoring yet):
+ * Match a fingerprint against a live DOM. Order:
  *   0. absent fingerprint (pending/unpinned spec) -> no element, needsReview
  *   1. exact anchors (testId/aria/id) -> confidence 1.0, strategy "exact"
  *   2. unique cssSelector hit         -> confidence 0.7, strategy "css"
- *   3. otherwise (absent or ambiguous) -> no element, needsReview
- * The signature and MatchResult shape are stable so the deferred hybrid scorer
- * slots in as extra steps without breaking callers.
+ *   2b. ambiguous cssSelector         -> weighted scorer picks the best hit only if
+ *       it clears the δ ambiguity margin -> strategy "scored"
+ *   3. true orphan (exact + css failed, has content signal) -> score a bounded
+ *       candidate pool, match the best only above MID -> strategy "scored"; else none
+ * A scored match below HIGH is flagged needsReview. The signature and MatchResult
+ * shape stay stable for callers.
  *
  * `fp` is optional: a pending (unpinned) spec has no fingerprint yet — authored
  * before the UI exists. Rather than throw, matching is skipped and NO_MATCH is

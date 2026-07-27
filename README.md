@@ -144,6 +144,8 @@ Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachabl
 - **Per-project enable/disable** - toggle individual connections independently of the global on/off
 - **Side panel surface** - open Specpin in Chrome's side panel / Firefox's sidebar, with inline spec detail
 - **Guide mode** - spec-driven onboarding tours in team + personal scopes, with a spotlight overlay, an anchored popover, and a keyboard shortcut
+- **Graph views** - visualize your app as screen-transition and status-flow diagrams, auto-captured as you browse (opt-in, per-project), edited in an in-browser graph editor and committed to your repo
+- **Spec-first authoring** - draft a spec from a screenshot or design before the UI exists (pending specs), then bind it to a real element once the frontend ships; author inside the extension's spec sheet page, fully offline
 - **Reader navigation** - shareable spec deep-links, keyboard cycle through a page's specs, and a "what changed since last visit" digest
 - **Spec search** - live client-side filter by title, file, tags, and description
 - **Spec filtering** - show/hide specs by tag, file, or page via facet checklists; team defaults (committed `views.json`) plus personal overrides
@@ -166,13 +168,19 @@ Let a coding agent write your specs. A skill bundled in `@specpin/cli` (reachabl
 specpin/
 ├── apps/
 │   ├── extension/            # WXT MV3 cross-browser extension (Chrome + Firefox)
-│   └── cli/                  # Go sidecar binary: init + serve
+│   ├── cli/                  # Go sidecar binary: init + serve
+│   └── web/                  # Astro Starlight marketing + docs site (specpin.ohnice.app)
 ├── packages/
 │   ├── spec-schema/          # JSON Schema v1 (SSOT) + generated TS types + validators
 │   ├── fingerprint-core/     # framework-agnostic capture + match (DOM only)
-│   └── api-client/           # typed TS client over the sidecar HTTP contract
+│   ├── api-client/           # typed TS client over the sidecar HTTP contract
+│   ├── specshot-core/        # headless spec-first authoring (MarkDoc model, numbering, export)
+│   ├── specshot-react/       # presentational spec-sheet editor components
+│   └── specshot-app/         # shared spec-sheet composition (hosted in the extension)
 ├── examples/
 │   └── demo-react-app/       # sample app + seeded .specs/ for trying Specpin
+├── plugins/
+│   └── specpin/              # Claude Code / Codex plugin (marketplace source)
 └── docs/                     # architecture, run guide, schema reference
 ```
 

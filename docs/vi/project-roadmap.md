@@ -318,15 +318,18 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access và exten
 
 ## Chiến lược Versioning
 
-**Hiện tại**: v0.0.0 (pre-release, dogfooding nội bộ).
+**Hiện tại**: đã release công khai và đang chạy, vẫn ở giai đoạn pre-1.0. Mỗi component
+versioning độc lập qua `release-please` từ conventional commit (xem `deployment-guide.md`):
 
-**Trước 1.0 (đã lên kế hoạch):**
-- v0.1.0: bản release công khai đầu tiên
-- v0.2.0: các tính năng dự kiến (hybrid scorer, nguồn FileSystem, Safari)
-- v0.3.0+: thêm tính năng, đánh bóng, bugfix
+- extension `0.0.16` — đang chạy trên Chrome Web Store + Firefox Add-ons
+- CLI `0.0.8` — GitHub Releases + npm (`@specpin/cli`)
+- spec-schema `0.0.5` — npm (`@specpin/spec-schema`)
+
+**Trước 1.0 (đang diễn ra):**
+- Đã release công khai; extension, CLI và spec-schema giờ iterate độc lập với nhau.
+- Ngắn hạn: nguồn spec FileSystem, đóng gói Safari, tiếp tục đánh bóng + bugfix.
 
 **Tiêu chí 1.0 (chưa định nghĩa):**
-- Hybrid fingerprint scorer được kiểm chứng trong production
 - Hỗ trợ Safari được xác nhận
 - 6+ tháng dogfooding không có bug Critical/High
 - Tài liệu hoàn chỉnh (user guide, API reference, migration guide)
@@ -338,12 +341,12 @@ Dự kiến, chờ phản hồi sử dụng: nguồn FileSystem Access và exten
 - Tính năng mới (renderer, source, AI assist) -> bump MINOR
 - Bugfix, hiệu năng, bảo mật -> bump PATCH
 
-## Nhịp Release (chưa cam kết)
+## Nhịp Release
 
-Dự kiến sau khi release public:
-- **Minor releases**: mỗi 2-3 tháng (tính năng mới, không breaking)
-- **Patch releases**: khi cần (hotfix, bảo mật, bug nghiêm trọng)
-- **Major releases**: 12-18 tháng (breaking change, schema v2+)
+Release diễn ra liên tục và theo từng component, do `release-please` điều phối từ
+conventional commit: merge release PR của một component sẽ cắt version tiếp theo của nó
+và publish artifact (xem `deployment-guide.md`). Không có nhịp theo lịch cố định — một
+`fix:`/`feat:` có phạm vi sẽ ship khi release PR của nó được merge.
 
 ## Phụ thuộc & Rủi ro (Dependencies & Risks)
 
@@ -353,7 +356,7 @@ Dự kiến sau khi release public:
 
 **Tính dễ vỡ của fingerprint:**
 - Rủi ro: refactor phá vỡ match, spec trở thành mất liên kết (orphaned)
-- Giảm thiểu: hybrid weighted scorer dự kiến, khuyến nghị thuộc tính `data-spec-id` cho các element quan trọng, cờ `needsReview` làm nổi các match mơ hồ.
+- Giảm thiểu: hybrid weighted scorer (đã giao 2026-07-02), khuyến nghị thuộc tính `data-spec-id` cho các element quan trọng, cờ `needsReview` làm nổi các match mơ hồ.
 
 **Thay đổi API của Extension:**
 - Rủi ro: các thay đổi API manifest v3/v2 của Chrome/Firefox phá vỡ extension

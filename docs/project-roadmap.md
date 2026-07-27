@@ -316,15 +316,18 @@ Planned, pending usage feedback: the FileSystem Access source and the VSCode aut
 
 ## Versioning Strategy
 
-**Current**: v0.0.0 (pre-release, internal dogfooding).
+**Current**: publicly released and live, still pre-1.0. Each component versions
+independently via `release-please` from conventional commits (see `deployment-guide.md`):
 
-**Pre-1.0 (planned):**
-- v0.1.0: first public release
-- v0.2.0: planned features (hybrid scorer, FileSystem source, Safari)
-- v0.3.0+: additional features, polish, bugfixes
+- extension `0.0.16` — live on the Chrome Web Store + Firefox Add-ons
+- CLI `0.0.8` — GitHub Releases + npm (`@specpin/cli`)
+- spec-schema `0.0.5` — npm (`@specpin/spec-schema`)
+
+**Pre-1.0 (ongoing):**
+- Public release shipped; extension, CLI, and spec-schema now iterate independently.
+- Near-term: FileSystem spec source, Safari packaging, continued polish + bugfixes.
 
 **1.0 criteria (not yet defined):**
-- Hybrid fingerprint scorer validated in production
 - Safari support confirmed
 - 6+ months dogfooding with no Critical/High bugs
 - Documentation complete (user guide, API reference, migration guides)
@@ -336,12 +339,12 @@ Planned, pending usage feedback: the FileSystem Access source and the VSCode aut
 - New features (renderers, sources, AI assist) -> MINOR bump
 - Bugfixes, performance, security -> PATCH bump
 
-## Release Cadence (not yet committed)
+## Release Cadence
 
-Planned after public release:
-- **Minor releases**: every 2-3 months (new features, non-breaking)
-- **Patch releases**: as needed (hotfixes, security, critical bugs)
-- **Major releases**: 12-18 months (breaking changes, schema v2+)
+Releases are continuous and per-component, driven by `release-please` from conventional
+commits: merging a component's release PR cuts its next version and publishes its
+artifacts (see `deployment-guide.md`). There is no fixed calendar cadence — a scoped
+`fix:`/`feat:` ships when its release PR merges.
 
 ## Dependencies & Risks
 
@@ -351,7 +354,7 @@ Planned after public release:
 
 **Fingerprint brittleness:**
 - Risk: refactors break matches, specs become orphaned
-- Mitigation: planned hybrid weighted scorer, `data-spec-id` attribute recommended for critical elements, `needsReview` flag surfaces ambiguous matches.
+- Mitigation: hybrid weighted scorer (shipped 2026-07-02), `data-spec-id` attribute recommended for critical elements, `needsReview` flag surfaces ambiguous matches.
 
 **Extension API changes:**
 - Risk: Chrome/Firefox manifest v3/v2 API shifts break extension

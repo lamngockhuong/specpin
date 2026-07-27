@@ -30,7 +30,7 @@ Schema chuẩn (canonical) là `packages/spec-schema/schema/v1.json` (JSON Schem
 | `specFiles` | string[] | yes | tên của các file `<area>.spec.json` |
 | `settings.defaultLocale` | string | no | fallback locale khi lựa chọn của người xem không có trên một spec |
 | `settings.locales` | string[] | no | BCP-47 locales mà project này soạn spec trong đó; language picker của extension cung cấp hợp (union) của các project được kết nối |
-| `settings.matchConfidenceThreshold` | number 0-1 | no | dành riêng cho hybrid scorer đang được hoãn lại |
+| `settings.matchConfidenceThreshold` | number 0-1 | no | dành riêng, chưa được dùng (scorer dùng ngưỡng HIGH/MID cố định trong `score.ts`) |
 | `settings.stalenessThresholdDays` | number 1-3650 | no | số ngày sau `meta.reviewedAt` của một spec trước khi nó render là **stale** (cũ); mặc định lúc chạy là **90** khi không có. Giá trị bị giới hạn khoảng nên không thể âm thầm tắt tín hiệu độ mới (freshness). Được phân giải theo từng project, nên một trang nhiều project dùng cài đặt của chính project chứa mỗi spec; project local/manual (không có manifest) luôn dùng 90. |
 | `settings.defaultDisplayMode` | DisplayMode | no | render mode dự phòng (fallback) |
 

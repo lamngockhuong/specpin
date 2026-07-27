@@ -397,7 +397,7 @@ Two jobs (JS, Go):
 
 2. **Generated files never hand-edited**: all `*.gen.*` files regenerated via `pnpm --filter @specpin/spec-schema gen`. Biome ignores them. Git tracks them (for consumers without build step).
 
-3. **Fingerprint matching order**: (1) exact anchors (test-id, aria, id, data-spec-id) confidence 1.0, (2) unique cssSelector confidence 0.7, (3) else `needsReview`. Hybrid weighted scorer deferred to 1.1 but `MatchResult` interface stable.
+3. **Fingerprint matching order**: (1) exact anchors (test-id, aria, id, data-spec-id) confidence 1.0, (2) unique cssSelector confidence 0.7, (3) hybrid weighted scorer on ambiguous/orphan hits (`strategy:"scored"`, matched above MID, `needsReview` below HIGH), else `needsReview`. `MatchResult` interface stable; scorer `WEIGHTS` in `score.ts` (see `docs/scorer-tuning.md`).
 
 4. **Sidecar security**: binds 127.0.0.1 only, token auth on all requests, CORS restricted to extension origins, path-traversal guard on writes, no web origin access.
 

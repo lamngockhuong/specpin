@@ -146,3 +146,30 @@ Both reusable workflows also accept:
 - The chrome/firefox zips load as unpacked extensions and report the new version.
 - For spec-schema: `npm view @specpin/spec-schema version` shows the new version,
   and the npm page lists a provenance attestation.
+
+## Claude Code / Codex plugin (marketplace)
+
+The repo doubles as a Claude Code plugin marketplace: `.claude-plugin/marketplace.json`
+(at the repo root) advertises one plugin, `specpin`, whose source is `plugins/specpin/`.
+Unlike the artifacts above, this channel has **no build, release, or publish pipeline** —
+it ships straight from `main`. A user installs it by pointing Claude Code at the GitHub
+repo:
+
+```
+/plugin marketplace add lamngockhuong/specpin
+/plugin install specpin@lamngockhuong
+```
+
+So "deploying" a plugin change means merging it to `main`; the marketplace serves the
+current tree. There is no version tag and release-please does not track it. A Codex
+manifest (`plugins/specpin/.codex-plugin/plugin.json`) ships alongside the Claude one.
+
+What guards it in CI:
+
+- `plugins/specpin/skills/specpin/` is **generated** from the canonical skill source
+  (`apps/cli/skill/`) by `apps/cli/npm/scripts/sync-skill.mjs`, which feeds both the npm
+  tarball copy and this plugin copy. The existing drift gate (`sync-skill.mjs --check`)
+  fails CI if either checked-in copy drifted — never hand-edit the generated copy.
+- `ci.yml` lists `plugins/**` and `.claude-plugin/**` in its path filter so a PR touching
+  only the plugin still runs the js job + drift gate; the hand-maintained manifests are
+  linted by `biome ci`.
