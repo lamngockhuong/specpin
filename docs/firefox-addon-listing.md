@@ -36,6 +36,10 @@ Features:
 
 • Guide mode: spec-driven onboarding tours in two scopes (team, committed to your repo; personal, per-origin), with a spotlight overlay and an anchored popover.
 
+• Graph views: visualize your app as screen-transition and status-flow diagrams — navigations are auto-captured as you browse (per-project, opt-in), edited in an in-browser graph editor, and committed to your repo.
+
+• Spec-first authoring: draft a spec from a screenshot or design before the UI exists (pending specs), then bind it to a real element once the frontend ships. Author right inside the add-on's spec sheet page, fully offline.
+
 • Sidebar surface: open Specpin in Firefox's sidebar with inline spec detail and live auto-refresh.
 
 • Spec search: live client-side filter by title, file, tags, and description.
@@ -72,6 +76,10 @@ Tính năng:
 
 • Chế độ hướng dẫn (Guide mode): tour onboarding dựa trên đặc tả với hai phạm vi (nhóm, commit vào repo; cá nhân, theo từng origin), kèm lớp phủ spotlight và popover neo.
 
+• Sơ đồ luồng (Graph views): trực quan hóa ứng dụng dưới dạng sơ đồ chuyển màn hình và luồng trạng thái - các bước điều hướng được tự động bắt khi bạn duyệt trang (tùy chọn, theo từng dự án), chỉnh sửa trong trình soạn sơ đồ ngay trên trình duyệt, và commit vào repo.
+
+• Soạn spec-first: soạn một đặc tả từ screenshot hoặc design trước khi UI tồn tại (pending spec), rồi bind nó vào phần tử thực khi frontend hoàn thiện. Soạn ngay trong trang spec sheet của tiện ích, hoàn toàn offline.
+
 • Bề mặt sidebar: mở Specpin trong sidebar của Firefox với chi tiết đặc tả nội tuyến và tự động làm mới trực tiếp.
 
 • Tìm kiếm đặc tả: lọc phía client theo tiêu đề, tệp, thẻ và mô tả.
@@ -107,6 +115,10 @@ Specpinはビジネス仕様（ルール、説明、受け入れ基準）を、�
 • マルチプロジェクト接続: 1つのアドオンで複数のプロジェクトを同時に管理、originによってページごとにルーティング、プロジェクト単位の有効/無効とソースバッジ（sidecarかローカルか）。
 
 • ガイドモード: 2つのスコープ（チーム、リポジトリにコミット；個人、origin単位）のspec駆動オンボーディングツアー。スポットライトオーバーレイとアンカー付きポップオーバー付き。
+
+• グラフビュー: アプリを画面遷移図とステータスフロー図として可視化 — ナビゲーションは閲覧中に自動キャプチャ（プロジェクト単位・オプトイン）、ブラウザ内のグラフエディターで編集し、リポジトリにコミット。
+
+• spec-firstオーサリング: UIが存在する前にスクリーンショットやデザインからspecを作成（pending spec）、フロントエンド完成後に実要素へバインド。アドオンのspec sheetページ上で、完全オフラインで作成可能。
 
 • Sidebarサーフェス: FirefoxのsidebarでSpecpinを開き、インラインspecの詳細とライブ自動更新を利用可能。
 
