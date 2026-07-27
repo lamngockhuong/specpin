@@ -28,7 +28,7 @@ The canonical schema is `packages/spec-schema/schema/v1.json` (JSON Schema draft
 | `specFiles` | string[] | yes | names of the `<area>.spec.json` files |
 | `settings.defaultLocale` | string | no | fallback locale when the viewer's choice is absent on a spec |
 | `settings.locales` | string[] | no | BCP-47 locales this project authors specs in; the extension's language picker offers the union across connected projects |
-| `settings.matchConfidenceThreshold` | number 0-1 | no | reserved for the deferred hybrid scorer |
+| `settings.matchConfidenceThreshold` | number 0-1 | no | reserved; not yet consumed (the scorer uses fixed HIGH/MID thresholds in `score.ts`) |
 | `settings.stalenessThresholdDays` | number 1-3650 | no | days after a spec's `meta.reviewedAt` before it renders as **stale**; runtime default **90** when absent. Bounded so it cannot silently disable the freshness signal. Resolved per-project, so a multi-project page uses each spec's own project setting; local/manual projects (no manifest) always use 90. |
 | `settings.defaultDisplayMode` | DisplayMode | no | fallback render mode |
 

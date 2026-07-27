@@ -399,7 +399,7 @@ Hai job (JS, Go):
 
 2. **Generated file không bao giờ sửa tay**: tất cả file `*.gen.*` được regenerate qua `pnpm --filter @specpin/spec-schema gen`. Biome bỏ qua chúng. Git track chúng (cho consumer không có bước build).
 
-3. **Thứ tự fingerprint matching**: (1) exact anchors (test-id, aria, id, data-spec-id) confidence 1.0, (2) unique cssSelector confidence 0.7, (3) nếu không thì `needsReview`. Hybrid weighted scorer hoãn sang 1.1 nhưng interface `MatchResult` ổn định.
+3. **Thứ tự fingerprint matching**: (1) exact anchors (test-id, aria, id, data-spec-id) confidence 1.0, (2) unique cssSelector confidence 0.7, (3) hybrid weighted scorer trên các hit mơ hồ/orphan (`strategy:"scored"`, match khi trên MID, `needsReview` khi dưới HIGH), nếu không thì `needsReview`. Interface `MatchResult` ổn định; `WEIGHTS` của scorer nằm trong `score.ts` (xem `docs/scorer-tuning.md`).
 
 4. **Sidecar security**: chỉ bind 127.0.0.1, token auth trên mọi request, CORS giới hạn ở extension origin, path-traversal guard khi ghi, không cho web origin truy cập.
 
