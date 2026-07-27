@@ -4,17 +4,16 @@ import { screensToGraph } from "./config-to-graph.js";
 import { createDirtyTracker } from "./graph-edit-dirty.js";
 import type { EditOpResult } from "./graph-edit-field-ops.js";
 import { updateScreenFields, updateTransitionFields } from "./graph-edit-field-ops.js";
-import {
-  cascadeRemoveNodeEdges,
-  nodeDeleteGuardError,
-  removeManualEdge,
-  upsertManualEdge,
-} from "./graph-edit-shared-guards.js";
+import { cascadeRemoveNodeEdges, upsertManualEdge } from "./graph-edit-shared-guards.js";
 
 interface ScreensDraft {
   screens: Screen[];
   transitions: Transition[];
+  /** Ids of auto-captured edges the draft has taken over (see `adopted` below). */
+  adopted: Set<string>;
 }
+
+const isNonManual = (t: Transition): boolean => (t.source ?? "manual") !== "manual";
 
 // Track C (C1)'s edit-mode: an in-memory DRAFT held over the raw
 // FlowsConfig/ScreensConfig (never the derived Graph -- config-to-graph.ts's
@@ -57,15 +56,20 @@ export interface ScreensEditHandle {
     patch: Partial<Pick<Screen, "name" | "urlGlob" | "specIds">>,
   ): EditOpResult;
   addEdge(edge: Transition): EditOpResult;
+  /** Delete an edge; an auto-captured one is taken over (adopted) so it stays
+   *  deleted after Save rather than being preserved back from the live config. */
   deleteEdge(id: string): EditOpResult;
-  /** C2: edit an existing manual-owned transition's fields by id. */
+  /** C2: edit a transition's fields by id; an auto-captured one is reclassified
+   *  to manual (adopted) so the edit persists instead of being refused. */
   updateEdge(
     id: string,
     patch: Partial<Pick<Transition, "trigger" | "guard" | "role" | "specId">>,
   ): EditOpResult;
   /** The draft's full current screens + transitions, ready for
-   *  mergeScreensDraft (graph-write-back.ts). */
-  snapshot(): { screens: Screen[]; transitions: Transition[] };
+   *  mergeScreensDraft (graph-write-back.ts). `adopted` lists the auto-captured
+   *  edges the editor took over (edited or deleted) so Save reclassifies them to
+   *  manual instead of preserving the stale auto-captured copy. */
+  snapshot(): { screens: Screen[]; transitions: Transition[]; adopted: string[] };
   /** C3: true once any mutation has succeeded since construction or the last
    *  resetDirty(). */
   isDirty(): boolean;
@@ -83,6 +87,11 @@ export function createScreensEditMode(
 ): ScreensEditHandle {
   let screens: Screen[] = [...config.screens];
   let transitions: Transition[] = [...config.transitions];
+  // Auto take-ownership: editing or deleting an auto-captured edge reclassifies
+  // it to manual. We record its id here (never mutating the set in place -- each
+  // op builds a fresh Set) so Save (mergeScreensDraft) drops the stale
+  // auto-captured copy from the preserved slice and the draft's version wins.
+  let adopted = new Set<string>();
   const tracker = createDirtyTracker<ScreensDraft>();
 
   /** Snapshot the pre-mutation draft, run `mutate`, and only THEN hand that
@@ -93,7 +102,7 @@ export function createScreensEditMode(
    *  overwrite the single kept undo snapshot with state that's identical to
    *  current, making a later undoLast() a silent no-op. */
   function withUndo(mutate: () => EditOpResult): EditOpResult {
-    const before = { screens, transitions };
+    const before = { screens, transitions, adopted };
     const result = mutate();
     if (result.ok) tracker.commit(before);
     return result;
@@ -115,8 +124,18 @@ export function createScreensEditMode(
 
     deleteNode(id) {
       return withUndo(() => {
-        const error = nodeDeleteGuardError(transitions, id, opts.hasShotReference);
-        if (error) return { ok: false, error };
+        // A shot still references it -> the one hard block that remains.
+        if (opts.hasShotReference?.(id)) {
+          return { ok: false, error: `"${id}" is referenced by a spec sheet (.specs/shots)` };
+        }
+        // Auto take-ownership: adopt every auto-captured edge touching the node
+        // so the cascade can remove them (and Save won't resurrect them) --
+        // deleting a node no longer refuses just because an auto-captured edge
+        // still points at it.
+        const blocking = transitions.filter(
+          (t) => (t.from === id || t.to === id) && isNonManual(t),
+        );
+        if (blocking.length) adopted = new Set([...adopted, ...blocking.map((t) => t.id)]);
         screens = screens.filter((s) => s.id !== id);
         transitions = cascadeRemoveNodeEdges(transitions, id);
         return { ok: true };
@@ -145,22 +164,39 @@ export function createScreensEditMode(
 
     deleteEdge(id) {
       return withUndo(() => {
-        const result = removeManualEdge(transitions, id);
-        if (result.error) return { ok: false, error: result.error };
-        transitions = result.edges;
+        const existing = transitions.find((t) => t.id === id);
+        if (!existing) return { ok: false, error: `unknown transition "${id}"` };
+        // Auto take-ownership on delete: an auto-captured edge is removed like a
+        // manual one, but its id is adopted so Save drops the stale copy too
+        // (otherwise mergeScreensDraft would preserve and resurrect it).
+        if (isNonManual(existing)) adopted = new Set(adopted).add(id);
+        transitions = transitions.filter((t) => t.id !== id);
         return { ok: true };
       });
     },
 
     updateEdge(id, patch) {
       return withUndo(() => {
+        const existing = transitions.find((t) => t.id === id);
+        if (!existing) return { ok: false, error: `unknown transition "${id}"` };
+        // Auto take-ownership on edit: reclassify an auto-captured edge to manual
+        // (and adopt its id) before the field patch, so editing it "just works"
+        // and Save persists the edited manual version instead of refusing.
+        if (isNonManual(existing)) {
+          transitions = transitions.map((t) => (t.id === id ? { ...t, source: "manual" } : t));
+          adopted = new Set(adopted).add(id);
+        }
         const r = updateTransitionFields(transitions, id, patch);
         transitions = r.transitions;
         return r.result;
       });
     },
 
-    snapshot: () => ({ screens: [...screens], transitions: [...transitions] }),
+    snapshot: () => ({
+      screens: [...screens],
+      transitions: [...transitions],
+      adopted: [...adopted],
+    }),
 
     isDirty: () => tracker.isDirty(),
     resetDirty: () => tracker.resetDirty(),
@@ -169,6 +205,7 @@ export function createScreensEditMode(
       if (!snapshot) return { ok: false, error: "nothing to undo" };
       screens = snapshot.screens;
       transitions = snapshot.transitions;
+      adopted = snapshot.adopted;
       return { ok: true };
     },
   };

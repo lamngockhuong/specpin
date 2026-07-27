@@ -145,6 +145,15 @@ export function mergeScreensConfig(input: ScreensMergeInput): ScreensMergeResult
 // depth on top of the editor's own live delete-guard). graph-write-back-flows.ts
 // applies the identical rule to FlowsConfig -- exported here so it stays one
 // definition, not two.
+//
+// ADOPTION (auto take-ownership): the editor may deliberately take over an
+// auto-captured screen transition -- when the user edits or deletes one, it is
+// reclassified to "manual". Those ids arrive in `adopted`; they are dropped
+// from the preserved slice so the draft's manual version (an edit) or its
+// absence (a delete) wins instead of the stale auto-captured copy resurfacing.
+// Only ids the editor explicitly adopted take over -- without `adopted` the
+// cross-source clobber is still refused, so B3's approve path is unchanged and
+// an untouched auto-captured edge is still preserved verbatim.
 
 /** True when `t`'s effective source (undefined defaults to "manual", per the
  *  schema) is the one this merge call owns. */
@@ -160,6 +169,10 @@ export interface ScreensDraftMergeInput {
   /** The draft's full desired transition list, of any source (see
    *  FlowsMergeInput.transitions -- same "only the owned slice applies" rule). */
   transitions: Transition[];
+  /** Ids of previously non-manual (auto-captured) transitions the editor has
+   *  taken over: dropped from the preserved slice so the draft's manual version
+   *  (or its deletion) wins instead of the stale copy being carried over. */
+  adopted?: string[];
   source: TransitionSource;
 }
 
@@ -170,7 +183,8 @@ export interface ScreensDraftMergeInput {
  *  upsert/dedupe/validate do the rest for the owned slice being added back. */
 export function mergeScreensDraft(input: ScreensDraftMergeInput): ScreensMergeResult {
   const { config, source } = input;
-  const preserved = config.transitions.filter((t) => !isOwnedBy(t, source));
+  const adopted = new Set(input.adopted ?? []);
+  const preserved = config.transitions.filter((t) => !isOwnedBy(t, source) && !adopted.has(t.id));
   const neededIds = new Set(preserved.flatMap((t) => [t.from, t.to]));
   const screensById = new Map(input.screens.map((s) => [s.id, s]));
   for (const id of neededIds) {
