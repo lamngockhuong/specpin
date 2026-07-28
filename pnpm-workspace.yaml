@@ -2,6 +2,9 @@ packages:
   - "packages/*"
   - "apps/*"
   - "examples/*"
+  # Root-level Playwright E2E harness. The globs above match only nested dirs,
+  # so a root package must be listed explicitly or pnpm ignores it entirely.
+  - "e2e"
 
 # pnpm 11: build-dependency allowlist (replaces package.json#pnpm.onlyBuiltDependencies).
 # Only esbuild ran its build script under pnpm 10; keep that unchanged.

@@ -1,0 +1,21 @@
+{
+  "name": "@specpin/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test --project=smoke",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@specpin/spec-schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.0",
+    "@specpin/demo-react-app": "workspace:*",
+    "@specpin/extension": "workspace:*",
+    "@types/node": "24.13.3",
+    "typescript": "6.0.3"
+  }
+}

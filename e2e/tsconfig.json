@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    // Test-only package: nothing is emitted or consumed as a library, so drop
+    // the declaration/composite build machinery the publishable packages need.
+    "types": ["node"],
+    "declaration": false,
+    "composite": false,
+    "noEmit": true,
+    "module": "Preserve"
+  },
+  "include": ["fixtures", "setup", "specs", "playwright.config.ts"]
+}
