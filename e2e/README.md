@@ -3,8 +3,9 @@
 Real-browser end-to-end suite: a built Chrome MV3 extension, a sidecar compiled from
 HEAD, and the demo app — the three-process loop from `docs/run-guide.md`, automated.
 
-> Phase 07 of the plan replaces most of this file with `docs/e2e-testing.md` and trims
-> it to a pointer. Until then, this is the contributor guide.
+> This is the contributor guide for now. Once the suite has a `docs/e2e-testing.md`
+> (with the coverage map and the Firefox manual checklist), this file should shrink to a
+> pointer at it rather than growing a second guide alongside it.
 
 ## Run it
 

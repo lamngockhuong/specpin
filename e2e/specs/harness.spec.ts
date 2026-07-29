@@ -2,9 +2,9 @@ import { tmpdir } from "node:os";
 import { expect, test } from "../fixtures/extension.js";
 
 /** Proof of life for the three-process harness. Deliberately asserts nothing about
- *  specs, matching, or rendering — those are Phase 02. If this file is red, no
- *  scenario above it can be trusted, so it stays the cheapest possible check that
- *  each moving part is actually up. */
+ *  specs, matching, or rendering — the scenarios under `specs/smoke/` own those. If
+ *  this file is red, none of them can be trusted, so it stays the cheapest possible
+ *  check that each moving part is actually up. */
 test.describe("harness", () => {
   test("loads the built extension and resolves its id from the service worker", async ({
     extensionId,
