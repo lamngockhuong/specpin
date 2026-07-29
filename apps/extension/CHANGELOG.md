@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.18](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.17...extension-v0.0.18) (2026-07-29)
+
+
+### Bug Fixes
+
+* **extension:** stop the graph panel blocking on unreachable sidecars ([#209](https://github.com/lamngockhuong/specpin/issues/209)) ([6a348f8](https://github.com/lamngockhuong/specpin/commit/6a348f86d8513adaf74f9f2ef5b89af9c58347d4))
+
 ## [0.0.17](https://github.com/lamngockhuong/specpin/compare/extension-v0.0.16...extension-v0.0.17) (2026-07-27)
 
 
