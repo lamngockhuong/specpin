@@ -12,6 +12,18 @@ import { type Sidecar, startSidecar } from "./sidecar.js";
 import { waitFor } from "./wait-for.js";
 import { openExtensionPage, sendMessage } from "./wake.js";
 
+/** How long to keep re-driving the connection before calling it unreachable.
+ *
+ *  Comfortably above `SidecarClient`'s own 10s `REQUEST_TIMEOUT_MS`
+ *  (`packages/api-client/src/client.ts`), so a single slow fetch cannot exhaust the
+ *  budget on its own and several real attempts get a turn. */
+const CONNECT_DEADLINE_MS = 40_000;
+
+/** Minimum gap between RECONNECT messages. Slightly above the client's 10s request
+ *  timeout so at most one re-drive is ever in flight, keeping the background's
+ *  single-writer mutation chain from backing up. */
+const RECONNECT_EVERY_MS = 12_000;
+
 export interface WorkerFixtures {
   /** One `vite preview` per worker. Read-only and stateless, so sharing it across a
    *  worker's tests costs nothing and saves a server start per test. */
@@ -140,27 +152,81 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
         // The underlying gap — connect handlers making one attempt with no backoff —
         // is a product robustness issue worth fixing in `sidecar-connection.ts`; it is
         // not something the harness should paper over silently, hence this note.
-        let attempts = 0;
-        await waitFor(
-          async () => {
-            if (attempts > 0) await sendMessage(probe, { type: "RECONNECT" });
-            attempts += 1;
-            const status = await sendMessage<{
-              connections?: Array<{ connected: boolean }>;
-            }>(probe, { type: "GET_STATUS" });
-            return status.connections?.some((c) => c.connected) ? true : null;
-          },
-          {
-            subject: `extension to connect to the sidecar at ${sidecar.baseUrl}`,
-            interval: 250,
-            // If the extension cannot connect, say whether the sidecar itself is
-            // reachable from Node — that single fact separates an extension-side fault
-            // from a dead sidecar, and it is otherwise a long guess.
-            describeFailure: () =>
-              `ADD_CONNECTION replied ${JSON.stringify(added)}; ` +
-              "check whether the sidecar is reachable outside the browser",
-          },
-        );
+        // Two distinct recoveries, because there are two distinct failure states.
+        //
+        // An EMPTY connection list means the background lost the connection entirely: on
+        // a cold service worker, `initWorker()` fires `reestablish()` fire-and-forget,
+        // OUTSIDE the `mutate()` chain that serializes ADD_CONNECTION. Its
+        // `await getConnections()` can read storage *before* our write and then finish
+        // *after* it, so `registry.setConnections([])` overwrites the connection we just
+        // added. Storage still holds it; the registry does not; `GET_STATUS` reports []
+        // and RECONNECT is a no-op because there is nothing to reconnect. Nothing
+        // re-reads storage until the 1-minute keepalive alarm — which is why widening
+        // deadlines never helped. `GET_FLOWS_SCREENS` (a default, non-refresh read) calls
+        // `hydrateFromStorage()`, so it is the lever that repopulates the registry.
+        //
+        // A PRESENT-but-disconnected connection is the ordinary case: re-drive the
+        // network with RECONNECT, sparingly — it runs inside `mutate()` and can spend the
+        // client's full 10s request timeout, so a tight retry cadence just queues
+        // mutations that never drain.
+        let reconnects = 0;
+        let rehydrates = 0;
+        let polls = 0;
+        let lastReconnect = Date.now();
+        let lastStatus: unknown;
+        try {
+          await waitFor(
+            async () => {
+              polls += 1;
+              const status = await sendMessage<{
+                connections?: Array<{ connected: boolean; error?: string; errorDetail?: string }>;
+              }>(probe, { type: "GET_STATUS" });
+              lastStatus = status.connections;
+
+              if (status.connections?.some((c) => c.connected)) return true;
+
+              if (!status.connections?.length) {
+                rehydrates += 1;
+                await sendMessage(probe, { type: "GET_FLOWS_SCREENS" });
+              } else if (Date.now() - lastReconnect >= RECONNECT_EVERY_MS) {
+                lastReconnect = Date.now();
+                reconnects += 1;
+                await sendMessage(probe, { type: "RECONNECT" });
+              }
+              return null;
+            },
+            {
+              subject: `extension to connect to the sidecar at ${sidecar.baseUrl}`,
+              // Must outlast the client's own 10s per-request timeout by enough to fit a
+              // couple of real attempts: a deadline equal to that timeout lets one slow
+              // fetch consume the whole budget, which reads as "cannot connect" rather
+              // than "was not given time to".
+              timeout: CONNECT_DEADLINE_MS,
+              interval: 500,
+            },
+          );
+        } catch (error) {
+          // Whether the sidecar answers Node right now is the one fact that separates an
+          // extension-side fault from a dead sidecar. Probed here rather than in
+          // `describeFailure`, which is synchronous and so cannot await a fetch.
+          const probes = await Promise.all(
+            ["/health", "/specs"].map(async (path) => {
+              try {
+                return `${path} -> ${(await sidecar.fetch(path)).status}`;
+              } catch (reason) {
+                return `${path} -> threw ${String(reason)}`;
+              }
+            }),
+          );
+          throw new Error(
+            `${String(error)}\n` +
+              `after ${polls} status poll(s), ${rehydrates} re-hydrate(s), ` +
+              `${reconnects} RECONNECT(s); ` +
+              `ADD_CONNECTION replied ${JSON.stringify(added)}\n` +
+              `last GET_STATUS connections: ${JSON.stringify(lastStatus)}\n` +
+              `sidecar probed directly from node: ${probes.join(", ")}`,
+          );
+        }
       } finally {
         await probe.close();
       }
