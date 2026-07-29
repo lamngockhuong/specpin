@@ -16,6 +16,6 @@
     "@specpin/demo-react-app": "workspace:*",
     "@specpin/extension": "workspace:*",
     "@types/node": "24.13.3",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   }
 }
