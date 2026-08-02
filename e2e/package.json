@@ -12,7 +12,7 @@
     "@specpin/spec-schema": "workspace:*"
   },
   "devDependencies": {
-    "@playwright/test": "1.62.0",
+    "@playwright/test": "1.62.1",
     "@specpin/demo-react-app": "workspace:*",
     "@specpin/extension": "workspace:*",
     "@types/node": "24.13.3",
