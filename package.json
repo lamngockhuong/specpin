@@ -26,7 +26,7 @@
     "@biomejs/biome": "2.5.2",
     "happy-dom": "20.11.1",
     "lefthook": "2.1.10",
-    "turbo": "2.10.6",
+    "turbo": "2.10.8",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   }
